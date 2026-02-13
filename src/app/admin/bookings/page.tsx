@@ -248,3 +248,4 @@ export default function AdminBookingsPage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";
