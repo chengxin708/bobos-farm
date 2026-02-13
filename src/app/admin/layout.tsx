@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { AdminAuthProvider, useAdminAuth } from '@/components/AdminAuthProvider';
 import AdminSidebar from '@/components/AdminSidebar';
 import { redirect } from 'next/navigation';
