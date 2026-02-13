@@ -110,7 +110,7 @@ export async function PATCH(
     if (status && zelle_reference !== undefined) {
       updateQuery = await db`
         UPDATE bookings 
-        SET status = ${status}, zelle_reference = ${zego_reference || null}
+        SET status = ${status}, zelle_reference = ${zelle_reference || null}
         WHERE id = ${id}
         RETURNING id, status, zelle_reference
       `;
@@ -121,10 +121,10 @@ export async function PATCH(
         WHERE id = ${id}
         RETURNING id, status, zelle_reference
       `;
-    } else if (zego_reference !== undefined) {
+    } else if (zelle_reference !== undefined) {
       updateQuery = await db`
         UPDATE bookings 
-        SET zelle_reference = ${zego_reference || null}
+        SET zelle_reference = ${zelle_reference || null}
         WHERE id = ${id}
         RETURNING id, status, zelle_reference
       `;
