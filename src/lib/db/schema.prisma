@@ -1,0 +1,127 @@
+// Prisma schema for Bobos Farm
+// Run `npx prisma generate` to generate the client
+// Run `npx prisma db push` to push the schema to your database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Change to "mysql" or "sqlite" if needed
+  url      = env("DATABASE_URL")
+}
+
+// ==================== Users ====================
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  phone           String?
+  name            String?
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  bookings            Booking[]
+  emailVerifications EmailVerification[]
+
+  @@map("users")
+}
+
+// ==================== Yurts (蒙古包) ====================
+model Yurt {
+  id              String    @id @default(cuid())
+  name            String    // 白/红/黄
+  color           String
+  descriptionCn   String?   @map("description_cn")
+  descriptionEn   String?   @map("description_en")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  bookings        Booking[]
+
+  @@map("yurts")
+}
+
+// ==================== Bookings (预约) ====================
+model Booking {
+  id              String    @id @default(cuid())
+  userId          String    @map("user_id")
+  yurtId          String    @map("yurt_id")
+  date            DateTime
+  time            String
+  status          BookingStatus @default(PENDING)
+  zelleReference  String?   @map("zelle_reference")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yurt            Yurt      @relation(fields: [yurtId], references: [id], onDelete: Cascade)
+  orders          BookingOrder[]
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+// ==================== Menu Categories ====================
+model MenuCategory {
+  id          String   @id @default(cuid())
+  nameCn      String   @map("name_cn")
+  nameEn      String   @map("name_en")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  items       MenuItem[]
+
+  @@map("menu_categories")
+}
+
+// ==================== Menu Items ====================
+model MenuItem {
+  id              String    @id @default(cuid())
+  categoryId      String    @map("category_id")
+  nameCn          String    @map("name_cn")
+  nameEn          String    @map("name_en")
+  descriptionCn   String?   @map("description_cn")
+  descriptionEn   String?   @map("description_en")
+  price           Decimal   @db.Decimal(10, 2)
+  imageUrl        String?   @map("image_url")
+  available       Boolean   @default(true)
+
+  category        MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orders          BookingOrder[]
+
+  @@map("menu_items")
+}
+
+// ==================== Booking Orders (预约点单) ====================
+model BookingOrder {
+  id              String    @id @default(cuid())
+  bookingId       String    @map("booking_id")
+  menuItemId      String    @map("menu_item_id")
+  quantity        Int       @default(1)
+  price           Decimal   @db.Decimal(10, 2)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@map("booking_orders")
+}
+
+// ==================== Email Verifications ====================
+model EmailVerification {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  token       String    @unique
+  expiresAt   DateTime  @map("expires_at")
+  used        Boolean   @default(false)
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verifications")
+}
