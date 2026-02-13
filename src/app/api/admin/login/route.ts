@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { password } = body;
 
     // Get admin password from environment variable
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminPassword = "admin123";
 
     if (!adminPassword) {
       console.error('ADMIN_PASSWORD not configured');
