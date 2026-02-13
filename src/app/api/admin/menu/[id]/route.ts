@@ -129,14 +129,7 @@ export async function PATCH(
 
     values.push(id);
 
-    const result = await db`
-      UPDATE menu_items 
-      SET ${db(updates.map((u, i) => db`${db(u.split('=')[0].trim()) = ${u.split('=')[1].trim()}`).join(', '))}
-      WHERE id = ${id}
-      RETURNING id, category_id, name, description, price, image_url, available
-    `;
-
-    // Simpler approach - update fields individually
+    // Update fields individually
     if (name !== undefined) {
       await db`UPDATE menu_items SET name = ${name} WHERE id = ${id}`;
     }
