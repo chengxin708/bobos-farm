@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      bookings: query.rows,
-      total: parseInt(countQuery.rows[0]?.total || '0'),
+      bookings: (await query).rows,
+      total: parseInt((await countQuery).rows[0]?.total || '0'),
       page,
       limit
     });
