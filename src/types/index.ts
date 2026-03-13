@@ -95,5 +95,24 @@ export type SystemSettingDto = Pick<SystemSetting, "key" | "value" | "descriptio
 declare module "next-auth" {
   interface User {
     role?: string;
+    preferredLanguage?: string;
+  }
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+      preferredLanguage: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string;
+    id?: string;
+    preferredLanguage?: string;
   }
 }
