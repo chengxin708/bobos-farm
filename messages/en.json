@@ -11,7 +11,11 @@
     "back": "Back",
     "next": "Next",
     "search": "Search",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "optional": "Optional",
+    "saveChanges": "Save Changes",
+    "gotItContinue": "Got it, continue →",
+    "or": "or"
   },
   "nav": {
     "menu": "Menu",
@@ -27,6 +31,8 @@
     "login": {
       "title": "Sign In",
       "subtitle": "Welcome back! Please enter your details.",
+      "heroTitle": "Welcome Back\nto the Farm",
+      "heroSubtitle": "Your table in the Hudson Valley awaits",
       "email": "Email",
       "emailPlaceholder": "Enter your email",
       "password": "Password",
@@ -34,6 +40,7 @@
       "rememberMe": "Remember me",
       "forgotPassword": "Forgot password?",
       "signIn": "Sign In",
+      "signingIn": "Signing in...",
       "orContinueWith": "or",
       "continueWithGoogle": "Continue with Google",
       "noAccount": "Don't have an account?",
@@ -41,25 +48,569 @@
     },
     "register": {
       "title": "Create Account",
-      "subtitle": "Join us for a farm-to-table experience.",
+      "subtitle": "Reserve your spot at our table.",
+      "heroTitle": "Join Our Table",
+      "heroSubtitle": "Fresh from the pastures, straight to your plate",
       "name": "Full Name",
       "namePlaceholder": "Enter your full name",
       "email": "Email",
       "emailPlaceholder": "Enter your email",
-      "phone": "Phone (optional)",
-      "phonePlaceholder": "Enter your phone number",
+      "phone": "Phone",
+      "phoneOptional": "Optional — for reservation reminders",
+      "phonePlaceholder": "(555) 000-0000",
       "password": "Password",
       "passwordPlaceholder": "Create a password",
+      "passwordStrength": "Password strength: {strength}",
       "confirmPassword": "Confirm Password",
       "confirmPasswordPlaceholder": "Confirm your password",
+      "termsAgreement": "I agree to the Terms of Service and Privacy Policy",
       "createAccount": "Create Account",
+      "creatingAccount": "Creating account...",
+      "continueWithGoogle": "Continue with Google",
       "hasAccount": "Already have an account?",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "strength": {
+        "weak": "Weak",
+        "medium": "Medium",
+        "good": "Good",
+        "strong": "Strong"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "title": "A Farm-to-Table Feast\nin the Hudson Valley",
+      "subtitle": "Experience authentic Mongolian & Northeastern Chinese cuisine in our cozy yurts, surrounded by the rolling hills of New York's beautiful Hudson Valley",
+      "bookVisit": "Book Your Visit",
+      "viewMenu": "View Menu"
+    },
+    "about": {
+      "title": "Our Story",
+      "para1": "Nestled in the serene Hudson Valley, Bobo's Farm brings the bold, soulful flavors of Mongolian and Northeastern Chinese cuisine to your table. Our signature whole roasted lamb — slow-cooked over an open flame — is a celebration of tradition, community, and the land.",
+      "para2": "Dine inside one of our authentic Mongolian yurts, surrounded by rolling pastures and fresh mountain air. Every ingredient is sourced from local farms or grown right here on our property.",
+      "phone": "(516) 272-9999",
+      "location": "Hudson Valley, New York"
+    },
+    "highlights": {
+      "title": "What Makes Us Special",
+      "subtitle": "Three reasons to gather around our table",
+      "lamb": {
+        "title": "Signature Roasted\nWhole Lamb",
+        "desc": "Our showstopper: a whole lamb slow-roasted over an open flame for hours, seasoned with traditional Mongolian spices. Feeds 10-15 guests — perfect for celebrations."
+      },
+      "yurt": {
+        "title": "Dine in a Yurt",
+        "desc": "Step into one of our authentic Mongolian yurts for a truly unique dining experience. Warm, intimate, and beautifully decorated — each yurt seats up to 20 guests."
+      },
+      "farm": {
+        "title": "Farm Fresh",
+        "desc": "From our pastures to your plate. We raise our own livestock and grow seasonal vegetables on-site, ensuring the freshest, most flavorful ingredients in every dish."
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "From booking to feasting — four simple steps",
+      "step1": {
+        "title": "Choose a Date",
+        "desc": "Pick your preferred date and party size"
+      },
+      "step2": {
+        "title": "Pay Deposit",
+        "desc": "Secure your reservation with a small deposit"
+      },
+      "step3": {
+        "title": "Pre-Order Menu",
+        "desc": "Select your dishes and customize your feast"
+      },
+      "step4": {
+        "title": "Enjoy the Feast!",
+        "desc": "Arrive, relax, and savor an unforgettable meal"
+      }
+    },
+    "gallery": {
+      "title": "A Taste of the Experience",
+      "subtitle": "Moments from our farm and table"
+    }
+  },
+  "footer": {
+    "tagline": "Farm-to-table feasting in the\nHudson Valley since 2020.",
+    "quickLinks": "Quick Links",
+    "links": {
+      "menu": "Menu",
+      "bookAYurt": "Book a Yurt",
+      "aboutUs": "About Us",
+      "gallery": "Gallery",
+      "contact": "Contact"
+    },
+    "visitUs": "Visit Us",
+    "address": "Hudson Valley, New York",
+    "phone": "(516) 272-9999",
+    "email": "info@bobosfarm.com",
+    "hours": "Open: Fri-Sun, 11AM-9PM\nBy reservation only",
+    "copyright": "© 2026 Bobo's Farm. All rights reserved.",
+    "madeWith": "Made with love in the Hudson Valley"
+  },
+  "menu": {
+    "title": "Our Menu",
+    "subtitle": "Fresh ingredients, authentic flavors",
+    "categories": {
+      "wholeLamb": "Whole Lamb",
+      "signatureDishes": "Signature Dishes",
+      "ironPotStews": "Iron Pot Stews",
+      "coldDishes": "Cold Dishes",
+      "staples": "Staples",
+      "beverages": "Beverages"
+    },
+    "lambNotice": "Our whole roasted lamb (~35 lbs) is perfect for groups of 8+. Pre-order at least 3 days in advance.",
+    "advanceNotice3": "Requires 3 days advance notice",
+    "advanceNotice2": "Requires 2 days advance notice"
+  },
+  "booking": {
+    "stepper": {
+      "chooseDate": "Choose Date",
+      "selectYurt": "Select Yurt",
+      "details": "Details",
+      "confirmPay": "Confirm & Pay"
+    },
+    "date": {
+      "monthYear": "March 2026",
+      "legend": {
+        "available": "Available",
+        "selective": "Selective",
+        "limited": "Limited",
+        "full": "Full"
+      },
+      "days": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      }
+    },
+    "yurt": {
+      "title": "Select Your Yurt",
+      "subtitle": "for Saturday, March 15, 2026",
+      "status": {
+        "available": "Available",
+        "booked": "Booked"
+      }
+    },
+    "details": {
+      "title": "Reservation Details",
+      "subtitle": "Golden Meadow · Saturday, March 15, 2026",
+      "contactName": "Contact Name",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "numberOfGuests": "Number of Guests",
+      "capacityNotice": "Our yurts can handle 6-20 guests per meal. We recommend a minimum of 6 people for a full dining experience.",
+      "specialRequests": "Special Requests / Allergies",
+      "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests..."
+    },
+    "confirm": {
+      "summaryTitle": "Reservation Summary",
+      "summaryLabels": {
+        "date": "Date",
+        "yurt": "Yurt",
+        "guests": "Guests",
+        "specialRequests": "Special Requests"
+      },
+      "depositRequired": "Deposit Required",
+      "howToPay": "How to pay:",
+      "step1": "Open your Chase or Zelle app",
+      "step2": "Send $300 to:",
+      "step3": "Use this memo:",
+      "countdown": "Please complete payment within {time}",
+      "countdownSub": "or the reservation will be automatically cancelled",
+      "uploadTitle": "Drop your payment screenshot here",
+      "uploadBrowse": "or click to browse",
+      "uploadFormats": "Supports: JPG, PNG, PDF (max 5MB)",
+      "cancellationPolicy": "I understand the cancellation policy: cancellation within 3 days of the reservation date are non-refundable.",
+      "completedTransfer": "I Have Completed the Transfer",
+      "cancelReservation": "Cancel reservation"
+    }
+  },
+  "reservations": {
+    "title": "My Reservations",
+    "subtitle": "Manage your upcoming visits",
+    "status": {
+      "confirmed": "Confirmed",
+      "pendingPayment": "Pending Payment",
+      "completed": "Completed"
+    },
+    "actions": {
+      "reschedule": "Reschedule",
+      "payNow": "Pay Now",
+      "cancel": "Cancel"
+    },
+    "notOrderedYet": "Not ordered yet —",
+    "preOrderNow": "Pre-Order Now →",
+    "viewOrder": "View Order →",
+    "guests": "{count} guests"
+  },
+  "preOrder": {
+    "infoBar": "Pre-Order for {date} — {yurt} — {guests} guests",
+    "orderBy": "Order by {date}",
+    "categories": {
+      "signature": "Signature",
+      "appetizers": "Appetizers",
+      "mains": "Mains",
+      "sides": "Sides",
+      "drinks": "Drinks"
+    },
+    "searchPlaceholder": "Search dishes...",
+    "yourOrder": "Your Order",
+    "subtotal": "Subtotal",
+    "estimatedTotal": "Estimated Total",
+    "depositPaid": "Deposit already paid: $300",
+    "kitchenNotes": "Notes for the kitchen",
+    "kitchenNotesPlaceholder": "Any special notes for the kitchen?",
+    "paymentNote": "This is an estimate. Final payment collected on-site via Zelle.",
+    "submitOrder": "Submit Pre-Order"
+  },
+  "customerSettings": {
+    "title": "Settings",
+    "profile": {
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone",
+      "language": "Language",
+      "changePhoto": "Change photo"
+    },
+    "password": {
+      "title": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "updatePassword": "Update Password",
+      "strength": {
+        "good": "Good",
+        "medium": "Medium",
+        "weak": "Weak",
+        "strong": "Strong"
+      }
+    },
+    "notifications": {
+      "title": "Email Notifications",
+      "reservationConfirmations": "Reservation confirmations",
+      "orderReminders": "Order reminders",
+      "dayBeforeReminders": "Day-before reminders",
+      "promotionalOffers": "Promotional offers"
+    },
+    "danger": {
+      "deleteAccount": "Delete Account",
+      "deleteWarning": "This action cannot be undone. All your data will be permanently removed."
     }
   },
   "language": {
     "en": "EN",
     "zh": "\u4e2d\u6587",
     "switchTo": "Switch language"
+  },
+  "admin": {
+    "sidebar": {
+      "brandName": "Bobo's Farm",
+      "adminPanel": "Admin Panel",
+      "dashboard": "Dashboard",
+      "calendar": "Calendar",
+      "reservations": "Reservations",
+      "deposits": "Deposits",
+      "menu": "Menu",
+      "yurts": "Yurts",
+      "availability": "Availability",
+      "customers": "Customers",
+      "settings": "Settings",
+      "reports": "Reports"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "stats": {
+        "todayReservations": "Today's Reservations",
+        "pendingDeposits": "Pending Deposits",
+        "pendingOrders": "Pending Orders",
+        "monthRevenue": "This Month Revenue"
+      },
+      "actions": {
+        "createReservation": "Create Reservation",
+        "openCalendar": "Open Calendar",
+        "manageAvailability": "Manage Availability"
+      },
+      "weekOverview": {
+        "title": "This Week",
+        "viewCalendar": "View Calendar \u2192"
+      },
+      "legend": {
+        "available": "Available",
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "completed": "Completed"
+      },
+      "activity": {
+        "title": "Recent Activity",
+        "viewAll": "View All \u2192"
+      },
+      "expiringSoon": {
+        "title": "Expiring Soon",
+        "description": "These deposits are about to expire. Take action before they auto-release.",
+        "colCustomer": "Customer",
+        "colDate": "Date",
+        "colYurt": "Yurt",
+        "colExpiresIn": "Expires in",
+        "colAction": "Action",
+        "remind": "Remind"
+      }
+    },
+    "reservations": {
+      "title": "Reservations",
+      "searchPlaceholder": "Search reservations...",
+      "filters": "Filters",
+      "newReservation": "New Reservation",
+      "tabs": {
+        "all": "All",
+        "upcoming": "Upcoming",
+        "checkedIn": "Checked In",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "table": {
+        "id": "ID",
+        "guest": "GUEST",
+        "yurt": "YURT",
+        "dates": "DATES",
+        "guests": "GUESTS",
+        "status": "STATUS",
+        "deposit": "DEPOSIT",
+        "action": "ACTION"
+      },
+      "status": {
+        "confirmed": "Confirmed",
+        "pending": "Pending",
+        "checkedIn": "Checked In",
+        "cancelled": "Cancelled",
+        "completed": "Completed"
+      },
+      "actions": {
+        "view": "View",
+        "confirm": "Confirm",
+        "release": "Release",
+        "cancel": "Cancel",
+        "complete": "Complete"
+      }
+    },
+    "deposits": {
+      "title": "Deposits",
+      "tabs": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "refunded": "Refunded",
+        "expiringSoon": "Expiring Soon"
+      },
+      "stats": {
+        "totalPending": "Total pending deposits",
+        "collectedThisMonth": "This month",
+        "refundedThisMonth": "This month"
+      },
+      "card": {
+        "guests": "guests",
+        "depositPhone": "Deposit phone:",
+        "sentVia": "Sent via:",
+        "txnId": "Txn ID:"
+      },
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "refunded": "Refunded"
+      },
+      "actions": {
+        "confirmDeposit": "Confirm Deposit",
+        "notReceived": "Not Received",
+        "remind": "Remind"
+      }
+    },
+    "calendar": {
+      "title": "Calendar",
+      "views": {
+        "month": "Month",
+        "week": "Week"
+      },
+      "today": "Today",
+      "legend": {
+        "available": "Available",
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "cancelled": "Cancelled",
+        "done": "Done"
+      },
+      "status": {
+        "available": "Available"
+      }
+    },
+    "menu": {
+      "title": "Menu Management",
+      "categories": "Categories",
+      "addCategory": "+ Add Category",
+      "dishes": "dishes",
+      "addDish": "Add Dish",
+      "addNewDish": "Add New Dish",
+      "editDish": {
+        "title": "Edit Dish",
+        "nameEn": "Name (English)",
+        "nameZh": "Name (Chinese)",
+        "category": "Category",
+        "price": "Price",
+        "descriptionEn": "Description (English)",
+        "descriptionZh": "Description (Chinese)",
+        "image": "Image",
+        "imageUpload": "Drag image or click to upload",
+        "tags": "Tags",
+        "addTag": "+ Add tag",
+        "advanceOrder": "Advance Order (hours)",
+        "sortOrder": "Sort Order",
+        "active": "Active",
+        "saveChanges": "Save Changes"
+      }
+    },
+    "yurts": {
+      "title": "Yurt Management",
+      "subtitle": "Manage your yurt properties and availability",
+      "addYurt": "Add Yurt",
+      "capacity": "Capacity:",
+      "guests": "guests",
+      "beds": "beds",
+      "status": {
+        "active": "Active",
+        "maintenance": "Maintenance"
+      },
+      "actions": {
+        "edit": "Edit",
+        "viewDetails": "View Details"
+      }
+    },
+    "customers": {
+      "title": "Customers",
+      "searchPlaceholder": "Search customers...",
+      "filters": {
+        "all": "All",
+        "vip": "VIP",
+        "regular": "Regular",
+        "blocked": "Blocked"
+      },
+      "table": {
+        "name": "NAME",
+        "email": "EMAIL",
+        "phone": "PHONE",
+        "visits": "VISITS",
+        "lastVisit": "LAST VISIT",
+        "tag": "TAG",
+        "action": "ACTION"
+      },
+      "actions": {
+        "view": "View",
+        "addTag": "+ Add Tag"
+      },
+      "detail": {
+        "title": "Customer Details",
+        "memberSince": "Member since",
+        "stats": {
+          "totalVisits": "Total Visits",
+          "totalSpent": "Total Spent",
+          "cancelRate": "Cancel Rate",
+          "noShows": "No-shows"
+        },
+        "reservationHistory": "RESERVATION HISTORY",
+        "showMore": "Show {count} More \u2192",
+        "adminNotes": "ADMIN NOTES",
+        "saveNote": "Save Note"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "sidebarTitle": "System Settings",
+      "sidebarSubtitle": "Configure your farm's operational settings and preferences",
+      "tabs": {
+        "general": "General",
+        "booking": "Booking",
+        "classification": "Classification",
+        "ordering": "Ordering",
+        "guestPolicies": "Guest Policies",
+        "payment": "Payment",
+        "notifications": "Notifications"
+      },
+      "booking": {
+        "title": "Booking Settings",
+        "subtitle": "Configure deposit amounts, payment timeouts, and booking windows.",
+        "depositAmount": "Deposit Amount",
+        "depositAmountHelp": "Amount required to hold a reservation. Must be paid within 72 hours of booking to secure the date.",
+        "paymentTimeout": "Payment Timeout",
+        "paymentTimeoutUnit": "hours",
+        "paymentTimeoutHelp": "Time allowed for guests to complete payment. If not received within this window, the reservation will automatically be cancelled.",
+        "maxAdvanceBooking": "Max Advance Booking",
+        "maxAdvanceBookingUnit": "months",
+        "maxAdvanceBookingHelp": "Maximum number of months in advance guests can book a yurt.",
+        "minAdvanceBooking": "Min Advance Booking",
+        "minAdvanceBookingUnit": "days",
+        "minAdvanceBookingHelp": "Minimum number of days before arrival that a booking can be made."
+      },
+      "footer": {
+        "unsavedChanges": "\u26a1 Unsaved changes",
+        "discard": "Discard",
+        "saveChanges": "Save Changes"
+      }
+    },
+    "availability": {
+      "title": "Availability Calendar",
+      "openRange": "Open Range:",
+      "closeRange": "Close Range:",
+      "openAll": "Open All",
+      "closeAll": "Close All",
+      "datesSelected": "{count} dates selected",
+      "legend": {
+        "open": "Open",
+        "closed": "Closed",
+        "limited": "Limited",
+        "custom": "Custom",
+        "noAvailability": "No Availability"
+      },
+      "dayDetail": {
+        "perYurtAvailability": "Per-Yurt Availability",
+        "reservations": "Reservations",
+        "remaining": "remaining",
+        "confirm": "Confirm",
+        "adminNote": "Admin Note",
+        "saveNote": "Save Note"
+      }
+    },
+    "reports": {
+      "title": "Reports & Analytics",
+      "timeRanges": {
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "thisYear": "This Year",
+        "custom": "Custom"
+      },
+      "export": {
+        "csv": "Export CSV",
+        "pdf": "Export PDF"
+      },
+      "stats": {
+        "totalReservations": "Total Reservations",
+        "revenue": "Revenue",
+        "avgPartySize": "Avg Party Size",
+        "cancelRate": "Cancel Rate"
+      },
+      "charts": {
+        "reservationTrend": "Reservation Trend",
+        "reservations": "Reservations",
+        "cancellations": "Cancellations",
+        "monthlyRevenue": "Monthly Revenue",
+        "last7Months": "Last 7 months",
+        "popularDishes": "Popular Dishes",
+        "totalOrdersPerItem": "Total orders per item",
+        "yurtUtilization": "Yurt Utilization"
+      }
+    }
   }
 }

@@ -1,65 +1,616 @@
 {
   "common": {
-    "save": "\u4fdd\u5b58",
-    "cancel": "\u53d6\u6d88",
-    "loading": "\u52a0\u8f7d\u4e2d...",
-    "error": "\u53d1\u751f\u9519\u8bef",
-    "success": "\u6210\u529f",
-    "confirm": "\u786e\u8ba4",
-    "delete": "\u5220\u9664",
-    "edit": "\u7f16\u8f91",
-    "back": "\u8fd4\u56de",
-    "next": "\u4e0b\u4e00\u6b65",
-    "search": "\u641c\u7d22",
-    "noResults": "\u672a\u627e\u5230\u7ed3\u679c"
+    "save": "保存",
+    "cancel": "取消",
+    "loading": "加载中...",
+    "error": "发生错误",
+    "success": "成功",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "search": "搜索",
+    "noResults": "未找到结果",
+    "optional": "选填",
+    "saveChanges": "保存更改",
+    "gotItContinue": "明白，继续 →",
+    "or": "或"
   },
   "nav": {
-    "menu": "\u83dc\u5355",
-    "about": "\u5173\u4e8e\u6211\u4eec",
-    "gallery": "\u56fe\u96c6",
-    "bookNow": "\u7acb\u5373\u9884\u8ba2",
-    "login": "\u767b\u5f55",
-    "logout": "\u9000\u51fa",
-    "myReservations": "\u6211\u7684\u9884\u8ba2",
-    "settings": "\u8bbe\u7f6e"
+    "menu": "菜单",
+    "about": "关于我们",
+    "gallery": "图集",
+    "bookNow": "立即预订",
+    "login": "登录",
+    "logout": "退出",
+    "myReservations": "我的预订",
+    "settings": "设置"
   },
   "auth": {
     "login": {
-      "title": "\u767b\u5f55",
-      "subtitle": "\u6b22\u8fce\u56de\u6765\uff01\u8bf7\u8f93\u5165\u60a8\u7684\u4fe1\u606f\u3002",
-      "email": "\u90ae\u7b71",
-      "emailPlaceholder": "\u8bf7\u8f93\u5165\u90ae\u7b71",
-      "password": "\u5bc6\u7801",
-      "passwordPlaceholder": "\u8bf7\u8f93\u5165\u5bc6\u7801",
-      "rememberMe": "\u8bb0\u4f4f\u6211",
-      "forgotPassword": "\u5fd8\u8bb0\u5bc6\u7801\uff1f",
-      "signIn": "\u767b\u5f55",
-      "orContinueWith": "\u6216\u8005",
-      "continueWithGoogle": "\u4f7f\u7528Google\u767b\u5f55",
-      "noAccount": "\u8fd8\u6ca1\u6709\u8d26\u53f7\uff1f",
-      "signUp": "\u6ce8\u518c"
+      "title": "登录",
+      "subtitle": "欢迎回来！请输入您的信息。",
+      "heroTitle": "欢迎回来\n回到农场",
+      "heroSubtitle": "哈德逊河谷的餐桌在等您",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入邮箱",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "rememberMe": "记住我",
+      "forgotPassword": "忘记密码？",
+      "signIn": "登录",
+      "signingIn": "登录中...",
+      "orContinueWith": "或者",
+      "continueWithGoogle": "使用Google登录",
+      "noAccount": "还没有账号？",
+      "signUp": "注册"
     },
     "register": {
-      "title": "\u521b\u5efa\u8d26\u53f7",
-      "subtitle": "\u52a0\u5165\u6211\u4eec\uff0c\u4eab\u53d7\u519c\u573a\u5230\u9910\u684c\u7684\u7f8e\u98df\u4f53\u9a8c\u3002",
-      "name": "\u59d3\u540d",
-      "namePlaceholder": "\u8bf7\u8f93\u5165\u60a8\u7684\u59d3\u540d",
-      "email": "\u90ae\u7b71",
-      "emailPlaceholder": "\u8bf7\u8f93\u5165\u90ae\u7b71",
-      "phone": "\u7535\u8bdd\uff08\u9009\u586b\uff09",
-      "phonePlaceholder": "\u8bf7\u8f93\u5165\u7535\u8bdd\u53f7\u7801",
-      "password": "\u5bc6\u7801",
-      "passwordPlaceholder": "\u8bbe\u7f6e\u5bc6\u7801",
-      "confirmPassword": "\u786e\u8ba4\u5bc6\u7801",
-      "confirmPasswordPlaceholder": "\u518d\u6b21\u8f93\u5165\u5bc6\u7801",
-      "createAccount": "\u521b\u5efa\u8d26\u53f7",
-      "hasAccount": "\u5df2\u6709\u8d26\u53f7\uff1f",
-      "signIn": "\u767b\u5f55"
+      "title": "创建账号",
+      "subtitle": "预留您的专属餐位。",
+      "heroTitle": "加入我们的餐桌",
+      "heroSubtitle": "来自牧场的新鲜食材，直达您的盘中",
+      "name": "姓名",
+      "namePlaceholder": "请输入您的姓名",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入邮箱",
+      "phone": "电话",
+      "phoneOptional": "选填 — 用于预订提醒",
+      "phonePlaceholder": "(555) 000-0000",
+      "password": "密码",
+      "passwordPlaceholder": "设置密码",
+      "passwordStrength": "密码强度：{strength}",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "再次输入密码",
+      "termsAgreement": "我同意服务条款和隐私政策",
+      "createAccount": "创建账号",
+      "creatingAccount": "创建中...",
+      "continueWithGoogle": "使用Google登录",
+      "hasAccount": "已有账号？",
+      "signIn": "登录",
+      "strength": {
+        "weak": "较弱",
+        "medium": "中等",
+        "good": "良好",
+        "strong": "强"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "title": "哈德逊河谷的\n农场到餐桌盛宴",
+      "subtitle": "在我们温馨的蒙古包里，品味正宗的蒙古族与东北美食，四周环绕着纽约哈德逊河谷的连绵山丘",
+      "bookVisit": "预订您的到访",
+      "viewMenu": "查看菜单"
+    },
+    "about": {
+      "title": "我们的故事",
+      "para1": "坐落于宁静的哈德逊河谷，波姐农家乐将蒙古族与东北美食的浓郁风味带上您的餐桌。我们的招牌全羊——以明火慢烤，融合传统蒙古香料——是对传统、社区与土地的礼赞。",
+      "para2": "在我们的正宗蒙古包中用餐，四周是绿意盎然的牧场与清新的山间空气。每一种食材或来自本地农场，或就地种植于我们的农场。",
+      "phone": "(516) 272-9999",
+      "location": "纽约，哈德逊河谷"
+    },
+    "highlights": {
+      "title": "我们的特色",
+      "subtitle": "围坐餐桌的三大理由",
+      "lamb": {
+        "title": "招牌\n烤全羊",
+        "desc": "我们的压轴之作：整只羊以明火慢烤数小时，佐以传统蒙古香料。可供10-15人享用，最适合庆典聚会。"
+      },
+      "yurt": {
+        "title": "蒙古包用餐",
+        "desc": "走进我们正宗的蒙古包，体验独一无二的用餐体验。温馨私密、装饰精美——每顶蒙古包最多可容纳20位宾客。"
+      },
+      "farm": {
+        "title": "农场新鲜食材",
+        "desc": "从我们的牧场到您的餐盘。我们自行饲养牲畜、种植时令蔬菜，确保每道菜肴都使用最新鲜、最美味的食材。"
+      }
+    },
+    "howItWorks": {
+      "title": "预订流程",
+      "subtitle": "从预订到享用——简单四步",
+      "step1": {
+        "title": "选择日期",
+        "desc": "挑选您偏好的日期和用餐人数"
+      },
+      "step2": {
+        "title": "支付定金",
+        "desc": "支付少量定金锁定您的预订"
+      },
+      "step3": {
+        "title": "预订菜单",
+        "desc": "选择菜品，定制您的专属盛宴"
+      },
+      "step4": {
+        "title": "尽情享用！",
+        "desc": "到达农场，放松身心，品味难忘美食"
+      }
+    },
+    "gallery": {
+      "title": "体验的味道",
+      "subtitle": "来自农场与餐桌的美好瞬间"
+    }
+  },
+  "footer": {
+    "tagline": "自2020年起，在哈德逊河谷\n为您呈上农场到餐桌的盛宴。",
+    "quickLinks": "快速链接",
+    "links": {
+      "menu": "菜单",
+      "bookAYurt": "预订蒙古包",
+      "aboutUs": "关于我们",
+      "gallery": "图集",
+      "contact": "联系我们"
+    },
+    "visitUs": "到访信息",
+    "address": "纽约，哈德逊河谷",
+    "phone": "(516) 272-9999",
+    "email": "info@bobosfarm.com",
+    "hours": "营业时间：周五至周日，上午11点至晚上9点\n仅凭预订入场",
+    "copyright": "© 2026 波姐农家乐。保留所有权利。",
+    "madeWith": "用心制作于哈德逊河谷"
+  },
+  "menu": {
+    "title": "我们的菜单",
+    "subtitle": "新鲜食材，正宗风味",
+    "categories": {
+      "wholeLamb": "烤全羊",
+      "signatureDishes": "招牌菜",
+      "ironPotStews": "铁锅炖",
+      "coldDishes": "凉菜",
+      "staples": "主食",
+      "beverages": "饮品"
+    },
+    "lambNotice": "我们的烤全羊（约35磅）适合8人以上聚餐，请至少提前3天预订。",
+    "advanceNotice3": "需提前3天预订",
+    "advanceNotice2": "需提前2天预订"
+  },
+  "booking": {
+    "stepper": {
+      "chooseDate": "选择日期",
+      "selectYurt": "选择蒙古包",
+      "details": "填写信息",
+      "confirmPay": "确认并付款"
+    },
+    "date": {
+      "monthYear": "2026年3月",
+      "legend": {
+        "available": "可预订",
+        "selective": "有限",
+        "limited": "紧张",
+        "full": "已满"
+      },
+      "days": {
+        "sun": "日",
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六"
+      }
+    },
+    "yurt": {
+      "title": "选择蒙古包",
+      "subtitle": "2026年3月15日（周六）",
+      "status": {
+        "available": "可预订",
+        "booked": "已预订"
+      }
+    },
+    "details": {
+      "title": "预订详情",
+      "subtitle": "金色草原 · 2026年3月15日（周六）",
+      "contactName": "联系人姓名",
+      "email": "邮箱",
+      "phoneNumber": "联系电话",
+      "numberOfGuests": "用餐人数",
+      "capacityNotice": "我们的蒙古包可容纳6至20位宾客。建议最少6人，以获得完整的用餐体验。",
+      "specialRequests": "特殊要求 / 过敏信息",
+      "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求..."
+    },
+    "confirm": {
+      "summaryTitle": "预订摘要",
+      "summaryLabels": {
+        "date": "日期",
+        "yurt": "蒙古包",
+        "guests": "宾客",
+        "specialRequests": "特殊要求"
+      },
+      "depositRequired": "需要支付定金",
+      "howToPay": "付款方式：",
+      "step1": "打开您的Chase或Zelle应用",
+      "step2": "发送300美元至：",
+      "step3": "请使用以下备注：",
+      "countdown": "请在{time}内完成付款",
+      "countdownSub": "否则预订将自动取消",
+      "uploadTitle": "将付款截图拖放至此处",
+      "uploadBrowse": "或点击选择文件",
+      "uploadFormats": "支持格式：JPG、PNG、PDF（最大5MB）",
+      "cancellationPolicy": "我了解取消政策：预订日期前3天内取消不予退款。",
+      "completedTransfer": "我已完成转账",
+      "cancelReservation": "取消预订"
+    }
+  },
+  "reservations": {
+    "title": "我的预订",
+    "subtitle": "管理您的近期到访",
+    "status": {
+      "confirmed": "已确认",
+      "pendingPayment": "待付款",
+      "completed": "已完成"
+    },
+    "actions": {
+      "reschedule": "改期",
+      "payNow": "立即付款",
+      "cancel": "取消"
+    },
+    "notOrderedYet": "尚未预订菜品 —",
+    "preOrderNow": "立即预订菜品 →",
+    "viewOrder": "查看订单 →",
+    "guests": "{count}位宾客"
+  },
+  "preOrder": {
+    "infoBar": "预订菜品：{date} — {yurt} — {guests}位宾客",
+    "orderBy": "请于{date}前下单",
+    "categories": {
+      "signature": "招牌菜",
+      "appetizers": "开胃菜",
+      "mains": "主菜",
+      "sides": "小食",
+      "drinks": "饮品"
+    },
+    "searchPlaceholder": "搜索菜品...",
+    "yourOrder": "您的订单",
+    "subtotal": "小计",
+    "estimatedTotal": "预计总金额",
+    "depositPaid": "已支付定金：$300",
+    "kitchenNotes": "厨房备注",
+    "kitchenNotesPlaceholder": "有什么特别需要告知厨房的吗？",
+    "paymentNote": "以上为预估金额，最终付款将在用餐当天通过Zelle结清。",
+    "submitOrder": "提交预订单"
+  },
+  "customerSettings": {
+    "title": "设置",
+    "profile": {
+      "fullName": "姓名",
+      "email": "邮箱",
+      "phone": "电话",
+      "language": "语言",
+      "changePhoto": "更换头像"
+    },
+    "password": {
+      "title": "修改密码",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmNewPassword": "确认新密码",
+      "updatePassword": "更新密码",
+      "strength": {
+        "good": "良好",
+        "medium": "中等",
+        "weak": "较弱",
+        "strong": "强"
+      }
+    },
+    "notifications": {
+      "title": "邮件通知",
+      "reservationConfirmations": "预订确认通知",
+      "orderReminders": "订单提醒",
+      "dayBeforeReminders": "前一天提醒",
+      "promotionalOffers": "优惠活动推送"
+    },
+    "danger": {
+      "deleteAccount": "删除账号",
+      "deleteWarning": "此操作不可撤销，您的所有数据将被永久删除。"
     }
   },
   "language": {
     "en": "EN",
-    "zh": "\u4e2d\u6587",
-    "switchTo": "\u5207\u6362\u8bed\u8a00"
+    "zh": "中文",
+    "switchTo": "切换语言"
+  },
+  "admin": {
+    "sidebar": {
+      "brandName": "Bobo的农场",
+      "adminPanel": "管理后台",
+      "dashboard": "仪表盘",
+      "calendar": "日历",
+      "reservations": "预订管理",
+      "deposits": "定金管理",
+      "menu": "菜单管理",
+      "yurts": "营地管理",
+      "availability": "可用性管理",
+      "customers": "客户管理",
+      "settings": "系统设置",
+      "reports": "数据报告"
+    },
+    "dashboard": {
+      "title": "仪表盘",
+      "stats": {
+        "todayReservations": "今日预订",
+        "pendingDeposits": "待处理定金",
+        "pendingOrders": "待处理订单",
+        "monthRevenue": "本月收入"
+      },
+      "actions": {
+        "createReservation": "创建预订",
+        "openCalendar": "查看日历",
+        "manageAvailability": "管理可用日期"
+      },
+      "weekOverview": {
+        "title": "本周概况",
+        "viewCalendar": "查看日历 →"
+      },
+      "legend": {
+        "available": "可用",
+        "pending": "待确认",
+        "confirmed": "已确认",
+        "completed": "已完成"
+      },
+      "activity": {
+        "title": "最新动态",
+        "viewAll": "查看全部 →"
+      },
+      "expiringSoon": {
+        "title": "即将过期",
+        "description": "以下定金即将过期，请在自动释放前采取行动。",
+        "colCustomer": "客户",
+        "colDate": "日期",
+        "colYurt": "营地",
+        "colExpiresIn": "剩余时间",
+        "colAction": "操作",
+        "remind": "发送提醒"
+      }
+    },
+    "reservations": {
+      "title": "预订管理",
+      "searchPlaceholder": "搜索预订...",
+      "filters": "筛选",
+      "newReservation": "新建预订",
+      "tabs": {
+        "all": "全部",
+        "upcoming": "即将到来",
+        "checkedIn": "已入住",
+        "completed": "已完成",
+        "cancelled": "已取消"
+      },
+      "table": {
+        "id": "编号",
+        "guest": "客人",
+        "yurt": "营地",
+        "dates": "日期",
+        "guests": "人数",
+        "status": "状态",
+        "deposit": "定金",
+        "action": "操作"
+      },
+      "status": {
+        "confirmed": "已确认",
+        "pending": "待确认",
+        "checkedIn": "已入住",
+        "cancelled": "已取消",
+        "completed": "已完成"
+      },
+      "actions": {
+        "view": "查看",
+        "confirm": "确认",
+        "release": "释放",
+        "cancel": "取消",
+        "complete": "完成"
+      }
+    },
+    "deposits": {
+      "title": "定金管理",
+      "tabs": {
+        "pending": "待处理",
+        "confirmed": "已确认",
+        "refunded": "已退款",
+        "expiringSoon": "即将过期"
+      },
+      "stats": {
+        "totalPending": "待处理定金总数",
+        "collectedThisMonth": "本月",
+        "refundedThisMonth": "本月"
+      },
+      "card": {
+        "guests": "人",
+        "depositPhone": "联系电话：",
+        "sentVia": "支付方式：",
+        "txnId": "交易编号："
+      },
+      "status": {
+        "pending": "待确认",
+        "confirmed": "已确认",
+        "refunded": "已退款"
+      },
+      "actions": {
+        "confirmDeposit": "确认定金",
+        "notReceived": "未收到",
+        "remind": "发送提醒"
+      }
+    },
+    "calendar": {
+      "title": "日历",
+      "views": {
+        "month": "月视图",
+        "week": "周视图"
+      },
+      "today": "今天",
+      "legend": {
+        "available": "可预订",
+        "pending": "待确认",
+        "confirmed": "已确认",
+        "cancelled": "已取消",
+        "done": "已完成"
+      },
+      "status": {
+        "available": "可用"
+      }
+    },
+    "menu": {
+      "title": "菜单管理",
+      "categories": "分类",
+      "addCategory": "+ 添加分类",
+      "dishes": "道菜",
+      "addDish": "添加菜品",
+      "addNewDish": "新增菜品",
+      "editDish": {
+        "title": "编辑菜品",
+        "nameEn": "英文名称",
+        "nameZh": "中文名称",
+        "category": "分类",
+        "price": "价格",
+        "descriptionEn": "英文描述",
+        "descriptionZh": "中文描述",
+        "image": "图片",
+        "imageUpload": "拖拽图片或点击上传",
+        "tags": "标签",
+        "addTag": "+ 添加标签",
+        "advanceOrder": "提前订餐（小时）",
+        "sortOrder": "排序",
+        "active": "已上架",
+        "saveChanges": "保存修改"
+      }
+    },
+    "yurts": {
+      "title": "营地管理",
+      "subtitle": "管理您的营地和可用情况",
+      "addYurt": "添加营地",
+      "capacity": "容纳：",
+      "guests": "人",
+      "beds": "张床",
+      "status": {
+        "active": "正常营业",
+        "maintenance": "维修中"
+      },
+      "actions": {
+        "edit": "编辑",
+        "viewDetails": "查看详情"
+      }
+    },
+    "customers": {
+      "title": "客户管理",
+      "searchPlaceholder": "搜索客户...",
+      "filters": {
+        "all": "全部",
+        "vip": "首席客户",
+        "regular": "常规客户",
+        "blocked": "黑名单"
+      },
+      "table": {
+        "name": "姓名",
+        "email": "邮箱",
+        "phone": "电话",
+        "visits": "到访次数",
+        "lastVisit": "最近到访",
+        "tag": "标识",
+        "action": "操作"
+      },
+      "actions": {
+        "view": "查看",
+        "addTag": "+ 添加标识"
+      },
+      "detail": {
+        "title": "客户详情",
+        "memberSince": "会员自",
+        "stats": {
+          "totalVisits": "总到访次数",
+          "totalSpent": "总消费",
+          "cancelRate": "取消率",
+          "noShows": "爽约次数"
+        },
+        "reservationHistory": "预订历史",
+        "showMore": "显示更多 {count} 条 →",
+        "adminNotes": "管理备注",
+        "saveNote": "保存备注"
+      }
+    },
+    "settings": {
+      "title": "系统设置",
+      "sidebarTitle": "系统设置",
+      "sidebarSubtitle": "配置农场的运营设置和首选项",
+      "tabs": {
+        "general": "基本设置",
+        "booking": "预订设置",
+        "classification": "客户分类",
+        "ordering": "订餐设置",
+        "guestPolicies": "客户政策",
+        "payment": "支付设置",
+        "notifications": "通知设置"
+      },
+      "booking": {
+        "title": "预订设置",
+        "subtitle": "配置定金金额、支付期限和预订时间窗口。",
+        "depositAmount": "定金金额",
+        "depositAmountHelp": "担保预订所需的定金金额。必须在预订后72小时内完成支付以保留日期。",
+        "paymentTimeout": "支付期限",
+        "paymentTimeoutUnit": "小时",
+        "paymentTimeoutHelp": "客户完成支付的允许时间。如果在此期限内未收到付款，预订将自动取消。",
+        "maxAdvanceBooking": "最远预订时长",
+        "maxAdvanceBookingUnit": "个月",
+        "maxAdvanceBookingHelp": "客户可以提前预订的最长月数。",
+        "minAdvanceBooking": "最短预订时间",
+        "minAdvanceBookingUnit": "天",
+        "minAdvanceBookingHelp": "客户可以在入住日期前几天内提交预订。"
+      },
+      "footer": {
+        "unsavedChanges": "⚡ 尚未保存的修改",
+        "discard": "放弃修改",
+        "saveChanges": "保存修改"
+      }
+    },
+    "availability": {
+      "title": "可用性日历",
+      "openRange": "开放日期范围：",
+      "closeRange": "关闭日期范围：",
+      "openAll": "全部开放",
+      "closeAll": "全部关闭",
+      "datesSelected": "已选择 {count} 个日期",
+      "legend": {
+        "open": "开放",
+        "closed": "已关闭",
+        "limited": "有限可用",
+        "custom": "自定义",
+        "noAvailability": "无可用营地"
+      },
+      "dayDetail": {
+        "perYurtAvailability": "各营地可用性",
+        "reservations": "预订",
+        "remaining": "剩余",
+        "confirm": "确认",
+        "adminNote": "管理备注",
+        "saveNote": "保存备注"
+      }
+    },
+    "reports": {
+      "title": "数据报告",
+      "timeRanges": {
+        "thisWeek": "本周",
+        "thisMonth": "本月",
+        "lastMonth": "上个月",
+        "thisYear": "今年",
+        "custom": "自定义"
+      },
+      "export": {
+        "csv": "导出 CSV",
+        "pdf": "导出 PDF"
+      },
+      "stats": {
+        "totalReservations": "总预订数",
+        "revenue": "收入",
+        "avgPartySize": "平均人数",
+        "cancelRate": "取消率"
+      },
+      "charts": {
+        "reservationTrend": "预订趋势",
+        "reservations": "预订",
+        "cancellations": "取消",
+        "monthlyRevenue": "月度收入",
+        "last7Months": "近7个月",
+        "popularDishes": "热门菜品",
+        "totalOrdersPerItem": "各菜品总订单数",
+        "yurtUtilization": "营地使用率"
+      }
+    }
   }
 }

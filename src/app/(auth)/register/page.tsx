@@ -5,20 +5,25 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { User, Mail, Phone, EyeOff, Lock } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
-function getPasswordStrength(password: string): { score: number; label: string; color: string } {
-  if (!password) return { score: 0, label: '', color: '' }
+type StrengthKey = 'weak' | 'medium' | 'good' | 'strong'
+
+function getPasswordStrength(password: string): { score: number; strengthKey: StrengthKey; color: string } {
+  if (!password) return { score: 0, strengthKey: 'weak', color: '' }
   let score = 0
   if (password.length >= 8) score++
   if (/[A-Z]/.test(password)) score++
   if (/[0-9]/.test(password)) score++
   if (/[^A-Za-z0-9]/.test(password)) score++
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
+  const keys: StrengthKey[] = ['weak', 'weak', 'medium', 'good', 'strong']
   const colors = ['', '#E05252', '#E8B730', '#5B8C3E', '#5B8C3E']
-  return { score, label: labels[score] || 'Weak', color: colors[score] || '#E05252' }
+  return { score, strengthKey: keys[score] || 'weak', color: colors[score] || '#E05252' }
 }
 
 export default function RegisterPage() {
+  const t = useTranslations('auth.register')
+  const tCommon = useTranslations('common')
   const router = useRouter()
 
   const [name, setName] = useState('')
@@ -112,10 +117,10 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-black/35" />
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-16">
           <h2 className="font-playfair text-[44px] font-bold text-white text-center leading-tight">
-            Join Our Table
+            {t('heroTitle')}
           </h2>
           <p className="text-white/70 text-base mt-4 text-center">
-            Fresh from the pastures, straight to your plate
+            {t('heroSubtitle')}
           </p>
         </div>
       </div>
@@ -131,8 +136,8 @@ export default function RegisterPage() {
 
           {/* Heading */}
           <div className="flex flex-col gap-1.5">
-            <h1 className="font-playfair text-[28px] font-bold text-brown">Create Account</h1>
-            <p className="text-sm text-brown/53">Reserve your spot at our table.</p>
+            <h1 className="font-playfair text-[28px] font-bold text-brown">{t('title')}</h1>
+            <p className="text-sm text-brown/53">{t('subtitle')}</p>
           </div>
 
           {error && (
@@ -144,12 +149,12 @@ export default function RegisterPage() {
           {/* Fields */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">Full Name</label>
+              <label className="text-[13px] font-semibold text-brown">{t('name')}</label>
               <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
                 <User size={18} className="text-brown/33" />
                 <input
                   type="text"
-                  placeholder="Enter your full name"
+                  placeholder={t('namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -159,12 +164,12 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">Email</label>
+              <label className="text-[13px] font-semibold text-brown">{t('email')}</label>
               <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
                 <Mail size={18} className="text-brown/33" />
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t('emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -175,14 +180,14 @@ export default function RegisterPage() {
 
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-1.5">
-                <label className="text-[13px] font-semibold text-brown">Phone</label>
-                <span className="text-[11px] text-brown/33 italic">Optional — for reservation reminders</span>
+                <label className="text-[13px] font-semibold text-brown">{t('phone')}</label>
+                <span className="text-[11px] text-brown/33 italic">{t('phoneOptional')}</span>
               </div>
               <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
                 <Phone size={18} className="text-brown/33" />
                 <input
                   type="tel"
-                  placeholder="(555) 000-0000"
+                  placeholder={t('phonePlaceholder')}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
@@ -191,13 +196,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">Password</label>
+              <label className="text-[13px] font-semibold text-brown">{t('password')}</label>
               <div className="flex items-center justify-between h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
                 <div className="flex items-center gap-3">
                   <Lock size={18} className="text-brown/33" />
                   <input
                     type="password"
-                    placeholder="Create a password"
+                    placeholder={t('passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -219,19 +224,19 @@ export default function RegisterPage() {
                     ))}
                   </div>
                   <span className="text-[11px]" style={{ color: strength.color }}>
-                    Password strength: {strength.label}
+                    {t('passwordStrength', { strength: t(`strength.${strength.strengthKey}`) })}
                   </span>
                 </>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">Confirm Password</label>
+              <label className="text-[13px] font-semibold text-brown">{t('confirmPassword')}</label>
               <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
                 <Lock size={18} className="text-brown/33" />
                 <input
                   type="password"
-                  placeholder="Confirm your password"
+                  placeholder={t('confirmPasswordPlaceholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -244,7 +249,7 @@ export default function RegisterPage() {
             <div className="flex gap-2.5">
               <div className="w-[18px] h-[18px] rounded border-[1.5px] border-beige bg-white shrink-0 mt-0.5" />
               <span className="text-xs text-brown/53 leading-relaxed">
-                I agree to the Terms of Service and Privacy Policy
+                {t('termsAgreement')}
               </span>
             </div>
 
@@ -254,14 +259,14 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="h-[50px] rounded-2xl bg-gradient-to-r from-amber to-[#A67C2E] text-white text-base font-semibold shadow-[0_4px_16px_rgba(139,105,20,0.2)] cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? t('creatingAccount') : t('createAccount')}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-4">
             <div className="flex-1 h-px bg-beige" />
-            <span className="text-xs text-brown/33">or</span>
+            <span className="text-xs text-brown/33">{tCommon('or')}</span>
             <div className="flex-1 h-px bg-beige" />
           </div>
 
@@ -272,13 +277,13 @@ export default function RegisterPage() {
             className="h-12 rounded-xl bg-white border-[1.5px] border-beige flex items-center justify-center gap-2.5 cursor-pointer"
           >
             <span className="text-[#4285F4] text-lg font-bold">G</span>
-            <span className="text-sm font-medium text-brown">Continue with Google</span>
+            <span className="text-sm font-medium text-brown">{t('continueWithGoogle')}</span>
           </button>
 
           {/* Sign In Link */}
           <div className="flex justify-center gap-1">
-            <span className="text-[13px] text-brown/53">Already have an account?</span>
-            <Link href="/login" className="text-[13px] font-semibold text-amber no-underline">Sign in</Link>
+            <span className="text-[13px] text-brown/53">{t('hasAccount')}</span>
+            <Link href="/login" className="text-[13px] font-semibold text-amber no-underline">{t('signIn')}</Link>
           </div>
         </div>
       </div>
