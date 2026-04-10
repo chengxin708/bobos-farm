@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Libre_Baskerville, Source_Sans_3, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
+import { DM_Serif_Display, DM_Sans, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Providers from '@/components/Providers';
 import "./globals.css";
 
-const libreBaskerville = Libre_Baskerville({
-  variable: "--font-playfair-display",
+const dmSerif = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400"],
   display: "swap",
 });
 
-const sourceSans = Source_Sans_3({
+const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -50,7 +50,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${libreBaskerville.variable} ${sourceSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
+        className={`${dmSerif.variable} ${dmSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
       >
         <Providers>
           <NextIntlClientProvider messages={messages}>
