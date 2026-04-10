@@ -37,9 +37,13 @@
   --color-nav-hover-bg: #FFFFFF0D;
   --color-cell-border: #E8DFD0;
 
-  /* === Fonts === */
-  --font-playfair: var(--font-playfair-display), serif;
-  --font-lato: var(--font-lato-sans), sans-serif;
+  /* === Font Stacks === */
+  /* English-first, Chinese fallback — browser picks the right font per glyph */
+  --font-playfair: var(--font-playfair-display), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
+  --font-sans: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* Legacy alias for existing code */
+  --font-lato: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 @layer base {
@@ -49,11 +53,12 @@
     box-sizing: border-box;
   }
   body {
-    font-family: var(--font-lato);
+    font-family: var(--font-sans);
     background-color: var(--color-cream);
     color: var(--color-brown);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.01em;
   }
   ::selection {
     background-color: #8B691430;
