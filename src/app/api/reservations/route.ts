@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
+import {
+  sendReservationCreated,
+  sendAdminNewReservation,
+} from "@/lib/email";
 
 const createReservationBodySchema = z.object({
   yurtId: z.string().min(1, "yurtId is required"),
@@ -175,6 +179,34 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Fire-and-forget: send notification emails
+      // Admin-created reservations are already confirmed, so notify the customer
+      const emailSettings = await prisma.systemSetting.findMany({
+        where: { key: { in: ["notification_email", "email_booking_confirmation", "email_admin_new_booking"] } },
+      });
+      const emailSettingsMap: Record<string, string> = {};
+      for (const s of emailSettings) emailSettingsMap[s.key] = s.value;
+
+      if (emailSettingsMap.email_booking_confirmation !== "false") {
+        void sendReservationCreated(guestEmail, {
+          reservationId: reservation.id,
+          date,
+          yurtName: yurt.name,
+          guestCount,
+          depositAmount,
+          paymentDeadline: null,
+        });
+      }
+
+      if (emailSettingsMap.email_admin_new_booking !== "false" && emailSettingsMap.notification_email) {
+        void sendAdminNewReservation(emailSettingsMap.notification_email, {
+          guestName: guestName,
+          date,
+          yurtName: yurt.name,
+          guestCount,
+        });
+      }
+
       return NextResponse.json(reservation, { status: 201 });
     }
 
@@ -307,6 +339,36 @@ export async function POST(req: NextRequest) {
         details: { yurtName: yurt.name, date, guestCount },
       },
     });
+
+    // Fire-and-forget: send notification emails
+    const emailSettings = await prisma.systemSetting.findMany({
+      where: { key: { in: ["notification_email", "email_booking_confirmation", "email_admin_new_booking", "zelle_recipient", "zelle_recipient_name"] } },
+    });
+    const emailSettingsMap: Record<string, string> = {};
+    for (const s of emailSettings) emailSettingsMap[s.key] = s.value;
+
+    if (emailSettingsMap.email_booking_confirmation !== "false" && reservation.user.email) {
+      void sendReservationCreated(reservation.user.email, {
+        reservationId: reservation.id,
+        date,
+        yurtName: yurt.name,
+        guestCount,
+        depositAmount,
+        paymentDeadline,
+        zelleRecipient: emailSettingsMap.zelle_recipient,
+        zelleRecipientName: emailSettingsMap.zelle_recipient_name,
+        memoCode: reservation.id.slice(-6).toUpperCase(),
+      });
+    }
+
+    if (emailSettingsMap.email_admin_new_booking !== "false" && emailSettingsMap.notification_email) {
+      void sendAdminNewReservation(emailSettingsMap.notification_email, {
+        guestName: reservation.user.name || reservation.user.email,
+        date,
+        yurtName: yurt.name,
+        guestCount,
+      });
+    }
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {

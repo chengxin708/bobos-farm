@@ -47,6 +47,12 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   guest_warning_threshold: 4,
   zelle_recipient: 5,
   zelle_recipient_name: 5,
+  notification_email: 6,
+  resend_api_key: 6,
+  email_from_name: 6,
+  email_booking_confirmation: 6,
+  email_payment_reminder: 6,
+  email_admin_new_booking: 6,
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -372,12 +378,120 @@ export default function Settings() {
   }
 
   function renderNotificationsTab() {
+    const toggleField = (key: string) => {
+      const current = formValues[key] ?? 'true'
+      updateField(key, current === 'true' ? 'false' : 'true')
+    }
+
+    const isEnabled = (key: string) => (formValues[key] ?? 'true') === 'true'
+
     return (
       <div>
         <h2 className="text-xl font-bold text-brown">Notification Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure email and notification preferences.</p>
-        <div className="text-sm text-gray-text bg-cream-bg rounded-lg p-6 text-center">
-          Notification settings will be available in a future update.
+        <p className="text-sm text-gray-text mt-1 mb-8">Configure email notification preferences.</p>
+
+        {/* Resend API Key */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Resend API Key</label>
+          <input
+            type="password"
+            value={formValues.resend_api_key ?? ''}
+            onChange={e => updateField('resend_api_key', e.target.value)}
+            className={`border ${formValues.resend_api_key !== originalValues.resend_api_key ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm font-mono`}
+            placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          />
+          <p className="text-xs text-gray-text mt-1">
+            从 <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-amber underline">resend.com</a> 获取 API Key。保存后邮件通知即可生效。
+          </p>
+        </div>
+
+        {/* Admin Notification Email */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Admin Notification Email</label>
+          <input
+            type="email"
+            value={formValues.notification_email ?? ''}
+            onChange={e => updateField('notification_email', e.target.value)}
+            className={`border ${formValues.notification_email !== originalValues.notification_email ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="admin@bobosfarm.com"
+          />
+          <p className="text-xs text-gray-text mt-1">Admin alerts (new bookings, deposit submissions) will be sent to this address.</p>
+        </div>
+
+        {/* Email Sender Name */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Email Sender Name</label>
+          <input
+            type="text"
+            value={formValues.email_from_name ?? ''}
+            onChange={e => updateField('email_from_name', e.target.value)}
+            className={`border ${formValues.email_from_name !== originalValues.email_from_name ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="Bobo's Farm"
+          />
+          <p className="text-xs text-gray-text mt-1">Display name shown in the email &ldquo;From&rdquo; field.</p>
+        </div>
+
+        {/* Toggle: Booking Confirmation */}
+        <div className="mb-6 flex items-center justify-between max-w-sm">
+          <div>
+            <p className="text-sm font-bold text-brown">Booking Confirmation Email</p>
+            <p className="text-xs text-gray-text mt-0.5">Send confirmation email when a booking is created.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleField('email_booking_confirmation')}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+              isEnabled('email_booking_confirmation') ? 'bg-green' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                isEnabled('email_booking_confirmation') ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Toggle: Payment Reminder */}
+        <div className="mb-6 flex items-center justify-between max-w-sm">
+          <div>
+            <p className="text-sm font-bold text-brown">Payment Reminder Email</p>
+            <p className="text-xs text-gray-text mt-0.5">Allow sending payment reminder emails to customers.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleField('email_payment_reminder')}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+              isEnabled('email_payment_reminder') ? 'bg-green' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                isEnabled('email_payment_reminder') ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Toggle: Admin New Booking Alert */}
+        <div className="mb-6 flex items-center justify-between max-w-sm">
+          <div>
+            <p className="text-sm font-bold text-brown">Admin New Booking Alert</p>
+            <p className="text-xs text-gray-text mt-0.5">Send notification to admin when a new booking is created.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleField('email_admin_new_booking')}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+              isEnabled('email_admin_new_booking') ? 'bg-green' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                isEnabled('email_admin_new_booking') ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
       </div>
     )

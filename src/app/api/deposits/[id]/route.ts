@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
+import { sendDepositConfirmed } from "@/lib/email";
 
 const depositActionSchema = z.object({
   action: z.enum(["confirm", "release", "refund"]),
@@ -72,6 +73,16 @@ export async function PATCH(
           details: { depositAmount: reservation.depositAmount },
         },
       });
+
+      // Fire-and-forget: send deposit confirmed email to customer
+      if (updated.user.email) {
+        void sendDepositConfirmed(updated.user.email, {
+          date: updated.date,
+          yurtName: updated.yurt.name,
+          guestCount: updated.guestCount,
+          reservationId: updated.id,
+        });
+      }
 
       return NextResponse.json(updated);
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { resetEmailClient } from "@/lib/email";
 import { z } from "zod";
 
 // Allowlist of valid setting keys to prevent arbitrary key injection
@@ -24,6 +25,11 @@ const ALLOWED_SETTING_KEYS = [
   "zelle_recipient",
   "zelle_recipient_name",
   "preorder_deadline_days",
+  "email_from_name",
+  "email_booking_confirmation",
+  "email_payment_reminder",
+  "email_admin_new_booking",
+  "resend_api_key",
 ] as const;
 
 const settingsUpdateSchema = z.record(
@@ -86,6 +92,12 @@ export async function PATCH(req: NextRequest) {
         details: { updatedKeys: Object.keys(parsed.data) },
       },
     });
+
+    // Reset email client cache if email-related settings changed
+    const emailKeys = ['resend_api_key', 'email_from_name'];
+    if (Object.keys(parsed.data).some(k => emailKeys.includes(k))) {
+      resetEmailClient();
+    }
 
     return NextResponse.json(results);
   } catch (error) {

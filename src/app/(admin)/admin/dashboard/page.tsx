@@ -630,10 +630,20 @@ export default function Dashboard() {
                       </div>
                       <div className="w-[80px] text-right">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setRemindingSoon(row.id)
-                            // Reminder is a placeholder — navigate to deposits for now
-                            setTimeout(() => setRemindingSoon(null), 1500)
+                            try {
+                              const res = await fetch(`/api/reservations/${row.id}/remind`, {
+                                method: 'POST',
+                              })
+                              if (!res.ok) {
+                                const data = await res.json()
+                                console.error('Remind failed:', data.error)
+                              }
+                            } catch (err) {
+                              console.error('Remind request failed:', err)
+                            }
+                            setTimeout(() => setRemindingSoon(null), 2000)
                           }}
                           disabled={remindingSoon === row.id}
                           className="text-[12px] font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 disabled:opacity-50 cursor-pointer"
