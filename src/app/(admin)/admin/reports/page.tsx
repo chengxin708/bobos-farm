@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
-import { Download, Calendar, DollarSign, Users, TrendingDown } from 'lucide-react'
+import { Download, Calendar, DollarSign, Users, TrendingDown, ClipboardList } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -194,18 +194,6 @@ export default function Reports() {
 
   const totalUtilization = yurtData.reduce((s, y) => s + y.value, 0)
 
-  // ── Popular dishes (placeholder until orders data available) ────
-
-  const popularDishes = [
-    { name: 'Whole Roasted Lamb', orders: 145 },
-    { name: 'Grilled Lamb Chops', orders: 128 },
-    { name: 'Harvest Salad', orders: 115 },
-    { name: 'BBQ Ribs', orders: 98 },
-    { name: 'Mushroom Medley', orders: 84 },
-    { name: 'Berry Cobbler', orders: 76 },
-    { name: 'Roast Chicken', orders: 65 },
-  ]
-
   const timeRanges: { key: TimeRange; label: string }[] = [
     { key: 'week', label: t('timeRanges.thisWeek') },
     { key: 'month', label: t('timeRanges.thisMonth') },
@@ -343,21 +331,12 @@ export default function Reports() {
           <div className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-brown">{t('charts.popularDishes')}</span>
-              <span className="text-xs text-gray-text">{t('charts.totalOrdersPerItem')}</span>
             </div>
-            <div className="flex flex-col gap-3">
-              {popularDishes.map((dish, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-xs text-brown w-28 truncate">{dish.name}</span>
-                  <div className="flex-1 bg-cream-bg rounded-full h-4 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-amber"
-                      style={{ width: `${(dish.orders / 145) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-semibold text-brown w-8 text-right">{dish.orders}</span>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ClipboardList size={32} className="text-beige mb-3" />
+              <p className="text-sm text-gray-text">
+                Pre-order data will appear here once orders are placed
+              </p>
             </div>
           </div>
 

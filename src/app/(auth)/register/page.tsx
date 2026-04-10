@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { User, Mail, Phone, EyeOff, Lock } from 'lucide-react'
+import { User, Mail, Phone, Eye, EyeOff, Lock } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 type StrengthKey = 'weak' | 'medium' | 'good' | 'strong'
@@ -31,6 +31,8 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -201,7 +203,7 @@ export default function RegisterPage() {
                 <div className="flex items-center gap-3">
                   <Lock size={18} className="text-brown/33" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder={t('passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -209,7 +211,9 @@ export default function RegisterPage() {
                     className="text-sm bg-transparent outline-none placeholder:text-brown/27"
                   />
                 </div>
-                <EyeOff size={18} className="text-brown/27 cursor-pointer" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="bg-transparent border-none p-0 cursor-pointer">
+                  {showPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
+                </button>
               </div>
               {/* Strength bar */}
               {password && (
@@ -232,16 +236,21 @@ export default function RegisterPage() {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold text-brown">{t('confirmPassword')}</label>
-              <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <Lock size={18} className="text-brown/33" />
-                <input
-                  type="password"
-                  placeholder={t('confirmPasswordPlaceholder')}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
-                />
+              <div className="flex items-center justify-between h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
+                <div className="flex items-center gap-3">
+                  <Lock size={18} className="text-brown/33" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder={t('confirmPasswordPlaceholder')}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="text-sm bg-transparent outline-none placeholder:text-brown/27"
+                  />
+                </div>
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="bg-transparent border-none p-0 cursor-pointer">
+                  {showConfirmPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
+                </button>
               </div>
             </div>
 

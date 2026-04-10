@@ -12,11 +12,17 @@ const ALLOWED_SETTING_KEYS = [
   "business_phone",
   "business_address",
   "cancellation_policy_days",
+  "cancellation_window_days",
   "max_guest_count",
   "booking_advance_days",
+  "max_advance_booking_days",
+  "min_advance_booking_days",
+  "guest_warning_threshold",
   "notification_email",
   "venmo_handle",
   "zelle_email",
+  "zelle_recipient",
+  "zelle_recipient_name",
 ] as const;
 
 const settingsUpdateSchema = z.record(

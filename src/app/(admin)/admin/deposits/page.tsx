@@ -141,7 +141,7 @@ export default function Deposits() {
       const res = await fetch(`/api/reservations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm_deposit' }),
+        body: JSON.stringify({ action: 'confirm' }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -164,7 +164,7 @@ export default function Deposits() {
       const res = await fetch(`/api/reservations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject_deposit' }),
+        body: JSON.stringify({ action: 'release' }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -187,7 +187,7 @@ export default function Deposits() {
       const res = await fetch(`/api/reservations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject_deposit' }),
+        body: JSON.stringify({ action: 'release' }),
       })
       if (!res.ok) {
         const err = await res.json()

@@ -366,7 +366,7 @@ export default function MenuManagement() {
 
       if (editingCategory) {
         const res = await fetch(`/api/menu/categories`, {
-          method: 'POST',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...payload, id: editingCategory.id }),
         })

@@ -140,8 +140,12 @@
       "bookAYurt": "Book a Yurt",
       "aboutUs": "About Us",
       "gallery": "Gallery",
-      "contact": "Contact"
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "cancellation": "Cancellation Policy"
     },
+    "legal": "Legal",
     "visitUs": "Visit Us",
     "address": "891 Albany Post Rd, New Paltz, NY 12561",
     "phone": "(516) 272-9999",
@@ -228,6 +232,8 @@
       "uploadBrowse": "or click to browse",
       "uploadFormats": "Supports: JPG, PNG, PDF (max 5MB)",
       "cancellationPolicy": "I understand the cancellation policy: cancellation within 3 days of the reservation date are non-refundable.",
+      "cancellationPolicyText": "I understand that cancellations within 3 days of the reservation date are non-refundable.",
+      "cancellationPolicyLink": "View full cancellation policy",
       "completedTransfer": "I Have Completed the Transfer",
       "cancelReservation": "Cancel reservation"
     }
@@ -253,6 +259,15 @@
     "preOrderNow": "Pre-Order Now →",
     "viewOrder": "View Order →",
     "guests": "{count} guests",
+    "awaitingConfirmation": "Awaiting confirmation",
+    "waitingForAdmin": "Waiting for admin confirmation",
+    "cancelDialog": {
+      "title": "Cancel Reservation?",
+      "message": "Are you sure you want to cancel this reservation? This action cannot be undone.",
+      "keep": "Keep Reservation",
+      "confirm": "Yes, Cancel",
+      "cancelling": "Cancelling..."
+    },
     "emptyTitle": "No reservations yet",
     "emptySubtitle": "Book your first yurt experience and enjoy a farm-to-table feast in the Hudson Valley.",
     "bookFirst": "Book Your First Yurt"
@@ -285,7 +300,8 @@
       "email": "Email",
       "phone": "Phone",
       "language": "Language",
-      "changePhoto": "Change photo"
+      "changePhoto": "Change photo",
+      "saved": "Profile saved!"
     },
     "password": {
       "title": "Change Password",
@@ -293,6 +309,7 @@
       "newPassword": "New Password",
       "confirmNewPassword": "Confirm New Password",
       "updatePassword": "Update Password",
+      "updateSuccess": "Password updated successfully!",
       "strength": {
         "good": "Good",
         "medium": "Medium",
@@ -309,7 +326,85 @@
     },
     "danger": {
       "deleteAccount": "Delete Account",
-      "deleteWarning": "This action cannot be undone. All your data will be permanently removed."
+      "deleteWarning": "This action cannot be undone. All your data will be permanently removed.",
+      "confirmDelete": "Confirm Delete"
+    }
+  },
+  "legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last updated: April 2026",
+      "collect": {
+        "title": "What We Collect",
+        "body": "When you make a reservation at Bobo's Farm, we collect your name, email address, and phone number. If you upload a payment screenshot to confirm your deposit, we store that image securely. We also use cookies to keep you signed in and remember your language preference."
+      },
+      "usage": {
+        "title": "How We Use Your Information",
+        "body": "We use your personal information to process and manage your reservations, communicate booking confirmations and reminders, verify deposit payments, and improve our services. We do not sell your personal data to third parties."
+      },
+      "storage": {
+        "title": "Data Storage",
+        "body": "Your data is stored securely in our database hosted on Supabase (AWS US-East-1). Payment screenshots are stored in secure cloud storage. We retain your information for as long as your account is active or as needed to provide our services."
+      },
+      "rights": {
+        "title": "Your Rights",
+        "body": "You may request access to, correction of, or deletion of your personal data at any time by contacting us or through your account settings. You can update your profile, change your password, and manage notification preferences from the Settings page."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "body": "If you have questions about this privacy policy or your personal data, please contact us at info@bobosfarm.com or call (516) 272-9999. Our address is 891 Albany Post Rd, New Paltz, NY 12561."
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "lastUpdated": "Last updated: April 2026",
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "body": "By accessing or using the Bobo's Farm website and booking system, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services."
+      },
+      "booking": {
+        "title": "Booking & Cancellation",
+        "body": "Reservations are confirmed once a deposit is received and verified by our team. Cancellations made 3 or more days before the reservation date are eligible for a full deposit refund. Cancellations made less than 3 days before the reservation date will result in forfeiture of the deposit. Please review our full cancellation policy for details."
+      },
+      "deposits": {
+        "title": "Deposits",
+        "body": "A deposit of $300 is required to secure your reservation. Deposits must be paid via Zelle within the specified time window (typically 12 hours). If payment is not received within this window, the reservation will be automatically cancelled and the date will be released."
+      },
+      "liability": {
+        "title": "Limitation of Liability",
+        "body": "Bobo's Farm provides a farm dining experience. We are not responsible for allergic reactions if dietary restrictions were not communicated in advance. Guests participate in outdoor farm activities at their own risk. Our total liability is limited to the amount of the deposit paid."
+      },
+      "governingLaw": {
+        "title": "Governing Law",
+        "body": "These terms are governed by the laws of the State of New York. Any disputes shall be resolved in the courts of Ulster County, New York."
+      }
+    },
+    "cancellation": {
+      "title": "Cancellation Policy",
+      "lastUpdated": "Last updated: April 2026",
+      "overview": {
+        "title": "Policy Overview",
+        "body": "We understand plans can change. Our cancellation policy is designed to be fair to both our guests and our team, who prepare fresh ingredients in advance for each reservation."
+      },
+      "refund": {
+        "eligible": {
+          "title": "3+ days before reservation: Full refund",
+          "desc": "Cancel at least 3 days before your reservation date and receive a full refund of your $300 deposit."
+        },
+        "nonEligible": {
+          "title": "Less than 3 days before reservation: Deposit forfeited",
+          "desc": "Cancellations made within 3 days of the reservation date are non-refundable, as ingredients have already been ordered and preparation has begun."
+        }
+      },
+      "howToCancel": {
+        "title": "How to Cancel",
+        "body": "You can cancel your reservation through your",
+        "reservationsLink": "My Reservations page"
+      },
+      "disputes": {
+        "title": "Disputes & Exceptions",
+        "body": "If you believe an exception should be made (e.g., medical emergency, severe weather), please contact us at info@bobosfarm.com or call (516) 272-9999. We review each case individually and will do our best to accommodate reasonable requests."
+      }
     }
   },
   "language": {

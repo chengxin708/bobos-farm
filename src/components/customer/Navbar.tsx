@@ -102,7 +102,7 @@ export default function Navbar() {
           </div>
           {user ? (
             <Link href="/settings" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2">
-              Settings
+              {t('settings')}
             </Link>
           ) : (
             <Link href="/login" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2">{t('login')}</Link>

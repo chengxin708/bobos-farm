@@ -150,7 +150,7 @@ export default function SettingsPage() {
               <div className="w-16 h-16 rounded-full bg-amber flex items-center justify-center">
                 <span className="text-2xl font-bold text-white">{initials}</span>
               </div>
-              <span className="text-sm text-amber cursor-pointer">{t('profile.changePhoto')}</span>
+              <span className="text-sm text-amber cursor-default opacity-50" title="Coming soon">{t('profile.changePhoto')}</span>
             </div>
 
             {/* Form Fields */}
@@ -232,7 +232,7 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               {profileSuccess && (
-                <span className="text-xs text-green font-medium">Profile saved!</span>
+                <span className="text-xs text-green font-medium">{t('profile.saved')}</span>
               )}
               <div className="flex-1" />
               <button
@@ -316,7 +316,7 @@ export default function SettingsPage() {
             )}
             {passwordSuccess && (
               <div className="bg-green/10 text-green text-sm rounded-lg px-4 py-2">
-                Password updated successfully!
+                {t('password.updateSuccess')}
               </div>
             )}
 
@@ -403,12 +403,13 @@ export default function SettingsPage() {
                   className="px-4 py-2 text-sm text-[#DC3545] border border-[#DC3545] rounded-md font-semibold"
                   onClick={() => setShowDeleteConfirm(false)}
                 >
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
                 <button
-                  className="px-4 py-2 text-sm bg-[#DC3545] text-white rounded-md font-semibold"
+                  className="px-4 py-2 text-sm bg-[#DC3545] text-white rounded-md font-semibold cursor-pointer border-none"
+                  onClick={() => alert('Account deletion is not yet available. Please contact support.')}
                 >
-                  Confirm Delete
+                  {t('danger.confirmDelete')}
                 </button>
               </div>
             )}

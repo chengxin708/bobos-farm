@@ -2,16 +2,23 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowLeft, Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 
-const DEPOSIT_AMOUNT = 300
+const settingsFetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 export default function BookingConfirmPage() {
   const t = useTranslations('booking.confirm')
   const router = useRouter()
   const booking = useBooking()
+  const { data: settings } = useSWR('/api/settings', settingsFetcher)
+  const DEPOSIT_AMOUNT = settings?.deposit_amount ? Number(settings.deposit_amount) : 300
 
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -185,6 +192,26 @@ export default function BookingConfirmPage() {
     }
   }
 
+  // Upload screenshot to Supabase Storage via API route
+  async function uploadScreenshot(file: File): Promise<string | null> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('reservationId', booking.reservationId!)
+
+    const res = await fetch('/api/reservations/upload-screenshot', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error || 'Failed to upload screenshot')
+    }
+
+    const data = await res.json()
+    return data.url
+  }
+
   // Submit payment
   async function handleSubmitPayment() {
     if (!booking.reservationId || !acceptedTerms) return
@@ -192,14 +219,19 @@ export default function BookingConfirmPage() {
     setError(null)
 
     try {
-      // In a production app, we'd upload the file to storage first.
-      // For now we just submit the payment action.
+      // Upload screenshot if provided
+      let screenshotUrl: string | null = null
+      if (uploadedFile) {
+        screenshotUrl = await uploadScreenshot(uploadedFile)
+      }
+
       const res = await fetch(`/api/reservations/${booking.reservationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'submit_payment',
           paymentReference: `BOBO-${booking.selectedDate?.replace(/-/g, '')}-${booking.contactName.split(' ')[0]?.toUpperCase()}`,
+          ...(screenshotUrl ? { paymentScreenshotUrl: screenshotUrl } : {}),
         }),
       })
 
@@ -503,7 +535,10 @@ export default function BookingConfirmPage() {
               {acceptedTerms && <Check size={12} className="text-white" />}
             </button>
             <span className="text-xs text-brown/53 leading-relaxed">
-              {t('cancellationPolicy')}
+              {t('cancellationPolicyText')}{' '}
+              <Link href="/cancellation" className="text-amber font-medium no-underline hover:underline">
+                {t('cancellationPolicyLink')}
+              </Link>
             </span>
           </label>
 

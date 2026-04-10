@@ -299,7 +299,7 @@ export default function ReservationsPage() {
                     {isPaymentSubmitted && (
                       <div className="flex items-center gap-2.5">
                         <Timer size={18} className="text-[#E67E22]" />
-                        <span className="text-sm text-[#E67E22]">Waiting for admin confirmation</span>
+                        <span className="text-sm text-[#E67E22]">{t('waitingForAdmin')}</span>
                       </div>
                     )}
 
@@ -329,7 +329,11 @@ export default function ReservationsPage() {
                         >
                           Pre-Order Menu
                         </Link>
-                        <button className="text-[13px] font-medium text-brown px-5 py-2 rounded-lg border border-beige bg-white cursor-pointer">
+                        <button
+                          disabled
+                          title="Coming soon"
+                          className="text-[13px] font-medium text-brown px-5 py-2 rounded-lg border border-beige bg-white cursor-not-allowed opacity-50"
+                        >
                           {t('actions.reschedule')}
                         </button>
                         <button
@@ -359,7 +363,7 @@ export default function ReservationsPage() {
                       </>
                     )}
                     {isPaymentSubmitted && (
-                      <span className="text-[13px] text-[#8E8E93] italic">Awaiting confirmation</span>
+                      <span className="text-[13px] text-[#8E8E93] italic">{t('awaitingConfirmation')}</span>
                     )}
                   </div>
                 </div>
@@ -385,9 +389,9 @@ export default function ReservationsPage() {
       {confirmCancelId && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-[400px] max-w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)] flex flex-col gap-4">
-            <h3 className="font-playfair text-xl font-bold text-brown">Cancel Reservation?</h3>
+            <h3 className="font-playfair text-xl font-bold text-brown">{t('cancelDialog.title')}</h3>
             <p className="text-sm text-brown/60">
-              Are you sure you want to cancel this reservation? This action cannot be undone.
+              {t('cancelDialog.message')}
             </p>
             {cancelError && (
               <div className="bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-3 py-2">
@@ -400,7 +404,7 @@ export default function ReservationsPage() {
                 disabled={!!cancelling}
                 className="px-5 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white disabled:opacity-50"
               >
-                Keep Reservation
+                {t('cancelDialog.keep')}
               </button>
               <button
                 onClick={handleCancelConfirm}
@@ -410,7 +414,7 @@ export default function ReservationsPage() {
                 {cancelling && (
                   <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 )}
-                {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
+                {cancelling ? t('cancelDialog.cancelling') : t('cancelDialog.confirm')}
               </button>
             </div>
           </div>

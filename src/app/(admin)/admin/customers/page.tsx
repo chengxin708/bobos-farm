@@ -101,13 +101,42 @@ export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [noteSaving, setNoteSaving] = useState(false)
   const [noteSaved, setNoteSaved] = useState(false)
 
-  const handleSaveNote = useCallback((customerId: string) => {
-    // Notes are stored locally for now (no backend endpoint yet)
-    setNoteSaved(true)
-    setTimeout(() => setNoteSaved(false), 2000)
-  }, [])
+  // Load note when a customer is selected
+  const loadNote = useCallback(async (customerId: string) => {
+    // Skip if we already have a cached note (including empty string — only skip if key exists)
+    if (customerId in notes) return
+    try {
+      const res = await fetch(`/api/customers/${customerId}/notes`)
+      if (res.ok) {
+        const data = await res.json()
+        setNotes(prev => ({ ...prev, [customerId]: data.note ?? '' }))
+      }
+    } catch {
+      // ignore fetch errors for notes
+    }
+  }, [notes])
+
+  const handleSaveNote = useCallback(async (customerId: string) => {
+    setNoteSaving(true)
+    try {
+      const res = await fetch(`/api/customers/${customerId}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: notes[customerId] ?? '' }),
+      })
+      if (res.ok) {
+        setNoteSaved(true)
+        setTimeout(() => setNoteSaved(false), 2000)
+      }
+    } catch {
+      // ignore save errors silently
+    } finally {
+      setNoteSaving(false)
+    }
+  }, [notes])
 
   const { data: allReservations, isLoading } = useSWR<Reservation[]>('/api/reservations', fetcher)
 
@@ -211,7 +240,8 @@ export default function Customers() {
   const handleRowClick = useCallback((id: string) => {
     setSelectedId(id)
     setDetailOpen(true)
-  }, [])
+    loadNote(id)
+  }, [loadNote])
 
   const filterKeys: { key: FilterType; label: string }[] = [
     { key: 'all', label: t('filters.all') },
@@ -401,9 +431,10 @@ export default function Customers() {
               />
               <button
                 onClick={() => handleSaveNote(selectedCustomer.id)}
-                className="flex items-center gap-1.5 bg-green text-white text-xs font-semibold px-3 py-1.5 rounded-md mt-2"
+                disabled={noteSaving}
+                className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-md mt-2 ${noteSaving ? 'bg-green/60 cursor-not-allowed' : 'bg-green'}`}
               >
-                <Save size={12} /> {noteSaved ? 'Saved!' : t('detail.saveNote')}
+                <Save size={12} /> {noteSaved ? 'Saved!' : noteSaving ? 'Saving...' : t('detail.saveNote')}
               </button>
             </div>
           </div>

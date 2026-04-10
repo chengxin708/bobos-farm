@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn, getSession } from 'next-auth/react'
-import { Mail, EyeOff } from 'lucide-react'
+import { Mail, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 function LoginForm() {
@@ -16,6 +16,7 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -100,7 +101,7 @@ function LoginForm() {
                 <div className="flex items-center gap-3">
                   <span className="text-brown/33 text-sm">&#x1f512;</span>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder={t('passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -108,7 +109,9 @@ function LoginForm() {
                     className="text-sm bg-transparent outline-none placeholder:text-brown/27"
                   />
                 </div>
-                <EyeOff size={18} className="text-brown/27 cursor-pointer" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="bg-transparent border-none p-0 cursor-pointer">
+                  {showPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
+                </button>
               </div>
             </div>
 

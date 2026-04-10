@@ -14,6 +14,12 @@ export default function Footer() {
     { label: t('links.contact'), href: '/#about' },
   ]
 
+  const legalLinks = [
+    { label: t('links.privacy'), href: '/privacy' },
+    { label: t('links.terms'), href: '/terms' },
+    { label: t('links.cancellation'), href: '/cancellation' },
+  ]
+
   return (
     <footer className="bg-[#1a1510] w-full">
       <div className="max-w-[1120px] mx-auto px-6 sm:px-12 lg:px-20">
@@ -29,6 +35,12 @@ export default function Footer() {
             <span className="text-[11px] text-white/35 font-semibold tracking-[0.15em] uppercase mb-1">{t('quickLinks')}</span>
             {links.map((link) => (
               <Link key={link.href + link.label} href={link.href} className="text-[13px] text-white/45 no-underline hover:text-amber transition-colors duration-300">{link.label}</Link>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="text-[11px] text-white/35 font-semibold tracking-[0.15em] uppercase mb-1">{t('legal')}</span>
+            {legalLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="text-[13px] text-white/45 no-underline hover:text-amber transition-colors duration-300">{link.label}</Link>
             ))}
           </div>
           <div className="flex flex-col gap-3">
