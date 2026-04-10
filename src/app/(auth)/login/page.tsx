@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { Mail, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -34,8 +34,16 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password')
       } else if (result?.ok) {
+        const session = await getSession()
+        const role = (session?.user as { role?: string })?.role
         router.refresh()
-        router.push(callbackUrl)
+        if (callbackUrl !== '/') {
+          router.push(callbackUrl)
+        } else if (role === 'ADMIN') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/')
+        }
       }
     } catch {
       setError('Something went wrong. Please try again.')

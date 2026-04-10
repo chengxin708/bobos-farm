@@ -9,9 +9,9 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const isBooking = pathname.startsWith('/booking')
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className={`flex flex-col ${isBooking ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       <Navbar />
-      <main className="flex-1 flex flex-col min-h-0">{children}</main>
+      <main className="flex-1 flex flex-col">{children}</main>
       {!isBooking && <Footer />}
     </div>
   )
