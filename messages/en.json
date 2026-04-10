@@ -83,57 +83,31 @@
   },
   "landing": {
     "hero": {
-      "title": "Whole Roasted Lamb\nin a Yurt",
-      "subtitle": "The Hudson Valley's most unique dining experience — authentic Chinese roasted whole lamb served in traditional Mongolian yurts. By appointment only.",
-      "bookVisit": "Reserve Your Yurt",
-      "viewMenu": "View Menu"
+      "location": "Hudson Valley, NY",
+      "bookVisit": "Book a Visit"
     },
-    "about": {
-      "title": "Our Story",
-      "para1": "Bobo's Farm is the only place in the Hudson Valley where you can feast on a whole Chinese roasted lamb inside a traditional Mongolian yurt. Owner Jimmy and his wife Bobo — \"the real boss and a genius on cooking\" — have created something truly special on their farm in New Paltz.",
-      "para2": "Gather your friends and family, put on your gloves, and tear into 35 pounds of perfectly spiced, slow-roasted lamb. With three colorful yurts nestled among the trees, farm-raised poultry, and karaoke to top it off — this is a celebration, not just a meal.",
-      "phone": "(516) 272-9999",
-      "location": "891 Albany Post Rd, New Paltz, NY 12561"
+    "story": {
+      "title": "From Our Farm to Your Table",
+      "description": "Nestled in New Paltz, Bobo's Farm is a gathering place where whole roasted lamb meets Mongolian yurts, farm-raised poultry meets homegrown vegetables, and every meal is a celebration worth sharing."
     },
-    "highlights": {
-      "title": "What Makes Us Special",
-      "subtitle": "Three reasons to gather around our table",
+    "experience": {
+      "title": "The Experience",
       "lamb": {
-        "title": "35-lb Whole\nRoasted Lamb",
-        "desc": "Our showstopper: a whole lamb (~35 lbs) slow-roasted with cumin and Sichuan spices. Feeds 8-15 guests. Reserve at least one week in advance — gloves provided."
+        "title": "Whole Roasted Lamb",
+        "desc": "A 35-lb lamb slow-roasted with cumin and Sichuan spices. Feeds 8-15 guests — gloves provided."
       },
       "yurt": {
-        "title": "Three Colorful\nMongolian Yurts",
-        "desc": "Choose from our white, red, or golden yurt — each nestled among the trees on our New Paltz farm. Warm in winter, breezy in summer. Seats up to 20 guests."
+        "title": "Yurt Dining",
+        "desc": "Three colorful Mongolian yurts nestled among the trees. Warm in winter, breezy in summer."
       },
       "farm": {
-        "title": "Farm-Raised\n& Homegrown",
-        "desc": "We raise our own geese and poultry right here on the farm. Fresh vegetables from our garden, authentic Chinese flavors, and even karaoke after dinner."
+        "title": "Farm Walk",
+        "desc": "Meet our farm-raised geese and poultry, stroll through the garden, and see where your meal begins."
       }
     },
-    "howItWorks": {
-      "title": "How It Works",
-      "subtitle": "From booking to feasting — four simple steps",
-      "step1": {
-        "title": "Choose a Date",
-        "desc": "Pick your preferred date and party size"
-      },
-      "step2": {
-        "title": "Pay Deposit",
-        "desc": "Secure your reservation with a small deposit"
-      },
-      "step3": {
-        "title": "Pre-Order Menu",
-        "desc": "Select your dishes and customize your feast"
-      },
-      "step4": {
-        "title": "Enjoy the Feast!",
-        "desc": "Arrive, relax, and savor an unforgettable meal"
-      }
-    },
-    "gallery": {
-      "title": "A Taste of the Experience",
-      "subtitle": "Moments from our farm and table"
+    "cta": {
+      "title": "Ready to gather?",
+      "bookVisit": "Book a Visit"
     }
   },
   "footer": {
