@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 
@@ -40,8 +40,9 @@ const MONTH_NAMES = [
 export default function BookingDatePage() {
   const t = useTranslations('booking.date')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
-  const { selectedDate, setSelectedDate } = useBooking()
+  const { selectedDate, setSelectedDate, hydrated } = useBooking()
 
   const [today] = useState(() => new Date())
   const todayStr = toLocalDateStr(today)
@@ -55,6 +56,9 @@ export default function BookingDatePage() {
     if (selectedDate) return parseInt(selectedDate.slice(5, 7), 10)
     return today.getMonth() + 1
   })
+
+  // Month transition animation state
+  const [monthFading, setMonthFading] = useState(false)
 
   const startDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-01`
   const endDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${daysInMonth(viewYear, viewMonth)}`
@@ -78,21 +82,9 @@ export default function BookingDatePage() {
     revalidateOnFocus: false,
   })
 
-  // Fetch reservations for this month (current user's own come back;
-  // we only need to count booked yurts per date).
-  // Note: The reservations API returns the user's own reservations for non-admin.
-  // For date availability we rely on availability + yurts data.
-  // The availability API returns yurt-level open/close status.
-  // A yurt is "booked" if there's a reservation with that yurtId+date.
-  // Since we can't query all reservations as customer, we infer from availability:
-  // - If a yurtAvailability record says isOpen=false, the yurt is closed
-  // - If no availability record, the yurt is open by default
-  // - Reservation conflicts are checked server-side at booking time
-  // For a richer UX, we compute status from availability records only.
-
   const totalYurts = Array.isArray(yurts) ? yurts.filter((y: { status: string }) => y.status === 'ACTIVE').length : 3
 
-  // Build date→status map
+  // Build date->status map
   const dateStatusMap = useMemo<Record<string, DateStatus>>(() => {
     if (!Array.isArray(availability)) return {}
     const map: Record<string, DateStatus> = {}
@@ -100,7 +92,7 @@ export default function BookingDatePage() {
     // Group availability by date
     const byDate: Record<string, { open: number; closed: number }> = {}
     for (const rec of availability) {
-      const dateKey = rec.date.slice(0, 10) // "2026-03-15"
+      const dateKey = rec.date.slice(0, 10)
       if (!byDate[dateKey]) byDate[dateKey] = { open: 0, closed: 0 }
       if (rec.isOpen) {
         byDate[dateKey].open++
@@ -116,19 +108,14 @@ export default function BookingDatePage() {
       const info = byDate[dateKey]
 
       if (!info) {
-        // No availability records => all yurts open by default
         map[dateKey] = 'available'
       } else if (info.closed >= totalYurts) {
-        // All yurts explicitly closed
         map[dateKey] = 'closed'
       } else if (info.open === 1 && info.closed === totalYurts - 1) {
-        // Only 1 yurt left open
         map[dateKey] = 'limited'
       } else if (info.closed > 0 && info.open > 1) {
-        // Some closed but more than 1 open
         map[dateKey] = 'available'
       } else if (info.open === 0 && info.closed < totalYurts) {
-        // Some closed, rest have no records (default open)
         const defaultOpen = totalYurts - info.closed
         if (defaultOpen === 1) map[dateKey] = 'limited'
         else map[dateKey] = 'available'
@@ -143,39 +130,39 @@ export default function BookingDatePage() {
   const numDays = daysInMonth(viewYear, viewMonth)
   const startDay = firstDayOfMonth(viewYear, viewMonth)
 
+  // Build calendar cells, starting from Monday (shift Sunday to end)
   const cells: (number | null)[] = useMemo(() => {
     const arr: (number | null)[] = []
-    for (let i = 0; i < startDay; i++) arr.push(null)
+    // Convert startDay from Sun=0 to Mon=0 layout: Mon=0, Tue=1, ..., Sun=6
+    const mondayStart = startDay === 0 ? 6 : startDay - 1
+    for (let i = 0; i < mondayStart; i++) arr.push(null)
     for (let d = 1; d <= numDays; d++) arr.push(d)
     while (arr.length % 7 !== 0) arr.push(null)
     return arr
   }, [startDay, numDays])
 
   const navigateMonth = useCallback((delta: number) => {
-    setViewMonth((m) => {
-      let newMonth = m + delta
-      if (newMonth < 1) { newMonth = 12; setViewYear(y => y - 1) }
-      if (newMonth > 12) { newMonth = 1; setViewYear(y => y + 1) }
-      return newMonth
-    })
+    setMonthFading(true)
+    setTimeout(() => {
+      setViewMonth((m) => {
+        let newMonth = m + delta
+        if (newMonth < 1) { newMonth = 12; setViewYear(y => y - 1) }
+        if (newMonth > 12) { newMonth = 1; setViewYear(y => y + 1) }
+        return newMonth
+      })
+      setMonthFading(false)
+    }, 150)
   }, [])
 
   const canGoBack = useMemo(() => {
-    // Don't go before current month
     return viewYear > today.getFullYear() ||
       (viewYear === today.getFullYear() && viewMonth > today.getMonth() + 1)
   }, [viewYear, viewMonth, today])
 
+  // Mo Tu We Th Fr Sa Su headers
   const dayHeaders = [
-    t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'),
-    t('days.thu'), t('days.fri'), t('days.sat'),
-  ]
-
-  const legend = [
-    { color: 'bg-green', label: t('legend.available') },
-    { color: 'bg-[#F4A623]', label: t('legend.selective') },
-    { color: 'bg-[#DC3545]', label: t('legend.limited') },
-    { color: 'bg-gray-300', label: t('legend.full') },
+    t('days.mon'), t('days.tue'), t('days.wed'),
+    t('days.thu'), t('days.fri'), t('days.sat'), t('days.sun'),
   ]
 
   function getDateKey(day: number): string {
@@ -227,127 +214,162 @@ export default function BookingDatePage() {
     setSelectedDate(isSelected(day) ? null : dateKey)
   }
 
-  function getDateStyle(day: number): string {
+  function isDisabled(day: number): boolean {
     const status = getStatus(day)
-    const sel = isSelected(day)
-    const base = 'flex items-center justify-center cursor-pointer border-none transition-all relative'
-
-    if (sel) {
-      return `${base} bg-amber text-white w-12 h-12 rounded-full text-lg font-bold ring-[3px] ring-amber/30`
-    }
-
-    switch (status) {
-      case 'past':
-        return `${base} text-beige w-10 h-10 rounded-full cursor-not-allowed`
-      case 'closed':
-        return `${base} bg-gray-200 text-gray-400 w-10 h-10 rounded-full cursor-not-allowed`
-      case 'full':
-        return `${base} bg-[#DC3545]/80 text-white w-10 h-10 rounded-full cursor-not-allowed`
-      case 'limited':
-        return `${base} bg-[#F4A623] text-white w-10 h-10 rounded-full hover:ring-2 hover:ring-amber/30`
-      case 'available':
-        return `${base} bg-green text-white w-10 h-10 rounded-full hover:ring-2 hover:ring-green/30`
-      default:
-        return `${base} text-brown w-10 h-10 hover:bg-amber/10 hover:rounded-full`
-    }
+    return status === 'past' || status === 'closed' || status === 'full'
   }
 
   const monthLabel = `${MONTH_NAMES[viewMonth - 1]} ${viewYear}`
 
+  // Don't render until hydrated to prevent flash
+  if (!hydrated) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#6B7F5E] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   return (
-    <>
-      {/* Calendar Section */}
-      <div className="flex-1 flex justify-center py-6 px-4 sm:px-10 lg:px-20 overflow-y-auto">
-        <div className="w-[700px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col gap-4">
-          {/* Month Header */}
-          <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Top Bar — sticky */}
+      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => router.push('/')}
+          className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
+          aria-label={tCommon('back')}
+        >
+          <ChevronLeft size={22} className="text-[#1A1208]" />
+        </button>
+        <span className="text-sm text-[#8C8478]">Step 1 of 4</span>
+      </div>
+
+      {/* Page Title */}
+      <div className="text-center mt-4 mb-6 px-4">
+        <h1 className="text-2xl font-serif text-[#1A1208]">Select a Date</h1>
+        {locale === 'zh' && (
+          <p className="text-sm text-[#8C8478] mt-1 font-sans">Choose your preferred date</p>
+        )}
+      </div>
+
+      {/* Calendar Card */}
+      <div className="flex-1 px-4 pb-28">
+        <div className="max-w-lg mx-auto bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => canGoBack && navigateMonth(-1)}
-              className={`border-none bg-transparent p-1 ${canGoBack ? 'cursor-pointer text-brown' : 'cursor-not-allowed text-beige'}`}
+              className={`flex items-center justify-center w-9 h-9 rounded-full border-none transition-colors ${
+                canGoBack
+                  ? 'bg-transparent hover:bg-[#E8ECE4] cursor-pointer text-[#1A1208]'
+                  : 'bg-transparent cursor-not-allowed text-[#8C8478]/30'
+              }`}
               disabled={!canGoBack}
+              aria-label="Previous month"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
-            <h2 className="font-playfair text-2xl font-bold text-brown italic">{monthLabel}</h2>
+            <h2 className="font-serif text-lg text-[#1A1208]">{monthLabel}</h2>
             <button
               onClick={() => navigateMonth(1)}
-              className="border-none bg-transparent p-1 cursor-pointer text-brown"
+              className="flex items-center justify-center w-9 h-9 rounded-full border-none bg-transparent hover:bg-[#E8ECE4] cursor-pointer text-[#1A1208] transition-colors"
+              aria-label="Next month"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
 
-          {/* Day Headers */}
-          <div className="grid grid-cols-7 text-center">
+          {/* Day Headers — Mo Tu We Th Fr Sa Su */}
+          <div className="grid grid-cols-7 mb-1">
             {dayHeaders.map((d) => (
-              <div key={d} className="py-2 text-xs font-semibold text-[#8E8E93]">{d}</div>
+              <div key={d} className="py-2 text-center text-xs font-medium uppercase tracking-wider text-[#8C8478]">
+                {d.slice(0, 2)}
+              </div>
             ))}
           </div>
 
           {/* Date Grid */}
-          {loadingAvail ? (
-            <div className="grid grid-cols-7 gap-y-3">
-              {Array.from({ length: 35 }).map((_, idx) => (
-                <div key={idx} className="flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full bg-beige/30 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-7 gap-y-3">
-              {cells.map((day, idx) => (
-                <div key={idx} className="flex items-center justify-center">
-                  {day !== null ? (
-                    <button
-                      onClick={() => handleDayClick(day)}
-                      disabled={getStatus(day) === 'past' || getStatus(day) === 'closed' || getStatus(day) === 'full'}
-                      className={getDateStyle(day)}
-                    >
-                      {day}
-                      {isToday(day) && !isSelected(day) && (
-                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber" />
-                      )}
-                    </button>
-                  ) : (
-                    <div className="w-10 h-10" />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            className={`transition-opacity duration-150 ${monthFading ? 'opacity-0' : 'opacity-100'}`}
+          >
+            {loadingAvail ? (
+              <div className="grid grid-cols-7 gap-y-1">
+                {Array.from({ length: 35 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-center py-0.5">
+                    <div className="w-11 h-11 rounded-full bg-[#E8ECE4]/40 animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-7 gap-y-1">
+                {cells.map((day, idx) => (
+                  <div key={idx} className="flex items-center justify-center py-0.5">
+                    {day !== null ? (
+                      <button
+                        onClick={() => handleDayClick(day)}
+                        disabled={isDisabled(day)}
+                        className={`
+                          relative flex flex-col items-center justify-center w-11 h-11 rounded-full
+                          border-none transition-all text-sm font-medium
+                          ${isSelected(day)
+                            ? 'bg-[#6B7F5E] text-white scale-105'
+                            : isDisabled(day)
+                              ? 'text-[#8C8478]/40 cursor-not-allowed bg-transparent'
+                              : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
+                          }
+                          ${isToday(day) && !isSelected(day) ? 'ring-1 ring-[#6B7F5E]/30' : ''}
+                        `}
+                        aria-label={`${MONTH_NAMES[viewMonth - 1]} ${day}`}
+                      >
+                        {day}
+                        {/* Limited availability dot */}
+                        {getStatus(day) === 'limited' && !isSelected(day) && (
+                          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C47D52]" />
+                        )}
+                      </button>
+                    ) : (
+                      <div className="w-11 h-11" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-6 pt-4">
-            {legend.map((l) => (
-              <div key={l.label} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${l.color}`} />
-                <span className="text-xs text-[#8E8E93]">{l.label}</span>
-              </div>
-            ))}
+          <div className="flex items-center justify-center gap-5 pt-4 mt-2 border-t border-[#F2EDE6]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#6B7F5E]" />
+              <span className="text-xs text-[#8C8478]">{t('legend.available')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#C47D52]" />
+              <span className="text-xs text-[#8C8478]">{t('legend.limited')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#8C8478]/40" />
+              <span className="text-xs text-[#8C8478]">{t('legend.full')}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-end px-4 sm:px-10 lg:px-20">
-        <div className="flex items-center gap-3">
-          {!selectedDate && (
-            <span className="text-sm text-[#8E8E93]">Select a date to continue</span>
-          )}
-          <button
-            onClick={() => selectedDate && router.push('/booking/yurt')}
-            disabled={!selectedDate}
-            aria-label={!selectedDate ? 'Select a date to continue' : 'Continue to yurt selection'}
-            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
-              selectedDate
-                ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
-                : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
-            }`}
-          >
-            {tCommon('next')} <ArrowRight size={18} />
-          </button>
-        </div>
+      {/* Bottom Fixed Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-[#F8F7F4]">
+        <button
+          onClick={() => selectedDate && router.push('/booking/yurt')}
+          disabled={!selectedDate}
+          aria-label={!selectedDate ? 'Select a date to continue' : 'Continue to yurt selection'}
+          className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
+            selectedDate
+              ? 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
+              : 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
+          }`}
+        >
+          {tCommon('next')}
+          <ChevronRight size={18} />
+        </button>
       </div>
-    </>
+    </div>
   )
 }
