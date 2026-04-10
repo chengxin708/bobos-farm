@@ -18,12 +18,16 @@
     "or": "或"
   },
   "nav": {
+    "home": "首页",
     "menu": "菜单",
     "about": "关于我们",
     "gallery": "图集",
+    "book": "预约",
     "bookNow": "立即预订",
+    "bookVisit": "预约到访",
     "login": "登录",
     "logout": "退出",
+    "my": "我的",
     "myReservations": "我的预订",
     "settings": "设置"
   },

@@ -18,12 +18,16 @@
     "or": "or"
   },
   "nav": {
+    "home": "Home",
     "menu": "Menu",
     "about": "About",
     "gallery": "Gallery",
+    "book": "Book",
     "bookNow": "Book Now",
+    "bookVisit": "Book a Visit",
     "login": "Login",
     "logout": "Logout",
+    "my": "My",
     "myReservations": "My Reservations",
     "settings": "Settings"
   },
