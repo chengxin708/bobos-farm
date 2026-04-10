@@ -19,8 +19,8 @@ export default function Footer() {
       <div className="max-w-[1120px] mx-auto px-6 sm:px-12 lg:px-20">
         <div className="flex flex-col md:flex-row gap-12 md:gap-16 py-14 border-b border-white/6">
           <div className="flex flex-col gap-4 md:w-[280px]">
-            <span className="font-playfair text-[20px] font-bold text-amber">Bobo&apos;s Farm</span>
-            <span className="text-[12px] text-white/25 tracking-[0.1em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
+            <span className="font-playfair text-[20px] font-bold italic text-amber">Bobo&apos;s Farm</span>
+            <span className="text-[11px] text-white/25 tracking-[0.12em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
             <p className="text-[13px] text-white/30 leading-[1.8] mt-1">
               {t('tagline')}
             </p>

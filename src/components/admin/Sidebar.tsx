@@ -28,7 +28,7 @@ export default function Sidebar() {
   return (
     <aside className="w-60 bg-sidebar-bg flex flex-col shrink-0 min-h-screen">
       <div className="p-5 flex flex-col gap-2">
-        <span className="font-playfair text-lg font-bold text-amber">{t('brandName')}</span>
+        <span className="font-playfair text-lg font-bold italic text-amber">{t('brandName')}</span>
         <span className="bg-cream-bg text-dark-brown text-xs font-semibold px-3 py-1 rounded-full self-start">{t('adminPanel')}</span>
       </div>
       <nav className="flex flex-col gap-0.5 px-0 py-4">
