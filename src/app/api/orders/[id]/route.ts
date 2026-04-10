@@ -1,0 +1,186 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth-options";
+import { z } from "zod";
+
+const orderUpdateSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        menuItemId: z.string().min(1),
+        quantity: z.number().int().min(1),
+      })
+    )
+    .min(1, "At least one item is required"),
+  notes: z.string().optional(),
+});
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                id: true,
+                nameEn: true,
+                nameZh: true,
+                price: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
+        reservation: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Auth check: only order owner or admin
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+    if (!isAdmin && order.reservation.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Strip reservation from response (caller already has it)
+    const { reservation: _reservation, ...orderData } = order;
+    return NextResponse.json(orderData);
+  } catch (error) {
+    console.error("Failed to fetch order:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch order" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const body = await req.json();
+    const parsed = orderUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { items, notes } = parsed.data;
+
+    // Fetch order with reservation ownership
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        reservation: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Auth check: only order owner or admin
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+    if (!isAdmin && order.reservation.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Only SUBMITTED orders can be modified (not LOCKED)
+    if (order.status === "LOCKED") {
+      return NextResponse.json(
+        { error: "Order is locked and cannot be modified" },
+        { status: 400 }
+      );
+    }
+
+    // Calculate new estimated total
+    const menuItemIds = items.map((i) => i.menuItemId);
+    const menuItems = await prisma.menuItem.findMany({
+      where: { id: { in: menuItemIds } },
+      select: { id: true, price: true },
+    });
+
+    const priceMap = new Map(menuItems.map((mi) => [mi.id, mi.price]));
+    const estimatedTotal = items.reduce((sum, item) => {
+      const price = priceMap.get(item.menuItemId) || 0;
+      return sum + price * item.quantity;
+    }, 0);
+
+    // Transaction: delete old items, create new ones, update order
+    const updated = await prisma.$transaction(async (tx) => {
+      // Delete existing order items
+      await tx.orderItem.deleteMany({
+        where: { orderId: id },
+      });
+
+      // Update order and create new items
+      return tx.order.update({
+        where: { id },
+        data: {
+          notes: notes !== undefined ? (notes || null) : order.notes,
+          estimatedTotal,
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+          items: {
+            create: items.map((item) => ({
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+            })),
+          },
+        },
+        include: {
+          items: {
+            include: {
+              menuItem: {
+                select: {
+                  id: true,
+                  nameEn: true,
+                  nameZh: true,
+                  price: true,
+                  imageUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Failed to update order:", error);
+    return NextResponse.json(
+      { error: "Failed to update order" },
+      { status: 500 }
+    );
+  }
+}

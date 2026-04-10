@@ -284,6 +284,8 @@
     "bookFirst": "预订餐桌"
   },
   "preOrder": {
+    "title": "预订菜品",
+    "editTitle": "编辑订单",
     "infoBar": "预订菜品：{date} — {yurt} — {guests}位宾客",
     "orderBy": "请于{date}前下单",
     "categories": {
@@ -295,6 +297,7 @@
     },
     "searchPlaceholder": "搜索菜品...",
     "yourOrder": "您的订单",
+    "items": "{count}道菜品",
     "subtotal": "小计",
     "estimatedTotal": "预计总金额",
     "depositPaid": "已支付定金：$300",
@@ -302,7 +305,17 @@
     "kitchenNotesPlaceholder": "有什么特别需要告知厨房的吗？",
     "paymentNote": "以上为预估金额，最终付款将在用餐当天通过Zelle结清。",
     "submitOrder": "提交预订单",
-    "saveDraft": "保存草稿"
+    "updateOrder": "更新订单",
+    "submitting": "提交中...",
+    "updating": "更新中...",
+    "orderSubmitted": "订单提交成功！",
+    "orderUpdated": "订单更新成功！",
+    "lastUpdated": "上次更新：{date}",
+    "saveDraft": "保存草稿",
+    "back": "返回",
+    "emptyOrder": "从菜单中添加菜品开始下单",
+    "noItems": "未找到菜品",
+    "loadingMenu": "加载菜单中..."
   },
   "customerSettings": {
     "title": "设置",

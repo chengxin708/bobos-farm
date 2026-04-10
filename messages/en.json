@@ -284,6 +284,8 @@
     "bookFirst": "Book a Table"
   },
   "preOrder": {
+    "title": "Pre-order Menu",
+    "editTitle": "Edit Order",
     "infoBar": "Pre-Order for {date} — {yurt} — {guests} guests",
     "orderBy": "Order by {date}",
     "categories": {
@@ -295,14 +297,25 @@
     },
     "searchPlaceholder": "Search dishes...",
     "yourOrder": "Your Order",
+    "items": "{count} items",
     "subtotal": "Subtotal",
     "estimatedTotal": "Estimated Total",
     "depositPaid": "Deposit already paid: $300",
-    "kitchenNotes": "Notes for the kitchen",
+    "kitchenNotes": "Kitchen Notes",
     "kitchenNotesPlaceholder": "Any special notes for the kitchen?",
     "paymentNote": "This is an estimate. Final payment collected on-site via Zelle.",
-    "submitOrder": "Submit Pre-Order",
-    "saveDraft": "Save Draft"
+    "submitOrder": "Submit Order",
+    "updateOrder": "Update Order",
+    "submitting": "Submitting...",
+    "updating": "Updating...",
+    "orderSubmitted": "Order submitted successfully!",
+    "orderUpdated": "Order updated successfully!",
+    "lastUpdated": "Last updated: {date}",
+    "saveDraft": "Save Draft",
+    "back": "Back",
+    "emptyOrder": "Add items from the menu to start your order",
+    "noItems": "No items found",
+    "loadingMenu": "Loading menu..."
   },
   "customerSettings": {
     "title": "Settings",
