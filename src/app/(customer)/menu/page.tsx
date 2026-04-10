@@ -5,7 +5,9 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import Link from 'next/link'
-import { Lock } from 'lucide-react'
+import Image from 'next/image'
+import { Lock, UtensilsCrossed, Info, Clock, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,19 +64,13 @@ const CATEGORY_I18N_KEY: Record<string, string> = {
   'Beverages': 'categories.beverages',
 }
 
-interface TagStyle {
-  label: string
-  bg: string
-  text: string
-}
-
-const TAG_STYLES: Record<string, TagStyle> = {
-  'signature':     { label: '\u{1F525} Signature',  bg: '#F5ECD8', text: '#8B6914' },
-  'advance-order': { label: '\u23F0 Pre-order',     bg: '#FEF3CD', text: '#8B6914' },
-  'popular':       { label: '\u{1F525} Popular',    bg: '#F5ECD8', text: '#8B6914' },
-  'vegetarian':    { label: '\u{1F33F} Vegetarian', bg: '#EAF2E3', text: '#5B8C3E' },
-  'gluten-free':   { label: '\u2713 GF',            bg: '#EAF2E3', text: '#5B8C3E' },
-  'non-alcoholic': { label: '\u{1F964} N/A',        bg: '#E8F4FD', text: '#2980B9' },
+const TAG_LABELS: Record<string, string> = {
+  'signature':     'Signature',
+  'advance-order': 'Pre-order',
+  'popular':       'Popular',
+  'vegetarian':    'Vegetarian',
+  'gluten-free':   'GF',
+  'non-alcoholic': 'N/A',
 }
 
 // ---------------------------------------------------------------------------
@@ -83,26 +79,25 @@ const TAG_STYLES: Record<string, TagStyle> = {
 
 function TabsSkeleton() {
   return (
-    <div className="flex items-end px-20 bg-white shadow-sm h-[52px] gap-2">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-5 w-28 my-auto skeleton-warm" />
+    <div className="flex gap-2 px-4 py-3 overflow-hidden">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="h-9 w-20 rounded-full skeleton-pulse shrink-0" />
       ))}
     </div>
   )
 }
 
-function CardsSkeleton() {
+function ListSkeleton() {
   return (
-    <div className="grid grid-cols-3 gap-6">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="card-warm bg-white rounded-2xl overflow-hidden">
-          <div className="h-[200px] skeleton-warm" />
-          <div className="p-4 flex flex-col gap-2">
-            <div className="h-4 w-3/4 skeleton-warm" />
-            <div className="h-3 w-1/2 skeleton-warm" />
-            <div className="h-5 w-16 skeleton-warm" />
-            <div className="h-3 w-full skeleton-warm" />
-            <div className="h-3 w-2/3 skeleton-warm" />
+    <div className="flex flex-col">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex gap-3 py-4 px-4 border-b border-[#F2EDE6]">
+          <div className="w-[60px] h-[60px] rounded-xl skeleton-pulse shrink-0" />
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="h-4 w-3/4 skeleton-pulse" />
+            <div className="h-3 w-1/2 skeleton-pulse" />
+            <div className="h-3 w-full skeleton-pulse" />
+            <div className="h-4 w-12 skeleton-pulse" />
           </div>
         </div>
       ))}
@@ -116,30 +111,30 @@ function CardsSkeleton() {
 
 function AuthOverlay() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FFF8F0CC] backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8F7F4CC] backdrop-blur-sm">
       <div
-        className="w-[400px] bg-white rounded-2xl flex flex-col items-center gap-6 px-9 py-10"
-        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)' }}
+        className="w-[340px] max-w-[90vw] bg-[#F8F7F4] rounded-2xl flex flex-col items-center gap-5 px-8 py-9"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04)' }}
       >
         {/* Lock icon */}
-        <div className="w-20 h-20 rounded-full bg-[#F5ECD8] flex items-center justify-center">
-          <Lock size={36} color="#8B6914" strokeWidth={1.8} />
+        <div className="w-16 h-16 rounded-full bg-[#E8ECE4] flex items-center justify-center">
+          <Lock size={28} color="#6B7F5E" strokeWidth={1.8} />
         </div>
 
         {/* Title */}
-        <h2 className="font-playfair text-2xl font-bold text-brown text-center">
+        <h2 className="font-serif text-xl font-bold text-[#1A1208] text-center">
           Sign in to view our menu
         </h2>
 
         {/* Description */}
-        <p className="text-sm text-brown/53 text-center leading-relaxed whitespace-pre-line">
+        <p className="text-sm text-[#8C8478] text-center leading-relaxed whitespace-pre-line">
           {"Create an account or sign in to explore\nour authentic dishes and place orders"}
         </p>
 
         {/* Sign In button */}
         <Link
           href="/login"
-          className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-amber to-[#A67C2E] text-white text-base font-semibold flex items-center justify-center no-underline"
+          className="w-full h-[46px] rounded-full bg-[#6B7F5E] text-white text-sm font-semibold flex items-center justify-center no-underline transition-colors duration-200 hover:bg-[#5A6D4F]"
         >
           Sign In
         </Link>
@@ -147,11 +142,169 @@ function AuthOverlay() {
         {/* Create Account button */}
         <Link
           href="/register"
-          className="w-full h-[50px] rounded-2xl bg-white border-[1.5px] border-[#E8DFD0] text-brown text-base font-semibold flex items-center justify-center no-underline"
+          className="w-full h-[46px] rounded-full bg-transparent border border-[#6B7F5E]/30 text-[#1A1208] text-sm font-semibold flex items-center justify-center no-underline transition-colors duration-200 hover:border-[#6B7F5E]/50"
         >
           Create Account
         </Link>
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Menu Item Row
+// ---------------------------------------------------------------------------
+
+function MenuItemRow({
+  item,
+  isExpanded,
+  onToggle,
+  displayName,
+  secondaryName,
+  description,
+  t,
+}: {
+  item: MenuItem
+  isExpanded: boolean
+  onToggle: () => void
+  displayName: string
+  secondaryName: string
+  description: string
+  t: ReturnType<typeof useTranslations<'menu'>>
+}) {
+  return (
+    <div className="border-b border-[#F2EDE6]">
+      {/* Collapsed row */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex gap-3 py-4 px-4 text-left bg-transparent border-none cursor-pointer"
+      >
+        {/* Image */}
+        <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={displayName}
+              width={60}
+              height={60}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <UtensilsCrossed size={22} color="#8C8478" strokeWidth={1.5} />
+          )}
+        </div>
+
+        {/* Text */}
+        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+          <span className="font-serif text-[16px] text-[#1A1208] leading-snug truncate">
+            {displayName}
+          </span>
+          {secondaryName && (
+            <span className="font-sans text-[13px] text-[#8C8478] leading-snug truncate">
+              {secondaryName}
+            </span>
+          )}
+          {description && (
+            <span className="font-sans text-[14px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
+              {description}
+            </span>
+          )}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-[#C47D52] font-medium text-[14px]">
+              ${Math.round(item.price)}
+            </span>
+            {item.tags && item.tags.length > 0 && item.tags.map((tag) => {
+              const label = TAG_LABELS[tag]
+              if (!label) return null
+              return (
+                <span
+                  key={tag}
+                  className="rounded-full px-2 py-0.5 text-[11px] bg-[#E8ECE4] text-[#6B7F5E]"
+                >
+                  {label}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded detail */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 flex flex-col gap-3">
+              {/* Close button */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  className="w-7 h-7 rounded-full bg-[#1A1208]/5 flex items-center justify-center border-none cursor-pointer"
+                >
+                  <X size={14} color="#8C8478" />
+                </button>
+              </div>
+
+              {/* Large image */}
+              {item.imageUrl && (
+                <div className="w-full aspect-[16/10] rounded-2xl overflow-hidden bg-[#F2EDE6]">
+                  <Image
+                    src={item.imageUrl}
+                    alt={displayName}
+                    width={600}
+                    height={375}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Full description */}
+              {description && (
+                <p className="font-sans text-[14px] text-[#8C8478] leading-relaxed">
+                  {description}
+                </p>
+              )}
+
+              {/* All tags */}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {item.tags.map((tag) => {
+                    const label = TAG_LABELS[tag]
+                    if (!label) return null
+                    return (
+                      <span
+                        key={tag}
+                        className="rounded-full px-2.5 py-1 text-[12px] bg-[#E8ECE4] text-[#6B7F5E]"
+                      >
+                        {label}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Pre-order notice */}
+              {item.advanceDaysRequired > 0 && (
+                <div className="flex items-center gap-2 bg-[#E8ECE4] rounded-full px-3 py-1.5 w-fit">
+                  <Clock size={14} color="#6B7F5E" />
+                  <span className="text-[12px] text-[#6B7F5E] font-medium">
+                    {item.advanceDaysRequired >= 3
+                      ? t('advanceNotice3')
+                      : t('advanceNotice2')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -175,6 +328,9 @@ export default function MenuPage() {
 
   // Active tab state — keyed to category id
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
+
+  // Expanded item state
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
 
   // Resolve the active category id: default to first category once loaded
   const resolvedTabId = activeTabId ?? (categories?.[0]?.id ?? null)
@@ -222,49 +378,53 @@ export default function MenuPage() {
     return categoryDisplayName(cat)
   }
 
+  const toggleExpanded = (id: string) => {
+    setExpandedItemId(prev => prev === id ? null : id)
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
+    <div className="flex flex-col min-h-screen bg-[#F8F7F4]">
       {/* Auth overlay for unauthenticated users */}
       {authStatus !== 'loading' && !isAuthenticated && <AuthOverlay />}
 
       {/* Blurred background content when not authenticated */}
       <div className={!isAuthenticated && authStatus !== 'loading' ? 'opacity-20 pointer-events-none' : ''}>
 
-        {/* Header */}
-        <div className="flex flex-col items-center gap-3 pt-12 pb-8 px-20">
-          <h1 className="font-playfair text-[40px] font-bold text-brown text-center">{t('title')}</h1>
-          <div className="w-20 h-[3px] rounded bg-gradient-to-r from-amber to-terracotta" />
-          <p className="text-base text-brown/53 text-center">{t('subtitle')}</p>
+        {/* Page Header */}
+        <div className="flex flex-col items-center pt-6 pb-4">
+          <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
+          <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
         </div>
 
         {/* Category Tabs */}
         {catLoading ? (
           <TabsSkeleton />
         ) : !categories || categories.length === 0 ? (
-          <div className="flex items-center justify-center py-20 px-20">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 rounded-full bg-beige/30 flex items-center justify-center">
-                <span className="text-2xl">&#x1F37D;</span>
-              </div>
-              <h3 className="font-playfair text-xl font-bold text-brown">Menu Coming Soon</h3>
-              <p className="text-sm text-brown/53 max-w-md">
+          <div className="flex items-center justify-center py-20 px-4">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <UtensilsCrossed size={32} color="#8C8478" strokeWidth={1.5} />
+              <h3 className="font-serif text-lg text-[#1A1208]">Menu Coming Soon</h3>
+              <p className="text-sm text-[#8C8478] max-w-[280px]">
                 Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex items-end px-20 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] h-[52px]">
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar">
             {(categories ?? []).map((cat) => {
               const isActive = cat.id === resolvedTabId
               const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveTabId(cat.id)}
-                  className={`flex items-center gap-2 px-6 py-3.5 text-sm cursor-pointer bg-transparent border-none ${
+                  onClick={() => {
+                    setActiveTabId(cat.id)
+                    setExpandedItemId(null)
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
                     isActive
-                      ? 'font-semibold text-amber border-b-[3px] border-amber'
-                      : 'text-brown/47'
+                      ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
+                      : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
                   }`}
                 >
                   <span>{emoji}</span>
@@ -276,76 +436,38 @@ export default function MenuPage() {
         )}
 
         {/* Content */}
-        <div className="flex flex-col gap-7 px-20 py-6 pb-16">
+        <div className="flex flex-col pb-16">
           {/* Info Banner for Whole Lamb */}
           {activeCategoryName === 'Whole Lamb' && (
-            <div className="flex items-center gap-3 bg-[#FEF3CD] rounded-xl px-5 py-4 border-l-4 border-amber">
-              <span className="text-lg">{'\u{1F411}'}</span>
-              <p className="text-[13px] text-[#7A5D10] leading-relaxed">
+            <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
+              <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
+              <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
                 {t('lambNotice')}
               </p>
             </div>
           )}
 
-          {/* Card Grid */}
+          {/* Item List */}
           {itemsLoading || catLoading ? (
-            <CardsSkeleton />
+            <ListSkeleton />
           ) : !items || items.length === 0 ? (
-            <div className="flex items-center justify-center py-20">
-              <p className="text-brown/47 text-base">No items in this category</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
+              <p className="text-[#8C8478] text-sm">No items in this category</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-6">
+            <div className="flex flex-col">
               {items.map((item) => (
-                <div key={item.id} className="card-warm bg-white rounded-2xl overflow-hidden">
-                  {/* Image */}
-                  {item.imageUrl && (
-                    <div className="h-[200px] img-zoom">
-                      <img src={item.imageUrl} alt={itemDisplayName(item)} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  {/* Body */}
-                  <div className="p-4 flex flex-col gap-2">
-                    <div className="text-base font-bold text-brown truncate">{itemDisplayName(item)}</div>
-                    {itemSecondaryName(item) && (
-                      <div className="text-sm text-brown/53 truncate">{itemSecondaryName(item)}</div>
-                    )}
-                    <div className="text-xl font-bold text-amber">${Math.round(item.price)}</div>
-                    {itemDescription(item) && (
-                      <p className="text-[13px] text-brown/47 leading-snug line-clamp-2">{itemDescription(item)}</p>
-                    )}
-                    {/* Tags */}
-                    {item.tags && item.tags.length > 0 && (
-                      <div className="flex gap-1.5 flex-wrap">
-                        {item.tags.map((tag) => {
-                          const style = TAG_STYLES[tag]
-                          if (!style) return null
-                          return (
-                            <span
-                              key={tag}
-                              className="text-[10px] font-semibold px-2 py-[3px] rounded-[10px]"
-                              style={{ backgroundColor: style.bg, color: style.text }}
-                            >
-                              {style.label}
-                            </span>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Pre-order notice */}
-                  {item.advanceDaysRequired > 0 && (
-                    <div className="bg-[#FEF3CD] h-8 flex items-center justify-center">
-                      <span className="text-[11px] font-medium text-[#7A5D10]">
-                        {item.advanceDaysRequired >= 3
-                          ? t('advanceNotice3')
-                          : t('advanceNotice2')}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <MenuItemRow
+                  key={item.id}
+                  item={item}
+                  isExpanded={expandedItemId === item.id}
+                  onToggle={() => toggleExpanded(item.id)}
+                  displayName={itemDisplayName(item)}
+                  secondaryName={itemSecondaryName(item)}
+                  description={itemDescription(item)}
+                  t={t}
+                />
               ))}
             </div>
           )}

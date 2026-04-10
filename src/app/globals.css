@@ -123,6 +123,15 @@
   }
 }
 
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Skeleton loader */
 .skeleton-pulse {
   background-color: #F2EDE6;
