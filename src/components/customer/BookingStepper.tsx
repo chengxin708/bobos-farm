@@ -54,19 +54,19 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                    isCompleted ? 'bg-green border-green text-white'
-                      : isCurrent ? 'bg-amber border-amber text-white'
-                      : 'bg-white border-beige text-beige'
-                  } ${isClickable ? 'hover:ring-2 hover:ring-green/30' : ''}`}>
+                    isCompleted ? 'bg-[#6B7F5E] border-[#6B7F5E] text-white'
+                      : isCurrent ? 'bg-[#6B7F5E] border-[#6B7F5E] text-white'
+                      : 'bg-white border-[#E8ECE4] text-[#8C8478]'
+                  } ${isClickable ? 'hover:ring-2 hover:ring-[#6B7F5E]/30' : ''}`}>
                   {isCompleted ? <Check size={18} /> : step}
                 </div>
                 <span className={`text-xs font-medium ${
-                    isCurrent ? 'text-brown font-semibold' : isCompleted ? 'text-green' : 'text-[#8E8E93]'
+                    isCurrent ? 'text-[#1A1208] font-semibold' : isCompleted ? 'text-[#6B7F5E]' : 'text-[#8C8478]'
                   } ${isClickable ? 'hover:underline' : ''}`}>{label}</span>
               </button>
               {i < steps.length - 1 && (
                 <div className="flex items-center px-2 sm:px-4 pb-6">
-                  <div className={`w-24 border-t-2 ${step < currentStep ? 'border-green' : 'border-dashed border-beige'}`} />
+                  <div className={`w-24 border-t-2 ${step < currentStep ? 'border-[#6B7F5E]' : 'border-dashed border-[#E8ECE4]'}`} />
                 </div>
               )}
             </div>

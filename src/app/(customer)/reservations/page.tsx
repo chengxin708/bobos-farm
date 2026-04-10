@@ -276,11 +276,11 @@ export default function ReservationsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between px-4 pt-6 pb-2">
         <div>
-          <h1 className="font-playfair text-2xl font-bold text-[#3D2B1F]">
+          <h1 className="font-serif text-2xl font-bold text-[#1A1208]">
             {t('title')}
           </h1>
         </div>
-        <Link href="/settings" className="p-2 text-[#8E8E93] hover:text-[#3D2B1F] transition-colors">
+        <Link href="/settings" className="p-2 text-[#8E8E93] hover:text-[#1A1208] transition-colors">
           <Settings size={22} />
         </Link>
       </div>
@@ -310,7 +310,7 @@ export default function ReservationsPage() {
             <div className="w-20 h-20 rounded-full bg-[#E8ECE4] flex items-center justify-center">
               <CalendarDays size={36} className="text-[#6B7F5E]" />
             </div>
-            <h2 className="font-playfair text-xl font-bold text-[#3D2B1F]">
+            <h2 className="font-serif text-xl font-bold text-[#1A1208]">
               {t('emptyTitle')}
             </h2>
             <p className="text-sm text-[#8E8E93] text-center">
@@ -328,7 +328,7 @@ export default function ReservationsPage() {
         {/* ── Upcoming Section ───────────────────────────────── */}
         {upcoming.length > 0 && (
           <div className="flex flex-col gap-4">
-            <h2 className="font-playfair text-lg font-semibold text-[#3D2B1F]">
+            <h2 className="font-serif text-lg font-semibold text-[#1A1208]">
               {t('upcoming')}
             </h2>
 
@@ -352,7 +352,7 @@ export default function ReservationsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <CalendarDays size={18} className="text-[#6B7F5E] shrink-0 mt-0.5" />
-                      <span className="font-playfair text-lg font-semibold text-[#3D2B1F]">
+                      <span className="font-serif text-lg font-semibold text-[#1A1208]">
                         {formatLongDate(r.date)}
                       </span>
                     </div>
@@ -464,7 +464,7 @@ export default function ReservationsPage() {
         {/* ── Past Section ───────────────────────────────────── */}
         {past.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h2 className="font-playfair text-lg font-semibold text-[#8E8E93]">
+            <h2 className="font-serif text-lg font-semibold text-[#8E8E93]">
               {t('past')}
             </h2>
 
@@ -478,7 +478,7 @@ export default function ReservationsPage() {
                 >
                   {/* Date */}
                   <div className="flex items-center justify-between">
-                    <span className="font-playfair text-base font-semibold text-[#3D2B1F]/70">
+                    <span className="font-serif text-base font-semibold text-[#1A1208]/70">
                       {formatLongDate(r.date)}
                     </span>
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusCfg.bg} ${statusCfg.text}`}>
@@ -525,12 +525,12 @@ export default function ReservationsPage() {
           >
             {/* Sheet header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#F0EFED] sticky top-0 bg-white rounded-t-2xl z-10">
-              <h3 className="font-playfair text-lg font-bold text-[#3D2B1F]">
+              <h3 className="font-serif text-lg font-bold text-[#1A1208]">
                 {t('modify.title')}
               </h3>
               <button
                 onClick={closeModify}
-                className="p-1.5 text-[#8E8E93] hover:text-[#3D2B1F] cursor-pointer bg-transparent border-none transition-colors"
+                className="p-1.5 text-[#8E8E93] hover:text-[#1A1208] cursor-pointer bg-transparent border-none transition-colors"
               >
                 <X size={20} />
               </button>
@@ -539,12 +539,12 @@ export default function ReservationsPage() {
             <div className="px-5 py-4 flex flex-col gap-5">
               {/* Change Date */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#3D2B1F]">
+                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
                   <CalendarDays size={16} className="text-[#6B7F5E]" />
                   {t('modify.changeDate')}
                 </label>
                 <div className="flex items-center justify-between bg-[#F8F7F4] rounded-xl px-4 py-3">
-                  <span className="text-sm text-[#3D2B1F]">
+                  <span className="text-sm text-[#1A1208]">
                     {formatLongDate(modifyingReservation.date)}
                   </span>
                   <ChevronRight size={16} className="text-[#8E8E93]" />
@@ -556,7 +556,7 @@ export default function ReservationsPage() {
 
               {/* Guest Count */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#3D2B1F]">
+                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
                   <Users size={16} className="text-[#6B7F5E]" />
                   {t('modify.guestCount')}
                 </label>
@@ -566,9 +566,9 @@ export default function ReservationsPage() {
                     disabled={modifyGuestCount <= 1}
                     className="w-10 h-10 rounded-full border border-[#E0DFDC] flex items-center justify-center cursor-pointer bg-white hover:bg-[#F8F7F4] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Minus size={16} className="text-[#3D2B1F]" />
+                    <Minus size={16} className="text-[#1A1208]" />
                   </button>
-                  <span className="text-xl font-semibold text-[#3D2B1F] w-8 text-center tabular-nums">
+                  <span className="text-xl font-semibold text-[#1A1208] w-8 text-center tabular-nums">
                     {modifyGuestCount}
                   </span>
                   <button
@@ -576,7 +576,7 @@ export default function ReservationsPage() {
                     disabled={modifyGuestCount >= modifyingReservation.yurt.capacity}
                     className="w-10 h-10 rounded-full border border-[#E0DFDC] flex items-center justify-center cursor-pointer bg-white hover:bg-[#F8F7F4] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Plus size={16} className="text-[#3D2B1F]" />
+                    <Plus size={16} className="text-[#1A1208]" />
                   </button>
                 </div>
                 <p className="text-xs text-[#8E8E93]">
@@ -586,7 +586,7 @@ export default function ReservationsPage() {
 
               {/* Special Requests */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#3D2B1F]">
+                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
                   {t('modify.specialRequests')}
                 </label>
                 <textarea
@@ -594,7 +594,7 @@ export default function ReservationsPage() {
                   onChange={(e) => setModifySpecialRequests(e.target.value)}
                   placeholder={t('modify.specialRequestsPlaceholder')}
                   rows={3}
-                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#3D2B1F] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
+                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
                 />
               </div>
 
@@ -638,10 +638,10 @@ export default function ReservationsPage() {
         return (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 w-[400px] max-w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)] flex flex-col gap-4">
-              <h3 className="font-playfair text-xl font-bold text-[#3D2B1F]">
+              <h3 className="font-serif text-xl font-bold text-[#1A1208]">
                 {t('cancelDialog.title')}
               </h3>
-              <p className="text-sm text-[#3D2B1F]/60">
+              <p className="text-sm text-[#1A1208]/60">
                 {t('cancelDialog.message')}
               </p>
 
@@ -659,7 +659,7 @@ export default function ReservationsPage() {
 
               {/* Optional reason */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-[#3D2B1F]">
+                <label className="text-sm font-medium text-[#1A1208]">
                   {t('cancelDialog.reasonLabel')}
                 </label>
                 <textarea
@@ -667,7 +667,7 @@ export default function ReservationsPage() {
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder={t('cancelDialog.reasonPlaceholder')}
                   rows={2}
-                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#3D2B1F] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
+                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
                 />
               </div>
 

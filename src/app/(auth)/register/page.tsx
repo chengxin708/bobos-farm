@@ -110,15 +110,15 @@ export default function RegisterPage() {
   const formContent = (
     <div className="w-full max-w-[400px] px-6 md:px-8">
       {/* Logo */}
-      <h1 className="font-playfair text-2xl font-bold text-[#3D2B1F] text-center md:text-left">
+      <h1 className="font-serif text-2xl font-bold text-[#1A1208] text-center md:text-left">
         Bobo&apos;s Farm
       </h1>
-      <p className="text-sm text-[#3D2B1F]/50 text-center md:text-left mt-1 mb-10">
+      <p className="text-sm text-[#1A1208]/50 text-center md:text-left mt-1 mb-10">
         {t('subtitle')}
       </p>
 
       {/* Heading */}
-      <h2 className="font-playfair text-2xl font-semibold text-[#3D2B1F] mb-6">
+      <h2 className="font-serif text-2xl font-semibold text-[#1A1208] mb-6">
         {t('title')}
       </h2>
 
@@ -133,14 +133,14 @@ export default function RegisterPage() {
         {/* Name */}
         <div>
           <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <User size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <User size={18} className="text-[#1A1208]/30 shrink-0" />
             <input
               type="text"
               placeholder={t('namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
           </div>
         </div>
@@ -148,14 +148,14 @@ export default function RegisterPage() {
         {/* Email */}
         <div>
           <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <Mail size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <Mail size={18} className="text-[#1A1208]/30 shrink-0" />
             <input
               type="email"
               placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
           </div>
         </div>
@@ -163,14 +163,14 @@ export default function RegisterPage() {
         {/* Password */}
         <div>
           <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <Lock size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <Lock size={18} className="text-[#1A1208]/30 shrink-0" />
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
             <button
               type="button"
@@ -178,8 +178,8 @@ export default function RegisterPage() {
               className="bg-transparent border-none p-0 cursor-pointer shrink-0"
             >
               {showPassword
-                ? <Eye size={18} className="text-[#3D2B1F]/30" />
-                : <EyeOff size={18} className="text-[#3D2B1F]/30" />}
+                ? <Eye size={18} className="text-[#1A1208]/30" />
+                : <EyeOff size={18} className="text-[#1A1208]/30" />}
             </button>
           </div>
           {/* Strength bar */}
@@ -204,14 +204,14 @@ export default function RegisterPage() {
         {/* Confirm Password */}
         <div>
           <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <Lock size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <Lock size={18} className="text-[#1A1208]/30 shrink-0" />
             <input
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder={t('confirmPasswordPlaceholder')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
             <button
               type="button"
@@ -219,8 +219,8 @@ export default function RegisterPage() {
               className="bg-transparent border-none p-0 cursor-pointer shrink-0"
             >
               {showConfirmPassword
-                ? <Eye size={18} className="text-[#3D2B1F]/30" />
-                : <EyeOff size={18} className="text-[#3D2B1F]/30" />}
+                ? <Eye size={18} className="text-[#1A1208]/30" />
+                : <EyeOff size={18} className="text-[#1A1208]/30" />}
             </button>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function RegisterPage() {
       {/* Divider */}
       <div className="flex items-center gap-4 my-6">
         <div className="flex-1 h-px bg-[#E8ECE4]" />
-        <span className="text-xs text-[#3D2B1F]/40">{tCommon('or')}</span>
+        <span className="text-xs text-[#1A1208]/40">{tCommon('or')}</span>
         <div className="flex-1 h-px bg-[#E8ECE4]" />
       </div>
 
@@ -254,11 +254,11 @@ export default function RegisterPage() {
           <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
           <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
-        <span className="text-sm font-medium text-[#3D2B1F]">{t('continueWithGoogle')}</span>
+        <span className="text-sm font-medium text-[#1A1208]">{t('continueWithGoogle')}</span>
       </button>
 
       {/* Bottom link */}
-      <p className="text-center mt-6 text-sm text-[#3D2B1F]/50">
+      <p className="text-center mt-6 text-sm text-[#1A1208]/50">
         {t('hasAccount')}{' '}
         <Link href="/login" className="text-[#6B7F5E] font-medium no-underline hover:underline">
           {t('signIn')}

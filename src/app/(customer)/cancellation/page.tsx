@@ -2,61 +2,71 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { ChevronLeft } from 'lucide-react'
 
 export default function CancellationPolicyPage() {
   const t = useTranslations('legal.cancellation')
 
   return (
-    <div className="flex-1 bg-cream">
-      <div className="max-w-[760px] mx-auto px-6 sm:px-12 py-16 lg:py-24">
-        <h1 className="font-playfair text-[32px] lg:text-[40px] font-bold text-brown mb-2">
+    <div className="flex-1 bg-[#F8F7F4]">
+      <div className="max-w-[680px] mx-auto px-4 py-12 lg:py-20">
+        {/* Back link */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-[#8C8478] hover:text-[#6B7F5E] transition-colors no-underline mb-6"
+        >
+          <ChevronLeft size={16} />
+          Back
+        </Link>
+
+        <h1 className="font-serif text-[32px] lg:text-[40px] font-bold text-[#1A1208] mb-2">
           {t('title')}
         </h1>
-        <p className="text-sm text-brown/40 mb-10">{t('lastUpdated')}</p>
+        <p className="text-sm text-[#8C8478] mb-10">{t('lastUpdated')}</p>
 
-        <div className="flex flex-col gap-10">
+        <div className="space-y-8">
           {/* Policy Overview */}
-          <section>
-            <h2 className="font-playfair text-xl font-bold text-brown mb-3">{t('overview.title')}</h2>
-            <p className="text-[15px] text-brown/60 leading-[1.8]">{t('overview.body')}</p>
+          <section className="space-y-4">
+            <h2 className="font-serif text-xl font-bold text-[#1A1208]">{t('overview.title')}</h2>
+            <p className="text-base text-[#8C8478] leading-[1.8] font-sans">{t('overview.body')}</p>
           </section>
 
           {/* Refund Details */}
-          <section>
-            <div className="bg-white rounded-xl p-6 border border-beige flex flex-col gap-4">
+          <section className="space-y-4">
+            <div className="bg-white rounded-2xl p-6 border border-[#E8ECE4] flex flex-col gap-4">
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-green mt-2 shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-[#6B7F5E] mt-2 shrink-0" />
                 <div>
-                  <p className="text-[15px] font-semibold text-brown">{t('refund.eligible.title')}</p>
-                  <p className="text-sm text-brown/50 mt-1">{t('refund.eligible.desc')}</p>
+                  <p className="text-base font-medium text-[#1A1208]">{t('refund.eligible.title')}</p>
+                  <p className="text-sm text-[#8C8478] mt-1 leading-[1.8]">{t('refund.eligible.desc')}</p>
                 </div>
               </div>
-              <div className="h-px bg-beige" />
+              <div className="h-px bg-[#E8ECE4]" />
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#DC3545] mt-2 shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-[#C4453A] mt-2 shrink-0" />
                 <div>
-                  <p className="text-[15px] font-semibold text-brown">{t('refund.nonEligible.title')}</p>
-                  <p className="text-sm text-brown/50 mt-1">{t('refund.nonEligible.desc')}</p>
+                  <p className="text-base font-medium text-[#1A1208]">{t('refund.nonEligible.title')}</p>
+                  <p className="text-sm text-[#8C8478] mt-1 leading-[1.8]">{t('refund.nonEligible.desc')}</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* How to Cancel */}
-          <section>
-            <h2 className="font-playfair text-xl font-bold text-brown mb-3">{t('howToCancel.title')}</h2>
-            <p className="text-[15px] text-brown/60 leading-[1.8]">
+          <section className="space-y-4">
+            <h2 className="font-serif text-xl font-bold text-[#1A1208]">{t('howToCancel.title')}</h2>
+            <p className="text-base text-[#8C8478] leading-[1.8] font-sans">
               {t('howToCancel.body')}{' '}
-              <Link href="/reservations" className="text-amber font-medium no-underline hover:underline">
+              <Link href="/reservations" className="text-[#6B7F5E] font-medium no-underline hover:underline">
                 {t('howToCancel.reservationsLink')}
               </Link>
             </p>
           </section>
 
           {/* Disputes */}
-          <section>
-            <h2 className="font-playfair text-xl font-bold text-brown mb-3">{t('disputes.title')}</h2>
-            <p className="text-[15px] text-brown/60 leading-[1.8]">{t('disputes.body')}</p>
+          <section className="space-y-4">
+            <h2 className="font-serif text-xl font-bold text-[#1A1208]">{t('disputes.title')}</h2>
+            <p className="text-base text-[#8C8478] leading-[1.8] font-sans">{t('disputes.body')}</p>
           </section>
         </div>
       </div>
