@@ -1,175 +1,340 @@
 "use client"
 
+import { useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Tent, Users, CircleDollarSign, CircleCheck, ClipboardList, Timer } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import useSWR from 'swr'
+import { Tent, Users, CircleDollarSign, CircleCheck, ClipboardList, Timer, CalendarDays } from 'lucide-react'
 
-interface ReservationCard {
-  dow: string
-  day: string
-  month: string
-  yurt: string
-  guestCount: number
-  depositLine: string
-  depositColor: string
-  depositIcon: 'confirmed' | 'pending'
-  actionLine?: { text: string; link: string; linkLabel: string }
-  timerLine?: { text: string }
-  status: 'confirmed' | 'pendingPayment' | 'completed'
-  statusColor: string
-  borderLeft?: boolean
-  bgColor: string
-  actions?: ('reschedule' | 'payNow' | 'cancel')[]
+// ── Types ──────────────────────────────────────────────────────────
+
+interface ReservationUser {
+  id: string
+  name: string | null
+  email: string
+  phone: string | null
 }
 
-const reservations: ReservationCard[] = [
-  {
-    dow: 'SAT',
-    day: '15',
-    month: 'MAR 2026',
-    yurt: 'Golden Meadow',
-    guestCount: 12,
-    depositLine: '$300 deposit confirmed',
-    depositColor: '#5B8C3E',
-    depositIcon: 'confirmed',
-    actionLine: { text: 'notOrderedYet', link: '/pre-order', linkLabel: 'preOrderNow' },
-    status: 'confirmed',
-    statusColor: '#3B82F6',
-    bgColor: '#FFFFFF',
-    actions: ['reschedule', 'cancel'],
-  },
-  {
-    dow: 'SAT',
-    day: '22',
-    month: 'MAR 2026',
-    yurt: 'Sunset Ridge',
-    guestCount: 8,
-    depositLine: '$300 — awaiting payment',
-    depositColor: '#F4A623',
-    depositIcon: 'pending',
-    timerLine: { text: '11h 23m remaining' },
-    status: 'pendingPayment',
-    statusColor: '#F4A623',
-    borderLeft: true,
-    bgColor: '#FFFFFF',
-    actions: ['payNow', 'cancel'],
-  },
-  {
-    dow: 'SAT',
-    day: '8',
-    month: 'FEB 2026',
-    yurt: 'Willow Creek',
-    guestCount: 6,
-    depositLine: '$200 deposit paid',
-    depositColor: '#5B8C3E',
-    depositIcon: 'confirmed',
-    actionLine: { text: '10 items ordered', link: '#', linkLabel: 'viewOrder' },
-    status: 'completed',
-    statusColor: '#5B8C3E',
-    bgColor: '#FAFAF8',
-  },
-]
+interface ReservationYurt {
+  id: string
+  name: string
+  capacity: number
+}
+
+interface Reservation {
+  id: string
+  userId: string
+  yurtId: string
+  date: string
+  guestCount: number
+  specialRequests: string | null
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  depositAmount: number
+  depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
+  depositConfirmedAt: string | null
+  paymentReference: string | null
+  paymentScreenshotUrl: string | null
+  paymentDeadline: string | null
+  cancelledAt: string | null
+  cancelReason: string | null
+  createdAt: string
+  updatedAt: string
+  user: ReservationUser
+  yurt: ReservationYurt
+  order?: { id: string; status: string; items: { id: string }[] } | null
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
+
+function getTimeRemaining(deadline: string | null): string | null {
+  if (!deadline) return null
+  const now = Date.now()
+  const end = new Date(deadline).getTime()
+  const diff = end - now
+  if (diff <= 0) return 'Expired'
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  if (hours > 0) return `${hours}h ${minutes}m remaining`
+  return `${minutes}m remaining`
+}
+
+const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
+  CONFIRMED:         { bg: 'bg-[#3B82F6]', text: 'text-white', label: 'confirmed' },
+  PENDING_PAYMENT:   { bg: 'bg-[#F4A623]', text: 'text-white', label: 'pendingPayment' },
+  PAYMENT_SUBMITTED: { bg: 'bg-[#E67E22]', text: 'text-white', label: 'paymentSubmitted' },
+  COMPLETED:         { bg: 'bg-[#5B8C3E]', text: 'text-white', label: 'completed' },
+  CANCELLED:         { bg: 'bg-[#DC3545]', text: 'text-white', label: 'cancelled' },
+  EXPIRED:           { bg: 'bg-gray-400',   text: 'text-white', label: 'expired' },
+}
+
+// ── Component ──────────────────────────────────────────────────────
 
 export default function ReservationsPage() {
   const t = useTranslations('reservations')
+  const { status: sessionStatus } = useSession()
+  const router = useRouter()
+  const [cancelling, setCancelling] = useState<string | null>(null)
+
+  const { data: reservations, isLoading, mutate } = useSWR<Reservation[]>(
+    sessionStatus === 'authenticated' ? '/api/reservations' : null,
+    fetcher
+  )
+
+  // Redirect unauthenticated users
+  if (sessionStatus === 'unauthenticated') {
+    router.push('/auth/login')
+    return null
+  }
+
+  const handleCancel = useCallback(async (id: string) => {
+    if (!confirm('Are you sure you want to cancel this reservation?')) return
+    setCancelling(id)
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to cancel')
+        return
+      }
+      mutate()
+    } catch {
+      alert('Failed to cancel reservation')
+    } finally {
+      setCancelling(null)
+    }
+  }, [mutate])
+
+  // Sort: upcoming first (by date asc), then past (by date desc)
+  const sorted = [...(reservations || [])].sort((a, b) => {
+    const now = Date.now()
+    const aDate = new Date(a.date).getTime()
+    const bDate = new Date(b.date).getTime()
+    const aUpcoming = aDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(a.status)
+    const bUpcoming = bDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(b.status)
+
+    if (aUpcoming && !bUpcoming) return -1
+    if (!aUpcoming && bUpcoming) return 1
+    if (aUpcoming && bUpcoming) return aDate - bDate
+    return bDate - aDate
+  })
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr)
+    return {
+      dow: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
+      day: d.getDate().toString(),
+      month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase(),
+    }
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
-      <div className="flex-1 flex flex-col items-center py-[60px] px-20 gap-8">
+    <div className="flex flex-col min-h-0 flex-1 bg-cream overflow-auto">
+      <div className="flex-1 flex flex-col items-center py-[60px] px-6 md:px-20 gap-8">
         {/* Header */}
         <div className="flex flex-col items-center gap-2">
           <h1 className="font-playfair text-[32px] font-bold text-brown">{t('title')}</h1>
           <p className="text-base text-[#8E8E93]">{t('subtitle')}</p>
         </div>
 
-        {/* Cards */}
-        <div className="flex flex-col gap-4 w-[800px]">
-          {reservations.map((r) => (
-            <div
-              key={r.day + r.month}
-              className="flex gap-6 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
-              style={{
-                backgroundColor: r.bgColor,
-                borderLeft: r.borderLeft ? '4px solid #8B6914' : undefined,
-              }}
-            >
-              {/* Date Column */}
-              <div className="flex flex-col items-center gap-0.5 w-[72px] shrink-0">
-                <span className="text-[11px] font-bold text-[#8E8E93] tracking-[1.5px]">{r.dow}</span>
-                <span className="font-playfair text-[40px] font-bold text-brown leading-none">{r.day}</span>
-                <span className="text-[11px] text-[#8E8E93]">{r.month}</span>
-              </div>
+        {/* Loading */}
+        {(isLoading || sessionStatus === 'loading') && (
+          <div className="text-gray-text text-sm py-12">Loading...</div>
+        )}
 
-              {/* Divider */}
-              <div className="w-px bg-beige self-stretch" />
-
-              {/* Info Column */}
-              <div className="flex flex-col gap-2.5 flex-1">
-                <div className="flex items-center gap-2.5">
-                  <Tent size={18} className="text-amber" />
-                  <span className="text-base font-semibold text-brown">{r.yurt}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Users size={18} className="text-amber" />
-                  <span className="text-sm text-[#8E8E93]">{t('guests', { count: r.guestCount })}</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <CircleDollarSign size={18} style={{ color: r.depositColor }} />
-                  <span className="text-sm" style={{ color: r.depositColor }}>{r.depositLine}</span>
-                  {r.depositIcon === 'confirmed' && r.status !== 'completed' && (
-                    <CircleCheck size={16} className="text-green" />
-                  )}
-                </div>
-                {r.actionLine && (
-                  <div className="flex items-center gap-2.5">
-                    {r.status === 'completed' ? (
-                      <CircleCheck size={18} className="text-green" />
-                    ) : (
-                      <ClipboardList size={18} className="text-amber" />
-                    )}
-                    <span className="text-sm text-[#8E8E93]">{r.status === 'completed' ? r.actionLine.text : t(r.actionLine.text as 'notOrderedYet')}</span>
-                    <Link href={r.actionLine.link} className="text-sm font-semibold text-amber no-underline">
-                      {t(r.actionLine.linkLabel as 'preOrderNow' | 'viewOrder')}
-                    </Link>
-                  </div>
-                )}
-                {r.timerLine && (
-                  <div className="flex items-center gap-2.5">
-                    <Timer size={18} style={{ color: '#F4A623' }} />
-                    <span className="text-sm font-semibold" style={{ color: '#F4A623' }}>{r.timerLine.text}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column */}
-              <div className="flex flex-col items-end gap-3">
-                <span
-                  className="text-xs font-semibold text-white px-3.5 py-1 rounded-xl"
-                  style={{ backgroundColor: r.statusColor }}
-                >
-                  {t(`status.${r.status}`)}
-                </span>
-                <div className="flex-1" />
-                {r.actions?.includes('reschedule') && (
-                  <button className="text-[13px] font-medium text-brown px-5 py-2 rounded-lg border border-beige bg-white cursor-pointer">
-                    {t('actions.reschedule')}
-                  </button>
-                )}
-                {r.actions?.includes('payNow') && (
-                  <Link
-                    href="/booking/confirm"
-                    className="no-underline text-[13px] font-semibold text-white px-5 py-2 rounded-lg bg-gradient-to-r from-[#8B6914] to-[#A67C2E]"
-                  >
-                    {t('actions.payNow')}
-                  </Link>
-                )}
-                {r.actions?.includes('cancel') && (
-                  <span className="text-[13px] font-medium text-[#EF4444] cursor-pointer">{t('actions.cancel')}</span>
-                )}
-              </div>
+        {/* Empty state */}
+        {!isLoading && sorted.length === 0 && sessionStatus === 'authenticated' && (
+          <div className="flex flex-col items-center gap-5 py-16 w-[800px] max-w-full">
+            <div className="w-32 h-32 rounded-full bg-[#F9F6F1] flex items-center justify-center">
+              <CalendarDays size={48} className="text-beige" />
             </div>
-          ))}
-        </div>
+            <h2 className="font-playfair text-xl font-bold text-brown">{t('emptyTitle') || 'No reservations yet'}</h2>
+            <p className="text-sm text-[#8E8E93] text-center max-w-md">
+              {t('emptySubtitle') || 'Book your first yurt experience and enjoy a farm-to-table feast in the Hudson Valley.'}
+            </p>
+            <Link
+              href="/booking/date"
+              className="no-underline px-8 py-3 rounded-2xl bg-gradient-to-r from-[#8B6914] to-[#A67C2E] text-white text-sm font-semibold shadow-[0_4px_16px_rgba(139,105,20,0.2)]"
+            >
+              {t('bookFirst') || 'Book Your First Yurt'}
+            </Link>
+          </div>
+        )}
+
+        {/* Cards */}
+        {sorted.length > 0 && (
+          <div className="flex flex-col gap-4 w-[800px] max-w-full">
+            {sorted.map((r) => {
+              const dateInfo = formatDate(r.date)
+              const statusCfg = STATUS_CONFIG[r.status] || STATUS_CONFIG.EXPIRED
+              const isTerminal = ['COMPLETED', 'CANCELLED', 'EXPIRED'].includes(r.status)
+              const isMuted = isTerminal
+              const isPendingPayment = r.status === 'PENDING_PAYMENT'
+              const isPaymentSubmitted = r.status === 'PAYMENT_SUBMITTED'
+              const isConfirmed = r.status === 'CONFIRMED'
+              const timeLeft = getTimeRemaining(r.paymentDeadline)
+              const isCancelling = cancelling === r.id
+
+              return (
+                <div
+                  key={r.id}
+                  className="flex gap-6 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+                  style={{
+                    backgroundColor: isMuted ? '#FAFAF8' : '#FFFFFF',
+                    borderLeft: isPendingPayment ? '4px solid #8B6914' : undefined,
+                    opacity: isMuted ? 0.8 : 1,
+                  }}
+                >
+                  {/* Date Column */}
+                  <div className="flex flex-col items-center gap-0.5 w-[72px] shrink-0">
+                    <span className="text-[11px] font-bold text-[#8E8E93] tracking-[1.5px]">{dateInfo.dow}</span>
+                    <span className="font-playfair text-[40px] font-bold text-brown leading-none">{dateInfo.day}</span>
+                    <span className="text-[11px] text-[#8E8E93]">{dateInfo.month}</span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="w-px bg-beige self-stretch" />
+
+                  {/* Info Column */}
+                  <div className="flex flex-col gap-2.5 flex-1">
+                    <div className="flex items-center gap-2.5">
+                      <Tent size={18} className="text-amber" />
+                      <span className="text-base font-semibold text-brown">{r.yurt?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Users size={18} className="text-amber" />
+                      <span className="text-sm text-[#8E8E93]">{t('guests', { count: r.guestCount })}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <CircleDollarSign
+                        size={18}
+                        className={r.depositStatus === 'CONFIRMED' ? 'text-[#5B8C3E]' : 'text-[#F4A623]'}
+                      />
+                      <span className={`text-sm ${r.depositStatus === 'CONFIRMED' ? 'text-[#5B8C3E]' : 'text-[#F4A623]'}`}>
+                        ${r.depositAmount} {r.depositStatus === 'CONFIRMED' ? 'deposit confirmed' :
+                          r.depositStatus === 'REFUNDED' ? 'refunded' :
+                          r.depositStatus === 'PENDING' ? 'payment submitted' :
+                          'awaiting payment'}
+                      </span>
+                      {r.depositStatus === 'CONFIRMED' && !isTerminal && (
+                        <CircleCheck size={16} className="text-[#5B8C3E]" />
+                      )}
+                    </div>
+
+                    {/* Pre-order line for confirmed */}
+                    {isConfirmed && (
+                      <div className="flex items-center gap-2.5">
+                        <ClipboardList size={18} className="text-amber" />
+                        {r.order && r.order.items.length > 0 ? (
+                          <>
+                            <span className="text-sm text-[#8E8E93]">{r.order.items.length} items ordered</span>
+                            <Link href={`/pre-order?reservationId=${r.id}`} className="text-sm font-semibold text-amber no-underline">
+                              {t('viewOrder')}
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm text-[#8E8E93]">{t('notOrderedYet')}</span>
+                            <Link href={`/pre-order?reservationId=${r.id}`} className="text-sm font-semibold text-amber no-underline">
+                              {t('preOrderNow')}
+                            </Link>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Timer for pending payment */}
+                    {isPendingPayment && timeLeft && (
+                      <div className="flex items-center gap-2.5">
+                        <Timer size={18} className="text-[#F4A623]" />
+                        <span className="text-sm font-semibold text-[#F4A623]">{timeLeft}</span>
+                      </div>
+                    )}
+
+                    {/* Payment submitted notice */}
+                    {isPaymentSubmitted && (
+                      <div className="flex items-center gap-2.5">
+                        <Timer size={18} className="text-[#E67E22]" />
+                        <span className="text-sm text-[#E67E22]">Waiting for admin confirmation</span>
+                      </div>
+                    )}
+
+                    {/* Cancel reason */}
+                    {r.status === 'CANCELLED' && r.cancelReason && (
+                      <div className="text-xs text-[#DC3545] bg-[#DC3545]/5 px-3 py-1.5 rounded-lg mt-1">
+                        Reason: {r.cancelReason}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Status + Actions */}
+                  <div className="flex flex-col items-end gap-3">
+                    <span
+                      className={`text-xs font-semibold px-3.5 py-1 rounded-xl ${statusCfg.bg} ${statusCfg.text}`}
+                    >
+                      {t(`status.${statusCfg.label}`)}
+                    </span>
+                    <div className="flex-1" />
+
+                    {/* Actions based on status */}
+                    {isConfirmed && (
+                      <>
+                        <Link
+                          href={`/pre-order?reservationId=${r.id}`}
+                          className="no-underline text-[13px] font-semibold text-white px-5 py-2 rounded-lg bg-gradient-to-r from-[#8B6914] to-[#A67C2E]"
+                        >
+                          Pre-Order Menu
+                        </Link>
+                        <button className="text-[13px] font-medium text-brown px-5 py-2 rounded-lg border border-beige bg-white cursor-pointer">
+                          {t('actions.reschedule')}
+                        </button>
+                        <button
+                          onClick={() => handleCancel(r.id)}
+                          disabled={isCancelling}
+                          className="text-[13px] font-medium text-[#EF4444] cursor-pointer disabled:opacity-50 bg-transparent border-none"
+                        >
+                          {t('actions.cancel')}
+                        </button>
+                      </>
+                    )}
+                    {isPendingPayment && (
+                      <>
+                        <Link
+                          href="/booking/confirm"
+                          className="no-underline text-[13px] font-semibold text-white px-5 py-2 rounded-lg bg-gradient-to-r from-[#8B6914] to-[#A67C2E]"
+                        >
+                          {t('actions.payNow')}
+                        </Link>
+                        <button
+                          onClick={() => handleCancel(r.id)}
+                          disabled={isCancelling}
+                          className="text-[13px] font-medium text-[#EF4444] cursor-pointer disabled:opacity-50 bg-transparent border-none"
+                        >
+                          {t('actions.cancel')}
+                        </button>
+                      </>
+                    )}
+                    {isPaymentSubmitted && (
+                      <span className="text-[13px] text-[#8E8E93] italic">Awaiting confirmation</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

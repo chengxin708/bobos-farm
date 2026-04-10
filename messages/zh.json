@@ -238,17 +238,24 @@
     "status": {
       "confirmed": "已确认",
       "pendingPayment": "待付款",
-      "completed": "已完成"
+      "paymentSubmitted": "已提交付款",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "expired": "已过期"
     },
     "actions": {
       "reschedule": "改期",
       "payNow": "立即付款",
-      "cancel": "取消"
+      "cancel": "取消",
+      "preOrderMenu": "预订菜品"
     },
     "notOrderedYet": "尚未预订菜品 —",
     "preOrderNow": "立即预订菜品 →",
     "viewOrder": "查看订单 →",
-    "guests": "{count}位宾客"
+    "guests": "{count}位宾客",
+    "emptyTitle": "暂无预订",
+    "emptySubtitle": "预订您的第一次蒙古包体验，享受哈德逊河谷的农场到餐桌盛宴。",
+    "bookFirst": "预订第一个蒙古包"
   },
   "preOrder": {
     "infoBar": "预订菜品：{date} — {yurt} — {guests}位宾客",
@@ -268,7 +275,8 @@
     "kitchenNotes": "厨房备注",
     "kitchenNotesPlaceholder": "有什么特别需要告知厨房的吗？",
     "paymentNote": "以上为预估金额，最终付款将在用餐当天通过Zelle结清。",
-    "submitOrder": "提交预订单"
+    "submitOrder": "提交预订单",
+    "saveDraft": "保存草稿"
   },
   "customerSettings": {
     "title": "设置",
@@ -467,7 +475,8 @@
       "actions": {
         "confirmDeposit": "确认定金",
         "notReceived": "未收到",
-        "remind": "发送提醒"
+        "remind": "发送提醒",
+        "reject": "拒绝"
       }
     },
     "calendar": {

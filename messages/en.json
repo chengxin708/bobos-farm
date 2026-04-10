@@ -238,17 +238,24 @@
     "status": {
       "confirmed": "Confirmed",
       "pendingPayment": "Pending Payment",
-      "completed": "Completed"
+      "paymentSubmitted": "Payment Submitted",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "expired": "Expired"
     },
     "actions": {
       "reschedule": "Reschedule",
       "payNow": "Pay Now",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "preOrderMenu": "Pre-Order Menu"
     },
     "notOrderedYet": "Not ordered yet —",
     "preOrderNow": "Pre-Order Now →",
     "viewOrder": "View Order →",
-    "guests": "{count} guests"
+    "guests": "{count} guests",
+    "emptyTitle": "No reservations yet",
+    "emptySubtitle": "Book your first yurt experience and enjoy a farm-to-table feast in the Hudson Valley.",
+    "bookFirst": "Book Your First Yurt"
   },
   "preOrder": {
     "infoBar": "Pre-Order for {date} — {yurt} — {guests} guests",
@@ -268,7 +275,8 @@
     "kitchenNotes": "Notes for the kitchen",
     "kitchenNotesPlaceholder": "Any special notes for the kitchen?",
     "paymentNote": "This is an estimate. Final payment collected on-site via Zelle.",
-    "submitOrder": "Submit Pre-Order"
+    "submitOrder": "Submit Pre-Order",
+    "saveDraft": "Save Draft"
   },
   "customerSettings": {
     "title": "Settings",
@@ -467,7 +475,8 @@
       "actions": {
         "confirmDeposit": "Confirm Deposit",
         "notReceived": "Not Received",
-        "remind": "Remind"
+        "remind": "Remind",
+        "reject": "Reject"
       }
     },
     "calendar": {

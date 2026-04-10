@@ -1,52 +1,336 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
 import { ChevronLeft, ChevronRight, Save } from 'lucide-react'
 
-type DateStatus = 'open' | 'closed' | 'limited' | 'custom'
+// ── Types ──────────────────────────────────────────────────────────
 
-const statusColors: Record<DateStatus, string> = {
-  open: 'bg-white',
-  closed: 'bg-[#FDE8E8]',
-  limited: 'bg-[#FEF3CD]',
-  custom: 'bg-light-blue-bg',
+interface Yurt {
+  id: string
+  name: string
+  capacity: number
+  status: string
 }
 
-// Sample calendar data
-const calendarData: Record<number, DateStatus> = {
-  1: 'open', 2: 'open', 3: 'open', 4: 'closed', 5: 'closed', 6: 'open', 7: 'open',
-  8: 'closed', 9: 'closed', 10: 'open', 11: 'open', 12: 'closed', 13: 'limited', 14: 'open',
-  15: 'open', 16: 'open', 17: 'open', 18: 'open', 19: 'open', 20: 'limited', 21: 'open',
-  22: 'open', 23: 'open', 24: 'open', 25: 'open', 26: 'open', 27: 'open', 28: 'custom',
-  29: 'open', 30: 'open', 31: 'open',
+interface AvailabilityEntry {
+  id: string
+  yurtId: string
+  date: string
+  isOpen: boolean
+  note: string | null
+  yurt: { id: string; name: string }
 }
 
-const closedDates = [4, 5, 8, 9, 12]
+interface ReservationUser {
+  id: string
+  name: string | null
+  email: string
+}
 
-const reservationsOnDay = [
-  { name: 'Mike Johnson', dates: 'Mar 14 - Mar 16', guests: 4, status: 'Confirmed' },
-]
+interface Reservation {
+  id: string
+  yurtId: string
+  date: string
+  guestCount: number
+  status: string
+  user: ReservationUser
+  yurt: { id: string; name: string }
+}
 
-const perYurtAvailability = [
-  { name: 'Golden Meadow', status: 'Available', color: 'bg-green' },
-  { name: 'Silver Creek', status: 'Available', color: 'bg-green' },
-  { name: 'Jade Valley', status: 'Available', color: 'bg-green' },
-]
+// ── Helpers ────────────────────────────────────────────────────────
 
-const dayHeaders = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
+
+const DAY_HEADERS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+function getMonthDays(year: number, month: number): { date: Date; day: number }[] {
+  const days: { date: Date; day: number }[] = []
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push({ date: new Date(year, month, d), day: d })
+  }
+  return days
+}
+
+function toDateKey(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+function formatDateISO(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+// ── Component ──────────────────────────────────────────────────────
 
 export default function Availability() {
   const t = useTranslations('admin.availability')
-  const [selectedDate, setSelectedDate] = useState(14)
-  const startDay = 6
-  const daysInMonth = 31
+  const { data: session, status: sessionStatus } = useSession()
+  const router = useRouter()
 
+  // Calendar state
+  const now = new Date()
+  const [currentYear, setCurrentYear] = useState(now.getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth())
+  const [selectedDate, setSelectedDate] = useState<number | null>(null)
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
+  const [adminNote, setAdminNote] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Bulk range state
+  const [openStart, setOpenStart] = useState('')
+  const [openEnd, setOpenEnd] = useState('')
+  const [closeStart, setCloseStart] = useState('')
+  const [closeEnd, setCloseEnd] = useState('')
+
+  // Redirect non-admin
+  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+    router.push('/')
+    return null
+  }
+
+  // Compute date range for API
+  const startDate = formatDateISO(currentYear, currentMonth, 1)
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  const endDate = formatDateISO(currentYear, currentMonth, daysInMonth)
+
+  // Fetch data
+  const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher)
+  const { data: availability, mutate: mutateAvailability } = useSWR<AvailabilityEntry[]>(
+    `/api/availability?startDate=${startDate}&endDate=${endDate}`,
+    fetcher
+  )
+  const { data: reservations } = useSWR<Reservation[]>(
+    `/api/reservations?startDate=${startDate}&endDate=${endDate}`,
+    fetcher
+  )
+
+  // Index availability by date+yurt
+  const availabilityIndex = useMemo(() => {
+    const idx: Record<string, Record<string, AvailabilityEntry>> = {}
+    availability?.forEach(a => {
+      const dateKey = toDateKey(new Date(a.date))
+      if (!idx[dateKey]) idx[dateKey] = {}
+      idx[dateKey][a.yurtId] = a
+    })
+    return idx
+  }, [availability])
+
+  // Index reservations by date
+  const reservationsByDate = useMemo(() => {
+    const idx: Record<string, Reservation[]> = {}
+    reservations?.forEach(r => {
+      if (['CANCELLED', 'EXPIRED'].includes(r.status)) return
+      const dateKey = toDateKey(new Date(r.date))
+      if (!idx[dateKey]) idx[dateKey] = []
+      idx[dateKey].push(r)
+    })
+    return idx
+  }, [reservations])
+
+  // Calendar cells
+  const monthDays = getMonthDays(currentYear, currentMonth)
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
   const cells: (number | null)[] = []
-  for (let i = 0; i < startDay; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null)
+  monthDays.forEach(d => cells.push(d.day))
   while (cells.length % 7 !== 0) cells.push(null)
+
+  // Get status for a date cell
+  const getCellStatus = (day: number): { allOpen: boolean; allClosed: boolean; hasMixed: boolean; hasReservations: boolean; resCount: number } => {
+    const dateKey = formatDateISO(currentYear, currentMonth, day)
+    const dateAvail = availabilityIndex[dateKey] || {}
+    const yurtList = yurts || []
+    const dateRes = reservationsByDate[dateKey] || []
+
+    let openCount = 0
+    let closedCount = 0
+
+    yurtList.forEach(yurt => {
+      const a = dateAvail[yurt.id]
+      if (a && !a.isOpen) closedCount++
+      else openCount++ // default is open if no entry
+    })
+
+    return {
+      allOpen: closedCount === 0 && openCount > 0,
+      allClosed: openCount === 0 && closedCount > 0,
+      hasMixed: openCount > 0 && closedCount > 0,
+      hasReservations: dateRes.length > 0,
+      resCount: dateRes.length,
+    }
+  }
+
+  // Navigation
+  const prevMonth = () => {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
+    else setCurrentMonth(m => m - 1)
+    setSelectedDate(null)
+    setSelectedDates(new Set())
+  }
+
+  const nextMonth = () => {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
+    else setCurrentMonth(m => m + 1)
+    setSelectedDate(null)
+    setSelectedDates(new Set())
+  }
+
+  const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  // Handle date click (with shift for multi-select)
+  const handleDateClick = useCallback((day: number, shiftKey: boolean) => {
+    const dateKey = formatDateISO(currentYear, currentMonth, day)
+    if (shiftKey) {
+      setSelectedDates(prev => {
+        const next = new Set(prev)
+        if (next.has(dateKey)) next.delete(dateKey)
+        else next.add(dateKey)
+        return next
+      })
+    } else {
+      setSelectedDate(day)
+      setSelectedDates(new Set())
+      // Load note for selected date
+      const dateAvail = availabilityIndex[dateKey] || {}
+      const firstEntry = Object.values(dateAvail)[0]
+      setAdminNote(firstEntry?.note || '')
+    }
+  }, [currentYear, currentMonth, availabilityIndex])
+
+  // Per-yurt toggle on selected date
+  const handleToggleYurt = useCallback(async (yurtId: string, isOpen: boolean) => {
+    if (selectedDate === null) return
+    setSaving(true)
+    try {
+      await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          yurtId,
+          date: formatDateISO(currentYear, currentMonth, selectedDate),
+          isOpen,
+        }),
+      })
+      mutateAvailability()
+    } catch {
+      alert('Failed to update availability')
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedDate, currentYear, currentMonth, mutateAvailability])
+
+  // Save admin note
+  const handleSaveNote = useCallback(async () => {
+    if (selectedDate === null || !yurts?.length) return
+    setSaving(true)
+    try {
+      // Save note for all yurts on this date
+      for (const yurt of yurts) {
+        const dateKey = formatDateISO(currentYear, currentMonth, selectedDate)
+        const existing = availabilityIndex[dateKey]?.[yurt.id]
+        await fetch('/api/availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            yurtId: yurt.id,
+            date: dateKey,
+            isOpen: existing ? existing.isOpen : true,
+            note: adminNote,
+          }),
+        })
+      }
+      mutateAvailability()
+    } catch {
+      alert('Failed to save note')
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedDate, currentYear, currentMonth, yurts, adminNote, availabilityIndex, mutateAvailability])
+
+  // Bulk open/close
+  const handleBulkAction = useCallback(async (isOpen: boolean, start: string, end: string) => {
+    if (!start || !end) { alert('Please fill both start and end dates'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/availability/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startDate: start, endDate: end, isOpen }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to update')
+        return
+      }
+      mutateAvailability()
+    } catch {
+      alert('Failed to bulk update')
+    } finally {
+      setSaving(false)
+    }
+  }, [mutateAvailability])
+
+  // Batch from multi-select
+  const handleBatchSelected = useCallback(async (isOpen: boolean) => {
+    if (selectedDates.size === 0) return
+    setSaving(true)
+    try {
+      const dates = Array.from(selectedDates).sort()
+      await fetch('/api/availability/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: dates[0],
+          endDate: dates[dates.length - 1],
+          isOpen,
+        }),
+      })
+      mutateAvailability()
+      setSelectedDates(new Set())
+    } catch {
+      alert('Failed to batch update')
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedDates, mutateAvailability])
+
+  // Selected date info
+  const selectedDateKey = selectedDate !== null ? formatDateISO(currentYear, currentMonth, selectedDate) : null
+  const selectedDateAvail = selectedDateKey ? (availabilityIndex[selectedDateKey] || {}) : {}
+  const selectedDateRes = selectedDateKey ? (reservationsByDate[selectedDateKey] || []) : []
+  const selectedDateLabel = selectedDate !== null
+    ? new Date(currentYear, currentMonth, selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : ''
+
+  // Yurt availability for selected date
+  const yurtAvailList = (yurts || []).map(yurt => {
+    const entry = selectedDateAvail[yurt.id]
+    const isOpen = entry ? entry.isOpen : true // default open
+    return { ...yurt, isOpen }
+  })
+
+  const openYurtCount = yurtAvailList.filter(y => y.isOpen).length
+
+  // ── Loading state ────────────────────────────────────────────
+
+  if (sessionStatus === 'loading') {
+    return (
+      <>
+        <TopBar title={t('title')} />
+        <div className="flex-1 p-6 flex items-center justify-center bg-cream-bg">
+          <p className="text-gray-text">Loading...</p>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -57,22 +341,55 @@ export default function Availability() {
           {/* Date Range Controls */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-brown">{t('openRange')}</span>
-            <input type="text" className="border border-beige rounded-md px-3 py-1.5 text-sm w-28" placeholder="Mar 1" />
-            <span className="text-sm text-gray-text">–</span>
-            <input type="text" className="border border-beige rounded-md px-3 py-1.5 text-sm w-28" placeholder="Mar 12" />
-            <button className="bg-green text-white text-sm font-semibold px-3 py-1.5 rounded-md">{t('openAll')}</button>
+            <input
+              type="date"
+              value={openStart}
+              onChange={(e) => setOpenStart(e.target.value)}
+              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
+            />
+            <span className="text-sm text-gray-text">-</span>
+            <input
+              type="date"
+              value={openEnd}
+              onChange={(e) => setOpenEnd(e.target.value)}
+              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
+            />
+            <button
+              onClick={() => handleBulkAction(true, openStart, openEnd)}
+              disabled={saving}
+              className="bg-[#5B8C3E] text-white text-sm font-semibold px-3 py-1.5 rounded-md disabled:opacity-50"
+            >
+              {t('openAll')}
+            </button>
+
             <span className="text-sm font-semibold text-brown ml-4">{t('closeRange')}</span>
-            <input type="text" className="border border-beige rounded-md px-3 py-1.5 text-sm w-28" placeholder="Apr 1" />
-            <span className="text-sm text-gray-text">–</span>
-            <input type="text" className="border border-beige rounded-md px-3 py-1.5 text-sm w-28" placeholder="" />
-            <button className="bg-red text-white text-sm font-semibold px-3 py-1.5 rounded-md">{t('closeAll')}</button>
+            <input
+              type="date"
+              value={closeStart}
+              onChange={(e) => setCloseStart(e.target.value)}
+              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
+            />
+            <span className="text-sm text-gray-text">-</span>
+            <input
+              type="date"
+              value={closeEnd}
+              onChange={(e) => setCloseEnd(e.target.value)}
+              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
+            />
+            <button
+              onClick={() => handleBulkAction(false, closeStart, closeEnd)}
+              disabled={saving}
+              className="bg-[#DC3545] text-white text-sm font-semibold px-3 py-1.5 rounded-md disabled:opacity-50"
+            >
+              {t('closeAll')}
+            </button>
           </div>
 
           {/* Month Nav */}
           <div className="flex items-center gap-3">
-            <ChevronLeft size={16} className="text-brown cursor-pointer" />
-            <span className="text-sm font-bold text-brown">March 2026</span>
-            <ChevronRight size={16} className="text-brown cursor-pointer" />
+            <ChevronLeft size={16} className="text-brown cursor-pointer" onClick={prevMonth} />
+            <span className="text-sm font-bold text-brown">{monthLabel}</span>
+            <ChevronRight size={16} className="text-brown cursor-pointer" onClick={nextMonth} />
             <div className="flex items-center gap-4 ml-4">
               <span className="flex items-center gap-1.5 text-xs text-gray-text">
                 <span className="w-3 h-3 rounded-sm bg-white border border-beige" /> {t('legend.open')}
@@ -83,19 +400,13 @@ export default function Availability() {
               <span className="flex items-center gap-1.5 text-xs text-gray-text">
                 <span className="w-3 h-3 rounded-sm bg-[#FEF3CD]" /> {t('legend.limited')}
               </span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-text">
-                <span className="w-3 h-3 rounded-sm bg-light-blue-bg" /> {t('legend.custom')}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-text">
-                <span className="w-3 h-3 rounded-sm bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,#F5C6CB_3px,#F5C6CB_6px)]" /> {t('legend.noAvailability')}
-              </span>
             </div>
           </div>
 
           {/* Calendar Grid */}
           <div className="bg-white rounded-xl border border-beige overflow-hidden">
             <div className="grid grid-cols-7">
-              {dayHeaders.map((d) => (
+              {DAY_HEADERS.map((d) => (
                 <div key={d} className="text-center py-2 text-xs font-semibold text-gray-text border-b border-beige">
                   {d}
                 </div>
@@ -103,28 +414,42 @@ export default function Availability() {
             </div>
             <div className="grid grid-cols-7">
               {cells.map((day, idx) => {
-                const status = day ? calendarData[day] || 'open' : 'open'
-                const isClosed = day ? closedDates.includes(day) : false
+                if (day === null) {
+                  return (
+                    <div key={idx} className="min-h-[70px] p-2 border-b border-r border-beige/50 bg-gray-50/50" />
+                  )
+                }
+
+                const status = getCellStatus(day)
+                const dateKey = formatDateISO(currentYear, currentMonth, day)
+                const isSelected = day === selectedDate
+                const isMultiSelected = selectedDates.has(dateKey)
+
+                let bgColor = 'bg-white'
+                if (status.allClosed) bgColor = 'bg-[#FDE8E8]'
+                else if (status.hasMixed) bgColor = 'bg-[#FEF3CD]'
+
                 return (
                   <div
                     key={idx}
-                    onClick={() => day && setSelectedDate(day)}
-                    className={`min-h-[70px] p-2 border-b border-r border-cell-border cursor-pointer ${
-                      day === null ? 'bg-gray-50/50' : statusColors[status as DateStatus]
-                    } ${day === selectedDate ? 'ring-2 ring-amber ring-inset' : ''} ${
-                      isClosed ? 'bg-[repeating-linear-gradient(45deg,#FDE8E8,#FDE8E8_3px,#F5C6CB_3px,#F5C6CB_6px)]' : ''
-                    }`}
+                    onClick={(e) => handleDateClick(day, e.shiftKey)}
+                    className={`min-h-[70px] p-2 border-b border-r border-beige/50 cursor-pointer transition-colors ${bgColor} ${
+                      isSelected ? 'ring-2 ring-amber ring-inset' : ''
+                    } ${isMultiSelected ? 'ring-2 ring-[#3B82F6] ring-inset' : ''}`}
                   >
-                    {day !== null && (
-                      <span className={`text-xs font-semibold ${day === selectedDate ? 'text-amber' : 'text-brown'}`}>
-                        {day}
-                      </span>
+                    <span className={`text-xs font-semibold ${isSelected ? 'text-amber' : 'text-brown'}`}>
+                      {day}
+                    </span>
+                    {status.hasReservations && (
+                      <div className="text-[9px] mt-1 text-[#3B82F6] font-medium">
+                        {status.resCount} res
+                      </div>
                     )}
-                    {day && calendarData[day] === 'limited' && (
-                      <div className="text-[9px] mt-1 text-[#D4A017]">{t('legend.limited')}</div>
+                    {status.hasMixed && (
+                      <div className="text-[9px] mt-0.5 text-[#D4A017]">{t('legend.limited')}</div>
                     )}
-                    {day && calendarData[day] === 'custom' && (
-                      <div className="text-[9px] mt-1 text-blue">{t('legend.custom')}</div>
+                    {status.allClosed && (
+                      <div className="text-[9px] mt-0.5 text-[#DC3545]">{t('legend.closed')}</div>
                     )}
                   </div>
                 )
@@ -133,56 +458,108 @@ export default function Availability() {
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-beige">
-            <span className="text-sm text-brown font-medium">5 {t('datesSelected').replace('{count} ', '')}</span>
-            <button className="bg-green text-white text-sm font-semibold px-4 py-1.5 rounded-md">{t('openAll')}</button>
-            <button className="bg-red text-white text-sm font-semibold px-4 py-1.5 rounded-md">{t('closeAll')}</button>
-          </div>
+          {selectedDates.size > 0 && (
+            <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-beige">
+              <span className="text-sm text-brown font-medium">{selectedDates.size} dates selected</span>
+              <button
+                onClick={() => handleBatchSelected(true)}
+                disabled={saving}
+                className="bg-[#5B8C3E] text-white text-sm font-semibold px-4 py-1.5 rounded-md disabled:opacity-50"
+              >
+                {t('openAll')}
+              </button>
+              <button
+                onClick={() => handleBatchSelected(false)}
+                disabled={saving}
+                className="bg-[#DC3545] text-white text-sm font-semibold px-4 py-1.5 rounded-md disabled:opacity-50"
+              >
+                {t('closeAll')}
+              </button>
+              <button
+                onClick={() => setSelectedDates(new Set())}
+                className="text-sm text-gray-text hover:text-brown ml-auto"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar */}
         <div className="w-[280px] flex flex-col gap-4 shrink-0">
-          <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-            <div className="text-sm font-bold text-brown">
-              Saturday, March {selectedDate}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-text">
-              <span className="w-3 h-3 rounded-sm bg-white border border-beige" /> {t('legend.open')} • 3 {t('dayDetail.remaining')}
-            </div>
+          {selectedDate !== null ? (
+            <>
+              {/* Date info */}
+              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
+                <div className="text-sm font-bold text-brown">{selectedDateLabel}</div>
+                <div className="flex items-center gap-1.5 text-xs text-gray-text">
+                  <span className="w-3 h-3 rounded-sm bg-white border border-beige" />
+                  {t('legend.open')} - {openYurtCount} {t('dayDetail.remaining')}
+                </div>
 
-            <div className="text-xs font-bold text-brown mt-2">{t('dayDetail.perYurtAvailability')}</div>
-            {perYurtAvailability.map((y) => (
-              <div key={y.name} className="flex items-center gap-2">
-                <div className={`w-2.5 h-2.5 rounded-full ${y.color}`} />
-                <span className="text-xs text-brown">{y.name}</span>
+                <div className="text-xs font-bold text-brown mt-2">{t('dayDetail.perYurtAvailability')}</div>
+                {yurtAvailList.map((yurt) => (
+                  <div key={yurt.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full ${yurt.isOpen ? 'bg-[#5B8C3E]' : 'bg-[#DC3545]'}`} />
+                      <span className="text-xs text-brown">{yurt.name}</span>
+                    </div>
+                    <button
+                      onClick={() => handleToggleYurt(yurt.id, !yurt.isOpen)}
+                      disabled={saving}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer border-none disabled:opacity-50 ${
+                        yurt.isOpen
+                          ? 'bg-[#EAF2E3] text-[#5B8C3E]'
+                          : 'bg-[#FFE0E0] text-[#DC3545]'
+                      }`}
+                    >
+                      {yurt.isOpen ? 'Open' : 'Closed'}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-brown">{t('dayDetail.reservations')} (1)</span>
-              <button className="text-xs text-green font-semibold">{t('dayDetail.confirm')}</button>
-            </div>
-            {reservationsOnDay.map((r) => (
-              <div key={r.name} className="text-xs">
-                <div className="font-medium text-brown">{r.name}</div>
-                <div className="text-gray-text">{r.dates} • {r.guests} guests</div>
+              {/* Reservations on date */}
+              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-brown">{t('dayDetail.reservations')} ({selectedDateRes.length})</span>
+                </div>
+                {selectedDateRes.length === 0 ? (
+                  <div className="text-xs text-gray-text">No reservations</div>
+                ) : (
+                  selectedDateRes.map((r) => (
+                    <div key={r.id} className="text-xs">
+                      <div className="font-medium text-brown">{r.user?.name || 'Unknown'}</div>
+                      <div className="text-gray-text">{r.yurt?.name} - {r.guestCount} guests - {r.status}</div>
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
-          </div>
 
-          <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-            <span className="text-xs font-bold text-brown">{t('dayDetail.adminNote')}</span>
-            <textarea
-              className="border border-beige rounded-md p-2 text-xs h-20 resize-none"
-              placeholder="Private note (e.g. overflow / extra shift needed)"
-              defaultValue="VIP customer: 1 × meadow & 1 extra shift needed for Golden Meadow in afternoon."
-            />
-            <button className="bg-green text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 self-end">
-              <Save size={12} /> {t('dayDetail.saveNote')}
-            </button>
-          </div>
+              {/* Admin note */}
+              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
+                <span className="text-xs font-bold text-brown">{t('dayDetail.adminNote')}</span>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  className="border border-beige rounded-md p-2 text-xs h-20 resize-none text-brown"
+                  placeholder="Private note (e.g. overflow / extra shift needed)"
+                />
+                <button
+                  onClick={handleSaveNote}
+                  disabled={saving}
+                  className="bg-[#5B8C3E] text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 self-end disabled:opacity-50"
+                >
+                  <Save size={12} /> {t('dayDetail.saveNote')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="bg-white rounded-xl border border-beige p-6 flex flex-col items-center gap-3">
+              <p className="text-sm text-gray-text text-center">Click a date to see details</p>
+              <p className="text-xs text-gray-text text-center">Hold Shift + click to multi-select dates</p>
+            </div>
+          )}
         </div>
       </div>
     </>
