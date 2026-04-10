@@ -140,11 +140,15 @@
     "tagline": "Whole roasted lamb in a yurt.\n891 Albany Post Rd, New Paltz, NY.",
     "quickLinks": "Quick Links",
     "links": {
+      "home": "Home",
       "menu": "Menu",
       "bookAYurt": "Book a Yurt",
+      "bookAVisit": "Book a Visit",
       "aboutUs": "About Us",
       "gallery": "Gallery",
       "contact": "Contact",
+      "reservations": "Reservations",
+      "settings": "Settings",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
       "cancellation": "Cancellation Policy"

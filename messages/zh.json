@@ -140,11 +140,15 @@
     "tagline": "蒙古包里的烤全羊。\n891 Albany Post Rd, New Paltz, NY.",
     "quickLinks": "快速链接",
     "links": {
+      "home": "首页",
       "menu": "菜单",
       "bookAYurt": "预订蒙古包",
+      "bookAVisit": "预订参观",
       "aboutUs": "关于我们",
       "gallery": "图集",
       "contact": "联系我们",
+      "reservations": "我的预订",
+      "settings": "设置",
       "privacy": "隐私政策",
       "terms": "服务条款",
       "cancellation": "取消政策"
