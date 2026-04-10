@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, User, Mail, Phone, Minus, Plus, AlertCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
+import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
+
+const settingsFetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 export default function BookingDetailsPage() {
   const t = useTranslations('booking.details')
@@ -47,8 +53,12 @@ export default function BookingDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
+  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', settingsFetcher, {
+    revalidateOnFocus: false,
+  })
+
   const maxGuests = booking.selectedYurt?.capacity || 15
-  const MIN_RECOMMENDED_GUESTS = 6
+  const MIN_RECOMMENDED_GUESTS = settings?.guest_warning_threshold ? Number(settings.guest_warning_threshold) : 6
 
   const formattedDate = booking.selectedDate
     ? new Date(booking.selectedDate + 'T12:00:00').toLocaleDateString('en-US', {

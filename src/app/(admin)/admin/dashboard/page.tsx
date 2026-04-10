@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
+import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import Link from 'next/link'
 import {
   Calendar as CalendarIcon,
@@ -208,33 +209,34 @@ export default function Dashboard() {
   }, [])
 
   const [remindingSoon, setRemindingSoon] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Shared SWR options: avoid refetch on focus, dedupe within 30s
   const swrOpts = { revalidateOnFocus: false, dedupingInterval: 30000 }
 
   // Fetch all data
-  const { data: todayRes, error: todayErr } = useSWR<Reservation[]>(
+  const { data: todayRes, error: todayErr, mutate: mutateTodayRes } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${today}&endDate=${today}`,
     fetcher, swrOpts
   )
-  const { data: pendingDeposits, error: pendingDepErr } = useSWR<Reservation[]>(
+  const { data: pendingDeposits, error: pendingDepErr, mutate: mutatePendingDeposits } = useSWR<Reservation[]>(
     '/api/reservations?status=PAYMENT_SUBMITTED',
     fetcher, swrOpts
   )
-  const { data: pendingPayment } = useSWR<Reservation[]>(
+  const { data: pendingPayment, mutate: mutatePendingPayment } = useSWR<Reservation[]>(
     '/api/reservations?status=PENDING_PAYMENT',
     fetcher, swrOpts
   )
-  const { data: weekRes, error: weekErr } = useSWR<Reservation[]>(
+  const { data: weekRes, error: weekErr, mutate: mutateWeekRes } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${week.start}&endDate=${week.end}`,
     fetcher, swrOpts
   )
-  const { data: monthRes, error: monthErr } = useSWR<Reservation[]>(
+  const { data: monthRes, error: monthErr, mutate: mutateMonthRes } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${monthStart}&endDate=${monthEnd}`,
     fetcher, swrOpts
   )
   const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher, swrOpts)
-  const { data: activityLogs } = useSWR<ActivityLog[]>('/api/activity-logs?limit=6', fetcher, {
+  const { data: activityLogs, mutate: mutateActivityLogs } = useSWR<ActivityLog[]>('/api/activity-logs?limit=6', fetcher, {
     ...swrOpts,
     onError: () => {/* activity logs endpoint may not exist yet, silently ignore */},
   })
@@ -361,14 +363,14 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href="/admin/reservations"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 hover:bg-[#F5F0E8]"
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 hover:bg-[#F5F0E8] cursor-pointer"
                 style={{ color: '#2C2416', border: '1px solid #E8E2D9' }}
               >
                 <CalendarPlus size={15} style={{ color: '#8B6914' }} />
                 {t('actions.createReservation')}
-              </Link>
+              </button>
               <Link
                 href="/admin/calendar"
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 hover:bg-[#F5F0E8]"
@@ -652,6 +654,19 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <CreateReservationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={() => {
+          mutateTodayRes()
+          mutatePendingDeposits()
+          mutatePendingPayment()
+          mutateWeekRes()
+          mutateMonthRes()
+          mutateActivityLogs()
+        }}
+      />
     </>
   )
 }

@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import { ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -148,6 +149,8 @@ export default function Calendar() {
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [weekBase, setWeekBase] = useState(today)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createModalDate, setCreateModalDate] = useState<string | undefined>(undefined)
 
   // Redirect non-admin
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function Calendar() {
 
   const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher)
 
-  const { data: reservations, isLoading: loadingRes } = useSWR<Reservation[]>(
+  const { data: reservations, isLoading: loadingRes, mutate: mutateReservations } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${dateRange.start}&endDate=${dateRange.end}`,
     fetcher
   )
@@ -320,17 +323,22 @@ export default function Calendar() {
         key={idx}
         className={`
           min-h-[80px] p-2 border-b border-r border-[#E8E2D9]/60
-          transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)]
+          transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
           ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#8B6914]' : ''}
         `}
+        onClick={() => { setCreateModalDate(dateStr); setShowCreateModal(true) }}
+        title="Click to create reservation"
       >
         {/* Date number */}
-        <div className="mb-1.5">
+        <div className="mb-1.5 flex items-center justify-between">
           <span className={`
             text-[13px] font-semibold
             ${isToday ? 'text-[#8B6914]' : 'text-[#2C2416]'}
           `}>
             {day}
+          </span>
+          <span className="w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: '#8B6914' }}>
+            <Plus size={12} className="text-white" />
           </span>
         </div>
 
@@ -585,6 +593,14 @@ export default function Calendar() {
             >
               {t('today')}
             </button>
+            <button
+              onClick={() => { setCreateModalDate(undefined); setShowCreateModal(true) }}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold text-white transition-colors cursor-pointer"
+              style={{ backgroundColor: '#8B6914' }}
+            >
+              <Plus size={14} />
+              创建预订
+            </button>
           </div>
         </div>
 
@@ -639,6 +655,13 @@ export default function Calendar() {
           <div className="text-center text-sm text-[#8A7E6B] py-2">{t('loading')}</div>
         )}
       </div>
+
+      <CreateReservationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={() => { mutateReservations() }}
+        defaultDate={createModalDate}
+      />
     </>
   )
 }

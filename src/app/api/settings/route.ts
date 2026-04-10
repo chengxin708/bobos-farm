@@ -23,6 +23,7 @@ const ALLOWED_SETTING_KEYS = [
   "zelle_email",
   "zelle_recipient",
   "zelle_recipient_name",
+  "preorder_deadline_days",
 ] as const;
 
 const settingsUpdateSchema = z.record(

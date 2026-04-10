@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2, Clock, X, FileText, AlertCircle, Shield } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
@@ -17,7 +17,7 @@ export default function BookingConfirmPage() {
   const t = useTranslations('booking.confirm')
   const router = useRouter()
   const booking = useBooking()
-  const { data: settings } = useSWR('/api/settings', settingsFetcher)
+  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', settingsFetcher)
   const DEPOSIT_AMOUNT = settings?.deposit_amount ? Number(settings.deposit_amount) : 300
 
   const [acceptedTerms, setAcceptedTerms] = useState(false)
@@ -31,6 +31,7 @@ export default function BookingConfirmPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -141,6 +142,10 @@ export default function BookingConfirmPage() {
     }
   }, [booking.paymentDeadline])
 
+  // Derive urgency from countdown
+  const countdownHours = parseInt(countdown.split(':')[0], 10)
+  const isUrgent = countdownHours < 6
+
   // File upload handler
   const handleFileChange = useCallback((file: File | null) => {
     if (!file) return
@@ -174,6 +179,7 @@ export default function BookingConfirmPage() {
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
+      setIsDragOver(false)
       const file = e.dataTransfer.files?.[0]
       if (file) handleFileChange(file)
     },
@@ -328,9 +334,9 @@ export default function BookingConfirmPage() {
   if (error && !created) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-4">
-        <div className="w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
+        <div className="w-full max-w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-red/10 flex items-center justify-center">
-            <span className="text-red text-2xl font-bold">!</span>
+            <AlertCircle size={28} className="text-red" />
           </div>
           <h3 className="font-playfair text-xl font-bold text-brown">Booking Failed</h3>
           <p className="text-sm text-brown/60 text-center">{error}</p>
@@ -353,13 +359,13 @@ export default function BookingConfirmPage() {
     )
   }
 
-  // Expired state — countdown reached 0
+  // Expired state -- countdown reached 0
   if (expired && !submitted) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-6">
-        <div className="w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
+        <div className="w-full max-w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-[#F4A623]/10 flex items-center justify-center">
-            <span className="text-[#F4A623] text-2xl font-bold">&#x23f0;</span>
+            <Clock size={28} className="text-[#F4A623]" />
           </div>
           <h3 className="font-playfair text-xl font-bold text-brown">Time Expired</h3>
           <p className="text-sm text-brown/60 text-center max-w-md">
@@ -403,175 +409,372 @@ export default function BookingConfirmPage() {
     },
   ]
 
-  const paymentSteps = [
-    { num: 1, textKey: 'step1' as const, highlight: null },
-    { num: 2, textKey: 'step2' as const, highlight: 'jenny@bobosfarm.com' },
-    { num: 3, textKey: 'step3' as const, highlight: paymentMemo },
-  ]
+  const zelleEmail = settings?.zelle_recipient || 'jenny@bobosfarm.com'
+  const zelleRecipientName = settings?.zelle_recipient_name || ''
+  const zelleDisplay = zelleRecipientName ? `${zelleRecipientName} (${zelleEmail})` : zelleEmail
 
   return (
     <>
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center py-6 px-4 sm:px-10 lg:px-20 gap-6 overflow-y-auto">
-        {/* Reservation Summary */}
-        <div className="w-[600px] bg-[#FEFCF3] rounded-2xl p-6 border-[1.5px] border-beige flex flex-col gap-5">
-          <h3 className="font-playfair text-xl font-bold text-brown">{t('summaryTitle')}</h3>
-          <div className="h-px bg-beige" />
-          <div className="flex flex-col gap-4">
-            {summaryRows.map((row) => (
-              <div key={row.labelKey} className="flex items-start gap-3">
-                <row.icon size={18} className="text-amber mt-0.5 shrink-0" />
-                <div>
-                  <div className="text-xs text-brown/53">{t(`summaryLabels.${row.labelKey}`)}</div>
-                  <div className="text-sm font-medium text-brown">{row.value}</div>
+      {/* Two-column content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-8">
+          <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
+
+            {/* ============================================
+                Mobile: Summary on top (shown only on small)
+                ============================================ */}
+            <div className="md:hidden flex flex-col gap-4">
+              {/* Reservation Summary Card */}
+              <div className="bg-white rounded-xl border border-[#E8E2D9] p-5">
+                <h3 className="font-playfair text-lg font-bold text-brown mb-4">
+                  {t('summaryTitle')}
+                </h3>
+                <div className="flex flex-col gap-3">
+                  {summaryRows.map((row, i) => (
+                    <div key={row.labelKey}>
+                      <div className="flex items-start gap-3">
+                        <row.icon size={16} className="text-amber mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] uppercase tracking-wider text-[#8A7E6B]">
+                            {t(`summaryLabels.${row.labelKey}`)}
+                          </div>
+                          <div className="text-sm font-semibold text-brown truncate">
+                            {row.value}
+                          </div>
+                        </div>
+                      </div>
+                      {i < summaryRows.length - 1 && (
+                        <div className="h-px bg-[#E8E2D9] mt-3 ml-7" />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Payment Card */}
-        <div className="w-[600px] bg-white rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-playfair text-xl font-bold text-brown">{t('depositRequired')}</h3>
-            <span className="font-playfair text-3xl font-bold text-amber">${DEPOSIT_AMOUNT}</span>
-          </div>
-          <div className="h-px bg-beige" />
-
-          <p className="text-base font-bold text-brown">{t('howToPay')}</p>
-
-          <div className="flex flex-col gap-4.5">
-            {paymentSteps.map((step) => (
-              <div key={step.num} className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-full bg-amber text-white text-sm font-bold flex items-center justify-center shrink-0">
-                  {step.num}
+              {/* Deposit + Timer row (mobile) */}
+              <div className="flex gap-3">
+                <div className="flex-1 bg-white rounded-xl border border-[#E8E2D9] p-4 flex flex-col items-center justify-center">
+                  <span className="text-[11px] uppercase tracking-wider text-[#8A7E6B] mb-1">{t('depositRequired')}</span>
+                  <span className="text-3xl font-bold text-amber font-playfair">${DEPOSIT_AMOUNT}</span>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-brown">{t(step.textKey)}</span>
-                  {step.highlight && (
-                    <button
-                      onClick={() => copyToClipboard(step.highlight!, `step-${step.num}`)}
-                      className="flex items-center gap-2 bg-amber-light rounded-lg px-3 py-1.5 border-none cursor-pointer"
-                    >
-                      <span className="text-sm font-semibold text-amber">{step.highlight}</span>
-                      {copiedField === `step-${step.num}` ? (
-                        <Check size={14} className="text-green" />
+                <div className={`flex-1 rounded-xl border p-4 flex flex-col items-center justify-center ${
+                  isUrgent
+                    ? 'bg-red/5 border-red/20'
+                    : 'bg-green-light border-green/20'
+                }`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Clock size={12} className={isUrgent ? 'text-red' : 'text-green'} />
+                    <span className={`text-[11px] uppercase tracking-wider ${isUrgent ? 'text-red' : 'text-green'}`}>
+                      Time Left
+                    </span>
+                  </div>
+                  <span className={`text-2xl font-bold font-mono tabular-nums ${isUrgent ? 'text-red' : 'text-brown'}`}>
+                    {countdown}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================
+                Left Column -- Payment Instructions + Upload
+                ============================================ */}
+            <div className="flex-1 md:flex-[3] flex flex-col gap-6">
+
+              {/* How to Pay */}
+              <div className="bg-white rounded-xl border border-[#E8E2D9] p-6 md:p-8">
+                <h3 className="font-playfair text-xl md:text-2xl font-bold text-brown mb-6">
+                  {t('howToPay')}
+                </h3>
+
+                <div className="flex flex-col gap-5">
+                  {/* Step 1 */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      1
+                    </div>
+                    <div className="pt-0.5">
+                      <span className="text-sm text-brown leading-relaxed">{t('step1')}</span>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      2
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-brown leading-relaxed pt-0.5">{t('step2')}</span>
+                      <button
+                        onClick={() => copyToClipboard(zelleEmail, 'step-2')}
+                        className="inline-flex items-center gap-2.5 bg-amber/8 hover:bg-amber/15 rounded-lg px-3.5 py-2 border-none cursor-pointer transition-colors group w-fit"
+                      >
+                        <span className="text-sm font-semibold text-amber font-mono tracking-wide">
+                          {zelleDisplay}
+                        </span>
+                        {copiedField === 'step-2' ? (
+                          <span className="flex items-center gap-1 text-green text-xs font-medium">
+                            <Check size={13} />
+                            Copied!
+                          </span>
+                        ) : (
+                          <Copy size={13} className="text-amber/60 group-hover:text-amber transition-colors" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      3
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm text-brown leading-relaxed pt-0.5">{t('step3')}</span>
+                      <button
+                        onClick={() => copyToClipboard(paymentMemo, 'step-3')}
+                        className="inline-flex items-center gap-2.5 bg-amber/8 hover:bg-amber/15 rounded-lg px-3.5 py-2 border-none cursor-pointer transition-colors group w-fit"
+                      >
+                        <span className="text-sm font-semibold text-amber font-mono tracking-wide">
+                          {paymentMemo}
+                        </span>
+                        {copiedField === 'step-3' ? (
+                          <span className="flex items-center gap-1 text-green text-xs font-medium">
+                            <Check size={13} />
+                            Copied!
+                          </span>
+                        ) : (
+                          <Copy size={13} className="text-amber/60 group-hover:text-amber transition-colors" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Area */}
+              <div className="bg-white rounded-xl border border-[#E8E2D9] p-6 md:p-8">
+                <h4 className="text-sm font-semibold text-brown mb-4 flex items-center gap-2">
+                  <Upload size={16} className="text-amber" />
+                  Payment Proof
+                </h4>
+
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                    uploadedFile
+                      ? 'border-green/40 bg-green-light/40 p-4'
+                      : isDragOver
+                        ? 'border-amber bg-amber-light/50 p-8'
+                        : 'border-[#E8E2D9] hover:border-amber/40 hover:bg-amber-light/20 p-8'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    className="hidden"
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                  />
+
+                  {uploadedFile ? (
+                    <div className="flex items-center gap-4">
+                      {uploadPreview ? (
+                        <img
+                          src={uploadPreview}
+                          alt="Payment screenshot"
+                          className="w-16 h-16 rounded-lg object-cover border border-[#E8E2D9]"
+                        />
                       ) : (
-                        <Copy size={14} className="text-amber" />
+                        <div className="w-16 h-16 rounded-lg bg-green/10 flex items-center justify-center">
+                          <FileText size={24} className="text-green" />
+                        </div>
                       )}
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-brown truncate">{uploadedFile.name}</p>
+                        <p className="text-xs text-[#8A7E6B] mt-0.5">
+                          {(uploadedFile.size / 1024).toFixed(0)} KB
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setUploadedFile(null)
+                          setUploadPreview(prev => {
+                            if (prev) URL.revokeObjectURL(prev)
+                            return null
+                          })
+                        }}
+                        className="w-8 h-8 rounded-full bg-brown/5 hover:bg-red/10 flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+                      >
+                        <X size={14} className="text-brown/40" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2.5">
+                      <div className="w-12 h-12 rounded-full bg-amber/8 flex items-center justify-center">
+                        <Upload size={22} className="text-amber/60" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-brown/70">{t('uploadTitle')}</p>
+                        <p className="text-[13px] text-amber font-semibold mt-1">{t('uploadBrowse')}</p>
+                      </div>
+                      <p className="text-[11px] text-[#8A7E6B]">{t('uploadFormats')}</p>
+                    </div>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Countdown */}
-          <div className="bg-[#F4A623] rounded-lg px-4 py-3.5 flex flex-col items-center gap-1">
-            <span className="text-sm font-bold text-white">
-              &#x23f0; {t('countdown', { time: countdown })}
-            </span>
-            <span className="text-xs text-white/80">{t('countdownSub')}</span>
-          </div>
+              {/* Error message */}
+              {error && created && (
+                <div className="flex items-center gap-3 bg-red/5 border border-red/15 text-red text-sm rounded-xl px-4 py-3">
+                  <AlertCircle size={16} className="shrink-0" />
+                  {error}
+                </div>
+              )}
 
-          {/* Upload Area */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onClick={() => fileInputRef.current?.click()}
-            className={`h-[180px] border-[1.5px] border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-              uploadedFile ? 'border-green bg-green-light/30' : 'border-beige hover:border-amber/50 hover:bg-amber-light/30'
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,application/pdf"
-              className="hidden"
-              onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-            />
-            {uploadedFile ? (
-              <>
-                {uploadPreview ? (
-                  <img
-                    src={uploadPreview}
-                    alt="Payment screenshot"
-                    className="h-24 rounded-lg object-contain"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-green/10 flex items-center justify-center">
-                    <Check size={24} className="text-green" />
-                  </div>
-                )}
-                <span className="text-sm text-green font-medium">{uploadedFile.name}</span>
-                <span className="text-[11px] text-brown/40">Click to change</span>
-              </>
-            ) : (
-              <>
-                <Upload size={32} className="text-beige" />
-                <span className="text-sm text-brown/53">{t('uploadTitle')}</span>
-                <span className="text-[13px] text-amber font-semibold">{t('uploadBrowse')}</span>
-                <span className="text-[11px] text-brown/33">{t('uploadFormats')}</span>
-              </>
-            )}
-          </div>
-
-          {/* Error message */}
-          {error && created && (
-            <div className="bg-red/10 text-red text-sm rounded-lg px-4 py-2">
-              {error}
+              {/* Cancel link -- desktop only, bottom of left column */}
+              <div className="hidden md:block">
+                <button
+                  onClick={handleCancel}
+                  className="text-[13px] text-[#8A7E6B] border-none bg-transparent cursor-pointer hover:text-red transition-colors"
+                >
+                  {t('cancelReservation')}
+                </button>
+              </div>
             </div>
-          )}
 
-          {/* Checkbox */}
-          <label className="flex gap-3 cursor-pointer select-none">
-            <button
-              type="button"
-              onClick={() => setAcceptedTerms(!acceptedTerms)}
-              className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer ${
-                acceptedTerms ? 'bg-amber border-amber' : 'border-beige bg-white'
-              }`}
-            >
-              {acceptedTerms && <Check size={12} className="text-white" />}
-            </button>
-            <span className="text-xs text-brown/53 leading-relaxed">
-              {t('cancellationPolicyText')}{' '}
-              <Link href="/cancellation" className="text-amber font-medium no-underline hover:underline">
-                {t('cancellationPolicyLink')}
-              </Link>
-            </span>
-          </label>
+            {/* ============================================
+                Right Column -- Sticky Sidebar
+                ============================================ */}
+            <div className="md:flex-[2] flex flex-col gap-4">
+              <div className="md:sticky md:top-6 flex flex-col gap-4">
 
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmitPayment}
-            disabled={!acceptedTerms || submitting}
-            className={`h-[52px] rounded-2xl text-white text-base font-semibold border-none w-full transition-colors flex items-center justify-center gap-2 ${
-              acceptedTerms && !submitting
-                ? 'bg-gradient-to-r from-amber to-[#A67C2E] cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
-                : 'bg-[#BFBFBF] cursor-not-allowed'
-            }`}
-          >
-            {submitting && <Loader2 size={18} className="animate-spin" />}
-            {submitting ? 'Submitting...' : t('completedTransfer')}
-          </button>
+                {/* Reservation Summary Card (desktop only) */}
+                <div className="hidden md:block bg-white rounded-xl border border-[#E8E2D9] p-5">
+                  <h3 className="font-playfair text-lg font-bold text-brown mb-4">
+                    {t('summaryTitle')}
+                  </h3>
+                  <div className="flex flex-col gap-3">
+                    {summaryRows.map((row, i) => (
+                      <div key={row.labelKey}>
+                        <div className="flex items-start gap-3">
+                          <row.icon size={16} className="text-amber mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[11px] uppercase tracking-wider text-[#8A7E6B]">
+                              {t(`summaryLabels.${row.labelKey}`)}
+                            </div>
+                            <div className="text-sm font-semibold text-brown">
+                              {row.value}
+                            </div>
+                          </div>
+                        </div>
+                        {i < summaryRows.length - 1 && (
+                          <div className="h-px bg-[#E8E2D9] mt-3 ml-7" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-          <button
-            onClick={handleCancel}
-            className="text-[13px] text-[#8E8E93] text-center border-none bg-transparent cursor-pointer hover:text-red transition-colors"
-          >
-            {t('cancelReservation')}
-          </button>
+                {/* Deposit Amount Card (desktop only) */}
+                <div className="hidden md:flex bg-white rounded-xl border border-[#E8E2D9] p-5 flex-col items-center">
+                  <span className="text-[11px] uppercase tracking-wider text-[#8A7E6B] mb-1">
+                    {t('depositRequired')}
+                  </span>
+                  <span className="text-4xl font-bold text-amber font-playfair">
+                    ${DEPOSIT_AMOUNT}
+                  </span>
+                </div>
+
+                {/* Countdown Timer Card (desktop only) */}
+                <div className={`hidden md:flex rounded-xl border p-5 flex-col items-center gap-1.5 ${
+                  isUrgent
+                    ? 'bg-red/5 border-red/20'
+                    : 'bg-green-light border-green/20'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className={isUrgent ? 'text-red' : 'text-green'} />
+                    <span className={`text-xs font-medium uppercase tracking-wider ${isUrgent ? 'text-red' : 'text-green'}`}>
+                      Time Remaining
+                    </span>
+                  </div>
+                  <span className={`text-3xl font-bold font-mono tabular-nums tracking-wider ${
+                    isUrgent ? 'text-red' : 'text-brown'
+                  }`}>
+                    {countdown}
+                  </span>
+                  <span className="text-[11px] text-[#8A7E6B]">
+                    {t('countdownSub')}
+                  </span>
+                </div>
+
+                {/* Policy + Submit Card */}
+                <div className="bg-white rounded-xl border border-[#E8E2D9] p-5 flex flex-col gap-4">
+                  {/* Checkbox */}
+                  <label className="flex gap-3 cursor-pointer select-none">
+                    <button
+                      type="button"
+                      onClick={() => setAcceptedTerms(!acceptedTerms)}
+                      className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${
+                        acceptedTerms ? 'bg-amber border-amber' : 'border-beige bg-white hover:border-amber/50'
+                      }`}
+                    >
+                      {acceptedTerms && <Check size={12} className="text-white" />}
+                    </button>
+                    <span className="text-xs text-[#8A7E6B] leading-relaxed">
+                      {t('cancellationPolicyText')}{' '}
+                      <Link href="/cancellation" className="text-amber font-medium no-underline hover:underline">
+                        {t('cancellationPolicyLink')}
+                      </Link>
+                    </span>
+                  </label>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={handleSubmitPayment}
+                    disabled={!acceptedTerms || submitting}
+                    className={`h-[52px] rounded-xl text-white text-[15px] font-semibold border-none w-full transition-all flex items-center justify-center gap-2 ${
+                      acceptedTerms && !submitting
+                        ? 'bg-amber hover:bg-amber/90 cursor-pointer shadow-[0_4px_16px_rgba(184,134,11,0.25)] hover:shadow-[0_6px_20px_rgba(184,134,11,0.35)] btn-warm'
+                        : 'bg-[#BFBFBF] cursor-not-allowed'
+                    }`}
+                  >
+                    {submitting && <Loader2 size={18} className="animate-spin" />}
+                    {submitting ? 'Submitting...' : t('completedTransfer')}
+                  </button>
+
+                  {/* Security note */}
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#8A7E6B]">
+                    <Shield size={11} />
+                    <span>Secure &amp; encrypted</span>
+                  </div>
+                </div>
+
+                {/* Cancel -- mobile only */}
+                <div className="md:hidden text-center mt-1">
+                  <button
+                    onClick={handleCancel}
+                    className="text-[13px] text-[#8A7E6B] border-none bg-transparent cursor-pointer hover:text-red transition-colors"
+                  >
+                    {t('cancelReservation')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Bottom Bar with Back button */}
-      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-between px-4 sm:px-10 lg:px-20">
+      <div className="h-14 shrink-0 bg-white border-t border-[#E8E2D9] flex items-center justify-between px-4 sm:px-6 lg:px-10">
         <button
           onClick={() => router.push('/booking/details')}
-          className="flex items-center gap-2 px-4 py-2.5 text-[15px] font-medium text-brown border-none bg-transparent cursor-pointer"
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-brown border-none bg-transparent cursor-pointer hover:text-amber transition-colors"
         >
-          <ArrowLeft size={18} /> Back to Details
+          <ArrowLeft size={16} /> Back to Details
         </button>
         <div />
       </div>

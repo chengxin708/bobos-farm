@@ -59,6 +59,13 @@ export default function BookingDatePage() {
   const startDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-01`
   const endDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${daysInMonth(viewYear, viewMonth)}`
 
+  // Fetch settings for advance booking limits
+  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
+    revalidateOnFocus: false,
+  })
+  const minAdvanceDays = settings?.min_advance_booking_days ? Number(settings.min_advance_booking_days) : 1
+  const maxAdvanceDays = settings?.max_advance_booking_days ? Number(settings.max_advance_booking_days) : 90
+
   // Fetch availability for the month
   const { data: availability, isLoading: loadingAvail } = useSWR(
     `/api/availability?startDate=${startDate}&endDate=${endDate}`,
@@ -175,6 +182,19 @@ export default function BookingDatePage() {
     return `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
 
+  // Compute earliest and latest bookable dates from settings
+  const earliestBookableStr = useMemo(() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + minAdvanceDays)
+    return toLocalDateStr(d)
+  }, [today, minAdvanceDays])
+
+  const latestBookableStr = useMemo(() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + maxAdvanceDays)
+    return toLocalDateStr(d)
+  }, [today, maxAdvanceDays])
+
   function isPast(day: number): boolean {
     const dateKey = getDateKey(day)
     return dateKey < todayStr
@@ -184,8 +204,14 @@ export default function BookingDatePage() {
     return getDateKey(day) === todayStr
   }
 
+  function isOutsideBookingWindow(day: number): boolean {
+    const dateKey = getDateKey(day)
+    return dateKey < earliestBookableStr || dateKey > latestBookableStr
+  }
+
   function getStatus(day: number): DateStatus | 'past' {
     if (isPast(day)) return 'past'
+    if (isOutsideBookingWindow(day)) return 'closed'
     const dateKey = getDateKey(day)
     return dateStatusMap[dateKey] || 'available'
   }

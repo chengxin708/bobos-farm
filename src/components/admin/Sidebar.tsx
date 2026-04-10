@@ -92,7 +92,7 @@ export default function Sidebar() {
         <h1 className="font-playfair text-lg font-bold italic text-[#C8A55A]">
           Bobo&apos;s Farm
         </h1>
-        <p className="mt-1 text-[11px] tracking-wide text-[#5E6B6E]">
+        <p className="mt-1 text-[11px] tracking-wide text-[#9AACB0]">
           管理后台
         </p>
         <div className="mt-3 h-px w-10 bg-[#C8A55A]/30" />

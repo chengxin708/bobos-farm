@@ -34,10 +34,16 @@ const fetcher = (url: string) => fetch(url).then(r => {
 
 // Map of setting keys to their tab index
 const KEY_TAB_MAP: Record<string, TabIndex> = {
+  business_name: 0,
+  business_email: 0,
+  business_phone: 0,
+  business_address: 0,
   deposit_amount: 1,
   payment_timeout_hours: 1,
   max_advance_booking_days: 1,
+  min_advance_booking_days: 1,
   cancellation_window_days: 2,
+  preorder_deadline_days: 3,
   guest_warning_threshold: 4,
   zelle_recipient: 5,
   zelle_recipient_name: 5,
@@ -136,9 +142,58 @@ export default function Settings() {
     return (
       <div>
         <h2 className="text-xl font-bold text-brown">General Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">General configuration options. More settings coming soon.</p>
-        <div className="text-sm text-gray-text bg-cream-bg rounded-lg p-6 text-center">
-          General settings will be available in a future update.
+        <p className="text-sm text-gray-text mt-1 mb-8">Business information and general configuration.</p>
+
+        {/* Business Name */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Business Name</label>
+          <input
+            type="text"
+            value={formValues.business_name ?? ''}
+            onChange={e => updateField('business_name', e.target.value)}
+            className={`border ${formValues.business_name !== originalValues.business_name ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="Bobo's Farm"
+          />
+          <p className="text-xs text-gray-text mt-1">Your business name as shown to customers.</p>
+        </div>
+
+        {/* Business Email */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Business Email</label>
+          <input
+            type="email"
+            value={formValues.business_email ?? ''}
+            onChange={e => updateField('business_email', e.target.value)}
+            className={`border ${formValues.business_email !== originalValues.business_email ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="info@bobosfarm.com"
+          />
+          <p className="text-xs text-gray-text mt-1">Primary contact email for your business.</p>
+        </div>
+
+        {/* Business Phone */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Business Phone</label>
+          <input
+            type="text"
+            value={formValues.business_phone ?? ''}
+            onChange={e => updateField('business_phone', e.target.value)}
+            className={`border ${formValues.business_phone !== originalValues.business_phone ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="(555) 000-0000"
+          />
+          <p className="text-xs text-gray-text mt-1">Business phone number shown to customers.</p>
+        </div>
+
+        {/* Business Address */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Business Address</label>
+          <input
+            type="text"
+            value={formValues.business_address ?? ''}
+            onChange={e => updateField('business_address', e.target.value)}
+            className={`border ${formValues.business_address !== originalValues.business_address ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            placeholder="123 Farm Road, Hudson Valley, NY"
+          />
+          <p className="text-xs text-gray-text mt-1">Physical address of your business.</p>
         </div>
       </div>
     )
@@ -241,8 +296,20 @@ export default function Settings() {
       <div>
         <h2 className="text-xl font-bold text-brown">Ordering Settings</h2>
         <p className="text-sm text-gray-text mt-1 mb-8">Configure pre-ordering and menu settings.</p>
-        <div className="text-sm text-gray-text bg-cream-bg rounded-lg p-6 text-center">
-          Ordering settings will be available in a future update.
+
+        {/* Pre-order Deadline */}
+        <div className="mb-8">
+          <label className="text-sm font-bold text-brown block mb-1">Pre-order Deadline</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.preorder_deadline_days ?? ''}
+              onChange={e => updateField('preorder_deadline_days', e.target.value)}
+              className={`border ${formValues.preorder_deadline_days !== originalValues.preorder_deadline_days ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+            />
+            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">days before reservation</span>
+          </div>
+          <p className="text-xs text-gray-text">Number of days before the reservation date that pre-orders must be placed.</p>
         </div>
       </div>
     )

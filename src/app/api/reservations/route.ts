@@ -13,6 +13,12 @@ const createReservationBodySchema = z.object({
   specialRequests: z.string().max(2000).optional(),
 });
 
+const adminCreateReservationSchema = createReservationBodySchema.extend({
+  guestName: z.string().min(1, "guestName is required"),
+  guestEmail: z.string().email("Invalid email"),
+  guestPhone: z.string().optional(),
+});
+
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
@@ -81,7 +87,98 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
     const body = await req.json();
+
+    // ── Admin branch: create reservation on behalf of a customer ──
+    if (isAdmin) {
+      const parsed = adminCreateReservationSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsed.error.flatten() },
+          { status: 400 }
+        );
+      }
+      const { yurtId, date, guestCount, specialRequests, guestName, guestEmail, guestPhone } = parsed.data;
+
+      // Validate yurt
+      const yurt = await prisma.yurt.findUnique({ where: { id: yurtId } });
+      if (!yurt || yurt.status !== "ACTIVE") {
+        return NextResponse.json({ error: "Yurt not available" }, { status: 400 });
+      }
+      if (guestCount > yurt.capacity) {
+        return NextResponse.json({ error: "Guest count exceeds yurt capacity" }, { status: 400 });
+      }
+
+      // Check availability
+      const reservationDate = new Date(date);
+      const existing = await prisma.reservation.findUnique({
+        where: { yurtId_date: { yurtId, date: reservationDate } },
+      });
+      if (existing) {
+        return NextResponse.json({ error: "This yurt is already booked for this date" }, { status: 409 });
+      }
+
+      const availability = await prisma.yurtAvailability.findUnique({
+        where: { yurtId_date: { yurtId, date: reservationDate } },
+      });
+      if (availability && !availability.isOpen) {
+        return NextResponse.json({ error: "This date is closed for this yurt" }, { status: 400 });
+      }
+
+      // Look up or create customer by email
+      let customer = await prisma.user.findUnique({ where: { email: guestEmail } });
+      if (!customer) {
+        customer = await prisma.user.create({
+          data: {
+            email: guestEmail,
+            name: guestName,
+            phone: guestPhone || null,
+            role: "CUSTOMER",
+          },
+        });
+      }
+
+      // Get deposit amount from settings
+      const depositSetting = await prisma.systemSetting.findUnique({
+        where: { key: "deposit_amount" },
+      });
+      const depositAmount = depositSetting ? parseFloat(depositSetting.value) : 300;
+
+      // Admin-created reservations skip deposit — confirmed directly
+      const reservation = await prisma.reservation.create({
+        data: {
+          userId: customer.id,
+          yurtId,
+          date: reservationDate,
+          guestCount,
+          specialRequests: specialRequests || null,
+          status: "CONFIRMED",
+          depositAmount,
+          depositStatus: "CONFIRMED",
+          depositConfirmedAt: new Date(),
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "RESERVATION_CREATED",
+          targetType: "Reservation",
+          targetId: reservation.id,
+          details: { yurtName: yurt.name, date, guestCount, createdByAdmin: true },
+        },
+      });
+
+      return NextResponse.json(reservation, { status: 201 });
+    }
+
+    // ── Customer branch: standard reservation creation ──
     const parsed = createReservationBodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -131,20 +228,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get deposit amount from settings
-    const depositSetting = await prisma.systemSetting.findUnique({
-      where: { key: "deposit_amount" },
+    // Fetch all needed settings in one query
+    const settingsRecords = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: [
+            "deposit_amount",
+            "payment_timeout_hours",
+            "min_advance_booking_days",
+            "max_advance_booking_days",
+          ],
+        },
+      },
     });
-    const depositAmount = depositSetting
-      ? parseFloat(depositSetting.value)
+    const settingsMap: Record<string, string> = {};
+    for (const s of settingsRecords) settingsMap[s.key] = s.value;
+
+    // Enforce advance booking window
+    const minAdvanceDays = settingsMap.min_advance_booking_days ? parseInt(settingsMap.min_advance_booking_days, 10) : 1;
+    const maxAdvanceDays = settingsMap.max_advance_booking_days ? parseInt(settingsMap.max_advance_booking_days, 10) : 90;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffMs = reservationDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < minAdvanceDays) {
+      return NextResponse.json(
+        { error: `Reservations must be made at least ${minAdvanceDays} day(s) in advance` },
+        { status: 400 }
+      );
+    }
+    if (diffDays > maxAdvanceDays) {
+      return NextResponse.json(
+        { error: `Reservations cannot be made more than ${maxAdvanceDays} days in advance` },
+        { status: 400 }
+      );
+    }
+
+    // Get deposit amount from settings
+    const depositAmount = settingsMap.deposit_amount
+      ? parseFloat(settingsMap.deposit_amount)
       : 300;
 
     // Get timeout from settings
-    const timeoutSetting = await prisma.systemSetting.findUnique({
-      where: { key: "payment_timeout_hours" },
-    });
-    const timeoutHours = timeoutSetting
-      ? parseFloat(timeoutSetting.value)
+    const timeoutHours = settingsMap.payment_timeout_hours
+      ? parseFloat(settingsMap.payment_timeout_hours)
       : 12;
 
     const paymentDeadline = new Date();
