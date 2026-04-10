@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, User, Mail, Phone, Minus, Plus, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, User, Mail, Phone, Minus, Plus, AlertCircle, Info, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
@@ -60,17 +60,6 @@ export default function BookingDetailsPage() {
   const maxGuests = booking.selectedYurt?.capacity || 15
   const MIN_RECOMMENDED_GUESTS = settings?.guest_warning_threshold ? Number(settings.guest_warning_threshold) : 6
 
-  const formattedDate = booking.selectedDate
-    ? new Date(booking.selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : ''
-
-  const subtitle = `${booking.selectedYurt?.name || ''} · ${formattedDate}`
-
   // Validation errors
   const errors = useMemo(() => {
     const e: Record<string, string | null> = {}
@@ -115,7 +104,7 @@ export default function BookingDetailsPage() {
   if (!booking.hydrated) {
     return (
       <div className="flex-1 flex items-center justify-center py-12">
-        <div className="w-10 h-10 rounded-full border-[3px] border-beige border-t-amber animate-spin" />
+        <div className="w-10 h-10 rounded-full border-[3px] border-[#E8ECE4] border-t-[#6B7F5E] animate-spin" />
       </div>
     )
   }
@@ -123,181 +112,177 @@ export default function BookingDetailsPage() {
   if (!booking.selectedDate || !booking.selectedYurtId) return null
 
   return (
-    <>
-      {/* Content */}
-      <div className="flex-1 flex justify-center py-6 px-4 sm:px-10 lg:px-20 overflow-y-auto">
-        <div className="w-[560px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col gap-6">
-          <div>
-            <h2 className="font-playfair text-2xl font-bold text-brown">{t('title')}</h2>
-            <p className="text-sm text-[#8E8E93] mt-1">{subtitle}</p>
-          </div>
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => router.push('/booking/yurt')}
+          className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
+          aria-label={tCommon('back')}
+        >
+          <ChevronLeft size={22} className="text-[#1A1208]" />
+        </button>
+        <span className="text-sm text-[#8C8478]">Step 3 of 4</span>
+      </div>
 
-          <div className="h-px bg-beige" />
+      {/* Page Title */}
+      <div className="text-center mt-4 mb-6 px-4">
+        <h1 className="text-2xl font-serif text-[#1A1208]">{t('title')}</h1>
+      </div>
 
-          {/* Form Fields */}
-          <div className="flex flex-col gap-5">
-            {/* Contact Name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('contactName')}</label>
-              <div className={`flex items-center gap-3 h-12 px-4 bg-[#FAFAF8] rounded-xl border ${
-                touched.contactName && errors.contactName ? 'border-[#DC3545]' : 'border-beige'
-              }`}>
-                <User size={16} className="text-brown/40" />
-                <input
-                  type="text"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  onBlur={() => handleBlur('contactName')}
-                  placeholder="Your full name"
-                  aria-label={t('contactName')}
-                  aria-invalid={touched.contactName && !!errors.contactName}
-                  className="flex-1 text-sm bg-transparent outline-none text-brown placeholder:text-brown/30"
-                />
-              </div>
-              {touched.contactName && errors.contactName && (
-                <div className="flex items-center gap-1.5 text-[#DC3545]">
-                  <AlertCircle size={13} />
-                  <span className="text-xs">{errors.contactName}</span>
-                </div>
-              )}
-            </div>
+      {/* Form Container */}
+      <div className="flex-1 px-4 pb-28">
+        <div className="max-w-[560px] mx-auto flex flex-col gap-5">
 
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('email')}</label>
-              <div className={`flex items-center gap-3 h-12 px-4 bg-[#FAFAF8] rounded-xl border ${
-                touched.contactEmail && errors.contactEmail ? 'border-[#DC3545]' : 'border-beige'
-              }`}>
-                <Mail size={16} className="text-brown/40" />
-                <input
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  onBlur={() => handleBlur('contactEmail')}
-                  placeholder="your@email.com"
-                  aria-label={t('email')}
-                  aria-invalid={touched.contactEmail && !!errors.contactEmail}
-                  className="flex-1 text-sm bg-transparent outline-none text-brown placeholder:text-brown/30"
-                />
-              </div>
-              {touched.contactEmail && errors.contactEmail && (
-                <div className="flex items-center gap-1.5 text-[#DC3545]">
-                  <AlertCircle size={13} />
-                  <span className="text-xs">{errors.contactEmail}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <label className="text-[13px] font-semibold text-brown">{t('phoneNumber')}</label>
-                <span className="text-[11px] text-brown/40 italic">{tCommon('optional')}</span>
-              </div>
-              <div className="flex items-center gap-3 h-12 px-4 bg-[#FAFAF8] rounded-xl border border-beige">
-                <Phone size={16} className="text-brown/40" />
-                <input
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  onBlur={() => handleBlur('contactPhone')}
-                  placeholder="(555) 000-0000"
-                  aria-label={t('phoneNumber')}
-                  className="flex-1 text-sm bg-transparent outline-none text-brown placeholder:text-brown/30"
-                />
-              </div>
-            </div>
-
-            {/* Guest Counter */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[13px] font-semibold text-brown">{t('numberOfGuests')}</label>
-              <div className="flex items-center justify-center gap-5">
-                <button
-                  onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                  disabled={guestCount <= 1}
-                  aria-label="Decrease guest count"
-                  className={`w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white ${
-                    guestCount <= 1 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-beige/30'
-                  }`}
-                >
-                  <Minus size={16} className="text-brown" />
-                </button>
-                <span className="text-2xl font-bold text-brown w-10 text-center">{guestCount}</span>
-                <button
-                  onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
-                  disabled={guestCount >= maxGuests}
-                  aria-label="Increase guest count"
-                  className={`w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white ${
-                    guestCount >= maxGuests ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-beige/30'
-                  }`}
-                >
-                  <Plus size={16} className="text-brown" />
-                </button>
-              </div>
-              <p className="text-xs text-[#8E8E93] text-center">
-                Max {maxGuests} guests for {booking.selectedYurt?.name}
-              </p>
-            </div>
-
-            {/* Capacity Notice - shown when below recommended minimum and not dismissed */}
-            {guestCount < MIN_RECOMMENDED_GUESTS && !capacityNoticeDismissed && (
-              <div className="bg-[#FEF3CD] rounded-lg p-4 flex flex-col gap-1">
-                <p className="text-[13px] text-[#7A5D10] leading-relaxed">
-                  {t('capacityNotice')}
-                </p>
-                <button
-                  onClick={() => setCapacityNoticeDismissed(true)}
-                  className="text-[13px] font-semibold text-amber no-underline self-end border-none bg-transparent cursor-pointer"
-                >
-                  {tCommon('gotItContinue')}
-                </button>
-              </div>
-            )}
-
-            {/* Special Requests */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <label className="text-[13px] font-semibold text-brown">{t('specialRequests')}</label>
-                <span className="text-[11px] text-brown/40 italic">{tCommon('optional')}</span>
-              </div>
-              <textarea
-                value={specialRequests}
-                onChange={(e) => setSpecialRequests(e.target.value)}
-                placeholder={t('specialRequestsPlaceholder')}
-                aria-label={t('specialRequests')}
-                className="h-24 px-4 py-3 bg-white rounded-xl border border-beige text-sm resize-none outline-none placeholder:text-brown/27"
+          {/* Contact Name */}
+          <div className="flex flex-col gap-1">
+            <div className={`relative flex items-center h-[52px] px-4 rounded-xl border transition-colors ${
+              touched.contactName && errors.contactName
+                ? 'border-[#C4453A]'
+                : 'border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20'
+            }`}>
+              <User size={18} className="text-[#8C8478] shrink-0 mr-3" />
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                onBlur={() => handleBlur('contactName')}
+                placeholder={`${t('contactName')} *`}
+                aria-label={t('contactName')}
+                aria-invalid={touched.contactName && !!errors.contactName}
+                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
               />
             </div>
+            {touched.contactName && errors.contactName && (
+              <div className="flex items-center gap-1.5 text-[#C4453A] mt-1">
+                <AlertCircle size={14} className="shrink-0" />
+                <span className="text-sm">{errors.contactName}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Email */}
+          <div className="flex flex-col gap-1">
+            <div className={`relative flex items-center h-[52px] px-4 rounded-xl border transition-colors ${
+              touched.contactEmail && errors.contactEmail
+                ? 'border-[#C4453A]'
+                : 'border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20'
+            }`}>
+              <Mail size={18} className="text-[#8C8478] shrink-0 mr-3" />
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                onBlur={() => handleBlur('contactEmail')}
+                placeholder={`${t('email')} *`}
+                aria-label={t('email')}
+                aria-invalid={touched.contactEmail && !!errors.contactEmail}
+                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+              />
+            </div>
+            {touched.contactEmail && errors.contactEmail && (
+              <div className="flex items-center gap-1.5 text-[#C4453A] mt-1">
+                <AlertCircle size={14} className="shrink-0" />
+                <span className="text-sm">{errors.contactEmail}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div className="flex flex-col gap-1">
+            <div className="relative flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
+              <Phone size={18} className="text-[#8C8478] shrink-0 mr-3" />
+              <input
+                type="tel"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                onBlur={() => handleBlur('contactPhone')}
+                placeholder={`${t('phoneNumber')} (${tCommon('optional')})`}
+                aria-label={t('phoneNumber')}
+                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+              />
+            </div>
+          </div>
+
+          {/* Guest Counter */}
+          <div className="rounded-xl border border-[#E8ECE4] p-4">
+            <label className="text-sm font-medium text-[#8C8478]">{t('numberOfGuests')}</label>
+            <div className="flex items-center justify-center gap-6 mt-3">
+              <button
+                onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                disabled={guestCount <= 1}
+                aria-label="Decrease guest count"
+                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
+                  guestCount <= 1 ? 'cursor-not-allowed text-[#8C8478]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                }`}
+              >
+                <Minus size={18} />
+              </button>
+              <span className="text-xl font-medium text-[#1A1208] w-10 text-center">{guestCount}</span>
+              <button
+                onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
+                disabled={guestCount >= maxGuests}
+                aria-label="Increase guest count"
+                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
+                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#8C8478]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                }`}
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-[#8C8478] text-center mt-2">
+              Yurt capacity: {maxGuests} guests
+            </p>
+          </div>
+
+          {/* Capacity Notice - shown when below recommended minimum and not dismissed */}
+          {guestCount < MIN_RECOMMENDED_GUESTS && !capacityNoticeDismissed && (
+            <div className="bg-[#E8ECE4] rounded-xl p-3 flex items-start gap-2.5">
+              <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
+              <p className="text-sm text-[#3D4A35] leading-relaxed flex-1">
+                {t('capacityNotice')}
+              </p>
+              <button
+                onClick={() => setCapacityNoticeDismissed(true)}
+                aria-label="Dismiss notice"
+                className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#D4DDD0] transition-colors border-none bg-transparent cursor-pointer"
+              >
+                <X size={14} className="text-[#6B7F5E]" />
+              </button>
+            </div>
+          )}
+
+          {/* Special Requests */}
+          <div className="flex flex-col gap-1">
+            <textarea
+              value={specialRequests}
+              onChange={(e) => setSpecialRequests(e.target.value)}
+              placeholder={t('specialRequestsPlaceholder')}
+              aria-label={t('specialRequests')}
+              className="min-h-[100px] px-4 py-3 rounded-xl border border-[#E8ECE4] focus:border-[#6B7F5E] focus:ring-1 focus:ring-[#6B7F5E]/20 text-base text-[#1A1208] resize-none outline-none placeholder:text-[#8C8478] bg-transparent transition-colors"
+            />
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-between px-4 sm:px-10 lg:px-20">
-        <button
-          onClick={() => router.push('/booking/yurt')}
-          className="flex items-center gap-2 px-4 py-2.5 text-[15px] font-medium text-brown border-none bg-transparent cursor-pointer"
-        >
-          <ArrowLeft size={18} /> {tCommon('back')}
-        </button>
-        <div className="flex items-center gap-3">
-          {!isValid && Object.values(touched).some(Boolean) && (
-            <span className="text-sm text-[#DC3545]">Please fill in required fields</span>
-          )}
+      {/* Bottom Fixed Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-[#F8F7F4]">
+        <div className="max-w-[560px] mx-auto">
           <button
             onClick={handleNext}
             disabled={!isValid}
             aria-label={!isValid ? 'Please complete required fields' : 'Continue to confirmation'}
-            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
+            className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
               isValid
-                ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
-                : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
+                ? 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
+                : 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
             }`}
           >
-            {tCommon('next')} <ArrowRight size={18} />
+            {tCommon('next')}
+            <ChevronRight size={18} />
           </button>
         </div>
       </div>
-    </>
+    </div>
   )
 }
