@@ -27,7 +27,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="h-20 w-full flex items-center justify-between px-6 sm:px-12 lg:px-20 bg-white/93 sticky top-0 z-50">
+    <nav className="glass-nav h-20 w-full flex items-center justify-between px-6 sm:px-12 lg:px-20 sticky top-0 z-50">
       <Link href="/" className="flex flex-col no-underline">
         <span className="font-playfair text-2xl font-bold text-amber">Bobo&apos;s Farm</span>
         <span className="text-[11px] text-amber tracking-wide">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>

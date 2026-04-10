@@ -55,4 +55,214 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  ::selection {
+    background-color: #8B691430;
+    color: #3D2B1F;
+  }
+}
+
+/* ============================================================
+   Warm grain texture overlay
+   ============================================================ */
+.warm-grain {
+  position: relative;
+}
+.warm-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ============================================================
+   Scroll-triggered fade-in animation
+   ============================================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes warmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 105, 20, 0.15); }
+  50% { box-shadow: 0 0 20px 4px rgba(139, 105, 20, 0.08); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-gentle-float {
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* ============================================================
+   Enhanced card styles
+   ============================================================ */
+.card-warm {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 12px rgba(61, 43, 31, 0.04);
+}
+.card-warm:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(139, 105, 20, 0.1),
+              0 4px 12px rgba(61, 43, 31, 0.06);
+}
+
+/* Image zoom on hover */
+.img-zoom {
+  overflow: hidden;
+}
+.img-zoom img {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.img-zoom:hover img {
+  transform: scale(1.06);
+}
+
+/* ============================================================
+   Button glow effects
+   ============================================================ */
+.btn-warm {
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn-warm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(139, 105, 20, 0.3);
+}
+.btn-warm:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  transition: all 0.25s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================================
+   Glass navbar
+   ============================================================ */
+.glass-nav {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(232, 223, 208, 0.5);
+}
+
+/* ============================================================
+   Section decorative dividers
+   ============================================================ */
+.divider-leaf {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.divider-leaf::before,
+.divider-leaf::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #E8DFD0, transparent);
+}
+
+/* ============================================================
+   Gallery hover overlay
+   ============================================================ */
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.gallery-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(61, 43, 31, 0.25) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.gallery-item:hover::after {
+  opacity: 1;
+}
+.gallery-item img {
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   Warm skeleton pulse
+   ============================================================ */
+@keyframes warmPulseAnim {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.skeleton-warm {
+  background: linear-gradient(90deg, #E8DFD0 25%, #F5ECD8 50%, #E8DFD0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ============================================================
+   Smooth scrolling
+   ============================================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   Focus ring style
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid #8B6914;
+  outline-offset: 2px;
+  border-radius: 4px;
 }

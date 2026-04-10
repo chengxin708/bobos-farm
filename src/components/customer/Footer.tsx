@@ -16,11 +16,11 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-brown w-full flex flex-col">
-      <div className="flex items-center justify-center gap-4 h-10 w-full">
-        <div className="w-[200px] h-px bg-[#5B4A3A]" />
-        <Sprout size={20} className="text-green" />
-        <div className="w-[200px] h-px bg-[#5B4A3A]" />
+    <footer className="bg-brown w-full flex flex-col warm-grain">
+      <div className="flex items-center justify-center gap-4 h-12 w-full">
+        <div className="w-[200px] h-px" style={{ background: 'linear-gradient(to right, transparent, #5B4A3A)' }} />
+        <Sprout size={20} className="text-green animate-gentle-float" />
+        <div className="w-[200px] h-px" style={{ background: 'linear-gradient(to left, transparent, #5B4A3A)' }} />
       </div>
       <div className="flex gap-[60px] px-20 py-10">
         <div className="flex-1 flex flex-col gap-4">
@@ -33,7 +33,7 @@ export default function Footer() {
         <div className="flex-1 flex flex-col gap-3.5">
           <span className="text-[13px] text-white/60 font-semibold tracking-wide">{t('quickLinks')}</span>
           {links.map((link) => (
-            <Link key={link.href + link.label} href={link.href} className="text-sm text-white/80 no-underline hover:text-amber transition-colors">{link.label}</Link>
+            <Link key={link.href + link.label} href={link.href} className="text-sm text-white/80 no-underline hover:text-amber hover:translate-x-1 transition-all duration-200">{link.label}</Link>
           ))}
         </div>
         <div className="flex-1 flex flex-col gap-3.5">

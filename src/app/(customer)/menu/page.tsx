@@ -85,7 +85,7 @@ function TabsSkeleton() {
   return (
     <div className="flex items-end px-20 bg-white shadow-sm h-[52px] gap-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-5 w-28 my-auto rounded bg-[#E8DFD0] animate-pulse" />
+        <div key={i} className="h-5 w-28 my-auto skeleton-warm" />
       ))}
     </div>
   )
@@ -95,14 +95,14 @@ function CardsSkeleton() {
   return (
     <div className="grid grid-cols-3 gap-6">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
-          <div className="h-[200px] bg-[#E8DFD0] animate-pulse" />
+        <div key={i} className="card-warm bg-white rounded-2xl overflow-hidden">
+          <div className="h-[200px] skeleton-warm" />
           <div className="p-4 flex flex-col gap-2">
-            <div className="h-4 w-3/4 rounded bg-[#E8DFD0] animate-pulse" />
-            <div className="h-3 w-1/2 rounded bg-[#E8DFD0] animate-pulse" />
-            <div className="h-5 w-16 rounded bg-[#E8DFD0] animate-pulse" />
-            <div className="h-3 w-full rounded bg-[#E8DFD0] animate-pulse" />
-            <div className="h-3 w-2/3 rounded bg-[#E8DFD0] animate-pulse" />
+            <div className="h-4 w-3/4 skeleton-warm" />
+            <div className="h-3 w-1/2 skeleton-warm" />
+            <div className="h-5 w-16 skeleton-warm" />
+            <div className="h-3 w-full skeleton-warm" />
+            <div className="h-3 w-2/3 skeleton-warm" />
           </div>
         </div>
       ))}
@@ -297,10 +297,10 @@ export default function MenuPage() {
           ) : (
             <div className="grid grid-cols-3 gap-6">
               {items.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
+                <div key={item.id} className="card-warm bg-white rounded-2xl overflow-hidden">
                   {/* Image */}
                   {item.imageUrl && (
-                    <div className="h-[200px] overflow-hidden">
+                    <div className="h-[200px] img-zoom">
                       <img src={item.imageUrl} alt={itemDisplayName(item)} className="w-full h-full object-cover" />
                     </div>
                   )}
