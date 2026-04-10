@@ -29,8 +29,8 @@ export default function Navbar() {
   return (
     <nav className="glass-nav h-20 w-full flex items-center justify-between px-6 sm:px-12 lg:px-20 sticky top-0 z-50">
       <Link href="/" className="flex flex-col no-underline">
-        <span className="font-playfair text-[22px] font-bold italic text-brown">Bobo&apos;s Farm</span>
-        <span className="text-[10px] text-brown/40 tracking-[0.12em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
+        <span className="font-playfair text-[22px] font-bold italic text-amber">Bobo&apos;s Farm</span>
+        <span className="text-[10px] text-amber/50 tracking-[0.12em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
       </Link>
 
       {/* Desktop nav */}
