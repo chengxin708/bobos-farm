@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { User, Mail, Phone, Eye, EyeOff, Lock } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 type StrengthKey = 'weak' | 'medium' | 'good' | 'strong'
@@ -17,8 +18,8 @@ function getPasswordStrength(password: string): { score: number; strengthKey: St
   if (/[0-9]/.test(password)) score++
   if (/[^A-Za-z0-9]/.test(password)) score++
   const keys: StrengthKey[] = ['weak', 'weak', 'medium', 'good', 'strong']
-  const colors = ['', '#E05252', '#E8B730', '#5B8C3E', '#5B8C3E']
-  return { score, strengthKey: keys[score] || 'weak', color: colors[score] || '#E05252' }
+  const colors = ['', '#C4453A', '#E8B730', '#6B7F5E', '#6B7F5E']
+  return { score, strengthKey: keys[score] || 'weak', color: colors[score] || '#C4453A' }
 }
 
 export default function RegisterPage() {
@@ -28,7 +29,6 @@ export default function RegisterPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -66,7 +66,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone: phone || undefined, password, confirmPassword }),
+        body: JSON.stringify({ name, email, password, confirmPassword }),
       })
 
       const data = await res.json()
@@ -107,195 +107,191 @@ export default function RegisterPage() {
     }
   }
 
-  return (
-    <div className="flex h-screen">
-      {/* Left Image Panel */}
-      <div className="flex-1 relative overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1763771056927-557d39cb5e02?w=800&q=80"
-          alt="Farm animals"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="relative z-10 flex flex-col items-center justify-center h-full px-16">
-          <h2 className="font-playfair text-[44px] font-bold text-white text-center leading-tight">
-            {t('heroTitle')}
-          </h2>
-          <p className="text-white/70 text-base mt-4 text-center">
-            {t('heroSubtitle')}
-          </p>
+  const formContent = (
+    <div className="w-full max-w-[400px] px-6 md:px-8">
+      {/* Logo */}
+      <h1 className="font-playfair text-2xl font-bold text-[#3D2B1F] text-center md:text-left">
+        Bobo&apos;s Farm
+      </h1>
+      <p className="text-sm text-[#3D2B1F]/50 text-center md:text-left mt-1 mb-10">
+        {t('subtitle')}
+      </p>
+
+      {/* Heading */}
+      <h2 className="font-playfair text-2xl font-semibold text-[#3D2B1F] mb-6">
+        {t('title')}
+      </h2>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm mb-4">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* Right Panel */}
-      <div className="flex-1 bg-cream flex items-center justify-center overflow-auto py-8">
-        <div className="w-[420px] bg-white rounded-[20px] px-10 py-9 shadow-[0_4px_40px_rgba(0,0,0,0.03)] flex flex-col gap-6">
-          {/* Logo */}
-          <div className="flex flex-col items-center">
-            <span className="font-playfair text-[22px] font-bold text-amber">Bobo&apos;s Farm</span>
-            <span className="text-[11px] text-brown/40 tracking-wide">波姐农家乐</span>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Name */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <User size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type="text"
+              placeholder={t('namePlaceholder')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
           </div>
+        </div>
 
-          {/* Heading */}
-          <div className="flex flex-col gap-1.5">
-            <h1 className="font-playfair text-[28px] font-bold text-brown">{t('title')}</h1>
-            <p className="text-sm text-brown/53">{t('subtitle')}</p>
+        {/* Email */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <Mail size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type="email"
+              placeholder={t('emailPlaceholder')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
           </div>
+        </div>
 
-          {error && (
-            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
-          {/* Fields */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('name')}</label>
-              <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <User size={18} className="text-brown/33" />
-                <input
-                  type="text"
-                  placeholder={t('namePlaceholder')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('email')}</label>
-              <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <Mail size={18} className="text-brown/33" />
-                <input
-                  type="email"
-                  placeholder={t('emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <label className="text-[13px] font-semibold text-brown">{t('phone')}</label>
-                <span className="text-[11px] text-brown/33 italic">{t('phoneOptional')}</span>
-              </div>
-              <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <Phone size={18} className="text-brown/33" />
-                <input
-                  type="tel"
-                  placeholder={t('phonePlaceholder')}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('password')}</label>
-              <div className="flex items-center justify-between h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <div className="flex items-center gap-3">
-                  <Lock size={18} className="text-brown/33" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t('passwordPlaceholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="text-sm bg-transparent outline-none placeholder:text-brown/27"
+        {/* Password */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <Lock size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('passwordPlaceholder')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="bg-transparent border-none p-0 cursor-pointer shrink-0"
+            >
+              {showPassword
+                ? <Eye size={18} className="text-[#3D2B1F]/30" />
+                : <EyeOff size={18} className="text-[#3D2B1F]/30" />}
+            </button>
+          </div>
+          {/* Strength bar */}
+          {password && (
+            <div className="mt-2">
+              <div className="flex gap-1 h-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-full"
+                    style={{ backgroundColor: i <= strength.score ? strength.color : '#E8ECE4' }}
                   />
-                </div>
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="bg-transparent border-none p-0 cursor-pointer">
-                  {showPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
-                </button>
+                ))}
               </div>
-              {/* Strength bar */}
-              {password && (
-                <>
-                  <div className="flex gap-1 h-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="flex-1 rounded"
-                        style={{ backgroundColor: i <= strength.score ? strength.color : '#e5e1d8' }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-[11px]" style={{ color: strength.color }}>
-                    {t('passwordStrength', { strength: t(`strength.${strength.strengthKey}`) })}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('confirmPassword')}</label>
-              <div className="flex items-center justify-between h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <div className="flex items-center gap-3">
-                  <Lock size={18} className="text-brown/33" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder={t('confirmPasswordPlaceholder')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="text-sm bg-transparent outline-none placeholder:text-brown/27"
-                  />
-                </div>
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="bg-transparent border-none p-0 cursor-pointer">
-                  {showConfirmPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Terms */}
-            <div className="flex gap-2.5">
-              <div className="w-[18px] h-[18px] rounded border-[1.5px] border-beige bg-white shrink-0 mt-0.5" />
-              <span className="text-xs text-brown/53 leading-relaxed">
-                {t('termsAgreement')}
+              <span className="text-[11px] mt-1 block" style={{ color: strength.color }}>
+                {t('passwordStrength', { strength: t(`strength.${strength.strengthKey}`) })}
               </span>
             </div>
+          )}
+        </div>
 
-            {/* Create Account Button */}
+        {/* Confirm Password */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <Lock size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder={t('confirmPasswordPlaceholder')}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
             <button
-              type="submit"
-              disabled={isLoading}
-              className="h-[50px] rounded-2xl bg-gradient-to-r from-amber to-[#A67C2E] text-white text-base font-semibold shadow-[0_4px_16px_rgba(139,105,20,0.2)] cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="bg-transparent border-none p-0 cursor-pointer shrink-0"
             >
-              {isLoading ? t('creatingAccount') : t('createAccount')}
+              {showConfirmPassword
+                ? <Eye size={18} className="text-[#3D2B1F]/30" />
+                : <EyeOff size={18} className="text-[#3D2B1F]/30" />}
             </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-beige" />
-            <span className="text-xs text-brown/33">{tCommon('or')}</span>
-            <div className="flex-1 h-px bg-beige" />
-          </div>
-
-          {/* Google Button */}
-          <button
-            type="button"
-            onClick={() => signIn('google')}
-            className="h-12 rounded-xl bg-white border-[1.5px] border-beige flex items-center justify-center gap-2.5 cursor-pointer"
-          >
-            <span className="text-[#4285F4] text-lg font-bold">G</span>
-            <span className="text-sm font-medium text-brown">{t('continueWithGoogle')}</span>
-          </button>
-
-          {/* Sign In Link */}
-          <div className="flex justify-center gap-1">
-            <span className="text-[13px] text-brown/53">{t('hasAccount')}</span>
-            <Link href="/login" className="text-[13px] font-semibold text-amber no-underline">{t('signIn')}</Link>
           </div>
         </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="bg-[#6B7F5E] text-white rounded-full py-3 w-full text-base font-medium cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed transition-opacity mt-2"
+        >
+          {isLoading ? t('creatingAccount') : t('createAccount')}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-[#E8ECE4]" />
+        <span className="text-xs text-[#3D2B1F]/40">{tCommon('or')}</span>
+        <div className="flex-1 h-px bg-[#E8ECE4]" />
       </div>
+
+      {/* Google OAuth */}
+      <button
+        type="button"
+        onClick={() => signIn('google')}
+        className="border border-[#E8ECE4] rounded-full py-3 w-full flex items-center justify-center gap-2.5 cursor-pointer bg-white hover:bg-[#F9FAF8] transition-colors"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        <span className="text-sm font-medium text-[#3D2B1F]">{t('continueWithGoogle')}</span>
+      </button>
+
+      {/* Bottom link */}
+      <p className="text-center mt-6 text-sm text-[#3D2B1F]/50">
+        {t('hasAccount')}{' '}
+        <Link href="/login" className="text-[#6B7F5E] font-medium no-underline hover:underline">
+          {t('signIn')}
+        </Link>
+      </p>
     </div>
+  )
+
+  return (
+    <>
+      {/* Mobile layout */}
+      <div className="md:hidden min-h-screen bg-[#FAFAF7] flex items-center justify-center pt-16 pb-10">
+        {formContent}
+      </div>
+
+      {/* Desktop split layout */}
+      <div className="hidden md:flex h-screen">
+        {/* Left: farm photo */}
+        <div className="w-1/2 relative">
+          <Image
+            src="https://images.unsplash.com/photo-1763771056927-557d39cb5e02?w=1200&q=80"
+            alt="Bobo's Farm"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+
+        {/* Right: form */}
+        <div className="w-1/2 bg-[#FAFAF7] flex items-center justify-center overflow-auto py-8">
+          {formContent}
+        </div>
+      </div>
+    </>
   )
 }

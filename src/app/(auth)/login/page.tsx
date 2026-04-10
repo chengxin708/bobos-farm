@@ -2,9 +2,10 @@
 
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn, getSession } from 'next-auth/react'
-import { Mail, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 function LoginForm() {
@@ -53,105 +54,162 @@ function LoginForm() {
     }
   }
 
-  return (
-    <div className="flex h-screen">
-      <div className="flex-1 relative overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1767447612225-a281f76abdb7?w=800&q=80" alt="Farm" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 flex flex-col items-center justify-center h-full px-16">
-          <h2 className="font-playfair text-[44px] font-bold text-white text-center leading-tight whitespace-pre-line">{t('heroTitle')}</h2>
-          <p className="text-white/70 text-base mt-4 text-center">{t('heroSubtitle')}</p>
+  const formContent = (
+    <div className="w-full max-w-[400px] px-6 md:px-8">
+      {/* Logo */}
+      <h1 className="font-playfair text-2xl font-bold text-[#3D2B1F] text-center md:text-left">
+        Bobo&apos;s Farm
+      </h1>
+      <p className="text-sm text-[#3D2B1F]/50 text-center md:text-left mt-1 mb-10">
+        {t('subtitle')}
+      </p>
+
+      {/* Heading */}
+      <h2 className="font-playfair text-2xl font-semibold text-[#3D2B1F] mb-6">
+        {t('title')}
+      </h2>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm mb-4">
+          {error}
         </div>
-      </div>
-      <div className="flex-1 bg-cream flex items-center justify-center">
-        <div className="w-[420px] bg-white rounded-[20px] p-10 shadow-[0_4px_40px_rgba(0,0,0,0.03)] flex flex-col gap-7">
-          <div className="flex flex-col">
-            <span className="font-playfair text-[22px] font-bold text-amber">Bobo&apos;s Farm</span>
-            <span className="text-[11px] text-brown/40 tracking-wide">波姐农家乐</span>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Email */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <Mail size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type="email"
+              placeholder={t('emailPlaceholder')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <h1 className="font-playfair text-[28px] font-bold text-brown">{t('title')}</h1>
-            <p className="text-sm text-brown/53">{t('subtitle')}</p>
-          </div>
+        </div>
 
-          {error && (
-            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4.5">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('email')}</label>
-              <div className="flex items-center gap-3 h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <Mail size={18} className="text-brown/33" />
-                <input
-                  type="email"
-                  placeholder={t('emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="flex-1 text-sm bg-transparent outline-none placeholder:text-brown/27"
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-semibold text-brown">{t('password')}</label>
-              <div className="flex items-center justify-between h-12 px-4 bg-white rounded-xl border-[1.5px] border-beige">
-                <div className="flex items-center gap-3">
-                  <span className="text-brown/33 text-sm">&#x1f512;</span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t('passwordPlaceholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="text-sm bg-transparent outline-none placeholder:text-brown/27"
-                  />
-                </div>
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="bg-transparent border-none p-0 cursor-pointer">
-                  {showPassword ? <Eye size={18} className="text-brown/27" /> : <EyeOff size={18} className="text-brown/27" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>
-                <div className={`w-[18px] h-[18px] rounded border-[1.5px] ${rememberMe ? 'bg-amber border-amber' : 'bg-white border-beige'}`} />
-                <span className="text-[13px] text-brown">{t('rememberMe')}</span>
-              </label>
-              <a href="#" className="text-[13px] font-medium text-amber no-underline">{t('forgotPassword')}</a>
-            </div>
-
+        {/* Password */}
+        <div>
+          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+            <Lock size={18} className="text-[#3D2B1F]/30 shrink-0" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('passwordPlaceholder')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#3D2B1F]/30 text-[#3D2B1F]"
+            />
             <button
-              type="submit"
-              disabled={isLoading}
-              className="h-[50px] rounded-2xl bg-gradient-to-r from-amber to-[#A67C2E] text-white text-base font-semibold shadow-[0_4px_16px_rgba(139,105,20,0.2)] cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="bg-transparent border-none p-0 cursor-pointer shrink-0"
             >
-              {isLoading ? t('signingIn') : t('signIn')}
+              {showPassword
+                ? <Eye size={18} className="text-[#3D2B1F]/30" />
+                : <EyeOff size={18} className="text-[#3D2B1F]/30" />}
             </button>
-          </form>
-
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-beige" />
-            <span className="text-xs text-brown/33">{t('orContinueWith')}</span>
-            <div className="flex-1 h-px bg-beige" />
-          </div>
-          <button
-            type="button"
-            onClick={() => signIn('google')}
-            className="h-12 rounded-xl bg-white border-[1.5px] border-beige flex items-center justify-center gap-2.5 cursor-pointer"
-          >
-            <span className="text-[#4285F4] text-lg font-bold">G</span>
-            <span className="text-sm font-medium text-brown">{t('continueWithGoogle')}</span>
-          </button>
-          <div className="flex justify-center gap-1">
-            <span className="text-[13px] text-brown/53">{t('noAccount')}</span>
-            <Link href="/register" className="text-[13px] font-semibold text-amber no-underline">{t('signUp')}</Link>
           </div>
         </div>
+
+        {/* Remember me + Forgot password */}
+        <div className="flex items-center justify-between">
+          <label
+            className="flex items-center gap-2 cursor-pointer select-none"
+            onClick={() => setRememberMe(!rememberMe)}
+          >
+            <div
+              className={`w-[18px] h-[18px] rounded border-[1.5px] flex items-center justify-center transition-colors ${
+                rememberMe
+                  ? 'bg-[#6B7F5E] border-[#6B7F5E]'
+                  : 'bg-white border-[#E8ECE4]'
+              }`}
+            >
+              {rememberMe && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+            <span className="text-sm text-[#3D2B1F]">{t('rememberMe')}</span>
+          </label>
+          <a href="#" className="text-sm text-[#6B7F5E] no-underline hover:underline">
+            {t('forgotPassword')}
+          </a>
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="bg-[#6B7F5E] text-white rounded-full py-3 w-full text-base font-medium cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+        >
+          {isLoading ? t('signingIn') : t('signIn')}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-[#E8ECE4]" />
+        <span className="text-xs text-[#3D2B1F]/40">{t('orContinueWith')}</span>
+        <div className="flex-1 h-px bg-[#E8ECE4]" />
       </div>
+
+      {/* Google OAuth */}
+      <button
+        type="button"
+        onClick={() => signIn('google')}
+        className="border border-[#E8ECE4] rounded-full py-3 w-full flex items-center justify-center gap-2.5 cursor-pointer bg-white hover:bg-[#F9FAF8] transition-colors"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        <span className="text-sm font-medium text-[#3D2B1F]">{t('continueWithGoogle')}</span>
+      </button>
+
+      {/* Bottom link */}
+      <p className="text-center mt-6 text-sm text-[#3D2B1F]/50">
+        {t('noAccount')}{' '}
+        <Link href="/register" className="text-[#6B7F5E] font-medium no-underline hover:underline">
+          {t('signUp')}
+        </Link>
+      </p>
     </div>
+  )
+
+  return (
+    <>
+      {/* Mobile layout */}
+      <div className="md:hidden min-h-screen bg-[#FAFAF7] flex items-center justify-center pt-16 pb-10">
+        {formContent}
+      </div>
+
+      {/* Desktop split layout */}
+      <div className="hidden md:flex h-screen">
+        {/* Left: farm photo */}
+        <div className="w-1/2 relative">
+          <Image
+            src="https://images.unsplash.com/photo-1767447612225-a281f76abdb7?w=1200&q=80"
+            alt="Bobo's Farm"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+
+        {/* Right: form */}
+        <div className="w-1/2 bg-[#FAFAF7] flex items-center justify-center">
+          {formContent}
+        </div>
+      </div>
+    </>
   )
 }
 
