@@ -39,6 +39,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Limit date range to 90 days to prevent DoS via excessive DB operations
+    const MAX_RANGE_DAYS = 90;
+    const rangeDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (rangeDays > MAX_RANGE_DAYS) {
+      return NextResponse.json(
+        { error: `Date range cannot exceed ${MAX_RANGE_DAYS} days` },
+        { status: 400 }
+      );
+    }
+
     // Get target yurts
     let yurtIds: string[];
     if (yurtId) {

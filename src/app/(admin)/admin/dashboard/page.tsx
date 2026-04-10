@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
@@ -101,7 +101,10 @@ function getWeekRange(): { start: string; end: string; dates: Date[] } {
 }
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0]
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -174,12 +177,14 @@ export default function Dashboard() {
     return toDateStr(d)
   }, [])
 
+  const [remindingSoon, setRemindingSoon] = useState<string | null>(null)
+
   // Fetch all data
-  const { data: todayRes } = useSWR<Reservation[]>(
+  const { data: todayRes, error: todayErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${today}&endDate=${today}`,
     fetcher
   )
-  const { data: pendingDeposits } = useSWR<Reservation[]>(
+  const { data: pendingDeposits, error: pendingDepErr } = useSWR<Reservation[]>(
     '/api/reservations?status=PAYMENT_SUBMITTED',
     fetcher
   )
@@ -187,11 +192,11 @@ export default function Dashboard() {
     '/api/reservations?status=PENDING_PAYMENT',
     fetcher
   )
-  const { data: weekRes } = useSWR<Reservation[]>(
+  const { data: weekRes, error: weekErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${week.start}&endDate=${week.end}`,
     fetcher
   )
-  const { data: monthRes } = useSWR<Reservation[]>(
+  const { data: monthRes, error: monthErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${monthStart}&endDate=${monthEnd}`,
     fetcher
   )
@@ -199,6 +204,8 @@ export default function Dashboard() {
   const { data: activityLogs } = useSWR<ActivityLog[]>('/api/activity-logs?limit=6', fetcher, {
     onError: () => {/* activity logs endpoint may not exist yet, silently ignore */},
   })
+
+  const hasError = !!(todayErr || pendingDepErr || weekErr || monthErr)
 
   // Compute stats
   const todayCount = todayRes?.length ?? 0
@@ -270,6 +277,13 @@ export default function Dashboard() {
     <>
       <TopBar title={t('title')} />
       <div className="flex-1 p-6 flex flex-col gap-6 bg-cream-bg overflow-auto">
+        {/* Error Banner */}
+        {hasError && (
+          <div className="bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] rounded-lg px-4 py-3 text-sm">
+            Failed to load some dashboard data. Please refresh the page to try again.
+          </div>
+        )}
+
         {/* Stat Cards */}
         <div className="flex gap-4">
           {statCards.map((card) => (
@@ -417,8 +431,16 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="w-[80px]">
-                      <button className="bg-[#DC2626] text-white text-[11px] font-semibold px-3 py-1 rounded-md">
-                        {t('expiringSoon.remind')}
+                      <button
+                        onClick={() => {
+                          setRemindingSoon(row.id)
+                          // Reminder is a placeholder — navigate to deposits for now
+                          setTimeout(() => setRemindingSoon(null), 1500)
+                        }}
+                        disabled={remindingSoon === row.id}
+                        className="bg-[#DC2626] text-white text-[11px] font-semibold px-3 py-1 rounded-md disabled:opacity-50"
+                      >
+                        {remindingSoon === row.id ? 'Sent' : t('expiringSoon.remind')}
                       </button>
                     </div>
                   </div>

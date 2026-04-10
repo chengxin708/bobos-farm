@@ -87,6 +87,9 @@ function PreOrderPage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [notes, setNotes] = useState('')
+  const [submittingOrder, setSubmittingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [orderSuccess, setOrderSuccess] = useState(false)
 
   // Fetch categories and menu items
   const { data: categories } = useSWR<MenuCategory[]>('/api/menu/categories', fetcher)
@@ -369,12 +372,51 @@ function PreOrderPage() {
               {t('paymentNote')}
             </p>
 
+            {/* Order error */}
+            {orderError && (
+              <div className="bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-4 py-2">
+                {orderError}
+              </div>
+            )}
+
+            {/* Order success */}
+            {orderSuccess && (
+              <div className="bg-green/10 text-green text-sm rounded-lg px-4 py-2">
+                Order submitted successfully!
+              </div>
+            )}
+
             {/* Submit */}
             <button
-              disabled={orderItems.length === 0}
-              className="h-[52px] rounded-2xl bg-gradient-to-r from-[#8B6914] to-[#A67C2E] text-white text-[15px] font-semibold border-none cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)] w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={orderItems.length === 0 || submittingOrder || orderSuccess}
+              onClick={async () => {
+                if (submittingOrder || orderItems.length === 0 || !reservationId) return
+                setSubmittingOrder(true)
+                setOrderError(null)
+                try {
+                  const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      reservationId,
+                      items: orderItems.map(i => ({ menuItemId: i.id, quantity: i.qty })),
+                      notes: notes.trim() || undefined,
+                    }),
+                  })
+                  if (!res.ok) {
+                    const data = await res.json().catch(() => ({}))
+                    throw new Error(data.error || 'Failed to submit order')
+                  }
+                  setOrderSuccess(true)
+                } catch (err) {
+                  setOrderError(err instanceof Error ? err.message : 'Failed to submit order')
+                } finally {
+                  setSubmittingOrder(false)
+                }
+              }}
+              className="h-[52px] rounded-2xl bg-gradient-to-r from-[#8B6914] to-[#A67C2E] text-white text-[15px] font-semibold border-none cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)] w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {t('submitOrder')}
+              {submittingOrder ? 'Submitting...' : orderSuccess ? 'Order Submitted' : t('submitOrder')}
             </button>
 
             {/* Save Draft */}

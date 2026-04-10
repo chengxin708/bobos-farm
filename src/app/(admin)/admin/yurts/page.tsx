@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -58,10 +58,11 @@ export default function YurtManagement() {
   const [saving, setSaving] = useState(false)
 
   // Redirect non-admin
-  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+      router.push('/')
+    }
+  }, [sessionStatus, session, router])
 
   const { data: yurts, isLoading, mutate } = useSWR<Yurt[]>('/api/yurts', fetcher)
 

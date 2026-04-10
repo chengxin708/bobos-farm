@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -93,12 +93,21 @@ export default function Reservations() {
   const [endDate, setEndDate] = useState('')
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
   const [updating, setUpdating] = useState(false)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showSuccess = useCallback((msg: string) => {
+    setSuccessMsg(msg)
+    if (successTimer.current) clearTimeout(successTimer.current)
+    successTimer.current = setTimeout(() => setSuccessMsg(null), 3000)
+  }, [])
 
   // Redirect non-admin
-  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+      router.push('/')
+    }
+  }, [sessionStatus, session, router])
 
   // ── API URL construction ─────────────────────────────────────
 
@@ -128,7 +137,7 @@ export default function Reservations() {
 
   // ── Actions ──────────────────────────────────────────────────
 
-  const handleAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
+  const handleAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>): Promise<boolean> => {
     setUpdating(true)
     try {
       const body = action === 'cancel'
@@ -144,36 +153,43 @@ export default function Reservations() {
       if (!res.ok) {
         const err = await res.json()
         alert(err.error || 'Failed to update reservation')
-        return
+        return false
       }
 
       const updated = await res.json()
       // Update selected reservation if it's the same one
       if (selectedRes?.id === id) setSelectedRes(updated)
       mutate()
+      return true
     } catch {
       alert('Failed to update reservation')
+      return false
     } finally {
       setUpdating(false)
     }
   }, [selectedRes, mutate])
 
-  const confirmDeposit = useCallback((id: string) => {
-    handleAction(id, 'admin', {
+  const confirmDeposit = useCallback(async (id: string) => {
+    if (!confirm('Confirm this deposit? The reservation will become active.')) return
+    const ok = await handleAction(id, 'admin', {
       status: 'CONFIRMED',
       depositStatus: 'CONFIRMED',
       depositConfirmedAt: new Date().toISOString(),
     })
-  }, [handleAction])
+    if (ok) showSuccess('Deposit confirmed. Reservation is now active.')
+  }, [handleAction, showSuccess])
 
-  const cancelReservation = useCallback((id: string) => {
-    if (!confirm('Are you sure you want to cancel this reservation?')) return
-    handleAction(id, 'cancel')
-  }, [handleAction])
+  const cancelReservation = useCallback(async (id: string) => {
+    if (!confirm('Are you sure you want to cancel this reservation? This cannot be undone.')) return
+    const ok = await handleAction(id, 'cancel')
+    if (ok) showSuccess('Reservation cancelled successfully.')
+  }, [handleAction, showSuccess])
 
-  const completeReservation = useCallback((id: string) => {
-    handleAction(id, 'admin', { status: 'COMPLETED' })
-  }, [handleAction])
+  const completeReservation = useCallback(async (id: string) => {
+    if (!confirm('Mark this reservation as completed?')) return
+    const ok = await handleAction(id, 'admin', { status: 'COMPLETED' })
+    if (ok) showSuccess('Reservation marked as completed.')
+  }, [handleAction, showSuccess])
 
   const clearFilters = useCallback(() => {
     setActiveTab('all')
@@ -203,6 +219,16 @@ export default function Reservations() {
       <div className="flex-1 flex bg-cream-bg overflow-hidden">
         {/* Main Content */}
         <div className={`flex-1 p-6 flex flex-col gap-5 overflow-auto transition-all ${selectedRes ? 'mr-0' : ''}`}>
+          {/* Success Message */}
+          {successMsg && (
+            <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
+              {successMsg}
+              <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
+                <span className="text-lg leading-none">&times;</span>
+              </button>
+            </div>
+          )}
+
           {/* Title + subtitle */}
           <div>
             <h2 className="text-xl font-bold text-brown font-playfair">{t('title')}</h2>

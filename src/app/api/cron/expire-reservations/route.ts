@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { timingSafeEqual } from "crypto";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,7 +13,18 @@ export async function GET(req: NextRequest) {
       );
     }
     const authHeader = req.headers.get("authorization");
-    if (!authHeader || authHeader !== `Bearer ${configuredSecret}`) {
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    // Use timing-safe comparison to prevent token extraction via timing attacks
+    const expected = `Bearer ${configuredSecret}`;
+    try {
+      const a = Buffer.from(authHeader, "utf8");
+      const b = Buffer.from(expected, "utf8");
+      if (a.length !== b.length || !timingSafeEqual(a, b)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    } catch {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

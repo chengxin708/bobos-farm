@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { z } from "zod";
+
+const createReservationBodySchema = z.object({
+  yurtId: z.string().min(1, "yurtId is required"),
+  date: z.string().min(1, "date is required").refine(
+    (val) => !isNaN(Date.parse(val)),
+    { message: "Invalid date format" }
+  ),
+  guestCount: z.number().int().positive("guestCount must be a positive integer"),
+  specialRequests: z.string().max(2000).optional(),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -69,14 +80,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { yurtId, date, guestCount, specialRequests } = body;
-
-    if (!yurtId || !date || !guestCount) {
+    const parsed = createReservationBodySchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "yurtId, date, and guestCount are required" },
+        { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { yurtId, date, guestCount, specialRequests } = parsed.data;
 
     // Check yurt exists and is active
     const yurt = await prisma.yurt.findUnique({ where: { id: yurtId } });

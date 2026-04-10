@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
@@ -52,6 +52,14 @@ export default function Settings() {
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const saveSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current)
+    }
+  }, [])
 
   const { data: settings, mutate } = useSWR<SystemSetting[]>('/api/settings', fetcher)
 
@@ -99,7 +107,8 @@ export default function Settings() {
       setOriginalValues({ ...formValues })
       setSaveSuccess(true)
       mutate()
-      setTimeout(() => setSaveSuccess(false), 3000)
+      if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current)
+      saveSuccessTimerRef.current = setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Save settings error:', err)
     } finally {

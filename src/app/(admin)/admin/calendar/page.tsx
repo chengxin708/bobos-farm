@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -77,7 +77,10 @@ const AVAILABLE_COLORS = { border: 'border-l-[#5B8C3E]', bg: 'bg-[#5B8C3E]/10', 
 const CLOSED_COLORS = { bg: 'bg-gray-100', text: 'text-gray-400' }
 
 function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0]
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 function getMonthRange(year: number, month: number): { start: string; end: string } {
@@ -129,10 +132,11 @@ export default function Calendar() {
   const [weekBase, setWeekBase] = useState(today)
 
   // Redirect non-admin
-  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+      router.push('/')
+    }
+  }, [sessionStatus, session, router])
 
   // ── Date ranges ──────────────────────────────────────────────
 

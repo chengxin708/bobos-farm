@@ -39,7 +39,10 @@ interface MenuItem {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   'Whole Lamb': '\u{1F411}',
@@ -167,6 +170,7 @@ export default function MenuPage() {
   const { data: categories, isLoading: catLoading } = useSWR<MenuCategory[]>(
     '/api/menu/categories',
     fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   )
 
   // Active tab state — keyed to category id
@@ -181,6 +185,7 @@ export default function MenuPage() {
       ? `/api/menu/items?categoryId=${resolvedTabId}&activeOnly=true`
       : null,
     fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
   )
 
   // Figure out the active category nameEn for special logic (e.g. Whole Lamb banner)

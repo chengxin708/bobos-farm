@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -61,7 +61,10 @@ function getMonthDays(year: number, month: number): { date: Date; day: number }[
 }
 
 function toDateKey(date: Date): string {
-  return date.toISOString().split('T')[0]
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function formatDateISO(year: number, month: number, day: number): string {
@@ -91,10 +94,11 @@ export default function Availability() {
   const [closeEnd, setCloseEnd] = useState('')
 
   // Redirect non-admin
-  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+      router.push('/')
+    }
+  }, [sessionStatus, session, router])
 
   // Compute date range for API
   const startDate = formatDateISO(currentYear, currentMonth, 1)
@@ -232,11 +236,11 @@ export default function Availability() {
     if (selectedDate === null || !yurts?.length) return
     setSaving(true)
     try {
-      // Save note for all yurts on this date
-      for (const yurt of yurts) {
-        const dateKey = formatDateISO(currentYear, currentMonth, selectedDate)
+      // Save note for all yurts on this date (parallel requests)
+      const dateKey = formatDateISO(currentYear, currentMonth, selectedDate)
+      await Promise.all(yurts.map(yurt => {
         const existing = availabilityIndex[dateKey]?.[yurt.id]
-        await fetch('/api/availability', {
+        return fetch('/api/availability', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -246,7 +250,7 @@ export default function Availability() {
             note: adminNote,
           }),
         })
-      }
+      }))
       mutateAvailability()
     } catch {
       alert('Failed to save note')

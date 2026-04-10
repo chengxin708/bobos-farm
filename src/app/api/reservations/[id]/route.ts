@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { z } from "zod";
+
+// Zod schemas for each action to prevent unvalidated input
+const cancelActionSchema = z.object({
+  action: z.literal("cancel"),
+  reason: z.string().max(1000).optional(),
+});
+
+const submitPaymentActionSchema = z.object({
+  action: z.literal("submit_payment"),
+  paymentScreenshotUrl: z.string().url().max(2048).optional(),
+  paymentReference: z.string().max(255).optional(),
+});
+
+const rescheduleActionSchema = z.object({
+  action: z.literal("reschedule"),
+  newDate: z.string().min(1).refine(
+    (val) => !isNaN(Date.parse(val)),
+    { message: "Invalid date format" }
+  ),
+  newYurtId: z.string().optional(),
+});
+
+const adminUpdateSchema = z.object({
+  status: z.enum(["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "EXPIRED", "COMPLETED"]).optional(),
+  guestCount: z.number().int().positive().optional(),
+  specialRequests: z.string().max(2000).optional(),
+  depositStatus: z.enum(["UNPAID", "PENDING", "CONFIRMED", "REFUNDED"]).optional(),
+  depositAmount: z.number().nonnegative().optional(),
+  depositConfirmedAt: z.string().refine(
+    (val) => !isNaN(Date.parse(val)),
+    { message: "Invalid date" }
+  ).optional(),
+  paymentReference: z.string().max(255).optional(),
+  paymentScreenshotUrl: z.string().url().max(2048).optional(),
+});
 
 export async function GET(
   _req: NextRequest,
@@ -80,8 +116,23 @@ export async function PATCH(
     const body = await req.json();
     const { action } = body;
 
+    // Validate action field exists
+    if (!action || typeof action !== "string") {
+      // If no action, check for admin update below
+      if (!isAdmin) {
+        return NextResponse.json({ error: "action field is required" }, { status: 400 });
+      }
+    }
+
     // ---------- CANCEL ----------
     if (action === "cancel") {
+      const parsedCancel = cancelActionSchema.safeParse(body);
+      if (!parsedCancel.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedCancel.error.flatten() },
+          { status: 400 }
+        );
+      }
       if (
         reservation.status === "CANCELLED" ||
         reservation.status === "EXPIRED"
@@ -138,6 +189,13 @@ export async function PATCH(
 
     // ---------- SUBMIT PAYMENT ----------
     if (action === "submit_payment") {
+      const parsedPayment = submitPaymentActionSchema.safeParse(body);
+      if (!parsedPayment.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedPayment.error.flatten() },
+          { status: 400 }
+        );
+      }
       if (reservation.status !== "PENDING_PAYMENT") {
         return NextResponse.json(
           { error: "Reservation is not pending payment" },
@@ -161,8 +219,8 @@ export async function PATCH(
         data: {
           status: "PAYMENT_SUBMITTED",
           depositStatus: "PENDING",
-          paymentScreenshotUrl: body.paymentScreenshotUrl || null,
-          paymentReference: body.paymentReference || null,
+          paymentScreenshotUrl: parsedPayment.data.paymentScreenshotUrl || null,
+          paymentReference: parsedPayment.data.paymentReference || null,
         },
         include: {
           user: {
@@ -189,14 +247,14 @@ export async function PATCH(
 
     // ---------- RESCHEDULE ----------
     if (action === "reschedule") {
-      const { newDate, newYurtId } = body;
-
-      if (!newDate) {
+      const parsedReschedule = rescheduleActionSchema.safeParse(body);
+      if (!parsedReschedule.success) {
         return NextResponse.json(
-          { error: "newDate is required for rescheduling" },
+          { error: "Validation failed", details: parsedReschedule.error.flatten() },
           { status: 400 }
         );
       }
+      const { newDate, newYurtId } = parsedReschedule.data;
 
       if (
         reservation.status === "CANCELLED" ||
@@ -314,22 +372,20 @@ export async function PATCH(
 
     // ---------- ADMIN UPDATES ----------
     if (isAdmin) {
-      // Allow admin to update arbitrary fields
-      const allowedFields = [
-        "status",
-        "guestCount",
-        "specialRequests",
-        "depositStatus",
-        "depositAmount",
-        "depositConfirmedAt",
-        "paymentReference",
-        "paymentScreenshotUrl",
-      ];
+      // Validate admin update fields with Zod schema
+      const parsedAdmin = adminUpdateSchema.safeParse(body);
+      if (!parsedAdmin.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedAdmin.error.flatten() },
+          { status: 400 }
+        );
+      }
 
+      // Only include fields that were actually provided
       const updateData: Record<string, unknown> = {};
-      for (const field of allowedFields) {
-        if (body[field] !== undefined) {
-          updateData[field] = body[field];
+      for (const [key, value] of Object.entries(parsedAdmin.data)) {
+        if (value !== undefined) {
+          updateData[key] = value;
         }
       }
 

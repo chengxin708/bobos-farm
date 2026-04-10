@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -84,13 +84,22 @@ export default function Deposits() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [updating, setUpdating] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [, setTick] = useState(0)
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showSuccess = useCallback((msg: string) => {
+    setSuccessMsg(msg)
+    if (successTimer.current) clearTimeout(successTimer.current)
+    successTimer.current = setTimeout(() => setSuccessMsg(null), 3000)
+  }, [])
 
   // Redirect non-admin
-  if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-    router.push('/')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
+      router.push('/')
+    }
+  }, [sessionStatus, session, router])
 
   // Tick every minute for countdown updates
   useEffect(() => {
@@ -126,6 +135,7 @@ export default function Deposits() {
   // ── Actions ──────────────────────────────────────────────────
 
   const handleConfirmDeposit = useCallback(async (id: string) => {
+    if (!confirm('Confirm this deposit has been received?')) return
     setUpdating(id)
     try {
       const res = await fetch(`/api/reservations/${id}`, {
@@ -138,16 +148,17 @@ export default function Deposits() {
         alert(err.error || 'Failed to confirm deposit')
         return
       }
+      showSuccess('Deposit confirmed successfully. Reservation is now active.')
       mutateAll()
     } catch {
       alert('Failed to confirm deposit')
     } finally {
       setUpdating(null)
     }
-  }, [mutateAll])
+  }, [mutateAll, showSuccess])
 
   const handleReject = useCallback(async (id: string) => {
-    if (!confirm('Are you sure you want to reject this deposit?')) return
+    if (!confirm('Are you sure you want to reject this deposit? This action cannot be undone.')) return
     setUpdating(id)
     try {
       const res = await fetch(`/api/reservations/${id}`, {
@@ -160,13 +171,37 @@ export default function Deposits() {
         alert(err.error || 'Failed to reject deposit')
         return
       }
+      showSuccess('Deposit rejected. The customer will be notified.')
       mutateAll()
     } catch {
       alert('Failed to reject deposit')
     } finally {
       setUpdating(null)
     }
-  }, [mutateAll])
+  }, [mutateAll, showSuccess])
+
+  const handleNotReceived = useCallback(async (id: string) => {
+    if (!confirm('Mark this deposit as not received? The customer will need to re-submit payment proof.')) return
+    setUpdating(id)
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject_deposit' }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to update')
+        return
+      }
+      showSuccess('Deposit marked as not received.')
+      mutateAll()
+    } catch {
+      alert('Failed to update deposit status')
+    } finally {
+      setUpdating(null)
+    }
+  }, [mutateAll, showSuccess])
 
   // ── Compute stats ─────────────────────────────────────────────
 
@@ -181,14 +216,14 @@ export default function Deposits() {
     return new Date(a.paymentDeadline).getTime() - new Date(b.paymentDeadline).getTime()
   })
 
-  const getTabData = (): Reservation[] => {
+  const tabData = useMemo((): Reservation[] => {
     switch (activeTab) {
       case 'pending': return pendingRes || []
       case 'confirmed': return confirmedRes || []
       case 'refunded': return refundedRes || []
       case 'expiring': return sortedExpiring
     }
-  }
+  }, [activeTab, pendingRes, confirmedRes, refundedRes, sortedExpiring])
 
   const tabs: { key: TabKey; label: string; count?: number }[] = [
     { key: 'pending', label: t('tabs.pending'), count: pendingCount },
@@ -214,6 +249,16 @@ export default function Deposits() {
     <>
       <TopBar title={t('title')} />
       <div className="flex-1 p-6 flex flex-col gap-5 bg-cream-bg overflow-auto">
+        {/* Success Message */}
+        {successMsg && (
+          <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
+            {successMsg}
+            <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="flex gap-4">
           <div className="flex-1 bg-[#FEF3CD] rounded-xl p-5 border-l-4 border-[#F4A623]">
@@ -254,12 +299,12 @@ export default function Deposits() {
 
         {/* Deposit Cards */}
         <div className="flex flex-col gap-4">
-          {getTabData().length === 0 ? (
+          {tabData.length === 0 ? (
             <div className="bg-white rounded-xl border border-beige p-12 text-center">
               <p className="text-gray-text text-sm">No deposits found in this category.</p>
             </div>
           ) : (
-            getTabData().map((dep) => {
+            tabData.map((dep) => {
               const timeRemaining = getTimeRemaining(dep.paymentDeadline)
               const isUpdating = updating === dep.id
 
@@ -376,6 +421,7 @@ export default function Deposits() {
                           {t('actions.confirmDeposit')}
                         </button>
                         <button
+                          onClick={() => handleNotReceived(dep.id)}
                           disabled={isUpdating}
                           className="px-4 py-1.5 bg-white text-brown text-sm font-semibold rounded-md border border-beige hover:bg-beige/30 disabled:opacity-50"
                         >

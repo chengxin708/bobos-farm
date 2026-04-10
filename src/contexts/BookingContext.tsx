@@ -30,6 +30,8 @@ export interface BookingState {
 }
 
 interface BookingContextValue extends BookingState {
+  /** Whether sessionStorage state has been loaded (prevents false redirects on refresh) */
+  hydrated: boolean
   setSelectedDate: (date: string | null) => void
   setSelectedYurt: (yurt: SelectedYurt | null) => void
   setGuestCount: (count: number) => void
@@ -77,7 +79,7 @@ function saveState(state: BookingState) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    // sessionStorage quota exceeded or unavailable — ignore
+    // sessionStorage quota exceeded or unavailable -- ignore
   }
 }
 
@@ -152,6 +154,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     <BookingContext.Provider
       value={{
         ...state,
+        hydrated,
         setSelectedDate,
         setSelectedYurt,
         setGuestCount,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useBooking } from '@/contexts/BookingContext'
 
@@ -20,22 +20,41 @@ export default function BookingConfirmPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState('12:00:00')
+  const [expired, setExpired] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const uploadPreviewRef = useRef<string | null>(null)
   const creationAttempted = useRef(false)
 
-  // Redirect back if no booking details
+  // Keep ref in sync for cleanup
   useEffect(() => {
-    if (!booking.selectedDate || !booking.selectedYurtId || !booking.contactName) {
+    uploadPreviewRef.current = uploadPreview
+  }, [uploadPreview])
+
+  // Cleanup blob URLs and timers on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current)
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+      if (uploadPreviewRef.current) URL.revokeObjectURL(uploadPreviewRef.current)
+    }
+  }, [])
+
+  // Redirect back if no booking details (only after hydration to prevent false redirect on refresh)
+  useEffect(() => {
+    if (booking.hydrated && (!booking.selectedDate || !booking.selectedYurtId || !booking.contactName)) {
       router.replace('/booking/date')
     }
-  }, [booking.selectedDate, booking.selectedYurtId, booking.contactName, router])
+  }, [booking.hydrated, booking.selectedDate, booking.selectedYurtId, booking.contactName, router])
 
-  // Create reservation when arriving at this page
+  // Create reservation when arriving at this page (after hydration)
   useEffect(() => {
+    if (!booking.hydrated) return
     if (creationAttempted.current) return
     if (!booking.selectedDate || !booking.selectedYurtId) return
     // If reservation already exists (coming back from navigation)
@@ -47,7 +66,7 @@ export default function BookingConfirmPage() {
     creationAttempted.current = true
     createReservation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [booking.selectedDate, booking.selectedYurtId])
+  }, [booking.hydrated, booking.selectedDate, booking.selectedYurtId])
 
   async function createReservation() {
     setCreating(true)
@@ -91,6 +110,7 @@ export default function BookingConfirmPage() {
 
       if (diff === 0) {
         setCountdown('00:00:00')
+        setExpired(true)
         if (timerRef.current) clearInterval(timerRef.current)
         return
       }
@@ -126,10 +146,16 @@ export default function BookingConfirmPage() {
     setUploadedFile(file)
     setError(null)
     if (file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file)
-      setUploadPreview(url)
+      // Revoke previous blob URL to avoid memory leak
+      setUploadPreview(prev => {
+        if (prev) URL.revokeObjectURL(prev)
+        return URL.createObjectURL(file)
+      })
     } else {
-      setUploadPreview(null)
+      setUploadPreview(prev => {
+        if (prev) URL.revokeObjectURL(prev)
+        return null
+      })
     }
   }, [])
 
@@ -148,7 +174,8 @@ export default function BookingConfirmPage() {
     try {
       await navigator.clipboard.writeText(text)
       setCopiedField(field)
-      setTimeout(() => setCopiedField(null), 2000)
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+      copiedTimerRef.current = setTimeout(() => setCopiedField(null), 2000)
     } catch {
       // fallback - ignore
     }
@@ -179,7 +206,7 @@ export default function BookingConfirmPage() {
 
       setSubmitted(true)
       // Redirect to reservations after short delay
-      setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
         booking.resetBooking()
         router.push('/reservations')
       }, 3000)
@@ -270,6 +297,41 @@ export default function BookingConfirmPage() {
               className="px-6 py-2.5 rounded-xl bg-amber text-white text-sm font-semibold cursor-pointer border-none"
             >
               Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Expired state — countdown reached 0
+  if (expired && !submitted) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-6">
+        <div className="w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-[#F4A623]/10 flex items-center justify-center">
+            <span className="text-[#F4A623] text-2xl font-bold">&#x23f0;</span>
+          </div>
+          <h3 className="font-playfair text-xl font-bold text-brown">Time Expired</h3>
+          <p className="text-sm text-brown/60 text-center max-w-md">
+            Your payment window has expired and the reservation hold has been released.
+            Please start a new booking to reserve your spot.
+          </p>
+          <div className="flex gap-3 mt-2">
+            <button
+              onClick={() => {
+                booking.resetBooking()
+                router.push('/booking/date')
+              }}
+              className="px-6 py-2.5 rounded-xl bg-amber text-white text-sm font-semibold cursor-pointer border-none"
+            >
+              Start New Booking
+            </button>
+            <button
+              onClick={() => router.push('/reservations')}
+              className="px-6 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white"
+            >
+              View Reservations
             </button>
           </div>
         </div>

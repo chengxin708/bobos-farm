@@ -43,6 +43,7 @@ export async function GET(
     });
 
     // Get existing reservations for the next 3 months
+    // Only return dates (not statuses) for unauthenticated/customer users to prevent info leaks
     const reservations = await prisma.reservation.findMany({
       where: {
         yurtId: id,
@@ -54,14 +55,17 @@ export async function GET(
           notIn: ["CANCELLED", "EXPIRED"],
         },
       },
-      select: { date: true, status: true },
+      select: { date: true },
       orderBy: { date: "asc" },
     });
+
+    // Only return booked dates, not status details
+    const bookedDates = reservations.map((r) => r.date);
 
     return NextResponse.json({
       ...yurt,
       availability,
-      reservations,
+      bookedDates,
     });
   } catch (error) {
     console.error("Failed to fetch yurt:", error);

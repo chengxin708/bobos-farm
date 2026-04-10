@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -88,10 +88,11 @@ export default function ReservationsPage() {
   )
 
   // Redirect unauthenticated users
-  if (sessionStatus === 'unauthenticated') {
-    router.push('/auth/login')
-    return null
-  }
+  useEffect(() => {
+    if (sessionStatus === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [sessionStatus, router])
 
   const handleCancel = useCallback(async (id: string) => {
     if (!confirm('Are you sure you want to cancel this reservation?')) return
@@ -116,18 +117,21 @@ export default function ReservationsPage() {
   }, [mutate])
 
   // Sort: upcoming first (by date asc), then past (by date desc)
-  const sorted = [...(reservations || [])].sort((a, b) => {
+  const sorted = useMemo(() => {
+    if (!reservations) return []
     const now = Date.now()
-    const aDate = new Date(a.date).getTime()
-    const bDate = new Date(b.date).getTime()
-    const aUpcoming = aDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(a.status)
-    const bUpcoming = bDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(b.status)
+    return [...reservations].sort((a, b) => {
+      const aDate = new Date(a.date).getTime()
+      const bDate = new Date(b.date).getTime()
+      const aUpcoming = aDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(a.status)
+      const bUpcoming = bDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(b.status)
 
-    if (aUpcoming && !bUpcoming) return -1
-    if (!aUpcoming && bUpcoming) return 1
-    if (aUpcoming && bUpcoming) return aDate - bDate
-    return bDate - aDate
-  })
+      if (aUpcoming && !bUpcoming) return -1
+      if (!aUpcoming && bUpcoming) return 1
+      if (aUpcoming && bUpcoming) return aDate - bDate
+      return bDate - aDate
+    })
+  }, [reservations])
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)

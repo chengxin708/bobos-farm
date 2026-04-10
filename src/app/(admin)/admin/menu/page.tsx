@@ -129,6 +129,15 @@ export default function MenuManagement() {
     fetcher
   )
 
+  // ── Success feedback ──
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showSuccess = useCallback((msg: string) => {
+    setSuccessMsg(msg)
+    if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    successTimerRef.current = setTimeout(() => setSuccessMsg(null), 3000)
+  }, [])
+
   // ── Drawer state ──
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
@@ -287,6 +296,7 @@ export default function MenuManagement() {
       await mutateItems()
       await mutateCategories()
       closeDrawer()
+      showSuccess(editingItem ? 'Menu item updated successfully.' : 'New menu item created successfully.')
     } catch (error) {
       console.error('Save failed:', error)
       alert(error instanceof Error ? error.message : 'Save failed')
@@ -303,8 +313,10 @@ export default function MenuManagement() {
       if (!res.ok) throw new Error('Failed to delete')
       await mutateItems()
       await mutateCategories()
+      showSuccess('Menu item deleted.')
     } catch (error) {
       console.error('Delete failed:', error)
+      alert('Failed to delete menu item')
     }
   }
 
@@ -318,8 +330,10 @@ export default function MenuManagement() {
       })
       if (!res.ok) throw new Error('Failed to toggle')
       await mutateItems()
+      showSuccess(`${item.nameEn} is now ${item.isActive ? 'inactive' : 'active'}.`)
     } catch (error) {
       console.error('Toggle failed:', error)
+      alert('Failed to update item status')
     }
   }
 
@@ -370,6 +384,7 @@ export default function MenuManagement() {
 
       await mutateCategories()
       setCategoryModalOpen(false)
+      showSuccess(editingCategory ? 'Category updated successfully.' : 'New category created.')
     } catch (error) {
       console.error('Category save failed:', error)
       alert(error instanceof Error ? error.message : 'Save failed')
@@ -435,6 +450,16 @@ export default function MenuManagement() {
 
         {/* ── Main Content ── */}
         <div className="flex-1 p-6 overflow-auto">
+          {/* Success Message */}
+          {successMsg && (
+            <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between mb-4">
+              {successMsg}
+              <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
+                <span className="text-lg leading-none">&times;</span>
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold text-brown font-playfair">

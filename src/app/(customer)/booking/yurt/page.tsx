@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Check, Tent, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Tent, Users, CalendarX } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 interface Yurt {
   id: string
@@ -37,14 +40,14 @@ export default function BookingYurtPage() {
   const t = useTranslations('booking.yurt')
   const tCommon = useTranslations('common')
   const router = useRouter()
-  const { selectedDate, selectedYurtId, setSelectedYurt } = useBooking()
+  const { selectedDate, selectedYurtId, setSelectedYurt, hydrated } = useBooking()
 
-  // Redirect back if no date selected
+  // Redirect back if no date selected (only after hydration to prevent false redirect on refresh)
   useEffect(() => {
-    if (!selectedDate) {
+    if (hydrated && !selectedDate) {
       router.replace('/booking/date')
     }
-  }, [selectedDate, router])
+  }, [hydrated, selectedDate, router])
 
   // Fetch all yurts
   const { data: yurts, isLoading: loadingYurts } = useSWR<Yurt[]>(
@@ -62,15 +65,19 @@ export default function BookingYurtPage() {
     { revalidateOnFocus: false }
   )
 
-  // Build set of closed yurt IDs for this date
-  const closedYurtIds = new Set<string>()
-  if (Array.isArray(availability)) {
-    for (const rec of availability) {
-      if (!rec.isOpen) closedYurtIds.add(rec.yurtId)
+  // Build set of closed yurt IDs for this date (memoized)
+  const closedYurtIds = useMemo(() => {
+    const set = new Set<string>()
+    if (Array.isArray(availability)) {
+      for (const rec of availability) {
+        if (!rec.isOpen) set.add(rec.yurtId)
+      }
     }
-  }
+    return set
+  }, [availability])
 
   const activeYurts = Array.isArray(yurts) ? yurts.filter((y) => y.status === 'ACTIVE') : []
+  const availableYurts = activeYurts.filter((y) => !closedYurtIds.has(y.id))
 
   // Format the selected date for display
   const formattedDate = selectedDate
@@ -100,6 +107,15 @@ export default function BookingYurtPage() {
     }
   }
 
+  // Show spinner while hydrating from sessionStorage
+  if (!hydrated) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-12">
+        <div className="w-10 h-10 rounded-full border-[3px] border-beige border-t-amber animate-spin" />
+      </div>
+    )
+  }
+
   if (!selectedDate) return null
 
   return (
@@ -108,7 +124,7 @@ export default function BookingYurtPage() {
       <div className="flex-1 flex flex-col items-center py-6 px-4 sm:px-10 lg:px-20 gap-8 overflow-y-auto">
         <div className="text-center">
           <h2 className="font-playfair text-[28px] font-bold text-brown">{t('title')}</h2>
-          <p className="text-base text-brown/53 mt-2">for {formattedDate}</p>
+          <p className="text-base text-brown/53 mt-2">{formattedDate}</p>
         </div>
 
         {/* Yurt Cards */}
@@ -125,6 +141,40 @@ export default function BookingYurtPage() {
               </div>
             ))}
           </div>
+        ) : activeYurts.length === 0 ? (
+          /* Empty state: no active yurts configured */
+          <div className="flex flex-col items-center gap-4 py-12 max-w-md text-center">
+            <div className="w-20 h-20 rounded-full bg-[#F9F6F1] flex items-center justify-center">
+              <Tent size={36} className="text-beige" />
+            </div>
+            <h3 className="font-playfair text-xl font-bold text-brown">No Yurts Available</h3>
+            <p className="text-sm text-[#8E8E93]">
+              There are no yurts configured yet. Please check back later or contact us for assistance.
+            </p>
+            <button
+              onClick={() => router.push('/booking/date')}
+              className="mt-2 px-6 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white"
+            >
+              {tCommon('back')}
+            </button>
+          </div>
+        ) : availableYurts.length === 0 ? (
+          /* Empty state: all yurts booked/closed for this date */
+          <div className="flex flex-col items-center gap-4 py-12 max-w-md text-center">
+            <div className="w-20 h-20 rounded-full bg-[#FEF3CD] flex items-center justify-center">
+              <CalendarX size={36} className="text-[#F4A623]" />
+            </div>
+            <h3 className="font-playfair text-xl font-bold text-brown">Fully Booked</h3>
+            <p className="text-sm text-[#8E8E93]">
+              All yurts are booked for {formattedDate}. Please go back and select a different date.
+            </p>
+            <button
+              onClick={() => router.push('/booking/date')}
+              className="mt-2 px-6 py-2.5 rounded-xl bg-amber text-white text-sm font-semibold cursor-pointer border-none"
+            >
+              Choose Another Date
+            </button>
+          </div>
         ) : (
           <div className="flex gap-6 w-full max-w-[1100px]">
             {activeYurts.map((yurt, i) => {
@@ -133,14 +183,18 @@ export default function BookingYurtPage() {
               const imgSrc = yurt.imageUrl || PLACEHOLDER_IMAGES[i % PLACEHOLDER_IMAGES.length]
 
               return (
-                <div
+                <button
                   key={yurt.id}
+                  type="button"
                   onClick={() => handleYurtClick(yurt)}
-                  className={`flex-1 bg-white rounded-2xl overflow-hidden cursor-pointer transition-all relative ${
+                  disabled={!available}
+                  aria-label={`${yurt.name} - ${available ? t('status.available') : t('status.booked')} - Up to ${yurt.capacity} guests`}
+                  aria-pressed={selected}
+                  className={`flex-1 bg-white rounded-2xl overflow-hidden text-left transition-all relative border-none p-0 ${
                     selected
                       ? 'ring-[3px] ring-amber shadow-[0_4px_24px_rgba(0,0,0,0.06)]'
                       : 'shadow-[0_2px_16px_rgba(0,0,0,0.03)]'
-                  } ${!available ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  } ${!available ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {/* Image */}
                   <div className="h-[200px] overflow-hidden relative">
@@ -171,7 +225,7 @@ export default function BookingYurtPage() {
                       <p className="text-[13px] text-brown/53 leading-relaxed">{yurt.description}</p>
                     )}
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -186,17 +240,23 @@ export default function BookingYurtPage() {
         >
           <ArrowLeft size={18} /> {tCommon('back')}
         </button>
-        <button
-          onClick={() => selectedYurtId && router.push('/booking/details')}
-          disabled={!selectedYurtId}
-          className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
-            selectedYurtId
-              ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
-              : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
-          }`}
-        >
-          {tCommon('next')} <ArrowRight size={18} />
-        </button>
+        <div className="flex items-center gap-3">
+          {!selectedYurtId && activeYurts.length > 0 && availableYurts.length > 0 && (
+            <span className="text-sm text-[#8E8E93]">Select a yurt to continue</span>
+          )}
+          <button
+            onClick={() => selectedYurtId && router.push('/booking/details')}
+            disabled={!selectedYurtId}
+            aria-label={!selectedYurtId ? 'Select a yurt to continue' : 'Continue to details'}
+            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
+              selectedYurtId
+                ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
+                : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
+            }`}
+          >
+            {tCommon('next')} <ArrowRight size={18} />
+          </button>
+        </div>
       </div>
     </>
   )

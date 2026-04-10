@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Lock, EyeOff, Eye, ChevronDown, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
@@ -53,6 +53,14 @@ function getPasswordStrength(pw: string): { level: string; percent: number; colo
 export default function SettingsPage() {
   const t = useTranslations('customerSettings')
   const tCommon = useTranslations('common')
+  const profileSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (profileSuccessTimerRef.current) clearTimeout(profileSuccessTimerRef.current)
+    }
+  }, [])
 
   const { data: user, mutate } = useSWR<UserProfile>('/api/users/me', fetcher)
 
@@ -62,6 +70,7 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState<'EN' | 'ZH'>('EN')
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
 
   // Password form
   const [currentPassword, setCurrentPassword] = useState('')
@@ -108,7 +117,8 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error('Failed to save')
       mutate()
       setProfileSuccess(true)
-      setTimeout(() => setProfileSuccess(false), 3000)
+      if (profileSuccessTimerRef.current) clearTimeout(profileSuccessTimerRef.current)
+      profileSuccessTimerRef.current = setTimeout(() => setProfileSuccess(false), 3000)
     } catch (err) {
       console.error('Save profile error:', err)
     } finally {

@@ -9,7 +9,10 @@ import { useBooking } from '@/contexts/BookingContext'
 
 type DateStatus = 'available' | 'limited' | 'full' | 'closed'
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 /** Format date as YYYY-MM-DD in local time */
 function toLocalDateStr(date: Date): string {
@@ -40,7 +43,7 @@ export default function BookingDatePage() {
   const router = useRouter()
   const { selectedDate, setSelectedDate } = useBooking()
 
-  const today = new Date()
+  const [today] = useState(() => new Date())
   const todayStr = toLocalDateStr(today)
 
   // Current displayed month (1-indexed)
@@ -144,13 +147,11 @@ export default function BookingDatePage() {
   const navigateMonth = useCallback((delta: number) => {
     setViewMonth((m) => {
       let newMonth = m + delta
-      let newYear = viewYear
-      if (newMonth < 1) { newMonth = 12; newYear-- }
-      if (newMonth > 12) { newMonth = 1; newYear++ }
-      setViewYear(newYear)
+      if (newMonth < 1) { newMonth = 12; setViewYear(y => y - 1) }
+      if (newMonth > 12) { newMonth = 1; setViewYear(y => y + 1) }
       return newMonth
     })
-  }, [viewYear])
+  }, [])
 
   const canGoBack = useMemo(() => {
     // Don't go before current month
@@ -303,17 +304,23 @@ export default function BookingDatePage() {
 
       {/* Bottom Bar */}
       <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-end px-4 sm:px-10 lg:px-20">
-        <button
-          onClick={() => selectedDate && router.push('/booking/yurt')}
-          disabled={!selectedDate}
-          className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
-            selectedDate
-              ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
-              : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
-          }`}
-        >
-          {tCommon('next')} <ArrowRight size={18} />
-        </button>
+        <div className="flex items-center gap-3">
+          {!selectedDate && (
+            <span className="text-sm text-[#8E8E93]">Select a date to continue</span>
+          )}
+          <button
+            onClick={() => selectedDate && router.push('/booking/yurt')}
+            disabled={!selectedDate}
+            aria-label={!selectedDate ? 'Select a date to continue' : 'Continue to yurt selection'}
+            className={`flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold border-none transition-colors ${
+              selectedDate
+                ? 'bg-gradient-to-r from-amber to-[#A67C2E] text-white cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
+                : 'bg-[#BFBFBF] text-white/70 cursor-not-allowed'
+            }`}
+          >
+            {tCommon('next')} <ArrowRight size={18} />
+          </button>
+        </div>
       </div>
     </>
   )

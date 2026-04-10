@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { z } from "zod";
+
+// Allowlist of valid setting keys to prevent arbitrary key injection
+const ALLOWED_SETTING_KEYS = [
+  "deposit_amount",
+  "payment_timeout_hours",
+  "business_name",
+  "business_email",
+  "business_phone",
+  "business_address",
+  "cancellation_policy_days",
+  "max_guest_count",
+  "booking_advance_days",
+  "notification_email",
+  "venmo_handle",
+  "zelle_email",
+] as const;
+
+const settingsUpdateSchema = z.record(
+  z.enum(ALLOWED_SETTING_KEYS),
+  z.string().max(500)
+);
 
 export async function GET() {
   try {
@@ -30,16 +52,16 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body: Record<string, string> = await req.json();
-
-    if (typeof body !== "object" || Array.isArray(body)) {
+    const body = await req.json();
+    const parsed = settingsUpdateSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Body must be an object of key-value pairs" },
+        { error: "Validation failed. Only recognized setting keys with string values are allowed.", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const operations = Object.entries(body).map(([key, value]) =>
+    const operations = Object.entries(parsed.data).map(([key, value]) =>
       prisma.systemSetting.upsert({
         where: { key },
         update: { value: String(value) },
@@ -54,7 +76,7 @@ export async function PATCH(req: NextRequest) {
         userId: session.user?.id,
         action: "SETTINGS_UPDATED",
         targetType: "SystemSetting",
-        details: { updatedKeys: Object.keys(body) },
+        details: { updatedKeys: Object.keys(parsed.data) },
       },
     });
 
