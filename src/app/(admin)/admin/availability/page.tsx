@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
-import { ChevronLeft, ChevronRight, Save } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Save, Calendar, X, Users } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -166,6 +166,9 @@ export default function Availability() {
   monthDays.forEach(d => cells.push(d.day))
   while (cells.length % 7 !== 0) cells.push(null)
 
+  // Today detection
+  const todayKey = formatDateISO(now.getFullYear(), now.getMonth(), now.getDate())
+
   // Get status for a date cell
   const getCellStatus = (day: number): { allOpen: boolean; allClosed: boolean; hasMixed: boolean; hasReservations: boolean; resCount: number } => {
     const dateKey = formatDateISO(currentYear, currentMonth, day)
@@ -249,7 +252,7 @@ export default function Availability() {
     } finally {
       setSaving(false)
     }
-  }, [selectedDate, currentYear, currentMonth, mutateAvailability, showSuccess])
+  }, [selectedDate, currentYear, currentMonth, mutateAvailability, showSuccess, t])
 
   // Save admin note
   const handleSaveNote = useCallback(async () => {
@@ -354,8 +357,8 @@ export default function Availability() {
     return (
       <>
         <TopBar title={t('title')} />
-        <div className="flex-1 p-6 flex items-center justify-center bg-cream-bg">
-          <p className="text-gray-text">Loading...</p>
+        <div className="flex-1 p-6 flex items-center justify-center" style={{ background: '#F5F2ED' }}>
+          <p className="text-[#8A7E6B]">Loading...</p>
         </div>
       </>
     )
@@ -364,243 +367,326 @@ export default function Availability() {
   return (
     <>
       <TopBar title={t('title')} />
-      <div className="flex-1 p-6 flex flex-col gap-4 bg-cream-bg overflow-auto">
+      <div className="flex-1 flex flex-col overflow-auto" style={{ background: '#F5F2ED' }}>
         {/* Success Message */}
         {successMsg && (
-          <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
+          <div className="mx-6 mt-5 bg-[#EAF2E3] border border-[#4A7C59]/20 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
             {successMsg}
-            <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
-              <span className="text-lg leading-none">&times;</span>
+            <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/50 hover:text-[#2D5016] transition-colors">
+              <X size={16} />
             </button>
           </div>
         )}
 
-        <div className="flex-1 flex gap-5">
-        {/* Left - Calendar */}
-        <div className="flex-1 flex flex-col gap-4">
-          {/* Date Range Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-brown">{t('openRange')}</span>
-            <input
-              type="date"
-              value={openStart}
-              onChange={(e) => setOpenStart(e.target.value)}
-              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
-            />
-            <span className="text-sm text-gray-text">-</span>
-            <input
-              type="date"
-              value={openEnd}
-              onChange={(e) => setOpenEnd(e.target.value)}
-              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
-            />
-            <button
-              onClick={() => handleBulkAction(true, openStart, openEnd)}
-              disabled={saving}
-              className="bg-[#5B8C3E] text-white text-sm font-semibold px-3 py-1.5 rounded-md disabled:opacity-50"
-            >
-              {t('openAll')}
-            </button>
-
-            <span className="text-sm font-semibold text-brown ml-4">{t('closeRange')}</span>
-            <input
-              type="date"
-              value={closeStart}
-              onChange={(e) => setCloseStart(e.target.value)}
-              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
-            />
-            <span className="text-sm text-gray-text">-</span>
-            <input
-              type="date"
-              value={closeEnd}
-              onChange={(e) => setCloseEnd(e.target.value)}
-              className="border border-beige rounded-md px-3 py-1.5 text-sm w-36 bg-white text-brown"
-            />
-            <button
-              onClick={() => handleBulkAction(false, closeStart, closeEnd)}
-              disabled={saving}
-              className="bg-[#DC3545] text-white text-sm font-semibold px-3 py-1.5 rounded-md disabled:opacity-50"
-            >
-              {t('closeAll')}
-            </button>
-          </div>
-
-          {/* Month Nav */}
-          <div className="flex items-center gap-3">
-            <ChevronLeft size={16} className="text-brown cursor-pointer" onClick={prevMonth} />
-            <span className="text-sm font-bold text-brown">{monthLabel}</span>
-            <ChevronRight size={16} className="text-brown cursor-pointer" onClick={nextMonth} />
-            <div className="flex items-center gap-4 ml-4">
-              <span className="flex items-center gap-1.5 text-xs text-gray-text">
-                <span className="w-3 h-3 rounded-sm bg-white border border-beige" /> {t('legend.open')}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-text">
-                <span className="w-3 h-3 rounded-sm bg-[#FDE8E8]" /> {t('legend.closed')}
-              </span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-text">
-                <span className="w-3 h-3 rounded-sm bg-[#FEF3CD]" /> {t('legend.limited')}
-              </span>
-            </div>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="bg-white rounded-xl border border-beige overflow-hidden">
-            <div className="grid grid-cols-7">
-              {DAY_HEADERS.map((d) => (
-                <div key={d} className="text-center py-2 text-xs font-semibold text-gray-text border-b border-beige">
-                  {d}
+        {/* Date Range Controls Card */}
+        <div className="mx-6 mt-5 bg-white rounded-xl border border-[#E8E2D9] p-5">
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+            {/* Open Range */}
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-[#2C2416]">{t('openRange')}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={openStart}
+                    onChange={(e) => setOpenStart(e.target.value)}
+                    className="border border-[#E8E2D9] rounded-lg px-3 py-2 text-sm w-[150px] bg-white text-[#2C2416] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 focus:border-[#8B6914] transition-shadow"
+                  />
+                  <span className="text-[#8A7E6B] text-sm">-</span>
+                  <input
+                    type="date"
+                    value={openEnd}
+                    onChange={(e) => setOpenEnd(e.target.value)}
+                    className="border border-[#E8E2D9] rounded-lg px-3 py-2 text-sm w-[150px] bg-white text-[#2C2416] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 focus:border-[#8B6914] transition-shadow"
+                  />
                 </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7">
-              {cells.map((day, idx) => {
-                if (day === null) {
-                  return (
-                    <div key={idx} className="min-h-[70px] p-2 border-b border-r border-beige/50 bg-gray-50/50" />
-                  )
-                }
-
-                const status = getCellStatus(day)
-                const dateKey = formatDateISO(currentYear, currentMonth, day)
-                const isSelected = day === selectedDate
-                const isMultiSelected = selectedDates.has(dateKey)
-
-                let bgColor = 'bg-white'
-                if (status.allClosed) bgColor = 'bg-[#FDE8E8]'
-                else if (status.hasMixed) bgColor = 'bg-[#FEF3CD]'
-
-                return (
-                  <div
-                    key={idx}
-                    onClick={(e) => handleDateClick(day, e.shiftKey)}
-                    className={`min-h-[70px] p-2 border-b border-r border-beige/50 cursor-pointer transition-colors ${bgColor} ${
-                      isSelected ? 'ring-2 ring-amber ring-inset' : ''
-                    } ${isMultiSelected ? 'ring-2 ring-[#3B82F6] ring-inset' : ''}`}
-                  >
-                    <span className={`text-xs font-semibold ${isSelected ? 'text-amber' : 'text-brown'}`}>
-                      {day}
-                    </span>
-                    {status.hasReservations && (
-                      <div className="text-[9px] mt-1 text-[#3B82F6] font-medium">
-                        {status.resCount} res
-                      </div>
-                    )}
-                    {status.hasMixed && (
-                      <div className="text-[9px] mt-0.5 text-[#D4A017]">{t('legend.limited')}</div>
-                    )}
-                    {status.allClosed && (
-                      <div className="text-[9px] mt-0.5 text-[#DC3545]">{t('legend.closed')}</div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Bottom Actions */}
-          {selectedDates.size > 0 && (
-            <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-beige">
-              <span className="text-sm text-brown font-medium">{selectedDates.size} dates selected</span>
+              </div>
               <button
-                onClick={() => handleBatchSelected(true)}
+                onClick={() => handleBulkAction(true, openStart, openEnd)}
                 disabled={saving}
-                className="bg-[#5B8C3E] text-white text-sm font-semibold px-4 py-1.5 rounded-md disabled:opacity-50"
+                className="bg-[#4A7C59] text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 hover:bg-[#3D6B4A] transition-colors cursor-pointer"
               >
                 {t('openAll')}
               </button>
+            </div>
+
+            {/* Close Range */}
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold text-[#2C2416]">{t('closeRange')}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={closeStart}
+                    onChange={(e) => setCloseStart(e.target.value)}
+                    className="border border-[#E8E2D9] rounded-lg px-3 py-2 text-sm w-[150px] bg-white text-[#2C2416] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 focus:border-[#8B6914] transition-shadow"
+                  />
+                  <span className="text-[#8A7E6B] text-sm">-</span>
+                  <input
+                    type="date"
+                    value={closeEnd}
+                    onChange={(e) => setCloseEnd(e.target.value)}
+                    className="border border-[#E8E2D9] rounded-lg px-3 py-2 text-sm w-[150px] bg-white text-[#2C2416] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 focus:border-[#8B6914] transition-shadow"
+                  />
+                </div>
+              </div>
               <button
-                onClick={() => handleBatchSelected(false)}
+                onClick={() => handleBulkAction(false, closeStart, closeEnd)}
                 disabled={saving}
-                className="bg-[#DC3545] text-white text-sm font-semibold px-4 py-1.5 rounded-md disabled:opacity-50"
+                className="bg-[#C4533A] text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 hover:bg-[#A8452F] transition-colors cursor-pointer"
               >
                 {t('closeAll')}
               </button>
-              <button
-                onClick={() => setSelectedDates(new Set())}
-                className="text-sm text-gray-text hover:text-brown ml-auto"
-              >
-                Clear selection
-              </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="w-[280px] flex flex-col gap-4 shrink-0">
-          {selectedDate !== null ? (
-            <>
-              {/* Date info */}
-              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-                <div className="text-sm font-bold text-brown">{selectedDateLabel}</div>
-                <div className="flex items-center gap-1.5 text-xs text-gray-text">
-                  <span className="w-3 h-3 rounded-sm bg-white border border-beige" />
-                  {t('legend.open')} - {openYurtCount} {t('dayDetail.remaining')}
-                </div>
+        {/* Main Content: Calendar + Sidebar */}
+        <div className="flex-1 flex gap-5 px-6 py-5 min-h-0">
+          {/* Left - Calendar */}
+          <div className="flex-1 flex flex-col gap-4 min-w-0">
+            {/* Month Navigation + Legend */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={prevMonth}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/80 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={18} className="text-[#2C2416]" />
+                </button>
+                <span className="text-lg font-semibold text-[#2C2416] font-playfair min-w-[180px] text-center">
+                  {monthLabel}
+                </span>
+                <button
+                  onClick={nextMonth}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/80 transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={18} className="text-[#2C2416]" />
+                </button>
+              </div>
 
-                <div className="text-xs font-bold text-brown mt-2">{t('dayDetail.perYurtAvailability')}</div>
-                {yurtAvailList.map((yurt) => (
-                  <div key={yurt.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2.5 h-2.5 rounded-full ${yurt.isOpen ? 'bg-[#5B8C3E]' : 'bg-[#DC3545]'}`} />
-                      <span className="text-xs text-brown">{yurt.name}</span>
-                    </div>
-                    <button
-                      onClick={() => handleToggleYurt(yurt.id, !yurt.isOpen)}
-                      disabled={saving}
-                      className={`text-xs font-semibold px-3 py-1 rounded-md cursor-pointer disabled:opacity-50 transition-colors ${
-                        yurt.isOpen
-                          ? 'bg-[#5B8C3E] text-white hover:bg-[#4A7A32]'
-                          : 'bg-[#DC3545] text-white hover:bg-[#C82333]'
-                      }`}
-                    >
-                      {yurt.isOpen ? t('legend.open') : t('legend.closed')}
-                    </button>
+              {/* Legend */}
+              <div className="flex items-center gap-5">
+                <span className="flex items-center gap-1.5 text-xs text-[#8A7E6B]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-white border border-[#E8E2D9]" /> {t('legend.open')}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-[#8A7E6B]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEE2E2]" /> {t('legend.closed')}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-[#8A7E6B]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEF3C7]" /> {t('legend.limited')}
+                </span>
+              </div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="bg-white rounded-xl border border-[#E8E2D9] overflow-hidden">
+              {/* Day headers */}
+              <div className="grid grid-cols-7" style={{ background: '#FAFAF7' }}>
+                {DAY_HEADERS.map((d) => (
+                  <div key={d} className="text-center py-2.5 text-[11px] font-semibold tracking-wider text-[#8A7E6B] uppercase">
+                    {d}
                   </div>
                 ))}
               </div>
+              {/* Date cells */}
+              <div className="grid grid-cols-7">
+                {cells.map((day, idx) => {
+                  if (day === null) {
+                    return (
+                      <div
+                        key={idx}
+                        className="min-h-[80px] border-t border-r border-[#E8E2D9]/60"
+                        style={{ background: '#FAFAF7' }}
+                      />
+                    )
+                  }
 
-              {/* Reservations on date */}
-              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-brown">{t('dayDetail.reservations')} ({selectedDateRes.length})</span>
-                </div>
-                {selectedDateRes.length === 0 ? (
-                  <div className="text-xs text-gray-text">No reservations</div>
-                ) : (
-                  selectedDateRes.map((r) => (
-                    <div key={r.id} className="text-xs">
-                      <div className="font-medium text-brown">{r.user?.name || 'Unknown'}</div>
-                      <div className="text-gray-text">{r.yurt?.name} - {r.guestCount} guests - {r.status}</div>
+                  const status = getCellStatus(day)
+                  const dateKey = formatDateISO(currentYear, currentMonth, day)
+                  const isSelected = day === selectedDate
+                  const isMultiSelected = selectedDates.has(dateKey)
+                  const isToday = dateKey === todayKey
+
+                  // Soft pastel backgrounds
+                  let cellBg = 'bg-white'
+                  if (status.allClosed) cellBg = 'bg-[#FEE2E2]'
+                  else if (status.hasMixed) cellBg = 'bg-[#FEF3C7]'
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={(e) => handleDateClick(day, e.shiftKey)}
+                      className={`
+                        relative min-h-[80px] p-2 border-t border-r border-[#E8E2D9]/60 cursor-pointer
+                        transition-all duration-150 hover:shadow-md hover:z-10
+                        ${cellBg}
+                        ${isSelected ? 'ring-2 ring-[#8B6914] ring-inset shadow-sm' : ''}
+                        ${isMultiSelected ? 'ring-2 ring-[#8B6914] ring-inset ring-dashed' : ''}
+                      `}
+                      style={isMultiSelected && !isSelected ? { borderStyle: 'dashed' } : undefined}
+                    >
+                      {/* Today accent */}
+                      {isToday && (
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#8B6914] rounded-r-full" />
+                      )}
+
+                      {/* Date number */}
+                      <span className={`text-[13px] font-medium ${isSelected ? 'text-[#8B6914]' : isToday ? 'text-[#8B6914] font-semibold' : 'text-[#2C2416]'}`}>
+                        {day}
+                      </span>
+
+                      {/* Status labels */}
+                      <div className="mt-1 flex flex-col gap-0.5">
+                        {status.hasReservations && (
+                          <span className="text-[10px] text-[#4A7C59] font-medium">
+                            {status.resCount} res
+                          </span>
+                        )}
+                        {status.hasMixed && (
+                          <span className="text-[10px] text-[#92710C]">{t('legend.limited')}</span>
+                        )}
+                        {status.allClosed && (
+                          <span className="text-[10px] text-[#C4533A]">{t('legend.closed')}</span>
+                        )}
+                      </div>
                     </div>
-                  ))
-                )}
+                  )
+                })}
               </div>
+            </div>
 
-              {/* Admin note */}
-              <div className="bg-white rounded-xl border border-beige p-4 flex flex-col gap-3">
-                <span className="text-xs font-bold text-brown">{t('dayDetail.adminNote')}</span>
-                <textarea
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                  className="border border-beige rounded-md p-2 text-xs h-20 resize-none text-brown"
-                  placeholder="Private note (e.g. overflow / extra shift needed)"
-                />
+            {/* Multi-select batch actions */}
+            {selectedDates.size > 0 && (
+              <div className="flex items-center gap-3 bg-white rounded-xl px-5 py-3.5 border border-[#E8E2D9]">
+                <span className="text-sm text-[#2C2416] font-medium">{selectedDates.size} dates selected</span>
                 <button
-                  onClick={handleSaveNote}
+                  onClick={() => handleBatchSelected(true)}
                   disabled={saving}
-                  className="bg-[#5B8C3E] text-white text-xs font-semibold px-3 py-1.5 rounded-md flex items-center gap-1.5 self-end disabled:opacity-50"
+                  className="bg-[#4A7C59] text-white text-sm font-semibold px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#3D6B4A] transition-colors cursor-pointer"
                 >
-                  <Save size={12} /> {t('dayDetail.saveNote')}
+                  {t('openAll')}
+                </button>
+                <button
+                  onClick={() => handleBatchSelected(false)}
+                  disabled={saving}
+                  className="bg-[#C4533A] text-white text-sm font-semibold px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#A8452F] transition-colors cursor-pointer"
+                >
+                  {t('closeAll')}
+                </button>
+                <button
+                  onClick={() => setSelectedDates(new Set())}
+                  className="text-sm text-[#8A7E6B] hover:text-[#2C2416] ml-auto transition-colors cursor-pointer"
+                >
+                  Clear selection
                 </button>
               </div>
-            </>
-          ) : (
-            <div className="bg-white rounded-xl border border-beige p-6 flex flex-col items-center gap-3">
-              <p className="text-sm text-gray-text text-center">Click a date to see details</p>
-              <p className="text-xs text-gray-text text-center">Hold Shift + click to multi-select dates</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="w-[300px] flex flex-col gap-4 shrink-0">
+            {selectedDate !== null ? (
+              <>
+                {/* Date Header + Yurt Toggles */}
+                <div className="bg-white rounded-xl border border-[#E8E2D9] p-5 flex flex-col gap-4">
+                  {/* Date heading */}
+                  <div>
+                    <h3 className="text-base font-semibold text-[#2C2416] font-playfair">
+                      {selectedDateLabel}
+                    </h3>
+                    <p className="text-xs text-[#8A7E6B] mt-1">
+                      {t('legend.open')} &middot; {openYurtCount} {t('dayDetail.remaining')}
+                    </p>
+                  </div>
+
+                  {/* Per-yurt availability */}
+                  <div>
+                    <h4 className="text-xs font-semibold text-[#2C2416] mb-3">{t('dayDetail.perYurtAvailability')}</h4>
+                    <div className="flex flex-col gap-2.5">
+                      {yurtAvailList.map((yurt) => (
+                        <div key={yurt.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-2 h-2 rounded-full ${yurt.isOpen ? 'bg-[#4A7C59]' : 'bg-[#C4533A]'}`} />
+                            <span className="text-sm text-[#2C2416]">{yurt.name}</span>
+                          </div>
+                          <button
+                            onClick={() => handleToggleYurt(yurt.id, !yurt.isOpen)}
+                            disabled={saving}
+                            className={`text-xs font-semibold px-3 py-1 rounded-md cursor-pointer disabled:opacity-50 transition-colors ${
+                              yurt.isOpen
+                                ? 'bg-[#4A7C59] text-white hover:bg-[#3D6B4A]'
+                                : 'bg-[#C4533A] text-white hover:bg-[#A8452F]'
+                            }`}
+                          >
+                            {yurt.isOpen ? t('legend.open') : t('legend.closed')}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reservations Card */}
+                <div className="bg-white rounded-xl border border-[#E8E2D9] p-5 flex flex-col gap-3">
+                  <h4 className="text-xs font-semibold text-[#2C2416]">
+                    {t('dayDetail.reservations')} ({selectedDateRes.length})
+                  </h4>
+                  {selectedDateRes.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-3">
+                      <Calendar size={20} className="text-[#E8E2D9]" />
+                      <span className="text-xs text-[#8A7E6B]">No reservations</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {selectedDateRes.map((r) => (
+                        <div key={r.id} className="bg-[#FAFAF7] rounded-lg px-3 py-2.5">
+                          <div className="text-sm font-medium text-[#2C2416]">{r.user?.name || 'Unknown'}</div>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-[#8A7E6B]">
+                            <span>{r.yurt?.name}</span>
+                            <span>&middot;</span>
+                            <Users size={11} className="inline" />
+                            <span>{r.guestCount}</span>
+                            <span>&middot;</span>
+                            <span className="capitalize">{r.status.toLowerCase()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Admin Notes Card */}
+                <div className="bg-white rounded-xl border border-[#E8E2D9] p-5 flex flex-col gap-3">
+                  <h4 className="text-xs font-semibold text-[#2C2416]">{t('dayDetail.adminNote')}</h4>
+                  <textarea
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    className="border border-[#E8E2D9] rounded-lg p-3 text-sm h-24 resize-none text-[#2C2416] placeholder:text-[#C4BDB2] focus:outline-none focus:ring-2 focus:ring-[#8B6914]/40 focus:border-[#8B6914] transition-shadow"
+                    placeholder="Private note (e.g. overflow / extra shift needed)"
+                  />
+                  <button
+                    onClick={handleSaveNote}
+                    disabled={saving}
+                    className="bg-[#4A7C59] text-white text-xs font-semibold px-4 py-2 rounded-md flex items-center gap-1.5 self-end disabled:opacity-50 hover:bg-[#3D6B4A] transition-colors cursor-pointer"
+                  >
+                    <Save size={13} /> {t('dayDetail.saveNote')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Empty State */
+              <div className="bg-white rounded-xl border border-[#E8E2D9] p-8 flex flex-col items-center gap-4 mt-8">
+                <div className="w-14 h-14 rounded-full bg-[#F5F2ED] flex items-center justify-center">
+                  <Calendar size={24} className="text-[#C4BDB2]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-[#8A7E6B]">Click a date to see details</p>
+                  <p className="text-xs text-[#C4BDB2] mt-1.5">Hold Shift + click to multi-select</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

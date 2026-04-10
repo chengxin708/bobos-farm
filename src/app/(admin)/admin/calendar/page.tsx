@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -63,18 +63,17 @@ const fetcher = (url: string) => fetch(url).then(r => {
   return r.json()
 })
 
-/** Status color mapping - border + bg + text */
-const STATUS_COLORS: Record<string, { border: string; bg: string; text: string }> = {
-  PENDING_PAYMENT:   { border: 'border-l-[#F4A623]', bg: 'bg-[#F4A623]/10', text: 'text-[#F4A623]' },
-  PAYMENT_SUBMITTED: { border: 'border-l-[#E67E22]', bg: 'bg-[#E67E22]/10', text: 'text-[#E67E22]' },
-  CONFIRMED:         { border: 'border-l-[#2980B9]', bg: 'bg-[#2980B9]/10', text: 'text-[#2980B9]' },
-  COMPLETED:         { border: 'border-l-gray-400',   bg: 'bg-gray-100',     text: 'text-gray-500' },
-  CANCELLED:         { border: 'border-l-[#DC3545]', bg: 'bg-[#DC3545]/10', text: 'text-[#DC3545]' },
-  EXPIRED:           { border: 'border-l-gray-300',   bg: 'bg-gray-50',      text: 'text-gray-400' },
+/** Status color mapping per new design spec */
+const STATUS_COLORS: Record<string, {
+  border: string; bg: string; text: string; dot: string; initBg: string
+}> = {
+  PENDING_PAYMENT:   { border: 'border-l-[#E67E22]', bg: 'bg-orange-100',  text: 'text-orange-700',  dot: 'bg-[#E67E22]', initBg: 'bg-[#E67E22]' },
+  PAYMENT_SUBMITTED: { border: 'border-l-[#E67E22]', bg: 'bg-orange-100',  text: 'text-orange-700',  dot: 'bg-[#E67E22]', initBg: 'bg-[#E67E22]' },
+  CONFIRMED:         { border: 'border-l-[#3B82F6]', bg: 'bg-blue-50',     text: 'text-blue-700',    dot: 'bg-[#3B82F6]', initBg: 'bg-[#3B82F6]' },
+  COMPLETED:         { border: 'border-l-[#6B7280]', bg: 'bg-gray-100',    text: 'text-gray-600',    dot: 'bg-[#6B7280]', initBg: 'bg-[#6B7280]' },
+  CANCELLED:         { border: 'border-l-[#DC3545]', bg: 'bg-red-50',      text: 'text-red-400',     dot: 'bg-[#DC3545]', initBg: 'bg-[#DC3545]' },
+  EXPIRED:           { border: 'border-l-gray-300',   bg: 'bg-gray-50',     text: 'text-gray-400',    dot: 'bg-gray-300',  initBg: 'bg-gray-300'  },
 }
-
-const AVAILABLE_COLORS = { border: 'border-l-[#5B8C3E]', bg: 'bg-[#5B8C3E]/10', text: 'text-[#5B8C3E]' }
-const CLOSED_COLORS = { bg: 'bg-gray-100', text: 'text-gray-400' }
 
 function formatDate(d: Date): string {
   const y = d.getFullYear()
@@ -117,6 +116,25 @@ function statusLabel(status: string, t: ReturnType<typeof useTranslations>): str
   } as Record<string, string>)[status]
   return key ? t(`status.${key}`) : status
 }
+
+/** Get initials from name or email */
+function getInitials(name: string | null, email: string): string {
+  const source = name || email.split('@')[0] || '?'
+  return source
+    .split(/[\s._-]+/)
+    .map(w => w[0]?.toUpperCase() ?? '')
+    .slice(0, 2)
+    .join('')
+}
+
+/** Get display name, truncated */
+function getDisplayName(user: ReservationUser): string {
+  return user.name || user.email?.split('@')[0] || '?'
+}
+
+// ── Closed-cell diagonal stripe pattern as CSS background ──────
+const CLOSED_STRIPE_BG = 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.04) 4px, rgba(0,0,0,0.04) 5px)'
+const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
 
 // ── Component ──────────────────────────────────────────────────────
 
@@ -175,7 +193,7 @@ export default function Calendar() {
     return map
   }, [reservations])
 
-  /** Map: "YYYY-MM-DD" -> yurtId -> AvailabilityEntry */
+  /** Map: "YYYY-MM-DD" -> Set<yurtId> for closed */
   const closedByDateYurt = useMemo(() => {
     const map = new Map<string, Set<string>>()
     if (!availability) return map
@@ -257,74 +275,104 @@ export default function Calendar() {
     return days
   }, [weekRange])
 
-  // ── Legend items ──────────────────────────────────────────────
+  // ── Legend items (new design spec) ───────────────────────────
 
   const legendItems = [
-    { color: 'bg-[#5B8C3E]', label: t('legend.available') },
-    { color: 'bg-[#F4A623]', label: t('legend.pending') },
-    { color: 'bg-[#E67E22]', label: t('legend.pendingConfirm') },
-    { color: 'bg-[#2980B9]', label: t('legend.confirmed') },
-    { color: 'bg-gray-400', label: t('legend.completed') },
-    { color: 'bg-[#DC3545]', label: t('legend.cancelled') },
-    { color: 'bg-gray-300', label: t('legend.closed') },
+    { color: 'bg-[#E67E22]', label: t('legend.pending') },
+    { color: 'bg-[#3B82F6]', label: t('legend.confirmed') },
+    { color: 'bg-[#6B7280]', label: t('legend.completed') },
+    { color: 'bg-gray-400',  label: t('legend.closed') },
   ]
 
   // ── Render helpers ───────────────────────────────────────────
 
   const todayStr = formatDate(today)
 
+  /** Collect reservations for a given date across all yurts (for month view) */
+  function getDateReservations(dateStr: string): Reservation[] {
+    const dayMap = resByDateYurt.get(dateStr)
+    if (!dayMap) return []
+    return Array.from(dayMap.values())
+  }
+
+  /** Check if any yurt is closed on this date */
+  function hasClosedYurts(dateStr: string): boolean {
+    return closedByDateYurt.has(dateStr) && closedByDateYurt.get(dateStr)!.size > 0
+  }
+
   function renderMonthCell(day: number | null, idx: number) {
     if (day === null) {
       return (
-        <div key={idx} className="min-h-[110px] p-1.5 border-b border-r border-beige/50 bg-gray-50/30" />
+        <div key={idx} className="min-h-[80px] border-b border-r border-[#E8E2D9]/60 bg-[#FAFAF7]/50" />
       )
     }
 
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const dayReservations = resByDateYurt.get(dateStr)
-    const dayClosed = closedByDateYurt.get(dateStr)
     const isToday = dateStr === todayStr
+    const dayRes = getDateReservations(dateStr)
+    const closed = hasClosedYurts(dateStr)
+    const maxVisible = 2
+    const visibleRes = dayRes.slice(0, maxVisible)
+    const remaining = dayRes.length - maxVisible
 
     return (
-      <div key={idx} className={`min-h-[110px] p-1.5 border-b border-r border-beige/50 ${isToday ? 'bg-amber/5' : ''}`}>
-        <div className="flex items-center gap-1 mb-1">
-          <span className={`text-xs font-semibold ${isToday ? 'bg-amber text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-brown'}`}>
+      <div
+        key={idx}
+        className={`
+          min-h-[80px] p-2 border-b border-r border-[#E8E2D9]/60
+          transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)]
+          ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#8B6914]' : ''}
+        `}
+      >
+        {/* Date number */}
+        <div className="mb-1.5">
+          <span className={`
+            text-[13px] font-semibold
+            ${isToday ? 'text-[#8B6914]' : 'text-[#2C2416]'}
+          `}>
             {day}
           </span>
         </div>
-        <div className="flex flex-col gap-0.5">
-          {activeYurts.map(yurt => {
-            const res = dayReservations?.get(yurt.id)
-            const isClosed = dayClosed?.has(yurt.id)
 
-            if (isClosed && !res) {
-              return (
-                <div key={yurt.id} className={`text-[10px] px-1 py-0.5 rounded ${CLOSED_COLORS.bg} ${CLOSED_COLORS.text} truncate`}
-                  style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)' }}
-                >
-                  {yurt.name.split(' ')[0]}
-                </div>
-              )
-            }
+        {/* Reservation pills */}
+        <div className="flex flex-col gap-1">
+          {visibleRes.map(res => {
+            const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
+            const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
+            const name = getDisplayName(res.user)
 
-            if (res) {
-              const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
-              return (
-                <div key={yurt.id}
-                  className={`text-[10px] px-1 py-0.5 rounded border-l-2 ${colors.border} ${colors.bg} ${colors.text} truncate ${res.status === 'CANCELLED' ? 'line-through' : ''}`}
-                >
-                  {res.user?.name || res.user?.email?.split('@')[0] || yurt.name.split(' ')[0]}
-                </div>
-              )
-            }
-
-            // Available
             return (
-              <div key={yurt.id} className={`text-[10px] px-1 py-0.5 rounded border-l-2 ${AVAILABLE_COLORS.border} ${AVAILABLE_COLORS.bg} ${AVAILABLE_COLORS.text} truncate`}>
-                {yurt.name.split(' ')[0]}
+              <div
+                key={res.id}
+                className={`
+                  flex items-center gap-1 px-1.5 py-0.5 rounded-full border-l-2
+                  ${colors.border} ${colors.bg} ${colors.text}
+                  ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
+                `}
+              >
+                <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 ${colors.initBg}`}>
+                  {initials}
+                </div>
+                <span className="text-[10px] font-medium truncate">{name}</span>
               </div>
             )
           })}
+
+          {remaining > 0 && (
+            <span className="text-[10px] text-[#8B6914] font-medium pl-1 cursor-pointer hover:underline">
+              +{remaining} more
+            </span>
+          )}
+
+          {/* Closed indicator */}
+          {closed && dayRes.length === 0 && (
+            <div
+              className="text-[10px] px-1.5 py-0.5 rounded text-[#8A7E6B] bg-gray-100"
+              style={{ backgroundImage: CLOSED_STRIPE_BG }}
+            >
+              {t('status.closed')}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -332,20 +380,30 @@ export default function Calendar() {
 
   function renderWeekView() {
     return (
-      <div className="bg-white rounded-xl border border-beige overflow-hidden">
-        {/* Yurt row headers + grid */}
+      <div className="bg-white rounded-xl border border-[#E8E2D9] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="border-b border-beige">
-                <th className="w-32 px-3 py-3 text-left text-xs font-semibold text-gray-text border-r border-beige" />
+              <tr className="border-b border-[#E8E2D9]">
+                <th className="w-36 px-4 py-3 text-left text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B] border-r border-[#E8E2D9] bg-[#FAFAF7]" />
                 {weekDays.map((d, i) => {
                   const dateStr = formatDate(d)
                   const isToday = dateStr === todayStr
                   return (
-                    <th key={i} className="px-2 py-3 text-center border-r border-beige last:border-r-0">
-                      <div className="text-xs font-semibold text-gray-text">{DAY_HEADERS[d.getDay()]}</div>
-                      <div className={`text-lg font-bold ${isToday ? 'bg-amber text-white w-8 h-8 rounded-full flex items-center justify-center mx-auto' : 'text-brown'}`}>
+                    <th
+                      key={i}
+                      className={`
+                        px-2 py-3 text-center border-r border-[#E8E2D9] last:border-r-0 bg-[#FAFAF7]
+                        ${isToday ? 'border-t-2 border-t-[#8B6914]' : ''}
+                      `}
+                    >
+                      <div className="text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">
+                        {DAY_HEADERS[d.getDay()]}
+                      </div>
+                      <div className={`
+                        text-lg font-semibold mt-0.5
+                        ${isToday ? 'text-[#8B6914]' : 'text-[#2C2416]'}
+                      `}>
                         {d.getDate()}
                       </div>
                     </th>
@@ -355,23 +413,28 @@ export default function Calendar() {
             </thead>
             <tbody>
               {activeYurts.map(yurt => (
-                <tr key={yurt.id} className="border-b border-beige last:border-b-0">
-                  <td className="px-3 py-3 border-r border-beige">
-                    <div className="text-sm font-semibold text-brown">{yurt.name}</div>
-                    <div className="text-[10px] text-gray-text">{yurt.capacity} guests max</div>
+                <tr key={yurt.id} className="border-b border-[#E8E2D9] last:border-b-0">
+                  <td className="px-4 py-3 border-r border-[#E8E2D9] bg-[#FAFAF7]">
+                    <div className="text-sm font-semibold text-[#2C2416]">{yurt.name}</div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Users size={10} className="text-[#8A7E6B]" />
+                      <span className="text-[10px] text-[#8A7E6B]">{yurt.capacity}</span>
+                    </div>
                   </td>
                   {weekDays.map((d, i) => {
                     const dateStr = formatDate(d)
+                    const isToday = dateStr === todayStr
                     const res = resByDateYurt.get(dateStr)?.get(yurt.id)
                     const isClosed = closedByDateYurt.get(dateStr)?.has(yurt.id)
 
                     if (isClosed && !res) {
                       return (
-                        <td key={i} className="px-2 py-2 border-r border-beige last:border-r-0">
-                          <div className={`p-2 rounded-lg ${CLOSED_COLORS.bg} text-center`}
-                            style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)' }}
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8E2D9] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                          <div
+                            className="p-3 rounded-lg bg-gray-50 text-center"
+                            style={{ backgroundImage: CLOSED_CROSSHATCH_BG }}
                           >
-                            <div className={`text-xs font-medium ${CLOSED_COLORS.text}`}>{t('status.closed')}</div>
+                            <div className="text-[11px] font-medium text-[#8A7E6B]">{t('status.closed')}</div>
                           </div>
                         </td>
                       )
@@ -379,33 +442,30 @@ export default function Calendar() {
 
                     if (res) {
                       const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
-                      const initials = (res.user?.name || res.user?.email || '?')
-                        .split(' ')
-                        .map(w => w[0]?.toUpperCase())
-                        .slice(0, 2)
-                        .join('')
+                      const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
 
                       return (
-                        <td key={i} className="px-2 py-2 border-r border-beige last:border-r-0">
-                          <div className={`p-2 rounded-lg border-l-2 ${colors.border} ${colors.bg} ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}`}>
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${
-                                res.status === 'CONFIRMED' ? 'bg-[#2980B9]' :
-                                res.status === 'PAYMENT_SUBMITTED' ? 'bg-[#E67E22]' :
-                                res.status === 'COMPLETED' ? 'bg-gray-400' :
-                                res.status === 'CANCELLED' ? 'bg-[#DC3545]' :
-                                'bg-[#F4A623]'
-                              }`}>
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8E2D9] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                          <div
+                            className={`
+                              p-3 rounded-lg border-l-[3px] ${colors.border} ${colors.bg}
+                              transition-shadow duration-150 hover:shadow-md
+                              ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
+                            `}
+                          >
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${colors.initBg}`}>
                                 {initials}
                               </div>
                               <div className={`text-xs font-semibold ${colors.text} truncate`}>
-                                {res.user?.name || res.user?.email?.split('@')[0]}
+                                {getDisplayName(res.user)}
                               </div>
                             </div>
-                            <div className="text-[10px] text-gray-text">
-                              {t('guests', { count: res.guestCount })}
+                            <div className="flex items-center gap-1 text-[#8A7E6B]">
+                              <Users size={10} />
+                              <span className="text-[11px]">{t('guests', { count: res.guestCount })}</span>
                             </div>
-                            <div className={`text-[10px] font-medium mt-0.5 ${colors.text}`}>
+                            <div className={`inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
                               {statusLabel(res.status, t)}
                             </div>
                           </div>
@@ -415,9 +475,9 @@ export default function Calendar() {
 
                     // Available
                     return (
-                      <td key={i} className="px-2 py-2 border-r border-beige last:border-r-0">
-                        <div className="p-2 rounded-lg bg-[#5B8C3E]/5">
-                          <div className="text-[10px] text-[#5B8C3E] font-medium">{t('status.available')}</div>
+                      <td key={i} className={`px-2 py-2 border-r border-[#E8E2D9] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                        <div className="p-3 rounded-lg bg-[#4A7C59]/5">
+                          <div className="text-[11px] text-[#4A7C59] font-medium">{t('status.available')}</div>
                         </div>
                       </td>
                     )
@@ -437,8 +497,8 @@ export default function Calendar() {
     return (
       <>
         <TopBar title={t('title')} />
-        <div className="flex-1 p-6 flex items-center justify-center bg-cream-bg">
-          <p className="text-gray-text">{t('loading')}</p>
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <p className="text-[#8A7E6B]">{t('loading')}</p>
         </div>
       </>
     )
@@ -453,64 +513,107 @@ export default function Calendar() {
   return (
     <>
       <TopBar title={t('title')} />
-      <div className="flex-1 p-6 flex flex-col gap-4 bg-cream-bg overflow-auto">
-        {/* View Toggle + Navigation */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-0">
+      <div className="flex-1 p-6 flex flex-col gap-5 overflow-auto min-h-0">
+
+        {/* ── Top Controls Bar ─────────────────────────────── */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+
+          {/* View Toggle Pills */}
+          <div className="flex">
             <button
               onClick={() => setView('month')}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-l-md border border-beige ${
-                view === 'month' ? 'bg-amber text-white border-amber' : 'bg-white text-brown'
-              }`}
+              className={`
+                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200
+                ${view === 'month'
+                  ? 'bg-[#8B6914] text-white shadow-sm'
+                  : 'bg-transparent text-[#2C2416] border border-[#E8E2D9] hover:bg-[#F5F2ED]'
+                }
+              `}
             >
               {t('views.month')}
             </button>
             <button
               onClick={() => setView('week')}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-r-md border border-beige ${
-                view === 'week' ? 'bg-amber text-white border-amber' : 'bg-white text-brown'
-              }`}
+              className={`
+                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ml-2
+                ${view === 'week'
+                  ? 'bg-[#8B6914] text-white shadow-sm'
+                  : 'bg-transparent text-[#2C2416] border border-[#E8E2D9] hover:bg-[#F5F2ED]'
+                }
+              `}
             >
               {t('views.week')}
             </button>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={view === 'month' ? prevMonth : prevWeek} className="p-1 hover:bg-beige/30 rounded">
-              <ChevronLeft size={18} className="text-brown" />
+
+          {/* Navigation */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={view === 'month' ? prevMonth : prevWeek}
+              className="p-1.5 rounded-full hover:bg-[#E8E2D9]/50 transition-colors"
+            >
+              <ChevronLeft size={18} className="text-[#2C2416]" />
             </button>
-            <span className="text-base font-bold text-brown min-w-[200px] text-center">{navLabel}</span>
-            <button onClick={view === 'month' ? nextMonth : nextWeek} className="p-1 hover:bg-beige/30 rounded">
-              <ChevronRight size={18} className="text-brown" />
+            <span
+              className="text-lg font-semibold text-[#2C2416] min-w-[220px] text-center"
+              style={{ fontFamily: 'var(--font-playfair)' }}
+            >
+              {navLabel}
+            </span>
+            <button
+              onClick={view === 'month' ? nextMonth : nextWeek}
+              className="p-1.5 rounded-full hover:bg-[#E8E2D9]/50 transition-colors"
+            >
+              <ChevronRight size={18} className="text-[#2C2416]" />
             </button>
           </div>
-          <button onClick={goToToday} className="text-sm font-semibold text-amber hover:underline">
-            {t('today')}
-          </button>
+
+          {/* Today link + Legend */}
+          <div className="flex items-center gap-5">
+            {/* Legend (inline) */}
+            <div className="hidden md:flex items-center gap-4">
+              {legendItems.map(l => (
+                <div key={l.label} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${l.color}`} />
+                  <span className="text-[11px] text-[#8A7E6B]">{l.label}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={goToToday}
+              className="text-sm font-semibold text-[#8B6914] hover:underline transition-colors"
+            >
+              {t('today')}
+            </button>
+          </div>
         </div>
+
+        {/* ── Calendar Content ─────────────────────────────── */}
 
         {view === 'month' ? (
           <>
-            {/* Month Grid */}
-            <div className="bg-white rounded-xl border border-beige overflow-hidden">
+            {/* Month Grid Card */}
+            <div className="bg-white rounded-xl border border-[#E8E2D9] overflow-hidden shadow-sm flex-1 flex flex-col">
               {/* Day Headers */}
-              <div className="grid grid-cols-7 border-b border-beige">
-                {DAY_HEADERS.map((d) => (
-                  <div key={d} className="text-center py-2 text-xs font-semibold text-gray-text">
+              <div className="grid grid-cols-7 border-b border-[#E8E2D9] bg-[#FAFAF7]">
+                {DAY_HEADERS.map(d => (
+                  <div key={d} className="text-center py-2.5 text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">
                     {d}
                   </div>
                 ))}
               </div>
-              {/* Day Cells */}
-              <div className="grid grid-cols-7">
+              {/* Day Cells — auto-rows fill remaining height */}
+              <div className="grid grid-cols-7 flex-1" style={{ gridAutoRows: '1fr' }}>
                 {monthCells.map((day, idx) => renderMonthCell(day, idx))}
               </div>
             </div>
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-5 flex-wrap">
-              {legendItems.map((l) => (
+
+            {/* Mobile legend (below calendar) */}
+            <div className="flex md:hidden items-center justify-center gap-4 flex-wrap">
+              {legendItems.map(l => (
                 <div key={l.label} className="flex items-center gap-1.5">
-                  <div className={`w-2.5 h-2.5 rounded-full ${l.color}`} />
-                  <span className="text-xs text-gray-text">{l.label}</span>
+                  <div className={`w-2 h-2 rounded-full ${l.color}`} />
+                  <span className="text-[11px] text-[#8A7E6B]">{l.label}</span>
                 </div>
               ))}
             </div>
@@ -518,21 +621,22 @@ export default function Calendar() {
         ) : (
           <>
             {renderWeekView()}
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-5 flex-wrap">
-              {legendItems.map((l) => (
+
+            {/* Mobile legend (below calendar) */}
+            <div className="flex md:hidden items-center justify-center gap-4 flex-wrap">
+              {legendItems.map(l => (
                 <div key={l.label} className="flex items-center gap-1.5">
-                  <div className={`w-2.5 h-2.5 rounded-full ${l.color}`} />
-                  <span className="text-xs text-gray-text">{l.label}</span>
+                  <div className={`w-2 h-2 rounded-full ${l.color}`} />
+                  <span className="text-[11px] text-[#8A7E6B]">{l.label}</span>
                 </div>
               ))}
             </div>
           </>
         )}
 
-        {/* Loading indicator overlay */}
+        {/* Loading indicator */}
         {loadingRes && (
-          <div className="text-center text-sm text-gray-text">{t('loading')}</div>
+          <div className="text-center text-sm text-[#8A7E6B] py-2">{t('loading')}</div>
         )}
       </div>
     </>
