@@ -364,40 +364,81 @@
     },
     "reservations": {
       "title": "预订管理",
-      "searchPlaceholder": "搜索预订...",
+      "subtitle": "管理所有预订",
+      "searchPlaceholder": "按客人姓名或邮箱搜索...",
       "filters": "筛选",
       "newReservation": "新建预订",
       "tabs": {
         "all": "全部",
-        "upcoming": "即将到来",
-        "checkedIn": "已入住",
+        "pendingPayment": "待付款",
+        "paymentSubmitted": "待确认付款",
+        "confirmed": "已确认",
         "completed": "已完成",
-        "cancelled": "已取消"
+        "cancelled": "已取消",
+        "expired": "已过期"
       },
       "table": {
         "id": "编号",
         "guest": "客人",
         "yurt": "营地",
-        "dates": "日期",
+        "date": "日期",
         "guests": "人数",
         "status": "状态",
         "deposit": "定金",
         "action": "操作"
       },
       "status": {
-        "confirmed": "已确认",
-        "pending": "待确认",
-        "checkedIn": "已入住",
-        "cancelled": "已取消",
-        "completed": "已完成"
+        "PENDING_PAYMENT": "待付款",
+        "PAYMENT_SUBMITTED": "待确认付款",
+        "CONFIRMED": "已确认",
+        "COMPLETED": "已完成",
+        "CANCELLED": "已取消",
+        "EXPIRED": "已过期"
+      },
+      "depositStatus": {
+        "UNPAID": "未付",
+        "PENDING": "处理中",
+        "CONFIRMED": "已确认",
+        "REFUNDED": "已退款"
       },
       "actions": {
         "view": "查看",
-        "confirm": "确认",
-        "release": "释放",
+        "confirm": "确认定金",
+        "reject": "拒绝",
         "cancel": "取消",
-        "complete": "完成"
-      }
+        "complete": "完成",
+        "close": "关闭"
+      },
+      "detail": {
+        "title": "预订详情",
+        "reservationInfo": "预订信息",
+        "date": "日期",
+        "yurt": "营地",
+        "guests": "人数",
+        "specialRequests": "特殊要求",
+        "none": "无",
+        "guestInfo": "客人信息",
+        "name": "姓名",
+        "email": "邮箱",
+        "phone": "电话",
+        "notProvided": "未提供",
+        "paymentInfo": "付款信息",
+        "depositAmount": "定金金额",
+        "depositStatus": "定金状态",
+        "paymentReference": "付款参考号",
+        "paymentDeadline": "付款截止时间",
+        "screenshot": "付款截图",
+        "viewScreenshot": "查看截图",
+        "timeline": "活动时间线",
+        "created": "创建时间",
+        "updated": "最后更新"
+      },
+      "noResults": "未找到预订记录",
+      "loading": "加载预订中...",
+      "dateRange": "日期范围",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "clearFilters": "清除筛选"
     },
     "deposits": {
       "title": "定金管理",
@@ -438,14 +479,26 @@
       "today": "今天",
       "legend": {
         "available": "可预订",
-        "pending": "待确认",
+        "pending": "待付款",
+        "pendingConfirm": "待确认",
         "confirmed": "已确认",
+        "completed": "已完成",
         "cancelled": "已取消",
-        "done": "已完成"
+        "closed": "已关闭"
       },
       "status": {
-        "available": "可用"
-      }
+        "available": "可预订",
+        "closed": "已关闭",
+        "pendingPayment": "待付款",
+        "paymentSubmitted": "待确认付款",
+        "confirmed": "已确认",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "expired": "已过期"
+      },
+      "guests": "{count} 位客人",
+      "noData": "未找到预订记录",
+      "loading": "加载日历中..."
     },
     "menu": {
       "title": "菜单管理",

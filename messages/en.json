@@ -364,40 +364,81 @@
     },
     "reservations": {
       "title": "Reservations",
-      "searchPlaceholder": "Search reservations...",
+      "subtitle": "Manage all bookings",
+      "searchPlaceholder": "Search by guest name or email...",
       "filters": "Filters",
       "newReservation": "New Reservation",
       "tabs": {
         "all": "All",
-        "upcoming": "Upcoming",
-        "checkedIn": "Checked In",
+        "pendingPayment": "Pending Payment",
+        "paymentSubmitted": "Payment Submitted",
+        "confirmed": "Confirmed",
         "completed": "Completed",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "expired": "Expired"
       },
       "table": {
         "id": "ID",
         "guest": "GUEST",
         "yurt": "YURT",
-        "dates": "DATES",
+        "date": "DATE",
         "guests": "GUESTS",
         "status": "STATUS",
         "deposit": "DEPOSIT",
         "action": "ACTION"
       },
       "status": {
-        "confirmed": "Confirmed",
-        "pending": "Pending",
-        "checkedIn": "Checked In",
-        "cancelled": "Cancelled",
-        "completed": "Completed"
+        "PENDING_PAYMENT": "Pending Payment",
+        "PAYMENT_SUBMITTED": "Payment Submitted",
+        "CONFIRMED": "Confirmed",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Expired"
+      },
+      "depositStatus": {
+        "UNPAID": "Unpaid",
+        "PENDING": "Pending",
+        "CONFIRMED": "Confirmed",
+        "REFUNDED": "Refunded"
       },
       "actions": {
         "view": "View",
-        "confirm": "Confirm",
-        "release": "Release",
+        "confirm": "Confirm Deposit",
+        "reject": "Reject",
         "cancel": "Cancel",
-        "complete": "Complete"
-      }
+        "complete": "Complete",
+        "close": "Close"
+      },
+      "detail": {
+        "title": "Reservation Details",
+        "reservationInfo": "Reservation Info",
+        "date": "Date",
+        "yurt": "Yurt",
+        "guests": "Guests",
+        "specialRequests": "Special Requests",
+        "none": "None",
+        "guestInfo": "Guest Info",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "notProvided": "Not provided",
+        "paymentInfo": "Payment Info",
+        "depositAmount": "Deposit Amount",
+        "depositStatus": "Deposit Status",
+        "paymentReference": "Payment Reference",
+        "paymentDeadline": "Payment Deadline",
+        "screenshot": "Payment Screenshot",
+        "viewScreenshot": "View Screenshot",
+        "timeline": "Activity Timeline",
+        "created": "Created",
+        "updated": "Last Updated"
+      },
+      "noResults": "No reservations found",
+      "loading": "Loading reservations...",
+      "dateRange": "Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "clearFilters": "Clear Filters"
     },
     "deposits": {
       "title": "Deposits",
@@ -439,13 +480,25 @@
       "legend": {
         "available": "Available",
         "pending": "Pending",
+        "pendingConfirm": "Pending Confirm",
         "confirmed": "Confirmed",
+        "completed": "Completed",
         "cancelled": "Cancelled",
-        "done": "Done"
+        "closed": "Closed"
       },
       "status": {
-        "available": "Available"
-      }
+        "available": "Available",
+        "closed": "Closed",
+        "pendingPayment": "Pending Payment",
+        "paymentSubmitted": "Payment Submitted",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "expired": "Expired"
+      },
+      "guests": "{count} Guests",
+      "noData": "No reservations found",
+      "loading": "Loading calendar..."
     },
     "menu": {
       "title": "Menu Management",
