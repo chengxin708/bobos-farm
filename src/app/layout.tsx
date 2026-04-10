@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
+import { Cormorant_Garamond, Outfit, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Providers from '@/components/Providers';
 import "./globals.css";
 
-const playfairDisplay = Playfair_Display({
+const cormorant = Cormorant_Garamond({
   variable: "--font-playfair-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const outfit = Outfit({
   variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -50,7 +50,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${playfairDisplay.variable} ${dmSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
+        className={`${cormorant.variable} ${outfit.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
       >
         <Providers>
           <NextIntlClientProvider messages={messages}>
