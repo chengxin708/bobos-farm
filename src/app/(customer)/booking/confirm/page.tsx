@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Tent, Users, MessageSquare, Upload, Copy, Check, Loader2, Clock, X, FileText, AlertCircle, Shield } from 'lucide-react'
+import { ChevronLeft, Calendar, Tent, Users, Mail, Upload, Copy, Check, CheckCircle, Loader2, Clock, X, FileText, AlertCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
@@ -291,284 +291,266 @@ export default function BookingConfirmPage() {
 
   const paymentMemo = `BOBO-${booking.selectedDate?.replace(/-/g, '') || ''}-${booking.contactName.split(' ')[0]?.toUpperCase() || ''}`
 
+  const zelleEmail = settings?.zelle_recipient || 'jenny@bobosfarm.com'
+  const zelleRecipientName = settings?.zelle_recipient_name || ''
+  const zelleDisplay = zelleRecipientName ? `${zelleRecipientName} (${zelleEmail})` : zelleEmail
+
   // Show spinner while hydrating from sessionStorage
   if (!booking.hydrated) {
     return (
       <div className="flex-1 flex items-center justify-center py-12">
-        <div className="w-10 h-10 rounded-full border-[3px] border-beige border-t-amber animate-spin" />
+        <Loader2 size={32} className="text-[#C47D52] animate-spin" />
       </div>
     )
   }
 
   if (!booking.selectedDate || !booking.selectedYurtId) return null
 
-  // Success state
+  // ============ Success state ============
   if (submitted) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-6">
-        <div className="w-20 h-20 rounded-full bg-green flex items-center justify-center">
-          <Check size={40} className="text-white" />
+      <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 gap-5">
+        <div className="w-16 h-16 rounded-full bg-[#6B7F5E] flex items-center justify-center">
+          <CheckCircle size={36} className="text-white" />
         </div>
-        <h2 className="font-playfair text-2xl font-bold text-brown text-center">
-          Payment Submitted!
+        <h2 className="font-serif text-2xl text-[#1A1208] text-center">
+          Reservation Confirmed!
         </h2>
-        <p className="text-brown/60 text-center max-w-md">
-          Your reservation is being processed. You&apos;ll receive a confirmation email once your deposit is verified.
+        <p className="text-sm text-[#8C8478] text-center">
+          Redirecting to your reservations...
         </p>
-        <p className="text-sm text-[#8E8E93]">Redirecting to your reservations...</p>
       </div>
     )
   }
 
-  // Creating state
+  // ============ Creating state ============
   if (creating) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-4">
-        <Loader2 size={40} className="text-amber animate-spin" />
-        <p className="text-brown/60">Creating your reservation...</p>
+      <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 gap-4">
+        <Loader2 size={36} className="text-[#C47D52] animate-spin" />
+        <p className="text-sm text-[#8C8478]">Creating your reservation...</p>
       </div>
     )
   }
 
-  // Error state (failed to create)
+  // ============ Error state (failed to create) ============
   if (error && !created) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-4">
-        <div className="w-full max-w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-red/10 flex items-center justify-center">
-            <AlertCircle size={28} className="text-red" />
-          </div>
-          <h3 className="font-playfair text-xl font-bold text-brown">Booking Failed</h3>
-          <p className="text-sm text-brown/60 text-center">{error}</p>
-          <div className="flex gap-3 mt-2">
-            <button
-              onClick={() => router.push('/booking/date')}
-              className="px-6 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white"
-            >
-              Start Over
-            </button>
-            <button
-              onClick={createReservation}
-              className="px-6 py-2.5 rounded-xl bg-amber text-white text-sm font-semibold cursor-pointer border-none"
-            >
-              Try Again
-            </button>
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 gap-5">
+        <div className="w-16 h-16 rounded-full bg-[#C4453A]/10 flex items-center justify-center">
+          <AlertCircle size={28} className="text-[#C4453A]" />
+        </div>
+        <h3 className="font-serif text-xl text-[#1A1208]">Booking Failed</h3>
+        <p className="text-sm text-[#8C8478] text-center max-w-sm">{error}</p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => router.push('/booking/date')}
+            className="px-6 py-2.5 rounded-full border border-[#D6D1CA] text-[#1A1208] text-sm font-medium cursor-pointer bg-white"
+          >
+            Start Over
+          </button>
+          <button
+            onClick={createReservation}
+            className="px-6 py-2.5 rounded-full bg-[#C47D52] text-white text-sm font-medium cursor-pointer border-none"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
   }
 
-  // Expired state -- countdown reached 0
+  // ============ Expired state ============
   if (expired && !submitted) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-12 px-4 gap-6">
-        <div className="w-full max-w-[600px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#F4A623]/10 flex items-center justify-center">
-            <Clock size={28} className="text-[#F4A623]" />
-          </div>
-          <h3 className="font-playfair text-xl font-bold text-brown">Time Expired</h3>
-          <p className="text-sm text-brown/60 text-center max-w-md">
-            Your payment window has expired and the reservation hold has been released.
-            Please start a new booking to reserve your spot.
-          </p>
-          <div className="flex gap-3 mt-2">
-            <button
-              onClick={() => {
-                booking.resetBooking()
-                router.push('/booking/date')
-              }}
-              className="px-6 py-2.5 rounded-xl bg-amber text-white text-sm font-semibold cursor-pointer border-none"
-            >
-              Start New Booking
-            </button>
-            <button
-              onClick={() => router.push('/reservations')}
-              className="px-6 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white"
-            >
-              View Reservations
-            </button>
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 gap-5">
+        <div className="w-16 h-16 rounded-full bg-[#C4453A]/10 flex items-center justify-center">
+          <Clock size={28} className="text-[#C4453A]" />
         </div>
+        <h3 className="font-serif text-xl text-[#1A1208]">Payment Deadline Expired</h3>
+        <p className="text-sm text-[#8C8478] text-center max-w-sm">
+          Please start a new booking
+        </p>
+        <Link
+          href="/booking/date"
+          onClick={() => booking.resetBooking()}
+          className="mt-2 px-6 py-2.5 rounded-full bg-[#C47D52] text-white text-sm font-medium no-underline"
+        >
+          Start New Booking
+        </Link>
       </div>
     )
   }
 
-  const summaryRows = [
-    { icon: Calendar, labelKey: 'date' as const, value: formattedDate },
-    {
-      icon: Tent,
-      labelKey: 'yurt' as const,
-      value: `${booking.selectedYurt?.name || ''} (up to ${booking.selectedYurt?.capacity || 0} guests)`,
-    },
-    { icon: Users, labelKey: 'guests' as const, value: String(booking.guestCount) },
-    {
-      icon: MessageSquare,
-      labelKey: 'specialRequests' as const,
-      value: booking.specialRequests || 'None',
-    },
-  ]
+  // ============ Main confirm UI ============
+  const summaryCard = (
+    <div className="bg-[#F2EDE6] rounded-2xl p-5 flex flex-col gap-4">
+      <h3 className="font-serif text-lg text-[#1A1208]">Your Reservation</h3>
 
-  const zelleEmail = settings?.zelle_recipient || 'jenny@bobosfarm.com'
-  const zelleRecipientName = settings?.zelle_recipient_name || ''
-  const zelleDisplay = zelleRecipientName ? `${zelleRecipientName} (${zelleEmail})` : zelleEmail
+      <div className="flex flex-col gap-3">
+        {/* Date */}
+        <div className="flex items-center gap-3">
+          <Calendar size={16} className="text-[#8C8478] shrink-0" />
+          <span className="text-sm text-[#1A1208]">{formattedDate}</span>
+        </div>
+        {/* Yurt */}
+        <div className="flex items-center gap-3">
+          <Tent size={16} className="text-[#8C8478] shrink-0" />
+          <span className="text-sm text-[#1A1208]">{booking.selectedYurt?.name || ''}</span>
+        </div>
+        {/* Guests */}
+        <div className="flex items-center gap-3">
+          <Users size={16} className="text-[#8C8478] shrink-0" />
+          <span className="text-sm text-[#1A1208]">{booking.guestCount} guests</span>
+        </div>
+        {/* Email */}
+        <div className="flex items-center gap-3">
+          <Mail size={16} className="text-[#8C8478] shrink-0" />
+          <span className="text-sm text-[#1A1208]">{booking.contactEmail}</span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="h-px bg-[#D6D1CA]" />
+
+      {/* Deposit */}
+      <div className="text-center">
+        <div className="text-xs text-[#8C8478] mb-1">{t('depositRequired')}</div>
+        <div className="text-[#C47D52] text-xl font-serif font-medium">${DEPOSIT_AMOUNT}</div>
+      </div>
+
+      {/* Countdown */}
+      <div className="flex items-center justify-center gap-2">
+        <Clock size={14} className={isUrgent ? 'text-[#C4453A]' : 'text-[#8C8478]'} />
+        <span className={`text-sm font-mono tabular-nums ${isUrgent ? 'text-[#C4453A]' : 'text-[#8C8478]'}`}>
+          Payment due in {countdown}
+        </span>
+      </div>
+    </div>
+  )
 
   return (
-    <>
-      {/* Two-column content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-8">
-          <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+        <button
+          onClick={() => router.push('/booking/details')}
+          className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
+          aria-label="Back"
+        >
+          <ChevronLeft size={22} className="text-[#1A1208]" />
+        </button>
+        <span className="text-sm text-[#8C8478]">Step 4 of 4</span>
+      </div>
 
-            {/* ============================================
-                Mobile: Summary on top (shown only on small)
-                ============================================ */}
-            <div className="md:hidden flex flex-col gap-4">
-              {/* Reservation Summary Card */}
-              <div className="bg-white rounded-xl border border-[#E8E2D9] p-5">
-                <h3 className="font-playfair text-lg font-bold text-brown mb-4">
-                  {t('summaryTitle')}
-                </h3>
-                <div className="flex flex-col gap-3">
-                  {summaryRows.map((row, i) => (
-                    <div key={row.labelKey}>
-                      <div className="flex items-start gap-3">
-                        <row.icon size={16} className="text-amber mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[11px] uppercase tracking-wider text-[#8A7E6B]">
-                            {t(`summaryLabels.${row.labelKey}`)}
-                          </div>
-                          <div className="text-sm font-semibold text-brown truncate">
-                            {row.value}
-                          </div>
-                        </div>
-                      </div>
-                      {i < summaryRows.length - 1 && (
-                        <div className="h-px bg-[#E8E2D9] mt-3 ml-7" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {/* Page Title */}
+      <div className="text-center mt-4 mb-6 px-4">
+        <h1 className="text-2xl font-serif text-[#1A1208]">Confirm &amp; Pay</h1>
+      </div>
 
-              {/* Deposit + Timer row (mobile) */}
-              <div className="flex gap-3">
-                <div className="flex-1 bg-white rounded-xl border border-[#E8E2D9] p-4 flex flex-col items-center justify-center">
-                  <span className="text-[11px] uppercase tracking-wider text-[#8A7E6B] mb-1">{t('depositRequired')}</span>
-                  <span className="text-3xl font-bold text-amber font-playfair">${DEPOSIT_AMOUNT}</span>
-                </div>
-                <div className={`flex-1 rounded-xl border p-4 flex flex-col items-center justify-center ${
-                  isUrgent
-                    ? 'bg-red/5 border-red/20'
-                    : 'bg-green-light border-green/20'
-                }`}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Clock size={12} className={isUrgent ? 'text-red' : 'text-green'} />
-                    <span className={`text-[11px] uppercase tracking-wider ${isUrgent ? 'text-red' : 'text-green'}`}>
-                      Time Left
-                    </span>
-                  </div>
-                  <span className={`text-2xl font-bold font-mono tabular-nums ${isUrgent ? 'text-red' : 'text-brown'}`}>
-                    {countdown}
-                  </span>
-                </div>
-              </div>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-6">
+
+            {/* ===== Mobile: Summary card on top ===== */}
+            <div className="md:hidden">
+              {summaryCard}
             </div>
 
-            {/* ============================================
-                Left Column -- Payment Instructions + Upload
-                ============================================ */}
-            <div className="flex-1 md:flex-[3] flex flex-col gap-6">
+            {/* ===== Left Column: Payment + Upload ===== */}
+            <div className="flex-1 flex flex-col gap-6">
 
-              {/* How to Pay */}
-              <div className="bg-white rounded-xl border border-[#E8E2D9] p-6 md:p-8">
-                <h3 className="font-playfair text-xl md:text-2xl font-bold text-brown mb-6">
-                  {t('howToPay')}
-                </h3>
+              {/* Payment Instructions */}
+              <div className="flex flex-col gap-4">
+                <h2 className="font-serif text-lg text-[#1A1208]">Payment Instructions</h2>
 
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
                   {/* Step 1 */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      1
-                    </div>
-                    <div className="pt-0.5">
-                      <span className="text-sm text-brown leading-relaxed">{t('step1')}</span>
-                    </div>
+                  <div className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#8C8478] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Open Zelle in your bank app</span>
                   </div>
 
                   {/* Step 2 */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      2
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-brown leading-relaxed pt-0.5">{t('step2')}</span>
+                  <div className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#8C8478] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <div className="flex flex-col gap-2 pt-0.5">
+                      <span className="text-sm text-[#3D3229] leading-relaxed">
+                        Send to: <span className="font-medium">{zelleDisplay}</span>
+                      </span>
                       <button
-                        onClick={() => copyToClipboard(zelleEmail, 'step-2')}
-                        className="inline-flex items-center gap-2.5 bg-amber/8 hover:bg-amber/15 rounded-lg px-3.5 py-2 border-none cursor-pointer transition-colors group w-fit"
+                        onClick={() => copyToClipboard(zelleEmail, 'email')}
+                        className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
                       >
-                        <span className="text-sm font-semibold text-amber font-mono tracking-wide">
-                          {zelleDisplay}
-                        </span>
-                        {copiedField === 'step-2' ? (
-                          <span className="flex items-center gap-1 text-green text-xs font-medium">
-                            <Check size={13} />
+                        {copiedField === 'email' ? (
+                          <>
+                            <Check size={12} />
                             Copied!
-                          </span>
+                          </>
                         ) : (
-                          <Copy size={13} className="text-amber/60 group-hover:text-amber transition-colors" />
+                          <>
+                            <Copy size={12} />
+                            Copy
+                          </>
                         )}
                       </button>
                     </div>
                   </div>
 
                   {/* Step 3 */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-7 h-7 rounded-md bg-amber text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      3
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-brown leading-relaxed pt-0.5">{t('step3')}</span>
+                  <div className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#8C8478] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Amount: <span className="font-medium">${DEPOSIT_AMOUNT}</span></span>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#8C8478] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">4</span>
+                    <div className="flex flex-col gap-2 pt-0.5">
+                      <span className="text-sm text-[#3D3229] leading-relaxed">
+                        Memo: <span className="font-mono font-medium">{paymentMemo}</span>
+                      </span>
                       <button
-                        onClick={() => copyToClipboard(paymentMemo, 'step-3')}
-                        className="inline-flex items-center gap-2.5 bg-amber/8 hover:bg-amber/15 rounded-lg px-3.5 py-2 border-none cursor-pointer transition-colors group w-fit"
+                        onClick={() => copyToClipboard(paymentMemo, 'memo')}
+                        className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
                       >
-                        <span className="text-sm font-semibold text-amber font-mono tracking-wide">
-                          {paymentMemo}
-                        </span>
-                        {copiedField === 'step-3' ? (
-                          <span className="flex items-center gap-1 text-green text-xs font-medium">
-                            <Check size={13} />
+                        {copiedField === 'memo' ? (
+                          <>
+                            <Check size={12} />
                             Copied!
-                          </span>
+                          </>
                         ) : (
-                          <Copy size={13} className="text-amber/60 group-hover:text-amber transition-colors" />
+                          <>
+                            <Copy size={12} />
+                            Copy
+                          </>
                         )}
                       </button>
                     </div>
                   </div>
+
+                  {/* Step 5 */}
+                  <div className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#8C8478] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">5</span>
+                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Upload screenshot below</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Upload Area */}
-              <div className="bg-white rounded-xl border border-[#E8E2D9] p-6 md:p-8">
-                <h4 className="text-sm font-semibold text-brown mb-4 flex items-center gap-2">
-                  <Upload size={16} className="text-amber" />
-                  Payment Proof
-                </h4>
-
+              {/* Upload Zone */}
+              <div className="flex flex-col gap-3">
                 <div
                   onDrop={handleDrop}
                   onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
                   onDragLeave={() => setIsDragOver(false)}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`relative rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+                  className={`relative rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
                     uploadedFile
-                      ? 'border-green/40 bg-green-light/40 p-4'
+                      ? 'border-[#6B7F5E]/40 bg-[#E8ECE4]/30 p-4'
                       : isDragOver
-                        ? 'border-amber bg-amber-light/50 p-8'
-                        : 'border-[#E8E2D9] hover:border-amber/40 hover:bg-amber-light/20 p-8'
+                        ? 'border-[#6B7F5E] bg-[#E8ECE4]/50 p-8'
+                        : 'border-[#E8ECE4] hover:border-[#6B7F5E]/40 p-8'
                   }`}
                 >
                   <input
@@ -585,16 +567,16 @@ export default function BookingConfirmPage() {
                         <img
                           src={uploadPreview}
                           alt="Payment screenshot"
-                          className="w-16 h-16 rounded-lg object-cover border border-[#E8E2D9]"
+                          className="w-14 h-14 rounded-xl object-cover border border-[#E8ECE4]"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-lg bg-green/10 flex items-center justify-center">
-                          <FileText size={24} className="text-green" />
+                        <div className="w-14 h-14 rounded-xl bg-[#6B7F5E]/10 flex items-center justify-center">
+                          <FileText size={22} className="text-[#6B7F5E]" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-brown truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-[#8A7E6B] mt-0.5">
+                        <p className="text-sm font-medium text-[#1A1208] truncate">{uploadedFile.name}</p>
+                        <p className="text-xs text-[#8C8478] mt-0.5">
                           {(uploadedFile.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
@@ -607,21 +589,19 @@ export default function BookingConfirmPage() {
                             return null
                           })
                         }}
-                        className="w-8 h-8 rounded-full bg-brown/5 hover:bg-red/10 flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+                        className="w-8 h-8 rounded-full bg-[#1A1208]/5 hover:bg-[#C4453A]/10 flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
                       >
-                        <X size={14} className="text-brown/40" />
+                        <X size={14} className="text-[#8C8478]" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2.5">
-                      <div className="w-12 h-12 rounded-full bg-amber/8 flex items-center justify-center">
-                        <Upload size={22} className="text-amber/60" />
-                      </div>
+                      <Upload size={24} className="text-[#6B7F5E]" />
                       <div className="text-center">
-                        <p className="text-sm text-brown/70">{t('uploadTitle')}</p>
-                        <p className="text-[13px] text-amber font-semibold mt-1">{t('uploadBrowse')}</p>
+                        <p className="text-sm text-[#3D3229]">Upload payment proof</p>
+                        <p className="text-xs text-[#8C8478] mt-1">Tap or drag file here</p>
                       </div>
-                      <p className="text-[11px] text-[#8A7E6B]">{t('uploadFormats')}</p>
+                      <p className="text-[11px] text-[#8C8478]">JPG, PNG, PDF (max 5MB)</p>
                     </div>
                   )}
                 </div>
@@ -629,155 +609,65 @@ export default function BookingConfirmPage() {
 
               {/* Error message */}
               {error && created && (
-                <div className="flex items-center gap-3 bg-red/5 border border-red/15 text-red text-sm rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 bg-[#C4453A]/5 border border-[#C4453A]/15 text-[#C4453A] text-sm rounded-xl px-4 py-3">
                   <AlertCircle size={16} className="shrink-0" />
                   {error}
                 </div>
               )}
 
-              {/* Cancel link -- desktop only, bottom of left column */}
-              <div className="hidden md:block">
+              {/* Terms Checkbox */}
+              <label className="flex gap-3 cursor-pointer select-none">
+                <button
+                  type="button"
+                  onClick={() => setAcceptedTerms(!acceptedTerms)}
+                  className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${
+                    acceptedTerms ? 'bg-[#6B7F5E] border-[#6B7F5E]' : 'border-[#D6D1CA] bg-white hover:border-[#6B7F5E]/50'
+                  }`}
+                >
+                  {acceptedTerms && <Check size={12} className="text-white" />}
+                </button>
+                <span className="text-xs text-[#8C8478] leading-relaxed">
+                  {t('cancellationPolicyText')}{' '}
+                  <Link href="/cancellation" className="text-[#C47D52] font-medium no-underline hover:underline">
+                    {t('cancellationPolicyLink')}
+                  </Link>
+                </span>
+              </label>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleSubmitPayment}
+                disabled={!acceptedTerms || submitting}
+                className={`rounded-full py-3.5 text-base font-medium w-full border-none transition-all flex items-center justify-center gap-2 ${
+                  acceptedTerms && !submitting
+                    ? 'bg-[#C47D52] text-white cursor-pointer hover:bg-[#B06D42]'
+                    : 'bg-[#C47D52] text-white opacity-40 cursor-not-allowed'
+                }`}
+              >
+                {submitting && <Loader2 size={18} className="animate-spin" />}
+                {submitting ? 'Submitting...' : t('completedTransfer')}
+              </button>
+
+              {/* Cancel link */}
+              <div className="text-center md:text-left">
                 <button
                   onClick={handleCancel}
-                  className="text-[13px] text-[#8A7E6B] border-none bg-transparent cursor-pointer hover:text-red transition-colors"
+                  className="text-xs text-[#8C8478] border-none bg-transparent cursor-pointer hover:text-[#C4453A] transition-colors"
                 >
                   {t('cancelReservation')}
                 </button>
               </div>
             </div>
 
-            {/* ============================================
-                Right Column -- Sticky Sidebar
-                ============================================ */}
-            <div className="md:flex-[2] flex flex-col gap-4">
-              <div className="md:sticky md:top-6 flex flex-col gap-4">
-
-                {/* Reservation Summary Card (desktop only) */}
-                <div className="hidden md:block bg-white rounded-xl border border-[#E8E2D9] p-5">
-                  <h3 className="font-playfair text-lg font-bold text-brown mb-4">
-                    {t('summaryTitle')}
-                  </h3>
-                  <div className="flex flex-col gap-3">
-                    {summaryRows.map((row, i) => (
-                      <div key={row.labelKey}>
-                        <div className="flex items-start gap-3">
-                          <row.icon size={16} className="text-amber mt-0.5 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[11px] uppercase tracking-wider text-[#8A7E6B]">
-                              {t(`summaryLabels.${row.labelKey}`)}
-                            </div>
-                            <div className="text-sm font-semibold text-brown">
-                              {row.value}
-                            </div>
-                          </div>
-                        </div>
-                        {i < summaryRows.length - 1 && (
-                          <div className="h-px bg-[#E8E2D9] mt-3 ml-7" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Deposit Amount Card (desktop only) */}
-                <div className="hidden md:flex bg-white rounded-xl border border-[#E8E2D9] p-5 flex-col items-center">
-                  <span className="text-[11px] uppercase tracking-wider text-[#8A7E6B] mb-1">
-                    {t('depositRequired')}
-                  </span>
-                  <span className="text-4xl font-bold text-amber font-playfair">
-                    ${DEPOSIT_AMOUNT}
-                  </span>
-                </div>
-
-                {/* Countdown Timer Card (desktop only) */}
-                <div className={`hidden md:flex rounded-xl border p-5 flex-col items-center gap-1.5 ${
-                  isUrgent
-                    ? 'bg-red/5 border-red/20'
-                    : 'bg-green-light border-green/20'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <Clock size={14} className={isUrgent ? 'text-red' : 'text-green'} />
-                    <span className={`text-xs font-medium uppercase tracking-wider ${isUrgent ? 'text-red' : 'text-green'}`}>
-                      Time Remaining
-                    </span>
-                  </div>
-                  <span className={`text-3xl font-bold font-mono tabular-nums tracking-wider ${
-                    isUrgent ? 'text-red' : 'text-brown'
-                  }`}>
-                    {countdown}
-                  </span>
-                  <span className="text-[11px] text-[#8A7E6B]">
-                    {t('countdownSub')}
-                  </span>
-                </div>
-
-                {/* Policy + Submit Card */}
-                <div className="bg-white rounded-xl border border-[#E8E2D9] p-5 flex flex-col gap-4">
-                  {/* Checkbox */}
-                  <label className="flex gap-3 cursor-pointer select-none">
-                    <button
-                      type="button"
-                      onClick={() => setAcceptedTerms(!acceptedTerms)}
-                      className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${
-                        acceptedTerms ? 'bg-amber border-amber' : 'border-beige bg-white hover:border-amber/50'
-                      }`}
-                    >
-                      {acceptedTerms && <Check size={12} className="text-white" />}
-                    </button>
-                    <span className="text-xs text-[#8A7E6B] leading-relaxed">
-                      {t('cancellationPolicyText')}{' '}
-                      <Link href="/cancellation" className="text-amber font-medium no-underline hover:underline">
-                        {t('cancellationPolicyLink')}
-                      </Link>
-                    </span>
-                  </label>
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleSubmitPayment}
-                    disabled={!acceptedTerms || submitting}
-                    className={`h-[52px] rounded-xl text-white text-[15px] font-semibold border-none w-full transition-all flex items-center justify-center gap-2 ${
-                      acceptedTerms && !submitting
-                        ? 'bg-amber hover:bg-amber/90 cursor-pointer shadow-[0_4px_16px_rgba(184,134,11,0.25)] hover:shadow-[0_6px_20px_rgba(184,134,11,0.35)] btn-warm'
-                        : 'bg-[#BFBFBF] cursor-not-allowed'
-                    }`}
-                  >
-                    {submitting && <Loader2 size={18} className="animate-spin" />}
-                    {submitting ? 'Submitting...' : t('completedTransfer')}
-                  </button>
-
-                  {/* Security note */}
-                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#8A7E6B]">
-                    <Shield size={11} />
-                    <span>Secure &amp; encrypted</span>
-                  </div>
-                </div>
-
-                {/* Cancel -- mobile only */}
-                <div className="md:hidden text-center mt-1">
-                  <button
-                    onClick={handleCancel}
-                    className="text-[13px] text-[#8A7E6B] border-none bg-transparent cursor-pointer hover:text-red transition-colors"
-                  >
-                    {t('cancelReservation')}
-                  </button>
-                </div>
+            {/* ===== Right Column: Sticky summary (desktop only) ===== */}
+            <div className="hidden md:block md:w-[340px] shrink-0">
+              <div className="sticky top-20">
+                {summaryCard}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Bottom Bar with Back button */}
-      <div className="h-14 shrink-0 bg-white border-t border-[#E8E2D9] flex items-center justify-between px-4 sm:px-6 lg:px-10">
-        <button
-          onClick={() => router.push('/booking/details')}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-brown border-none bg-transparent cursor-pointer hover:text-amber transition-colors"
-        >
-          <ArrowLeft size={16} /> Back to Details
-        </button>
-        <div />
-      </div>
-    </>
+    </div>
   )
 }
