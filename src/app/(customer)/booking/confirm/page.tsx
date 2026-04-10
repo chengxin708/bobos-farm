@@ -1,10 +1,12 @@
 "use client"
 
-import { Calendar, Tent, Users, MessageSquare, Upload, Copy } from 'lucide-react'
+import { useState } from 'react'
+import { Calendar, Tent, Users, MessageSquare, Upload, Copy, Check } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 export default function BookingConfirmPage() {
   const t = useTranslations('booking.confirm')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const summaryRows = [
     { icon: Calendar, labelKey: 'date' as const, value: 'Saturday, March 15, 2026' },
@@ -22,7 +24,7 @@ export default function BookingConfirmPage() {
   return (
     <>
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center py-10 px-20 gap-6">
+      <div className="flex-1 flex flex-col items-center py-6 px-4 sm:px-10 lg:px-20 gap-6 overflow-y-auto">
         {/* Reservation Summary */}
         <div className="w-[600px] bg-[#FEFCF3] rounded-2xl p-6 border-[1.5px] border-beige flex flex-col gap-5">
           <h3 className="font-playfair text-xl font-bold text-brown">{t('summaryTitle')}</h3>
@@ -84,15 +86,30 @@ export default function BookingConfirmPage() {
           </div>
 
           {/* Checkbox */}
-          <div className="flex gap-3">
-            <div className="w-[18px] h-[18px] rounded border-[1.5px] border-beige bg-white shrink-0 mt-0.5" />
+          <label className="flex gap-3 cursor-pointer select-none">
+            <button
+              type="button"
+              onClick={() => setAcceptedTerms(!acceptedTerms)}
+              className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer ${
+                acceptedTerms ? 'bg-amber border-amber' : 'border-beige bg-white'
+              }`}
+            >
+              {acceptedTerms && <Check size={12} className="text-white" />}
+            </button>
             <span className="text-xs text-brown/53 leading-relaxed">
               {t('cancellationPolicy')}
             </span>
-          </div>
+          </label>
 
-          {/* Submit Button (Disabled) */}
-          <button className="h-[52px] rounded-2xl bg-[#BFBFBF] text-white text-base font-semibold cursor-not-allowed border-none w-full">
+          {/* Submit Button */}
+          <button
+            disabled={!acceptedTerms}
+            className={`h-[52px] rounded-2xl text-white text-base font-semibold border-none w-full transition-colors ${
+              acceptedTerms
+                ? 'bg-gradient-to-r from-amber to-[#A67C2E] cursor-pointer shadow-[0_4px_16px_rgba(139,105,20,0.2)]'
+                : 'bg-[#BFBFBF] cursor-not-allowed'
+            }`}
+          >
             {t('completedTransfer')}
           </button>
 

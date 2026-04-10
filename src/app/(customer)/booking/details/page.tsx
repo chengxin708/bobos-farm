@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, User, Mail, Phone, Minus, Plus } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -7,11 +8,12 @@ import { useTranslations } from 'next-intl'
 export default function BookingDetailsPage() {
   const t = useTranslations('booking.details')
   const tCommon = useTranslations('common')
+  const [guestCount, setGuestCount] = useState(4)
 
   return (
     <>
       {/* Content */}
-      <div className="flex-1 flex justify-center py-10 px-20">
+      <div className="flex-1 flex justify-center py-6 px-4 sm:px-10 lg:px-20 overflow-y-auto">
         <div className="w-[560px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col gap-6">
           <div>
             <h2 className="font-playfair text-2xl font-bold text-brown">{t('title')}</h2>
@@ -50,11 +52,17 @@ export default function BookingDetailsPage() {
             <div className="flex flex-col gap-2">
               <label className="text-[13px] font-semibold text-brown">{t('numberOfGuests')}</label>
               <div className="flex items-center justify-center gap-5">
-                <button className="w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white cursor-pointer">
+                <button
+                  onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                  className="w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white cursor-pointer hover:bg-beige/30"
+                >
                   <Minus size={16} className="text-brown" />
                 </button>
-                <span className="text-2xl font-bold text-brown w-10 text-center">4</span>
-                <button className="w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white cursor-pointer">
+                <span className="text-2xl font-bold text-brown w-10 text-center">{guestCount}</span>
+                <button
+                  onClick={() => setGuestCount(Math.min(15, guestCount + 1))}
+                  className="w-9 h-9 rounded-lg border border-beige flex items-center justify-center bg-white cursor-pointer hover:bg-beige/30"
+                >
                   <Plus size={16} className="text-brown" />
                 </button>
               </div>
@@ -84,7 +92,7 @@ export default function BookingDetailsPage() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="h-20 bg-white border-t border-beige flex items-center justify-between px-20">
+      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-between px-4 sm:px-10 lg:px-20">
         <Link href="/booking/yurt" className="no-underline flex items-center gap-2 px-4 py-2.5 text-[15px] font-medium text-brown">
           <ArrowLeft size={18} /> {tCommon('back')}
         </Link>

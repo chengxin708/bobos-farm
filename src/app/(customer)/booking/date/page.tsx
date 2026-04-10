@@ -39,18 +39,18 @@ export default function BookingDatePage() {
   while (cells.length % 7 !== 0) cells.push(null)
 
   const getDateStyle = (day: number) => {
-    if (day === selectedDate) return 'bg-amber text-white w-12 h-12 rounded-full text-lg font-bold'
+    if (day === selectedDate) return 'bg-amber text-white w-12 h-12 rounded-full text-lg font-bold ring-2 ring-amber/30'
     const status = calendarData[day]
+    if (status === 'full') return 'bg-gray-200 text-gray-400 w-10 h-10 rounded-full cursor-not-allowed'
     if (status === 'limited') return 'bg-beige/60 text-brown/60 w-10 h-10 rounded-full'
-    if (status === 'full') return 'bg-gray-200 text-gray-400 w-10 h-10 rounded-full'
-    if (day === 21 || day === 28) return 'bg-amber/20 text-amber w-10 h-10 rounded-full border-2 border-amber/40'
-    return 'text-brown w-10 h-10'
+    if (status === 'available') return 'bg-green/15 text-green w-10 h-10 rounded-full'
+    return 'text-brown w-10 h-10 hover:bg-amber/10 hover:rounded-full'
   }
 
   return (
     <>
       {/* Calendar Section */}
-      <div className="flex-1 flex justify-center py-10 px-20">
+      <div className="flex-1 flex justify-center py-6 px-4 sm:px-10 lg:px-20 overflow-y-auto">
         <div className="w-[700px] bg-white rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col gap-4">
           {/* Month Header */}
           <div className="flex items-center justify-between">
@@ -73,7 +73,7 @@ export default function BookingDatePage() {
                 {day !== null ? (
                   <button
                     onClick={() => setSelectedDate(day)}
-                    className={`flex items-center justify-center cursor-pointer border-none bg-transparent ${getDateStyle(day)}`}
+                    className={`flex items-center justify-center cursor-pointer border-none ${getDateStyle(day)}`}
                   >
                     {day}
                   </button>
@@ -97,7 +97,7 @@ export default function BookingDatePage() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="h-20 bg-white border-t border-beige flex items-center justify-end px-20">
+      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-end px-4 sm:px-10 lg:px-20">
         <Link
           href="/booking/yurt"
           className="no-underline flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber to-[#A67C2E] text-white text-base font-semibold shadow-[0_4px_16px_rgba(139,105,20,0.2)]"

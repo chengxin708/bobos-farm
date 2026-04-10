@@ -49,7 +49,7 @@ export default function BookingYurtPage() {
   return (
     <>
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center py-10 px-20 gap-8">
+      <div className="flex-1 flex flex-col items-center py-6 px-4 sm:px-10 lg:px-20 gap-8 overflow-y-auto">
         <div className="text-center">
           <h2 className="font-playfair text-[28px] font-bold text-brown">{t('title')}</h2>
           <p className="text-base text-brown/53 mt-2">{t('subtitle')}</p>
@@ -96,7 +96,7 @@ export default function BookingYurtPage() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="h-20 bg-white border-t border-beige flex items-center justify-between px-20">
+      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-between px-4 sm:px-10 lg:px-20">
         <Link href="/booking/date" className="no-underline flex items-center gap-2 px-4 py-2.5 text-[15px] font-medium text-brown">
           <ArrowLeft size={18} /> {tCommon('back')}
         </Link>

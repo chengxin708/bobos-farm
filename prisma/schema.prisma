@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum Language {
+  EN
+  ZH
+}
+
+enum YurtStatus {
+  ACTIVE
+  MAINTENANCE
+}
+
+enum ReservationStatus {
+  PENDING_PAYMENT
+  PAYMENT_SUBMITTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum DepositStatus {
+  UNPAID
+  PENDING
+  CONFIRMED
+  REFUNDED
+}
+
+enum OrderStatus {
+  DRAFT
+  SUBMITTED
+  LOCKED
+}
+
+// ============ USERS ============
+
+model User {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  name              String?
+  phone             String?
+  passwordHash      String?
+  role              Role          @default(CUSTOMER)
+  preferredLanguage Language      @default(EN)
+  emailVerified     DateTime?
+  image             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  reservations   Reservation[]
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+// ============ YURTS ============
+
+model Yurt {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  capacity    Int
+  status      YurtStatus @default(ACTIVE)
+  imageUrl    String?
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  availability YurtAvailability[]
+  reservations Reservation[]
+
+  @@map("yurts")
+}
+
+model YurtAvailability {
+  id     String  @id @default(cuid())
+  yurtId String
+  date   DateTime @db.Date
+  isOpen Boolean  @default(true)
+  note   String?
+
+  yurt Yurt @relation(fields: [yurtId], references: [id], onDelete: Cascade)
+
+  @@unique([yurtId, date])
+  @@map("yurt_availability")
+}
+
+// ============ MENU ============
+
+model MenuCategory {
+  id        String   @id @default(cuid())
+  nameEn    String
+  nameZh    String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id                  String   @id @default(cuid())
+  categoryId          String
+  nameEn              String
+  nameZh              String?
+  price               Float
+  descriptionEn       String?
+  descriptionZh       String?
+  imageUrl            String?
+  tags                String[] @default([])
+  isActive            Boolean  @default(true)
+  advanceDaysRequired Int      @default(0)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+// ============ RESERVATIONS ============
+
+model Reservation {
+  id                     String            @id @default(cuid())
+  userId                 String
+  yurtId                 String
+  date                   DateTime          @db.Date
+  guestCount             Int
+  specialRequests        String?
+  status                 ReservationStatus @default(PENDING_PAYMENT)
+  depositAmount          Float             @default(300)
+  depositStatus          DepositStatus     @default(UNPAID)
+  depositConfirmedAt     DateTime?
+  paymentReference       String?
+  paymentScreenshotUrl   String?
+  paymentDeadline        DateTime?
+  cancelledAt            DateTime?
+  cancelReason           String?
+  refundEligible         Boolean           @default(false)
+  rescheduledFrom        String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yurt  Yurt @relation(fields: [yurtId], references: [id], onDelete: Cascade)
+  order Order?
+  rescheduleHistory RescheduleHistory[]
+
+  @@unique([yurtId, date])
+  @@map("reservations")
+}
+
+// ============ ORDERS ============
+
+model Order {
+  id             String      @id @default(cuid())
+  reservationId  String      @unique
+  status         OrderStatus @default(DRAFT)
+  notes          String?
+  estimatedTotal Float?
+  submittedAt    DateTime?
+  lockedAt       DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  items       OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  menuItemId   String
+  quantity     Int
+  specialNotes String?
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// ============ SYSTEM ============
+
+model SystemSetting {
+  id          String @id @default(cuid())
+  key         String @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  targetType String?
+  targetId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
+
+model RescheduleHistory {
+  id             String   @id @default(cuid())
+  reservationId  String
+  oldDate        DateTime @db.Date
+  oldYurtId      String
+  newDate        DateTime @db.Date
+  newYurtId      String
+  rescheduledAt  DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@map("reschedule_history")
+}

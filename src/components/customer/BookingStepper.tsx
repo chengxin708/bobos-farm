@@ -18,7 +18,7 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
   ]
 
   return (
-    <div className="w-full bg-white shadow-sm py-10 px-20 flex justify-center">
+    <div className="w-full bg-white shadow-sm py-4 sm:py-6 lg:py-8 px-4 sm:px-10 lg:px-20 flex justify-center">
       <div className="flex items-center">
         {steps.map((label, i) => {
           const step = i + 1
@@ -39,7 +39,7 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
                   }`}>{label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className="flex items-center px-4" style={{ paddingBottom: 24 }}>
+                <div className="flex items-center px-2 sm:px-4 pb-6">
                   <div className={`w-24 border-t-2 ${step < currentStep ? 'border-green' : 'border-dashed border-beige'}`} />
                 </div>
               )}

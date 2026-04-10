@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* === Shared Colors === */
+  --color-cream: #FFF8F0;
+  --color-white: #FFFFFF;
+  --color-amber: #8B6914;
+  --color-amber-light: #F5ECD8;
+  --color-beige: #E8DFD0;
+  --color-brown: #3D2B1F;
+  --color-green: #5B8C3E;
+  --color-green-light: #EAF2E3;
+  --color-terracotta: #C4724B;
+  --color-terracotta-light: #FAE8E0;
+
+  /* === Admin-specific Colors === */
+  --color-sidebar-bg: #2D2116;
+  --color-cream-bg: #FFF8F0;
+  --color-amber-light-bg: #FBF5E8;
+  --color-amber-tint: #8B691414;
+  --color-dark-brown: #3D2E1F;
+  --color-muted-beige: #B8A99A;
+  --color-light-green-bg: #ECFDF5;
+  --color-red: #DC3545;
+  --color-red-badge: #E53E3E;
+  --color-light-red-bg: #FDE8E8;
+  --color-orange: #E67E22;
+  --color-blue: #3B82F6;
+  --color-light-blue-bg: #EFF6FF;
+  --color-light-yellow-bg: #FEF3CD;
+  --color-gray-text: #8A8A8A;
+  --color-gray-completed: #9CA3AF;
+  --color-warning: #F4A623;
+  --color-yellow-pending: #F4A623;
+  --color-topbar-border: #E8DFD0;
+  --color-nav-active-bg: #FFFFFF14;
+  --color-nav-hover-bg: #FFFFFF0D;
+  --color-cell-border: #E8DFD0;
+
+  /* === Fonts === */
+  --font-playfair: var(--font-playfair-display), serif;
+  --font-lato: var(--font-lato-sans), sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    font-family: var(--font-lato);
+    background-color: var(--color-cream);
+    color: var(--color-brown);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }

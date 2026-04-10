@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Sprout } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -7,11 +8,11 @@ export default function Footer() {
   const t = useTranslations('footer')
 
   const links = [
-    { key: 'menu', label: t('links.menu') },
-    { key: 'bookAYurt', label: t('links.bookAYurt') },
-    { key: 'aboutUs', label: t('links.aboutUs') },
-    { key: 'gallery', label: t('links.gallery') },
-    { key: 'contact', label: t('links.contact') },
+    { label: t('links.menu'), href: '/menu' },
+    { label: t('links.bookAYurt'), href: '/booking/date' },
+    { label: t('links.aboutUs'), href: '/#about' },
+    { label: t('links.gallery'), href: '/#gallery' },
+    { label: t('links.contact'), href: '/#about' },
   ]
 
   return (
@@ -32,7 +33,7 @@ export default function Footer() {
         <div className="flex-1 flex flex-col gap-3.5">
           <span className="text-[13px] text-white/60 font-semibold tracking-wide">{t('quickLinks')}</span>
           {links.map((link) => (
-            <a key={link.key} href="#" className="text-sm text-white/80 no-underline hover:text-amber transition-colors">{link.label}</a>
+            <Link key={link.href + link.label} href={link.href} className="text-sm text-white/80 no-underline hover:text-amber transition-colors">{link.label}</Link>
           ))}
         </div>
         <div className="flex-1 flex flex-col gap-3.5">
