@@ -752,6 +752,10 @@
         "confirm": "Confirm",
         "adminNote": "Admin Note",
         "saveNote": "Save Note"
+      },
+      "success": {
+        "yurtOpened": "Yurt opened for this date.",
+        "yurtClosed": "Yurt closed for this date."
       }
     },
     "reports": {

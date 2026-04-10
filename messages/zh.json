@@ -752,6 +752,10 @@
         "confirm": "确认",
         "adminNote": "管理备注",
         "saveNote": "保存备注"
+      },
+      "success": {
+        "yurtOpened": "该日期营地已开放。",
+        "yurtClosed": "该日期营地已关闭。"
       }
     },
     "reports": {

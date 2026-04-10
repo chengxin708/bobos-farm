@@ -60,10 +60,14 @@ function getMonthDays(year: number, month: number): { date: Date; day: number }[
   return days
 }
 
-function toDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
+function toDateKey(date: Date | string): string {
+  // Extract YYYY-MM-DD from ISO string directly to avoid timezone shift
+  if (typeof date === 'string') {
+    return date.slice(0, 10)
+  }
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(date.getUTCDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
 
@@ -135,7 +139,7 @@ export default function Availability() {
   const availabilityIndex = useMemo(() => {
     const idx: Record<string, Record<string, AvailabilityEntry>> = {}
     availability?.forEach(a => {
-      const dateKey = toDateKey(new Date(a.date))
+      const dateKey = toDateKey(a.date)
       if (!idx[dateKey]) idx[dateKey] = {}
       idx[dateKey][a.yurtId] = a
     })
@@ -147,7 +151,7 @@ export default function Availability() {
     const idx: Record<string, Reservation[]> = {}
     reservations?.forEach(r => {
       if (['CANCELLED', 'EXPIRED'].includes(r.status)) return
-      const dateKey = toDateKey(new Date(r.date))
+      const dateKey = toDateKey(r.date)
       if (!idx[dateKey]) idx[dateKey] = []
       idx[dateKey].push(r)
     })
@@ -239,7 +243,7 @@ export default function Availability() {
         }),
       })
       mutateAvailability()
-      showSuccess(`Yurt ${isOpen ? 'opened' : 'closed'} for this date.`)
+      showSuccess(isOpen ? t('success.yurtOpened') : t('success.yurtClosed'))
     } catch {
       alert('Failed to update availability')
     } finally {
@@ -543,13 +547,13 @@ export default function Availability() {
                     <button
                       onClick={() => handleToggleYurt(yurt.id, !yurt.isOpen)}
                       disabled={saving}
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full cursor-pointer border-none disabled:opacity-50 ${
+                      className={`text-xs font-semibold px-3 py-1 rounded-md cursor-pointer disabled:opacity-50 transition-colors ${
                         yurt.isOpen
-                          ? 'bg-[#EAF2E3] text-[#5B8C3E]'
-                          : 'bg-[#FFE0E0] text-[#DC3545]'
+                          ? 'bg-[#5B8C3E] text-white hover:bg-[#4A7A32]'
+                          : 'bg-[#DC3545] text-white hover:bg-[#C82333]'
                       }`}
                     >
-                      {yurt.isOpen ? 'Open' : 'Closed'}
+                      {yurt.isOpen ? t('legend.open') : t('legend.closed')}
                     </button>
                   </div>
                 ))}
