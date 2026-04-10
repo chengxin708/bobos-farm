@@ -223,6 +223,15 @@
   "reservations": {
     "title": "我的预订",
     "subtitle": "管理您的近期到访",
+    "upcoming": "即将到来",
+    "past": "过往",
+    "deposit": "订金",
+    "depositConfirmed": "已确认",
+    "depositRefunded": "已退款",
+    "depositPending": "已提交",
+    "depositAwaiting": "待付款",
+    "itemsPreOrdered": "已预订{count}道菜品",
+    "noPreOrder": "尚未预订菜品",
     "status": {
       "confirmed": "已确认",
       "pendingPayment": "待付款",
@@ -232,10 +241,13 @@
       "expired": "已过期"
     },
     "actions": {
+      "modify": "修改",
       "reschedule": "改期",
       "payNow": "立即付款",
       "cancel": "取消",
-      "preOrderMenu": "预订菜品"
+      "preOrder": "预订菜品",
+      "preOrderMenu": "预订菜品",
+      "cancelReservation": "取消预订"
     },
     "notOrderedYet": "尚未预订菜品 —",
     "preOrderNow": "立即预订菜品 →",
@@ -243,16 +255,33 @@
     "guests": "{count}位宾客",
     "awaitingConfirmation": "等待确认",
     "waitingForAdmin": "等待管理员确认",
+    "modify": {
+      "title": "修改预订",
+      "changeDate": "更改日期",
+      "contactToReschedule": "请联系我们改期",
+      "guestCount": "宾客人数",
+      "specialRequests": "特殊要求",
+      "specialRequestsPlaceholder": "任何饮食限制、过敏情况或特殊场合...",
+      "saveChanges": "保存更改",
+      "saving": "保存中...",
+      "saved": "更改已保存！",
+      "error": "保存失败",
+      "maxCapacity": "最大容量：{capacity}人"
+    },
     "cancelDialog": {
       "title": "取消预订？",
-      "message": "确定要取消此预订吗？此操作无法撤销。",
+      "message": "确定吗？此操作无法撤销。",
+      "refundEligible": "您的预订距离入住3天以上，订金将予以退还。",
+      "refundNotEligible": "您的预订距离入住不足3天，订金将不予退还。",
+      "reasonLabel": "原因（选填）",
+      "reasonPlaceholder": "告诉我们您取消的原因...",
       "keep": "保留预订",
-      "confirm": "确认取消",
+      "confirm": "取消预订",
       "cancelling": "取消中..."
     },
     "emptyTitle": "暂无预订",
-    "emptySubtitle": "预订您的第一次蒙古包体验，享受哈德逊河谷的农场到餐桌盛宴。",
-    "bookFirst": "预订第一个蒙古包"
+    "emptySubtitle": "预订您的第一次农场体验",
+    "bookFirst": "预订餐桌"
   },
   "preOrder": {
     "infoBar": "预订菜品：{date} — {yurt} — {guests}位宾客",

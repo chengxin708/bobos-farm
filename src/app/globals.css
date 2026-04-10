@@ -87,11 +87,19 @@
   to { background-position: 200% 0; }
 }
 
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 .animate-fade-up {
   animation: fadeUp 0.3s ease-out both;
 }
 .animate-fade-in {
   animation: fadeIn 0.4s ease both;
+}
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out both;
 }
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }

@@ -223,6 +223,15 @@
   "reservations": {
     "title": "My Reservations",
     "subtitle": "Manage your upcoming visits",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "deposit": "Deposit",
+    "depositConfirmed": "Confirmed",
+    "depositRefunded": "Refunded",
+    "depositPending": "Submitted",
+    "depositAwaiting": "Awaiting payment",
+    "itemsPreOrdered": "{count} items pre-ordered",
+    "noPreOrder": "No items pre-ordered",
     "status": {
       "confirmed": "Confirmed",
       "pendingPayment": "Pending Payment",
@@ -232,10 +241,13 @@
       "expired": "Expired"
     },
     "actions": {
+      "modify": "Modify",
       "reschedule": "Reschedule",
       "payNow": "Pay Now",
       "cancel": "Cancel",
-      "preOrderMenu": "Pre-Order Menu"
+      "preOrder": "Pre-order",
+      "preOrderMenu": "Pre-Order Menu",
+      "cancelReservation": "Cancel reservation"
     },
     "notOrderedYet": "Not ordered yet —",
     "preOrderNow": "Pre-Order Now →",
@@ -243,16 +255,33 @@
     "guests": "{count} guests",
     "awaitingConfirmation": "Awaiting confirmation",
     "waitingForAdmin": "Waiting for admin confirmation",
+    "modify": {
+      "title": "Modify Reservation",
+      "changeDate": "Change Date",
+      "contactToReschedule": "Contact us to reschedule",
+      "guestCount": "Guest Count",
+      "specialRequests": "Special Requests",
+      "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special occasions...",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Changes saved!",
+      "error": "Failed to save changes",
+      "maxCapacity": "Max capacity: {capacity}"
+    },
     "cancelDialog": {
       "title": "Cancel Reservation?",
-      "message": "Are you sure you want to cancel this reservation? This action cannot be undone.",
+      "message": "Are you sure? This cannot be undone.",
+      "refundEligible": "Since your reservation is 3+ days away, your deposit will be refunded.",
+      "refundNotEligible": "Since your reservation is less than 3 days away, your deposit will not be refunded.",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Let us know why you're cancelling...",
       "keep": "Keep Reservation",
-      "confirm": "Yes, Cancel",
+      "confirm": "Cancel Reservation",
       "cancelling": "Cancelling..."
     },
     "emptyTitle": "No reservations yet",
-    "emptySubtitle": "Book your first yurt experience and enjoy a farm-to-table feast in the Hudson Valley.",
-    "bookFirst": "Book Your First Yurt"
+    "emptySubtitle": "Book your first farm experience",
+    "bookFirst": "Book a Table"
   },
   "preOrder": {
     "infoBar": "Pre-Order for {date} — {yurt} — {guests} guests",

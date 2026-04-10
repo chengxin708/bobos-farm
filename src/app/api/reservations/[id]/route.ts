@@ -25,6 +25,12 @@ const rescheduleActionSchema = z.object({
   newYurtId: z.string().optional(),
 });
 
+const modifyDetailsSchema = z.object({
+  action: z.literal("modify_details"),
+  guestCount: z.number().int().positive().optional(),
+  specialRequests: z.string().max(2000).optional(),
+});
+
 const adminUpdateSchema = z.object({
   status: z.enum(["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "EXPIRED", "COMPLETED"]).optional(),
   guestCount: z.number().int().positive().optional(),
@@ -379,6 +385,72 @@ export async function PATCH(
             oldYurtId: reservation.yurtId,
             newYurtId: targetYurtId,
           },
+        },
+      });
+
+      return NextResponse.json(updated);
+    }
+
+    // ---------- MODIFY DETAILS (owner) ----------
+    if (action === "modify_details") {
+      const parsedModify = modifyDetailsSchema.safeParse(body);
+      if (!parsedModify.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedModify.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      // Only allow modification of active reservations
+      if (["CANCELLED", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
+        return NextResponse.json(
+          { error: "Cannot modify a cancelled, expired, or completed reservation" },
+          { status: 400 }
+        );
+      }
+
+      const updateData: Record<string, unknown> = {};
+
+      if (parsedModify.data.guestCount !== undefined) {
+        // Validate guest count does not exceed yurt capacity
+        if (parsedModify.data.guestCount > reservation.yurt.capacity) {
+          return NextResponse.json(
+            { error: `Guest count cannot exceed yurt capacity of ${reservation.yurt.capacity}` },
+            { status: 400 }
+          );
+        }
+        updateData.guestCount = parsedModify.data.guestCount;
+      }
+
+      if (parsedModify.data.specialRequests !== undefined) {
+        updateData.specialRequests = parsedModify.data.specialRequests;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return NextResponse.json(
+          { error: "No valid fields to update" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await prisma.reservation.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, phone: true },
+          },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "RESERVATION_MODIFIED",
+          targetType: "Reservation",
+          targetId: id,
+          details: updateData as Record<string, string | number>,
         },
       });
 
