@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Outfit, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
+import { Libre_Baskerville, Source_Sans_3, Noto_Serif_SC, Noto_Sans_SC } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import Providers from '@/components/Providers';
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
+const libreBaskerville = Libre_Baskerville({
   variable: "--font-playfair-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
   display: "swap",
 });
 
-const outfit = Outfit({
+const sourceSans = Source_Sans_3({
   variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -36,7 +36,7 @@ const notoSansSC = Noto_Sans_SC({
 export const metadata: Metadata = {
   title: "Bobo's Farm — 波姐农家乐",
   description:
-    "Farm-to-table feasting in the Hudson Valley. Reserve your yurt dining experience.",
+    "Whole roasted lamb in a yurt — the Hudson Valley's most unique dining experience. By appointment only.",
 };
 
 export default async function RootLayout({
@@ -50,7 +50,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className={`${cormorant.variable} ${outfit.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
+        className={`${libreBaskerville.variable} ${sourceSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable} antialiased`}
       >
         <Providers>
           <NextIntlClientProvider messages={messages}>

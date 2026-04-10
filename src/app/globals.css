@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  /* === Refined Palette — white-dominant, gold accent === */
-  --color-cream: #FEFDFB;
+  /* === Warm Earth Palette — lodge warmth, not clinical white === */
+  --color-cream: #FAF6F0;
   --color-white: #FFFFFF;
-  --color-amber: #9B7B2C;
-  --color-amber-light: #F7F2E8;
-  --color-beige: #E8E3DA;
-  --color-brown: #2C2218;
-  --color-green: #6B8F55;
-  --color-green-light: #F0F4EC;
-  --color-terracotta: #B8795A;
-  --color-terracotta-light: #F8F0EB;
+  --color-amber: #B8860B;
+  --color-amber-light: #F5EDD8;
+  --color-beige: #E4DDD2;
+  --color-brown: #2A1F14;
+  --color-green: #5E7D4E;
+  --color-green-light: #EDF2E8;
+  --color-terracotta: #C06B3E;
+  --color-terracotta-light: #F6EBE3;
 
   /* === Admin Colors === */
-  --color-sidebar-bg: #1E1A15;
-  --color-cream-bg: #FEFDFB;
-  --color-amber-light-bg: #FAF7F0;
-  --color-amber-tint: #9B7B2C10;
-  --color-dark-brown: #2C2218;
-  --color-muted-beige: #B8B0A4;
-  --color-light-green-bg: #F0F7ED;
+  --color-sidebar-bg: #1E1A14;
+  --color-cream-bg: #FAF6F0;
+  --color-amber-light-bg: #F8F2E6;
+  --color-amber-tint: #B8860B10;
+  --color-dark-brown: #2A1F14;
+  --color-muted-beige: #B5AA9A;
+  --color-light-green-bg: #EDF7E8;
   --color-red: #C4453A;
   --color-red-badge: #C4453A;
   --color-light-red-bg: #FDF2F1;
@@ -28,14 +28,14 @@
   --color-blue: #4A7FBF;
   --color-light-blue-bg: #F0F5FB;
   --color-light-yellow-bg: #FBF5E6;
-  --color-gray-text: #999690;
-  --color-gray-completed: #A0A09C;
+  --color-gray-text: #8C857A;
+  --color-gray-completed: #A09A90;
   --color-warning: #D4A23A;
   --color-yellow-pending: #D4A23A;
-  --color-topbar-border: #EDEBE6;
-  --color-nav-active-bg: #FFFFFF12;
+  --color-topbar-border: #E8E2D8;
+  --color-nav-active-bg: #FFFFFF14;
   --color-nav-hover-bg: #FFFFFF08;
-  --color-cell-border: #EDEBE6;
+  --color-cell-border: #E8E2D8;
 
   /* === Font Stacks === */
   --font-playfair: var(--font-playfair-display), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
@@ -44,145 +44,123 @@
 }
 
 @layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: var(--font-sans);
-    background-color: #FEFDFB;
+    background-color: #FAF6F0;
     color: var(--color-brown);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: 0.01em;
-    line-height: 1.6;
+    line-height: 1.65;
   }
   ::selection {
-    background-color: #9B7B2C18;
-    color: #2C2218;
+    background-color: #B8860B20;
+    color: #2A1F14;
   }
 }
 
 /* ============================================================
-   Refined animations — slow, elegant, minimal
+   Animations — warm, unhurried
    ============================================================ */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes revealLine {
-  from { width: 0; }
-  to { width: 60px; }
+@keyframes fadeInSlow {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
-.animate-fade-in-up {
-  animation: fadeIn 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+@keyframes revealWidth {
+  from { width: 0; opacity: 0; }
+  to { width: 60px; opacity: 1; }
 }
-
-.stagger-1 { animation-delay: 0.12s; }
-.stagger-2 { animation-delay: 0.24s; }
-.stagger-3 { animation-delay: 0.36s; }
-.stagger-4 { animation-delay: 0.48s; }
-.stagger-5 { animation-delay: 0.60s; }
-.stagger-6 { animation-delay: 0.72s; }
-
-/* ============================================================
-   Luxury card — subtle lift, neutral shadow
-   ============================================================ */
-.card-warm {
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-.card-warm:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06),
-              0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-/* Image zoom — restrained */
-.img-zoom { overflow: hidden; }
-.img-zoom img {
-  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.img-zoom:hover img {
-  transform: scale(1.04);
-}
-
-/* ============================================================
-   Refined button styles
-   ============================================================ */
-.btn-warm {
-  position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.btn-warm:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(155, 123, 44, 0.2);
-}
-.btn-warm:active { transform: translateY(0); }
-
-.btn-ghost {
-  transition: all 0.3s ease;
-}
-.btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.9);
-}
-
-/* ============================================================
-   Glass navbar — premium frosted
-   ============================================================ */
-.glass-nav {
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(237, 235, 230, 0.6);
-}
-
-/* ============================================================
-   Gallery — clean hover
-   ============================================================ */
-.gallery-item {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-}
-.gallery-item img {
-  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.gallery-item:hover img {
-  transform: scale(1.04);
-}
-
-/* ============================================================
-   Skeleton — refined shimmer
-   ============================================================ */
 @keyframes shimmer {
   from { background-position: -200% 0; }
   to { background-position: 200% 0; }
 }
-.skeleton-warm {
-  background: linear-gradient(90deg, #EDEBE6 25%, #F7F5F0 50%, #EDEBE6 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
-  border-radius: 6px;
+
+.animate-fade-in-up {
+  animation: fadeIn 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.animate-fade-in {
+  animation: fadeInSlow 1s ease both;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ============================================================
+   Card styles
+   ============================================================ */
+.card-warm {
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.card-warm:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(42, 31, 20, 0.08);
+}
+
+.img-zoom { overflow: hidden; }
+.img-zoom img {
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.img-zoom:hover img { transform: scale(1.04); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn-warm {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.btn-warm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.25);
+}
+.btn-warm:active { transform: translateY(0); }
+
+/* ============================================================
+   Glass navbar
+   ============================================================ */
+.glass-nav {
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  background: rgba(250, 246, 240, 0.9);
+  border-bottom: 1px solid rgba(228, 221, 210, 0.5);
 }
 
 /* ============================================================
-   Utility
+   Gallery
    ============================================================ */
-html { scroll-behavior: smooth; }
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.gallery-item img {
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.gallery-item:hover img { transform: scale(1.04); }
 
-:focus-visible {
-  outline: 2px solid #9B7B2C;
-  outline-offset: 2px;
+/* ============================================================
+   Skeleton
+   ============================================================ */
+.skeleton-warm {
+  background: linear-gradient(90deg, #E8E2D8 25%, #F0EBE2 50%, #E8E2D8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
   border-radius: 4px;
 }
 
-/* Thin decorative line */
-.line-reveal {
-  animation: revealLine 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both;
+/* ============================================================
+   Utilities
+   ============================================================ */
+html { scroll-behavior: smooth; }
+:focus-visible {
+  outline: 2px solid #B8860B;
+  outline-offset: 2px;
+  border-radius: 3px;
 }

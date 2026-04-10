@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { Sprout } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 export default function Footer() {
@@ -16,39 +15,36 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="bg-[#1E1A15] w-full flex flex-col">
-      <div className="flex items-center justify-center gap-5 h-12 w-full">
-        <div className="w-[160px] h-px bg-white/8" />
-        <Sprout size={16} className="text-white/20" />
-        <div className="w-[160px] h-px bg-white/8" />
-      </div>
-      <div className="flex flex-col md:flex-row gap-12 md:gap-[80px] px-8 sm:px-16 lg:px-24 py-12">
-        <div className="flex flex-col gap-4">
-          <span className="font-playfair text-xl font-bold text-amber tracking-wide">Bobo&apos;s Farm</span>
-          <span className="text-[12px] text-white/30 tracking-[0.1em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
-          <p className="text-[13px] text-white/35 leading-[1.8] max-w-[240px] font-light mt-2">
-            {t('tagline')}
-          </p>
+    <footer className="bg-[#1a1510] w-full">
+      <div className="max-w-[1120px] mx-auto px-6 sm:px-12 lg:px-20">
+        <div className="flex flex-col md:flex-row gap-12 md:gap-16 py-14 border-b border-white/6">
+          <div className="flex flex-col gap-4 md:w-[280px]">
+            <span className="font-playfair text-[20px] font-bold text-amber">Bobo&apos;s Farm</span>
+            <span className="text-[12px] text-white/25 tracking-[0.1em]">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
+            <p className="text-[13px] text-white/30 leading-[1.8] mt-1">
+              {t('tagline')}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="text-[11px] text-white/35 font-semibold tracking-[0.15em] uppercase mb-1">{t('quickLinks')}</span>
+            {links.map((link) => (
+              <Link key={link.href + link.label} href={link.href} className="text-[13px] text-white/45 no-underline hover:text-amber transition-colors duration-300">{link.label}</Link>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="text-[11px] text-white/35 font-semibold tracking-[0.15em] uppercase mb-1">{t('visitUs')}</span>
+            <span className="text-[13px] text-white/45">{t('address')}</span>
+            <span className="text-[13px] text-white/45">(516) 272-9999</span>
+            <span className="text-[13px] text-white/45">{t('email')}</span>
+            <p className="text-[12px] text-white/25 leading-[1.8] whitespace-pre-line mt-1">
+              {t('hours')}
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-3">
-          <span className="text-[11px] text-white/40 font-semibold tracking-[0.15em] uppercase">{t('quickLinks')}</span>
-          {links.map((link) => (
-            <Link key={link.href + link.label} href={link.href} className="text-[13px] text-white/55 no-underline hover:text-amber transition-colors duration-300 font-light">{link.label}</Link>
-          ))}
+        <div className="flex items-center justify-between h-12">
+          <span className="text-[11px] text-white/20">{t('copyright')}</span>
+          <span className="text-[11px] text-white/12 italic">{t('madeWith')}</span>
         </div>
-        <div className="flex flex-col gap-3">
-          <span className="text-[11px] text-white/40 font-semibold tracking-[0.15em] uppercase">{t('visitUs')}</span>
-          <span className="text-[13px] text-white/55 font-light">{t('address')}</span>
-          <span className="text-[13px] text-white/55 font-light">{t('phone')}</span>
-          <span className="text-[13px] text-white/55 font-light">{t('email')}</span>
-          <p className="text-[12px] text-white/30 leading-[1.8] whitespace-pre-line font-light mt-1">
-            {t('hours')}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between h-12 px-8 sm:px-16 lg:px-24 border-t border-white/6">
-        <span className="text-[11px] text-white/25 font-light">{t('copyright')}</span>
-        <span className="text-[11px] text-white/15 italic font-light">{t('madeWith')}</span>
       </div>
     </footer>
   )
