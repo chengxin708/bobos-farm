@@ -92,13 +92,18 @@ function PreOrderPage() {
   const [orderSuccess, setOrderSuccess] = useState(false)
 
   // Fetch categories and menu items
-  const { data: categories } = useSWR<MenuCategory[]>('/api/menu/categories', fetcher)
-  const { data: menuItems } = useSWR<MenuItem[]>('/api/menu/items?activeOnly=true', fetcher)
+  const { data: categories } = useSWR<MenuCategory[]>('/api/menu/categories', fetcher, {
+    revalidateOnFocus: false, dedupingInterval: 60000,
+  })
+  const { data: menuItems } = useSWR<MenuItem[]>('/api/menu/items?activeOnly=true', fetcher, {
+    revalidateOnFocus: false, dedupingInterval: 60000,
+  })
 
   // Fetch reservation if ID provided
   const { data: reservation } = useSWR<Reservation>(
     reservationId ? `/api/reservations/${reservationId}` : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false }
   )
 
   // Derive active category

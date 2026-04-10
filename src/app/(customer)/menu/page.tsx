@@ -240,6 +240,18 @@ export default function MenuPage() {
         {/* Category Tabs */}
         {catLoading ? (
           <TabsSkeleton />
+        ) : !categories || categories.length === 0 ? (
+          <div className="flex items-center justify-center py-20 px-20">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-beige/30 flex items-center justify-center">
+                <span className="text-2xl">&#x1F37D;</span>
+              </div>
+              <h3 className="font-playfair text-xl font-bold text-brown">Menu Coming Soon</h3>
+              <p className="text-sm text-brown/53 max-w-md">
+                Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="flex items-end px-20 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] h-[52px]">
             {(categories ?? []).map((cat) => {
@@ -295,13 +307,13 @@ export default function MenuPage() {
 
                   {/* Body */}
                   <div className="p-4 flex flex-col gap-2">
-                    <div className="text-base font-bold text-brown">{itemDisplayName(item)}</div>
+                    <div className="text-base font-bold text-brown truncate">{itemDisplayName(item)}</div>
                     {itemSecondaryName(item) && (
-                      <div className="text-sm text-brown/53">{itemSecondaryName(item)}</div>
+                      <div className="text-sm text-brown/53 truncate">{itemSecondaryName(item)}</div>
                     )}
                     <div className="text-xl font-bold text-amber">${Math.round(item.price)}</div>
                     {itemDescription(item) && (
-                      <p className="text-[13px] text-brown/47 leading-snug">{itemDescription(item)}</p>
+                      <p className="text-[13px] text-brown/47 leading-snug line-clamp-2">{itemDescription(item)}</p>
                     )}
                     {/* Tags */}
                     {item.tags && item.tags.length > 0 && (

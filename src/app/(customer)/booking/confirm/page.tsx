@@ -84,7 +84,11 @@ export default function BookingConfirmPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
+        if (res.status === 401) {
+          router.push(`/login?callbackUrl=${encodeURIComponent('/booking/confirm')}`)
+          return
+        }
+        const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to create reservation')
       }
 
@@ -200,7 +204,11 @@ export default function BookingConfirmPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
+        if (res.status === 401) {
+          router.push(`/login?callbackUrl=${encodeURIComponent('/booking/confirm')}`)
+          return
+        }
+        const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to submit payment')
       }
 
@@ -244,6 +252,15 @@ export default function BookingConfirmPage() {
     : ''
 
   const paymentMemo = `BOBO-${booking.selectedDate?.replace(/-/g, '') || ''}-${booking.contactName.split(' ')[0]?.toUpperCase() || ''}`
+
+  // Show spinner while hydrating from sessionStorage
+  if (!booking.hydrated) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-12">
+        <div className="w-10 h-10 rounded-full border-[3px] border-beige border-t-amber animate-spin" />
+      </div>
+    )
+  }
 
   if (!booking.selectedDate || !booking.selectedYurtId) return null
 
@@ -511,6 +528,17 @@ export default function BookingConfirmPage() {
             {t('cancelReservation')}
           </button>
         </div>
+      </div>
+
+      {/* Bottom Bar with Back button */}
+      <div className="h-16 shrink-0 bg-white border-t border-beige flex items-center justify-between px-4 sm:px-10 lg:px-20">
+        <button
+          onClick={() => router.push('/booking/details')}
+          className="flex items-center gap-2 px-4 py-2.5 text-[15px] font-medium text-brown border-none bg-transparent cursor-pointer"
+        >
+          <ArrowLeft size={18} /> Back to Details
+        </button>
+        <div />
       </div>
     </>
   )

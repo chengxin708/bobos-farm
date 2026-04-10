@@ -52,6 +52,7 @@ export default function Settings() {
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const saveSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Cleanup timer on unmount
@@ -88,6 +89,7 @@ export default function Settings() {
   }, [originalValues])
 
   const handleSave = useCallback(async () => {
+    if (saving) return
     const changed: Record<string, string> = {}
     Object.keys(formValues).forEach(key => {
       if (formValues[key] !== originalValues[key]) {
@@ -97,13 +99,14 @@ export default function Settings() {
     if (Object.keys(changed).length === 0) return
 
     setSaving(true)
+    setSaveError(null)
     try {
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changed),
       })
-      if (!res.ok) throw new Error('Failed to save')
+      if (!res.ok) throw new Error('Failed to save settings')
       setOriginalValues({ ...formValues })
       setSaveSuccess(true)
       mutate()
@@ -111,10 +114,11 @@ export default function Settings() {
       saveSuccessTimerRef.current = setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {
       console.error('Save settings error:', err)
+      setSaveError(err instanceof Error ? err.message : 'Failed to save settings. Please try again.')
     } finally {
       setSaving(false)
     }
-  }, [formValues, originalValues, mutate])
+  }, [formValues, originalValues, mutate, saving])
 
   const settingsTabs: { icon: typeof SettingsIcon; label: string }[] = [
     { icon: SettingsIcon, label: t('tabs.general') },
@@ -361,8 +365,8 @@ export default function Settings() {
           {/* Footer */}
           {settings && (
             <div className="max-w-2xl flex items-center justify-between pt-6 border-t border-beige">
-              <span className={`text-xs font-medium ${hasChanges ? 'text-amber' : saveSuccess ? 'text-green' : 'text-transparent'}`}>
-                {hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.'}
+              <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-amber' : saveSuccess ? 'text-green' : 'text-transparent'}`}>
+                {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.')}
               </span>
               <div className="flex gap-3">
                 <button

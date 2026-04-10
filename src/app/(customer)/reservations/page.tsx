@@ -81,6 +81,8 @@ export default function ReservationsPage() {
   const { status: sessionStatus } = useSession()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   const { data: reservations, isLoading, mutate } = useSWR<Reservation[]>(
     sessionStatus === 'authenticated' ? '/api/reservations' : null,
@@ -94,27 +96,34 @@ export default function ReservationsPage() {
     }
   }, [sessionStatus, router])
 
-  const handleCancel = useCallback(async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this reservation?')) return
-    setCancelling(id)
+  const handleCancelRequest = useCallback((id: string) => {
+    setCancelError(null)
+    setConfirmCancelId(id)
+  }, [])
+
+  const handleCancelConfirm = useCallback(async () => {
+    if (!confirmCancelId) return
+    setCancelling(confirmCancelId)
+    setCancelError(null)
     try {
-      const res = await fetch(`/api/reservations/${id}`, {
+      const res = await fetch(`/api/reservations/${confirmCancelId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel' }),
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to cancel')
+        setCancelError(err.error || 'Failed to cancel reservation')
         return
       }
+      setConfirmCancelId(null)
       mutate()
     } catch {
-      alert('Failed to cancel reservation')
+      setCancelError('Failed to cancel reservation. Please try again.')
     } finally {
       setCancelling(null)
     }
-  }, [mutate])
+  }, [confirmCancelId, mutate])
 
   // Sort: upcoming first (by date asc), then past (by date desc)
   const sorted = useMemo(() => {
@@ -153,9 +162,28 @@ export default function ReservationsPage() {
           <p className="text-base text-[#8E8E93]">{t('subtitle')}</p>
         </div>
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {(isLoading || sessionStatus === 'loading') && (
-          <div className="text-gray-text text-sm py-12">Loading...</div>
+          <div className="flex flex-col gap-4 w-[800px] max-w-full py-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-6 rounded-2xl p-6 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                <div className="flex flex-col items-center gap-1 w-[72px] shrink-0">
+                  <div className="h-3 w-8 bg-beige/30 rounded animate-pulse" />
+                  <div className="h-10 w-10 bg-beige/30 rounded-full animate-pulse" />
+                  <div className="h-3 w-12 bg-beige/30 rounded animate-pulse" />
+                </div>
+                <div className="w-px bg-beige self-stretch" />
+                <div className="flex flex-col gap-3 flex-1">
+                  <div className="h-5 w-40 bg-beige/30 rounded animate-pulse" />
+                  <div className="h-4 w-24 bg-beige/30 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-beige/30 rounded animate-pulse" />
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="h-6 w-20 bg-beige/30 rounded-xl animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Empty state */}
@@ -305,7 +333,7 @@ export default function ReservationsPage() {
                           {t('actions.reschedule')}
                         </button>
                         <button
-                          onClick={() => handleCancel(r.id)}
+                          onClick={() => handleCancelRequest(r.id)}
                           disabled={isCancelling}
                           className="text-[13px] font-medium text-[#EF4444] cursor-pointer disabled:opacity-50 bg-transparent border-none"
                         >
@@ -322,7 +350,7 @@ export default function ReservationsPage() {
                           {t('actions.payNow')}
                         </Link>
                         <button
-                          onClick={() => handleCancel(r.id)}
+                          onClick={() => handleCancelRequest(r.id)}
                           disabled={isCancelling}
                           className="text-[13px] font-medium text-[#EF4444] cursor-pointer disabled:opacity-50 bg-transparent border-none"
                         >
@@ -339,7 +367,55 @@ export default function ReservationsPage() {
             })}
           </div>
         )}
+        {/* Inline error banner */}
+        {cancelError && !confirmCancelId && (
+          <div className="w-[800px] max-w-full bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-4 py-3 flex items-center justify-between">
+            <span>{cancelError}</span>
+            <button
+              onClick={() => setCancelError(null)}
+              className="text-[#DC3545] font-semibold text-sm border-none bg-transparent cursor-pointer ml-4"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Cancel confirmation dialog overlay */}
+      {confirmCancelId && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-[400px] max-w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)] flex flex-col gap-4">
+            <h3 className="font-playfair text-xl font-bold text-brown">Cancel Reservation?</h3>
+            <p className="text-sm text-brown/60">
+              Are you sure you want to cancel this reservation? This action cannot be undone.
+            </p>
+            {cancelError && (
+              <div className="bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-3 py-2">
+                {cancelError}
+              </div>
+            )}
+            <div className="flex gap-3 justify-end mt-2">
+              <button
+                onClick={() => { setConfirmCancelId(null); setCancelError(null) }}
+                disabled={!!cancelling}
+                className="px-5 py-2.5 rounded-xl border border-beige text-brown text-sm font-medium cursor-pointer bg-white disabled:opacity-50"
+              >
+                Keep Reservation
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                disabled={!!cancelling}
+                className="px-5 py-2.5 rounded-xl bg-[#DC3545] text-white text-sm font-semibold cursor-pointer border-none disabled:opacity-50 flex items-center gap-2"
+              >
+                {cancelling && (
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                )}
+                {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

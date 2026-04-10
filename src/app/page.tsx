@@ -37,18 +37,18 @@ export default function Landing() {
       <section className="relative h-[800px] w-full overflow-hidden">
         <img src="https://images.unsplash.com/photo-1767447612225-a281f76abdb7?w=1440&q=80" alt="Farm landscape" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/12 to-black/67" />
-        <div className="relative z-10 flex flex-col items-center justify-center h-full gap-6 px-[120px]">
-          <h1 className="font-playfair text-[52px] font-bold text-white text-center leading-[1.2] max-w-[800px] whitespace-pre-line">{t('hero.title')}</h1>
-          <p className="text-lg text-white/80 text-center leading-relaxed max-w-[700px]">{t('hero.subtitle')}</p>
-          <div className="flex gap-4 pt-3">
-            <Link href="/booking/date" className="no-underline px-9 py-4 rounded-[14px] bg-gradient-to-b from-[#A07818] to-amber text-white text-base font-semibold shadow-[0_4px_20px_rgba(139,105,20,0.25)]">{t('hero.bookVisit')}</Link>
-            <Link href="/menu" className="no-underline px-9 py-4 rounded-[14px] border-[1.5px] border-white/67 text-white text-base font-semibold">{t('hero.viewMenu')}</Link>
+        <div className="relative z-10 flex flex-col items-center justify-center h-full gap-6 px-6 sm:px-16 lg:px-[120px]">
+          <h1 className="font-playfair text-3xl sm:text-[42px] lg:text-[52px] font-bold text-white text-center leading-[1.2] max-w-[800px] whitespace-pre-line">{t('hero.title')}</h1>
+          <p className="text-base sm:text-lg text-white/80 text-center leading-relaxed max-w-[700px]">{t('hero.subtitle')}</p>
+          <div className="flex flex-col sm:flex-row gap-4 pt-3">
+            <Link href="/booking/date" className="no-underline px-9 py-4 rounded-[14px] bg-gradient-to-b from-[#A07818] to-amber text-white text-base font-semibold shadow-[0_4px_20px_rgba(139,105,20,0.25)] text-center">{t('hero.bookVisit')}</Link>
+            <Link href="/menu" className="no-underline px-9 py-4 rounded-[14px] border-[1.5px] border-white/67 text-white text-base font-semibold text-center">{t('hero.viewMenu')}</Link>
           </div>
         </div>
         <ChevronDown size={28} className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/53 animate-bounce" />
       </section>
-      <section id="about" className="flex items-center gap-[60px] px-20 py-20">
-        <div className="w-[560px] h-[400px] rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.07)] shrink-0">
+      <section id="about" className="flex flex-col lg:flex-row items-center gap-8 lg:gap-[60px] px-6 sm:px-12 lg:px-20 py-12 lg:py-20">
+        <div className="w-full lg:w-[560px] h-[280px] lg:h-[400px] rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.07)] shrink-0">
           <img src="https://images.unsplash.com/photo-1763771056927-557d39cb5e02?w=800&q=80" alt="Farm" className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col gap-6">
@@ -64,12 +64,12 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      <section className="bg-cream flex flex-col items-center gap-12 px-20 py-20">
+      <section className="bg-cream flex flex-col items-center gap-12 px-6 sm:px-12 lg:px-20 py-12 lg:py-20">
         <div className="text-center">
           <h2 className="font-playfair text-4xl font-bold text-brown">{t('highlights.title')}</h2>
           <p className="text-base text-brown/60 mt-3">{t('highlights.subtitle')}</p>
         </div>
-        <div className="flex gap-7 w-full">
+        <div className="flex flex-col sm:flex-row gap-7 w-full">
           {highlights.map((card) => (
             <div key={card.title} className="flex-1 flex flex-col items-center gap-4 bg-white rounded-2xl p-8 shadow-[0_4px_30px_rgba(0,0,0,0.03)]">
               <div className={`w-16 h-16 ${card.bg} rounded-[32px] flex items-center justify-center`}><card.icon size={28} className="text-amber" /></div>
@@ -79,14 +79,14 @@ export default function Landing() {
           ))}
         </div>
       </section>
-      <section className="bg-white flex flex-col items-center gap-12 px-20 py-20">
+      <section className="bg-white flex flex-col items-center gap-12 px-6 sm:px-12 lg:px-20 py-12 lg:py-20">
         <div className="text-center">
           <h2 className="font-playfair text-4xl font-bold text-brown">{t('howItWorks.title')}</h2>
           <p className="text-base text-brown/60 mt-3">{t('howItWorks.subtitle')}</p>
         </div>
         <div className="relative w-full max-w-[1100px]">
-          <div className="absolute top-[36px] left-[150px] right-[150px] h-0.5 border-t-2 border-dashed border-beige" />
-          <div className="flex justify-between relative z-10">
+          <div className="absolute top-[36px] left-[150px] right-[150px] h-0.5 border-t-2 border-dashed border-beige hidden lg:block" />
+          <div className="flex flex-wrap justify-center lg:justify-between gap-6 relative z-10">
             {steps.map((step) => (
               <div key={step.title} className="flex flex-col items-center gap-3 w-[220px]">
                 <div className={`w-[72px] h-[72px] ${step.color} rounded-full flex items-center justify-center border-2`} style={{ borderColor: step.stroke }}><step.icon size={28} style={{ color: step.stroke }} /></div>
@@ -97,7 +97,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      <section id="gallery" className="bg-cream flex flex-col items-center gap-12 px-20 py-20">
+      <section id="gallery" className="bg-cream flex flex-col items-center gap-12 px-6 sm:px-12 lg:px-20 py-12 lg:py-20">
         <div className="text-center">
           <h2 className="font-playfair text-4xl font-bold text-brown">{t('gallery.title')}</h2>
           <p className="text-base text-brown/60 mt-3">{t('gallery.subtitle')}</p>
@@ -111,7 +111,7 @@ export default function Landing() {
             <div className={`${galleryImages[2].h} rounded-[14px] overflow-hidden`}><img src={galleryImages[2].url} alt="" className="w-full h-full object-cover" /></div>
             <div className={`${galleryImages[3].h} rounded-[14px] overflow-hidden`}><img src={galleryImages[3].url} alt="" className="w-full h-full object-cover" /></div>
           </div>
-          <div className="flex-1 flex flex-col gap-5">
+          <div className="flex-1 hidden sm:flex flex-col gap-5">
             <div className={`${galleryImages[4].h} rounded-[14px] overflow-hidden`}><img src={galleryImages[4].url} alt="" className="w-full h-full object-cover" /></div>
             <div className={`${galleryImages[5].h} rounded-[14px] overflow-hidden`}><img src={galleryImages[5].url} alt="" className="w-full h-full object-cover" /></div>
           </div>

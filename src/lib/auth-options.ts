@@ -4,6 +4,8 @@ import Google from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { prisma } from "./prisma";
 
+// TODO: [SECURITY] Add rate limiting on login attempts to prevent brute-force attacks
+// Consider using upstash/ratelimit or tracking failed attempts per email
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({

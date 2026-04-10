@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { Menu, X } from 'lucide-react'
 import { setLocale } from '@/lib/locale-actions'
 
 export default function Navbar() {
@@ -12,6 +14,7 @@ export default function Navbar() {
   const locale = useLocale()
   const router = useRouter()
   const { data: session } = useSession()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const user = session?.user
   const initials = user?.name
@@ -24,12 +27,14 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="h-20 w-full flex items-center justify-between px-20 bg-white/93 sticky top-0 z-50">
+    <nav className="h-20 w-full flex items-center justify-between px-6 sm:px-12 lg:px-20 bg-white/93 sticky top-0 z-50">
       <Link href="/" className="flex flex-col no-underline">
         <span className="font-playfair text-2xl font-bold text-amber">Bobo&apos;s Farm</span>
-        <span className="text-[11px] text-amber tracking-wide">波姐农家乐</span>
+        <span className="text-[11px] text-amber tracking-wide">{'\u6CE2\u59D0\u519C\u5BB6\u4E50'}</span>
       </Link>
-      <div className="flex items-center gap-8">
+
+      {/* Desktop nav */}
+      <div className="hidden md:flex items-center gap-8">
         <Link href="/menu" className="text-[15px] font-medium text-brown no-underline hover:text-amber transition-colors">{t('menu')}</Link>
         <a href="/#about" className="text-[15px] font-medium text-brown no-underline hover:text-amber transition-colors">{t('about')}</a>
         <a href="/#gallery" className="text-[15px] font-medium text-brown no-underline hover:text-amber transition-colors">{t('gallery')}</a>
@@ -61,6 +66,49 @@ export default function Navbar() {
           <Link href="/login" className="text-[15px] font-medium text-brown no-underline hover:text-amber transition-colors">{t('login')}</Link>
         )}
       </div>
+
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="md:hidden border-none bg-transparent cursor-pointer p-1 text-brown"
+        aria-label="Toggle navigation menu"
+      >
+        {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Mobile menu overlay */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 top-20 bg-white z-40 flex flex-col p-6 gap-4">
+          <Link href="/menu" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2 border-b border-beige">{t('menu')}</Link>
+          <a href="/#about" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2 border-b border-beige">{t('about')}</a>
+          <a href="/#gallery" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2 border-b border-beige">{t('gallery')}</a>
+          <Link href="/booking/date" onClick={() => setMobileOpen(false)} className="no-underline px-6 py-3 rounded-xl bg-gradient-to-b from-[#A07818] to-amber text-white text-base font-semibold text-center mt-2">
+            {t('bookNow')}
+          </Link>
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={() => { handleSetLocale('en'); setMobileOpen(false) }}
+              className={`text-sm font-semibold cursor-pointer bg-transparent border-0 p-0 ${locale === 'en' ? 'text-amber' : 'text-[#8E8E93]'}`}
+            >
+              {tLang('en')}
+            </button>
+            <span className="text-sm text-beige">|</span>
+            <button
+              onClick={() => { handleSetLocale('zh'); setMobileOpen(false) }}
+              className={`text-sm font-semibold cursor-pointer bg-transparent border-0 p-0 ${locale === 'zh' ? 'text-amber' : 'text-[#8E8E93]'}`}
+            >
+              {tLang('zh')}
+            </button>
+          </div>
+          {user ? (
+            <Link href="/settings" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2">
+              Settings
+            </Link>
+          ) : (
+            <Link href="/login" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-brown no-underline py-2">{t('login')}</Link>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

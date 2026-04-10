@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
     const depositStatus = searchParams.get("depositStatus");
 
     const where: Record<string, unknown> = {};
-    if (depositStatus) where.depositStatus = depositStatus;
+    const validDepositStatuses = ["UNPAID", "PENDING", "CONFIRMED", "REFUNDED"];
+    if (depositStatus && validDepositStatuses.includes(depositStatus)) {
+      where.depositStatus = depositStatus;
+    }
 
     const reservations = await prisma.reservation.findMany({
       where,

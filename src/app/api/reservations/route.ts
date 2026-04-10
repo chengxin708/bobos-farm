@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
       where.userId = session.user.id;
     } else {
       const status = searchParams.get("status");
-      if (status) where.status = status;
+      const validStatuses = ["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "EXPIRED", "COMPLETED"];
+      if (status && validStatuses.includes(status)) where.status = status;
 
       const yurtId = searchParams.get("yurtId");
       if (yurtId) where.yurtId = yurtId;
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// TODO: [SECURITY] Add rate limiting to prevent spam reservation creation (e.g., 5 per user per hour)
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();

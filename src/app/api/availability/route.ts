@@ -24,10 +24,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Validate date strings to prevent Invalid Date propagation
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid date format for startDate or endDate" },
+        { status: 400 }
+      );
+    }
+
     const where: Record<string, unknown> = {
       date: {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: startDateObj,
+        lte: endDateObj,
       },
     };
 

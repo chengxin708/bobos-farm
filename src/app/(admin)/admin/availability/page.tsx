@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -86,6 +86,21 @@ export default function Availability() {
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [adminNote, setAdminNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
+  }, [])
+
+  const showSuccess = useCallback((msg: string) => {
+    setSuccessMsg(msg)
+    if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    successTimerRef.current = setTimeout(() => setSuccessMsg(null), 3000)
+  }, [])
 
   // Bulk range state
   const [openStart, setOpenStart] = useState('')
@@ -224,12 +239,13 @@ export default function Availability() {
         }),
       })
       mutateAvailability()
+      showSuccess(`Yurt ${isOpen ? 'opened' : 'closed'} for this date.`)
     } catch {
       alert('Failed to update availability')
     } finally {
       setSaving(false)
     }
-  }, [selectedDate, currentYear, currentMonth, mutateAvailability])
+  }, [selectedDate, currentYear, currentMonth, mutateAvailability, showSuccess])
 
   // Save admin note
   const handleSaveNote = useCallback(async () => {
@@ -252,16 +268,18 @@ export default function Availability() {
         })
       }))
       mutateAvailability()
+      showSuccess('Note saved.')
     } catch {
       alert('Failed to save note')
     } finally {
       setSaving(false)
     }
-  }, [selectedDate, currentYear, currentMonth, yurts, adminNote, availabilityIndex, mutateAvailability])
+  }, [selectedDate, currentYear, currentMonth, yurts, adminNote, availabilityIndex, mutateAvailability, showSuccess])
 
   // Bulk open/close
   const handleBulkAction = useCallback(async (isOpen: boolean, start: string, end: string) => {
     if (!start || !end) { alert('Please fill both start and end dates'); return }
+    if (!isOpen && !confirm(`Close all yurts from ${start} to ${end}? Existing reservations will not be affected.`)) return
     setSaving(true)
     try {
       const res = await fetch('/api/availability/bulk', {
@@ -275,16 +293,18 @@ export default function Availability() {
         return
       }
       mutateAvailability()
+      showSuccess(`All yurts ${isOpen ? 'opened' : 'closed'} from ${start} to ${end}.`)
     } catch {
       alert('Failed to bulk update')
     } finally {
       setSaving(false)
     }
-  }, [mutateAvailability])
+  }, [mutateAvailability, showSuccess])
 
   // Batch from multi-select
   const handleBatchSelected = useCallback(async (isOpen: boolean) => {
     if (selectedDates.size === 0) return
+    if (!isOpen && !confirm(`Close all yurts for ${selectedDates.size} selected dates?`)) return
     setSaving(true)
     try {
       const dates = Array.from(selectedDates).sort()
@@ -299,12 +319,13 @@ export default function Availability() {
       })
       mutateAvailability()
       setSelectedDates(new Set())
+      showSuccess(`${selectedDates.size} dates ${isOpen ? 'opened' : 'closed'} successfully.`)
     } catch {
       alert('Failed to batch update')
     } finally {
       setSaving(false)
     }
-  }, [selectedDates, mutateAvailability])
+  }, [selectedDates, mutateAvailability, showSuccess])
 
   // Selected date info
   const selectedDateKey = selectedDate !== null ? formatDateISO(currentYear, currentMonth, selectedDate) : null
@@ -339,7 +360,18 @@ export default function Availability() {
   return (
     <>
       <TopBar title={t('title')} />
-      <div className="flex-1 p-6 flex gap-5 bg-cream-bg overflow-auto">
+      <div className="flex-1 p-6 flex flex-col gap-4 bg-cream-bg overflow-auto">
+        {/* Success Message */}
+        {successMsg && (
+          <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
+            {successMsg}
+            <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 flex gap-5">
         {/* Left - Calendar */}
         <div className="flex-1 flex flex-col gap-4">
           {/* Date Range Controls */}
@@ -564,6 +596,7 @@ export default function Availability() {
               <p className="text-xs text-gray-text text-center">Hold Shift + click to multi-select dates</p>
             </div>
           )}
+        </div>
         </div>
       </div>
     </>

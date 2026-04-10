@@ -70,7 +70,7 @@ export async function GET(
 
     // Non-admin users can only view their own reservations
     if (!isAdmin && reservation.userId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json(reservation);
@@ -110,7 +110,7 @@ export async function PATCH(
 
     // Non-admin users can only modify their own reservations
     if (!isAdmin && reservation.userId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
@@ -155,7 +155,7 @@ export async function PATCH(
         data: {
           status: "CANCELLED",
           cancelledAt: now,
-          cancelReason: body.reason || null,
+          cancelReason: parsedCancel.data.reason || null,
           refundEligible,
           depositStatus:
             refundEligible && reservation.depositStatus === "CONFIRMED"
@@ -177,7 +177,7 @@ export async function PATCH(
           targetType: "Reservation",
           targetId: id,
           details: {
-            reason: body.reason,
+            reason: parsedCancel.data.reason,
             refundEligible,
             date: reservation.date,
           },

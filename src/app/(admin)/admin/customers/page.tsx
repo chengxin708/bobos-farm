@@ -101,6 +101,13 @@ export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [noteSaved, setNoteSaved] = useState(false)
+
+  const handleSaveNote = useCallback((customerId: string) => {
+    // Notes are stored locally for now (no backend endpoint yet)
+    setNoteSaved(true)
+    setTimeout(() => setNoteSaved(false), 2000)
+  }, [])
 
   const { data: allReservations, isLoading } = useSWR<Reservation[]>('/api/reservations', fetcher)
 
@@ -392,8 +399,11 @@ export default function Customers() {
                 onChange={e => setNotes(prev => ({ ...prev, [selectedCustomer.id]: e.target.value }))}
                 placeholder="Add notes about this customer..."
               />
-              <button className="flex items-center gap-1.5 bg-green text-white text-xs font-semibold px-3 py-1.5 rounded-md mt-2">
-                <Save size={12} /> {t('detail.saveNote')}
+              <button
+                onClick={() => handleSaveNote(selectedCustomer.id)}
+                className="flex items-center gap-1.5 bg-green text-white text-xs font-semibold px-3 py-1.5 rounded-md mt-2"
+              >
+                <Save size={12} /> {noteSaved ? 'Saved!' : t('detail.saveNote')}
               </button>
             </div>
           </div>

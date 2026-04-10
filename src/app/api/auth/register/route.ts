@@ -3,6 +3,8 @@ import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 
+// TODO: [SECURITY] Add rate limiting to prevent brute-force account creation
+// Consider using upstash/ratelimit or similar per-IP rate limiter
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

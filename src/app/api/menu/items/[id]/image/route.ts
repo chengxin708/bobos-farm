@@ -53,6 +53,20 @@ export async function POST(
       );
     }
 
+    // Validate file magic bytes to prevent MIME spoofing
+    const arrayBuffer = await file.arrayBuffer();
+    const header = new Uint8Array(arrayBuffer.slice(0, 12));
+    const isJpeg = header[0] === 0xFF && header[1] === 0xD8 && header[2] === 0xFF;
+    const isPng = header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4E && header[3] === 0x47;
+    const isWebp = header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46
+      && header[8] === 0x57 && header[9] === 0x45 && header[10] === 0x42 && header[11] === 0x50;
+    if (!isJpeg && !isPng && !isWebp) {
+      return NextResponse.json(
+        { error: "File content does not match an allowed image format" },
+        { status: 400 }
+      );
+    }
+
     const supabase = createServiceClient();
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -65,8 +79,8 @@ export async function POST(
       await supabase.storage.from("menu-images").remove([oldPath]);
     }
 
-    // Upload to Supabase Storage
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Upload to Supabase Storage (reuse the arrayBuffer read during magic byte validation)
+    const buffer = Buffer.from(arrayBuffer);
     const { error: uploadError } = await supabase.storage
       .from("menu-images")
       .upload(storagePath, buffer, {

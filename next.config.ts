@@ -4,7 +4,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // TODO: [SECURITY] Add security headers (CSP, X-Frame-Options, Referrer-Policy)
+  // See: https://nextjs.org/docs/app/api-reference/config/next-config-js/headers
 };
 
 export default withNextIntl(nextConfig);

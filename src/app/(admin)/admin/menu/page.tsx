@@ -526,9 +526,9 @@ export default function MenuManagement() {
                 </div>
                 {/* Body */}
                 <div className="p-4 flex flex-col gap-2">
-                  <div className="text-sm font-bold text-brown">{item.nameEn}</div>
+                  <div className="text-sm font-bold text-brown truncate">{item.nameEn}</div>
                   {item.nameZh && (
-                    <div className="text-[13px] text-brown/50">{item.nameZh}</div>
+                    <div className="text-[13px] text-brown/50 truncate">{item.nameZh}</div>
                   )}
                   <div className="text-base font-bold text-amber">
                     ${item.price.toFixed(2)}

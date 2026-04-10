@@ -79,6 +79,9 @@ export default function SettingsPage() {
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   // Notification toggles
   const notificationKeys = [
@@ -102,8 +105,10 @@ export default function SettingsPage() {
   }, [user])
 
   const handleSaveProfile = useCallback(async () => {
+    if (profileSaving) return
     setProfileSaving(true)
     setProfileSuccess(false)
+    setProfileError(null)
     try {
       const res = await fetch('/api/users/me', {
         method: 'PATCH',
@@ -121,10 +126,11 @@ export default function SettingsPage() {
       profileSuccessTimerRef.current = setTimeout(() => setProfileSuccess(false), 3000)
     } catch (err) {
       console.error('Save profile error:', err)
+      setProfileError(err instanceof Error ? err.message : 'Failed to save profile. Please try again.')
     } finally {
       setProfileSaving(false)
     }
-  }, [name, phone, language, mutate])
+  }, [name, phone, language, mutate, profileSaving])
 
   const pwStrength = getPasswordStrength(newPassword)
   const initials = user ? getInitials(user.name, user.email) : '--'
@@ -218,6 +224,12 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {profileError && (
+              <div className="bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-4 py-2">
+                {profileError}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               {profileSuccess && (
                 <span className="text-xs text-green font-medium">Profile saved!</span>
@@ -297,13 +309,49 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {passwordError && (
+              <div className="bg-[#DC3545]/10 text-[#DC3545] text-sm rounded-lg px-4 py-2">
+                {passwordError}
+              </div>
+            )}
+            {passwordSuccess && (
+              <div className="bg-green/10 text-green text-sm rounded-lg px-4 py-2">
+                Password updated successfully!
+              </div>
+            )}
+
             <div className="flex justify-end">
               <button
-                disabled={!currentPassword || !newPassword || newPassword !== confirmPassword}
+                disabled={!currentPassword || !newPassword || newPassword !== confirmPassword || passwordSaving}
+                onClick={async () => {
+                  if (passwordSaving) return
+                  setPasswordSaving(true)
+                  setPasswordError(null)
+                  setPasswordSuccess(false)
+                  try {
+                    const res = await fetch('/api/users/me/password', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ currentPassword, newPassword }),
+                    })
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}))
+                      throw new Error(data.error || 'Failed to update password')
+                    }
+                    setPasswordSuccess(true)
+                    setCurrentPassword('')
+                    setNewPassword('')
+                    setConfirmPassword('')
+                  } catch (err) {
+                    setPasswordError(err instanceof Error ? err.message : 'Failed to update password')
+                  } finally {
+                    setPasswordSaving(false)
+                  }
+                }}
                 className="px-6 py-2.5 rounded-3xl bg-white text-amber text-sm font-medium cursor-pointer disabled:opacity-50"
                 style={{ border: '1.5px solid #8B6914' }}
               >
-                {t('password.updatePassword')}
+                {passwordSaving ? 'Updating...' : t('password.updatePassword')}
               </button>
             </div>
           </div>

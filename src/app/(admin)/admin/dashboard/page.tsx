@@ -179,29 +179,33 @@ export default function Dashboard() {
 
   const [remindingSoon, setRemindingSoon] = useState<string | null>(null)
 
+  // Shared SWR options: avoid refetch on focus, dedupe within 30s
+  const swrOpts = { revalidateOnFocus: false, dedupingInterval: 30000 }
+
   // Fetch all data
   const { data: todayRes, error: todayErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${today}&endDate=${today}`,
-    fetcher
+    fetcher, swrOpts
   )
   const { data: pendingDeposits, error: pendingDepErr } = useSWR<Reservation[]>(
     '/api/reservations?status=PAYMENT_SUBMITTED',
-    fetcher
+    fetcher, swrOpts
   )
   const { data: pendingPayment } = useSWR<Reservation[]>(
     '/api/reservations?status=PENDING_PAYMENT',
-    fetcher
+    fetcher, swrOpts
   )
   const { data: weekRes, error: weekErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${week.start}&endDate=${week.end}`,
-    fetcher
+    fetcher, swrOpts
   )
   const { data: monthRes, error: monthErr } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${monthStart}&endDate=${monthEnd}`,
-    fetcher
+    fetcher, swrOpts
   )
-  const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher)
+  const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher, swrOpts)
   const { data: activityLogs } = useSWR<ActivityLog[]>('/api/activity-logs?limit=6', fetcher, {
+    ...swrOpts,
     onError: () => {/* activity logs endpoint may not exist yet, silently ignore */},
   })
 

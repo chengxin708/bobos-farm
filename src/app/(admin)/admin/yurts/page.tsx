@@ -56,6 +56,12 @@ export default function YurtManagement() {
   const [editingYurt, setEditingYurt] = useState<Yurt | null>(null)
   const [form, setForm] = useState<YurtFormData>(defaultForm)
   const [saving, setSaving] = useState(false)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  const showSuccess = useCallback((msg: string) => {
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(null), 3000)
+  }, [])
 
   // Redirect non-admin
   useEffect(() => {
@@ -91,6 +97,11 @@ export default function YurtManagement() {
     if (!form.name.trim()) { alert('Name is required'); return }
     if (form.capacity < 1) { alert('Capacity must be at least 1'); return }
 
+    // Confirm if switching to maintenance
+    if (editingYurt && editingYurt.status === 'ACTIVE' && form.status === 'MAINTENANCE') {
+      if (!confirm(`Set ${form.name} to Maintenance? It will be unavailable for new bookings.`)) return
+    }
+
     setSaving(true)
     try {
       const url = editingYurt ? `/api/yurts/${editingYurt.id}` : '/api/yurts'
@@ -118,12 +129,13 @@ export default function YurtManagement() {
 
       mutate()
       setModalOpen(false)
+      showSuccess(editingYurt ? `${form.name} updated successfully.` : `${form.name} created successfully.`)
     } catch {
       alert('Failed to save yurt')
     } finally {
       setSaving(false)
     }
-  }, [form, editingYurt, mutate])
+  }, [form, editingYurt, mutate, showSuccess])
 
   // ── Loading state ────────────────────────────────────────────
 
@@ -142,6 +154,16 @@ export default function YurtManagement() {
     <>
       <TopBar title={t('title')} />
       <div className="flex-1 p-6 flex flex-col gap-5 bg-cream-bg overflow-auto">
+        {/* Success Message */}
+        {successMsg && (
+          <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between">
+            {successMsg}
+            <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
