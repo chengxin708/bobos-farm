@@ -34,7 +34,7 @@ export default function Footer() {
           <div className="flex flex-col gap-3">
             <span className="text-[11px] text-white/35 font-semibold tracking-[0.15em] uppercase mb-1">{t('visitUs')}</span>
             <span className="text-[13px] text-white/45">{t('address')}</span>
-            <span className="text-[13px] text-white/45">(516) 272-9999</span>
+            <span className="text-[13px] text-white/45">{t('phone')}</span>
             <span className="text-[13px] text-white/45">{t('email')}</span>
             <p className="text-[12px] text-white/25 leading-[1.8] whitespace-pre-line mt-1">
               {t('hours')}

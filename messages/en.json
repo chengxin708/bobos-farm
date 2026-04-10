@@ -79,32 +79,32 @@
   },
   "landing": {
     "hero": {
-      "title": "A Farm-to-Table Feast\nin the Hudson Valley",
-      "subtitle": "Experience authentic Mongolian & Northeastern Chinese cuisine in our cozy yurts, surrounded by the rolling hills of New York's beautiful Hudson Valley",
-      "bookVisit": "Book Your Visit",
+      "title": "Whole Roasted Lamb\nin a Yurt",
+      "subtitle": "The Hudson Valley's most unique dining experience — authentic Chinese roasted whole lamb served in traditional Mongolian yurts. By appointment only.",
+      "bookVisit": "Reserve Your Yurt",
       "viewMenu": "View Menu"
     },
     "about": {
       "title": "Our Story",
-      "para1": "Nestled in the serene Hudson Valley, Bobo's Farm brings the bold, soulful flavors of Mongolian and Northeastern Chinese cuisine to your table. Our signature whole roasted lamb — slow-cooked over an open flame — is a celebration of tradition, community, and the land.",
-      "para2": "Dine inside one of our authentic Mongolian yurts, surrounded by rolling pastures and fresh mountain air. Every ingredient is sourced from local farms or grown right here on our property.",
+      "para1": "Bobo's Farm is the only place in the Hudson Valley where you can feast on a whole Chinese roasted lamb inside a traditional Mongolian yurt. Owner Jimmy and his wife Bobo — \"the real boss and a genius on cooking\" — have created something truly special on their farm in New Paltz.",
+      "para2": "Gather your friends and family, put on your gloves, and tear into 35 pounds of perfectly spiced, slow-roasted lamb. With three colorful yurts nestled among the trees, farm-raised poultry, and karaoke to top it off — this is a celebration, not just a meal.",
       "phone": "(516) 272-9999",
-      "location": "Hudson Valley, New York"
+      "location": "891 Albany Post Rd, New Paltz, NY 12561"
     },
     "highlights": {
       "title": "What Makes Us Special",
       "subtitle": "Three reasons to gather around our table",
       "lamb": {
-        "title": "Signature Roasted\nWhole Lamb",
-        "desc": "Our showstopper: a whole lamb slow-roasted over an open flame for hours, seasoned with traditional Mongolian spices. Feeds 10-15 guests — perfect for celebrations."
+        "title": "35-lb Whole\nRoasted Lamb",
+        "desc": "Our showstopper: a whole lamb (~35 lbs) slow-roasted with cumin and Sichuan spices. Feeds 8-15 guests. Reserve at least one week in advance — gloves provided."
       },
       "yurt": {
-        "title": "Dine in a Yurt",
-        "desc": "Step into one of our authentic Mongolian yurts for a truly unique dining experience. Warm, intimate, and beautifully decorated — each yurt seats up to 20 guests."
+        "title": "Three Colorful\nMongolian Yurts",
+        "desc": "Choose from our white, red, or golden yurt — each nestled among the trees on our New Paltz farm. Warm in winter, breezy in summer. Seats up to 20 guests."
       },
       "farm": {
-        "title": "Farm Fresh",
-        "desc": "From our pastures to your plate. We raise our own livestock and grow seasonal vegetables on-site, ensuring the freshest, most flavorful ingredients in every dish."
+        "title": "Farm-Raised\n& Homegrown",
+        "desc": "We raise our own geese and poultry right here on the farm. Fresh vegetables from our garden, authentic Chinese flavors, and even karaoke after dinner."
       }
     },
     "howItWorks": {
@@ -133,7 +133,7 @@
     }
   },
   "footer": {
-    "tagline": "Farm-to-table feasting in the\nHudson Valley since 2020.",
+    "tagline": "Whole roasted lamb in a yurt.\n891 Albany Post Rd, New Paltz, NY.",
     "quickLinks": "Quick Links",
     "links": {
       "menu": "Menu",
@@ -143,12 +143,12 @@
       "contact": "Contact"
     },
     "visitUs": "Visit Us",
-    "address": "Hudson Valley, New York",
+    "address": "891 Albany Post Rd, New Paltz, NY 12561",
     "phone": "(516) 272-9999",
     "email": "info@bobosfarm.com",
-    "hours": "Open: Fri-Sun, 11AM-9PM\nBy reservation only",
+    "hours": "By appointment only\nReserve at least 1 week in advance",
     "copyright": "© 2026 Bobo's Farm. All rights reserved.",
-    "madeWith": "Made with love in the Hudson Valley"
+    "madeWith": "Made with love in New Paltz, NY"
   },
   "menu": {
     "title": "Our Menu",

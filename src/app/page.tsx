@@ -40,7 +40,7 @@ export default function Landing() {
         <div className="relative z-10 flex flex-col items-center justify-end h-full pb-[14vh] px-6 sm:px-16 lg:px-20">
           <div className="flex flex-col items-center gap-6 max-w-[720px] text-center">
             <p className="text-[11px] font-semibold tracking-[0.3em] uppercase text-amber/80 animate-fade-in-up">
-              Gardiner, New York · By Appointment Only
+              891 Albany Post Rd, New Paltz, NY · By Appointment Only
             </p>
             <h1 className="font-playfair text-[32px] sm:text-[44px] lg:text-[56px] font-bold text-white leading-[1.1] tracking-[-0.01em] animate-fade-in-up stagger-1">
               {t('hero.title')}
@@ -83,11 +83,11 @@ export default function Landing() {
             <div className="flex flex-col gap-2.5 mt-3 pt-4 border-t border-beige/60">
               <div className="flex items-center gap-3">
                 <Phone size={14} className="text-amber/70" />
-                <span className="text-[13px] text-brown/60">(516) 272-9999</span>
+                <span className="text-[13px] text-brown/60">{t('about.phone')}</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin size={14} className="text-amber/70" />
-                <span className="text-[13px] text-brown/60">Gardiner, New York · Hudson Valley</span>
+                <span className="text-[13px] text-brown/60">{t('about.location')}</span>
               </div>
             </div>
           </div>
@@ -182,8 +182,8 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#1a1510]/80 to-[#1a1510]/60" />
         <div className="relative z-10 flex flex-col items-center gap-6 text-center px-6">
           <p className="text-[11px] font-semibold tracking-[0.3em] uppercase text-amber/70">Reserve Your Table</p>
-          <h2 className="font-playfair text-[28px] sm:text-[36px] font-bold text-white max-w-[600px] leading-[1.2]">
-            Gather your friends. <br className="hidden sm:block" />We&apos;ll roast the lamb.
+          <h2 className="font-playfair text-[28px] sm:text-[36px] font-bold text-white max-w-[640px] leading-[1.2]">
+            Gather your crew. <br className="hidden sm:block" />We&apos;ll roast the whole lamb.
           </h2>
           <Link
             href="/booking/date"
