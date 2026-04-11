@@ -4,9 +4,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Flame, Tent, TreePine } from 'lucide-react'
 import { motion } from 'framer-motion'
-import Navbar from '@/components/customer/Navbar'
-import Footer from '@/components/customer/Footer'
-import BottomTabs from '@/components/customer/BottomTabs'
 import { useTranslations } from 'next-intl'
 
 const fadeUp = {
@@ -35,13 +32,9 @@ export default function Landing() {
   const t = useTranslations('landing')
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]"
-         style={{ height: '100dvh' }}>
-      <div className="shrink-0"><Navbar /></div>
-      <div className="flex-1 overflow-y-auto overscroll-contain" id="main-scroll">
-
+    <>
       {/* ── Section 1: Hero ── */}
-      <section className="relative w-full overflow-hidden shrink-0" style={{ height: '100dvh' }}>
+      <section className="relative w-full overflow-hidden" style={{ height: '75vh' }}>
         <Image
           src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600"
           alt="Golden farm landscape at Bobo's Farm"
@@ -50,10 +43,10 @@ export default function Landing() {
           priority
           sizes="100vw"
         />
-        {/* Bottom gradient — light, no dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F7F4] via-[#F8F7F4]/60 to-transparent" style={{ top: '60%' }} />
+        {/* Bottom gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F8F7F4] via-[#F8F7F4]/60 to-transparent" style={{ top: '55%' }} />
 
-        <div className="relative z-10 flex flex-col justify-end h-full pb-20 md:pb-24 px-6 md:px-12 lg:px-20">
+        <div className="relative z-10 flex flex-col justify-end h-full pb-10 md:pb-16 px-6 md:px-12 lg:px-20">
           <motion.div {...fadeUp} className="max-w-[1200px] mx-auto w-full">
             <h1 className="font-[family-name:var(--font-logo)] text-5xl md:text-7xl font-semibold text-[#1A1208] leading-[1.1] tracking-[0.01em]">
               Bobo&apos;s Farm
@@ -80,7 +73,6 @@ export default function Landing() {
         className="px-6 md:px-12 lg:px-20 pt-24 md:pt-32 pb-16 md:pb-24"
       >
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row md:items-center gap-10 md:gap-16">
-          {/* Text */}
           <div className="flex flex-col gap-5 md:flex-1">
             <h2 className="font-serif text-2xl md:text-4xl text-[#1A1208] leading-[1.15]">
               {t('story.title')}
@@ -89,7 +81,6 @@ export default function Landing() {
               {t('story.description')}
             </p>
           </div>
-          {/* Image */}
           <div className="md:flex-1">
             <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
               <Image
@@ -140,7 +131,6 @@ export default function Landing() {
         className="px-6 md:px-12 lg:px-20 pb-24"
       >
         <div className="max-w-[1200px] mx-auto">
-          {/* Atmospheric photo */}
           <div className="relative w-full aspect-[16/9] md:rounded-2xl overflow-hidden">
             <Image
               src="https://images.unsplash.com/photo-1544025162-d76694265947?w=1400"
@@ -151,7 +141,6 @@ export default function Landing() {
             />
           </div>
 
-          {/* CTA text */}
           <div className="flex flex-col items-center gap-5 mt-10 md:mt-12">
             <h2 className="font-serif text-2xl text-[#1A1208] text-center">
               {t('cta.title')}
@@ -165,10 +154,6 @@ export default function Landing() {
           </div>
         </div>
       </motion.section>
-
-      <Footer />
-      </div>
-      <div className="shrink-0 md:hidden"><BottomTabs /></div>
-    </div>
+    </>
   )
 }
