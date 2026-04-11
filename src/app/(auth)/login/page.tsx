@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getCsrfToken, signIn as nextAuthSignIn } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -29,23 +29,20 @@ function LoginForm() {
     const target = callbackUrl !== '/' ? callbackUrl : '/'
 
     try {
-      const csrfToken = await getCsrfToken()
-      const res = await fetch('/api/auth/callback/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email, password, csrfToken: csrfToken || '' }),
-        redirect: 'follow',
-        credentials: 'include',
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       })
 
-      if (res.url && res.url.includes('error')) {
+      if (result?.error) {
         setError('Invalid email or password')
+        setIsLoading(false)
       } else {
-        window.location.href = target
+        window.location.assign(target)
       }
     } catch {
       setError('Something went wrong. Please try again.')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -156,7 +153,7 @@ function LoginForm() {
       {/* Google OAuth */}
       <button
         type="button"
-        onClick={() => nextAuthSignIn('google')}
+        onClick={() => signIn('google')}
         className="border border-[#E8ECE4] rounded-full py-3 w-full flex items-center justify-center gap-2.5 cursor-pointer bg-white hover:bg-[#F9FAF8] transition-colors"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

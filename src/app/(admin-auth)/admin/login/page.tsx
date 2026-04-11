@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { getCsrfToken } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
@@ -17,24 +17,21 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      const csrfToken = await getCsrfToken()
-      const res = await fetch('/api/auth/callback/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ email, password, csrfToken: csrfToken || '' }),
-        redirect: 'follow',
-        credentials: 'include',
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       })
 
-      // After redirect-follow, check final URL for error
-      if (res.url && res.url.includes('error')) {
+      if (result?.error) {
         setError('Invalid email or password')
+        setIsLoading(false)
       } else {
-        window.location.href = '/admin/dashboard'
+        // Cookie is set. Use full page navigation.
+        window.location.assign('/admin/dashboard')
       }
     } catch {
       setError('Something went wrong')
-    } finally {
       setIsLoading(false)
     }
   }
