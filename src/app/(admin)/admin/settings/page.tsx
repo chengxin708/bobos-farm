@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import TopBar from '@/components/admin/TopBar'
+import AdminTopBar from '@/components/admin/AdminTopBar'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   Settings as SettingsIcon,
   CreditCard,
@@ -59,6 +60,7 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
 
 export default function Settings() {
   const t = useTranslations('admin.settings')
+  const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState<TabIndex>(1)
   const [formValues, setFormValues] = useState<Record<string, string>>({})
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({})
@@ -142,64 +144,72 @@ export default function Settings() {
     { icon: Bell, label: t('tabs.notifications') },
   ]
 
+  // ── Shared input style helper ──────────────────────────────────
+
+  const inputClass = (key: string) =>
+    `border ${formValues[key] !== originalValues[key] ? 'border-[#6B7F5E] border-2' : 'border-[#E8ECE4]'} rounded-lg px-3 py-2 text-sm w-full max-w-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors`
+
+  const smallInputClass = (key: string) =>
+    `border ${formValues[key] !== originalValues[key] ? 'border-[#6B7F5E] border-2' : 'border-[#E8ECE4]'} rounded-lg px-3 py-2 text-sm w-20 text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors`
+
   // ── Tab content renderers ──────────────────────────────────────
 
   function renderGeneralTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">General Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Business information and general configuration.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">General Settings</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Business information and general configuration.</p>
 
         {/* Business Name */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Business Name</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Name</label>
           <input
             type="text"
             value={formValues.business_name ?? ''}
             onChange={e => updateField('business_name', e.target.value)}
-            className={`border ${formValues.business_name !== originalValues.business_name ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('business_name')}
             placeholder="Bobo's Farm"
           />
-          <p className="text-xs text-gray-text mt-1">Your business name as shown to customers.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Your business name as shown to customers.</p>
         </div>
 
         {/* Business Email */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Business Email</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Email</label>
           <input
             type="email"
             value={formValues.business_email ?? ''}
             onChange={e => updateField('business_email', e.target.value)}
-            className={`border ${formValues.business_email !== originalValues.business_email ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('business_email')}
             placeholder="info@bobosfarm.com"
           />
-          <p className="text-xs text-gray-text mt-1">Primary contact email for your business.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Primary contact email for your business.</p>
         </div>
 
         {/* Business Phone */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Business Phone</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Phone</label>
           <input
             type="text"
             value={formValues.business_phone ?? ''}
             onChange={e => updateField('business_phone', e.target.value)}
-            className={`border ${formValues.business_phone !== originalValues.business_phone ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('business_phone')}
             placeholder="(555) 000-0000"
           />
-          <p className="text-xs text-gray-text mt-1">Business phone number shown to customers.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Business phone number shown to customers.</p>
         </div>
 
         {/* Business Address */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Business Address</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Address</label>
           <input
             type="text"
             value={formValues.business_address ?? ''}
             onChange={e => updateField('business_address', e.target.value)}
-            className={`border ${formValues.business_address !== originalValues.business_address ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('business_address')}
             placeholder="123 Farm Road, Hudson Valley, NY"
           />
-          <p className="text-xs text-gray-text mt-1">Physical address of your business.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Physical address of your business.</p>
         </div>
       </div>
     )
@@ -207,68 +217,68 @@ export default function Settings() {
 
   function renderBookingTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">{t('booking.title')}</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">{t('booking.subtitle')}</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('booking.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('booking.subtitle')}</p>
 
         {/* Deposit Amount */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">{t('booking.depositAmount')}</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.depositAmount')}</label>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm text-brown">$</span>
+            <span className="text-sm text-[#1A1208]">$</span>
             <input
               type="number"
               value={formValues.deposit_amount ?? ''}
               onChange={e => updateField('deposit_amount', e.target.value)}
-              className={`border-2 ${formValues.deposit_amount !== originalValues.deposit_amount ? 'border-amber' : 'border-beige'} rounded-md px-3 py-2 text-sm w-32 font-semibold`}
+              className={`border-2 ${formValues.deposit_amount !== originalValues.deposit_amount ? 'border-[#6B7F5E]' : 'border-[#E8ECE4]'} rounded-lg px-3 py-2 text-sm w-32 font-semibold text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors`}
             />
           </div>
-          <p className="text-xs text-gray-text">{t('booking.depositAmountHelp')}</p>
+          <p className="text-xs text-[#8C8478]">{t('booking.depositAmountHelp')}</p>
         </div>
 
         {/* Payment Timeout */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">{t('booking.paymentTimeout')}</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.paymentTimeout')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.payment_timeout_hours ?? ''}
               onChange={e => updateField('payment_timeout_hours', e.target.value)}
-              className={`border ${formValues.payment_timeout_hours !== originalValues.payment_timeout_hours ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('payment_timeout_hours')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">{t('booking.paymentTimeoutUnit')}</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.paymentTimeoutUnit')}</span>
           </div>
-          <p className="text-xs text-gray-text">{t('booking.paymentTimeoutHelp')}</p>
+          <p className="text-xs text-[#8C8478]">{t('booking.paymentTimeoutHelp')}</p>
         </div>
 
         {/* Max Advance Booking */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">{t('booking.maxAdvanceBooking')}</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.maxAdvanceBooking')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.max_advance_booking_days ?? ''}
               onChange={e => updateField('max_advance_booking_days', e.target.value)}
-              className={`border ${formValues.max_advance_booking_days !== originalValues.max_advance_booking_days ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('max_advance_booking_days')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">{t('booking.maxAdvanceBookingUnit')}</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.maxAdvanceBookingUnit')}</span>
           </div>
-          <p className="text-xs text-gray-text">{t('booking.maxAdvanceBookingHelp')}</p>
+          <p className="text-xs text-[#8C8478]">{t('booking.maxAdvanceBookingHelp')}</p>
         </div>
 
-        {/* Min Advance Booking — use a placeholder key for now since it may not exist */}
+        {/* Min Advance Booking */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">{t('booking.minAdvanceBooking')}</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.minAdvanceBooking')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.min_advance_booking_days ?? '1'}
               onChange={e => updateField('min_advance_booking_days', e.target.value)}
-              className={`border ${formValues.min_advance_booking_days !== originalValues.min_advance_booking_days ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('min_advance_booking_days')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">{t('booking.minAdvanceBookingUnit')}</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.minAdvanceBookingUnit')}</span>
           </div>
-          <p className="text-xs text-gray-text">{t('booking.minAdvanceBookingHelp')}</p>
+          <p className="text-xs text-[#8C8478]">{t('booking.minAdvanceBookingHelp')}</p>
         </div>
       </div>
     )
@@ -276,22 +286,22 @@ export default function Settings() {
 
   function renderCancellationTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">Cancellation Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure cancellation policies and refund windows.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Cancellation Settings</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure cancellation policies and refund windows.</p>
 
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Cancellation Window</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Cancellation Window</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.cancellation_window_days ?? ''}
               onChange={e => updateField('cancellation_window_days', e.target.value)}
-              className={`border ${formValues.cancellation_window_days !== originalValues.cancellation_window_days ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('cancellation_window_days')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">days</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">days</span>
           </div>
-          <p className="text-xs text-gray-text">Number of days before reservation date that cancellation is allowed with full refund.</p>
+          <p className="text-xs text-[#8C8478]">Number of days before reservation date that cancellation is allowed with full refund.</p>
         </div>
       </div>
     )
@@ -299,23 +309,23 @@ export default function Settings() {
 
   function renderOrderingTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">Ordering Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure pre-ordering and menu settings.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Ordering Settings</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure pre-ordering and menu settings.</p>
 
         {/* Pre-order Deadline */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Pre-order Deadline</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Pre-order Deadline</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.preorder_deadline_days ?? ''}
               onChange={e => updateField('preorder_deadline_days', e.target.value)}
-              className={`border ${formValues.preorder_deadline_days !== originalValues.preorder_deadline_days ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('preorder_deadline_days')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">days before reservation</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">days before reservation</span>
           </div>
-          <p className="text-xs text-gray-text">Number of days before the reservation date that pre-orders must be placed.</p>
+          <p className="text-xs text-[#8C8478]">Number of days before the reservation date that pre-orders must be placed.</p>
         </div>
       </div>
     )
@@ -323,22 +333,22 @@ export default function Settings() {
 
   function renderGuestPoliciesTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">Guest Policies</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure guest warning thresholds and policies.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Guest Policies</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure guest warning thresholds and policies.</p>
 
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Guest Warning Threshold</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Guest Warning Threshold</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
               value={formValues.guest_warning_threshold ?? ''}
               onChange={e => updateField('guest_warning_threshold', e.target.value)}
-              className={`border ${formValues.guest_warning_threshold !== originalValues.guest_warning_threshold ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-20`}
+              className={smallInputClass('guest_warning_threshold')}
             />
-            <span className="text-xs font-semibold text-brown bg-cream-bg px-3 py-2 rounded-md">guests</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">guests</span>
           </div>
-          <p className="text-xs text-gray-text">Minimum number of guests below which a warning is shown during booking.</p>
+          <p className="text-xs text-[#8C8478]">Minimum number of guests below which a warning is shown during booking.</p>
         </div>
       </div>
     )
@@ -346,32 +356,32 @@ export default function Settings() {
 
   function renderPaymentTab() {
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">Payment Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure Zelle payment recipient information.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Payment Settings</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure Zelle payment recipient information.</p>
 
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Zelle Recipient Name</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Name</label>
           <input
             type="text"
             value={formValues.zelle_recipient_name ?? ''}
             onChange={e => updateField('zelle_recipient_name', e.target.value)}
-            className={`border ${formValues.zelle_recipient_name !== originalValues.zelle_recipient_name ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm mb-1`}
+            className={`${inputClass('zelle_recipient_name')} mb-1`}
             placeholder="Enter recipient name"
           />
-          <p className="text-xs text-gray-text">Name displayed to customers during payment.</p>
+          <p className="text-xs text-[#8C8478]">Name displayed to customers during payment.</p>
         </div>
 
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Zelle Recipient Email</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Email</label>
           <input
             type="email"
             value={formValues.zelle_recipient ?? ''}
             onChange={e => updateField('zelle_recipient', e.target.value)}
-            className={`border ${formValues.zelle_recipient !== originalValues.zelle_recipient ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm mb-1`}
+            className={`${inputClass('zelle_recipient')} mb-1`}
             placeholder="Enter Zelle email"
           />
-          <p className="text-xs text-gray-text">Zelle email address where customers send deposit payments.</p>
+          <p className="text-xs text-[#8C8478]">Zelle email address where customers send deposit payments.</p>
         </div>
       </div>
     )
@@ -386,62 +396,62 @@ export default function Settings() {
     const isEnabled = (key: string) => (formValues[key] ?? 'true') === 'true'
 
     return (
-      <div>
-        <h2 className="text-xl font-bold text-brown">Notification Settings</h2>
-        <p className="text-sm text-gray-text mt-1 mb-8">Configure email notification preferences.</p>
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Notification Settings</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure email notification preferences.</p>
 
         {/* Resend API Key */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Resend API Key</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Resend API Key</label>
           <input
             type="password"
             value={formValues.resend_api_key ?? ''}
             onChange={e => updateField('resend_api_key', e.target.value)}
-            className={`border ${formValues.resend_api_key !== originalValues.resend_api_key ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm font-mono`}
+            className={`${inputClass('resend_api_key')} font-mono`}
             placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
           />
-          <p className="text-xs text-gray-text mt-1">
-            从 <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-amber underline">resend.com</a> 获取 API Key。保存后邮件通知即可生效。
+          <p className="text-xs text-[#8C8478] mt-1">
+            从 <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-[#6B7F5E] underline">resend.com</a> 获取 API Key。保存后邮件通知即可生效。
           </p>
         </div>
 
         {/* Admin Notification Email */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Admin Notification Email</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Admin Notification Email</label>
           <input
             type="email"
             value={formValues.notification_email ?? ''}
             onChange={e => updateField('notification_email', e.target.value)}
-            className={`border ${formValues.notification_email !== originalValues.notification_email ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('notification_email')}
             placeholder="admin@bobosfarm.com"
           />
-          <p className="text-xs text-gray-text mt-1">Admin alerts (new bookings, deposit submissions) will be sent to this address.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Admin alerts (new bookings, deposit submissions) will be sent to this address.</p>
         </div>
 
         {/* Email Sender Name */}
         <div className="mb-8">
-          <label className="text-sm font-bold text-brown block mb-1">Email Sender Name</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Email Sender Name</label>
           <input
             type="text"
             value={formValues.email_from_name ?? ''}
             onChange={e => updateField('email_from_name', e.target.value)}
-            className={`border ${formValues.email_from_name !== originalValues.email_from_name ? 'border-amber border-2' : 'border-beige'} rounded-md px-3 py-2 text-sm w-full max-w-sm`}
+            className={inputClass('email_from_name')}
             placeholder="Bobo's Farm"
           />
-          <p className="text-xs text-gray-text mt-1">Display name shown in the email &ldquo;From&rdquo; field.</p>
+          <p className="text-xs text-[#8C8478] mt-1">Display name shown in the email &ldquo;From&rdquo; field.</p>
         </div>
 
         {/* Toggle: Booking Confirmation */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-bold text-brown">Booking Confirmation Email</p>
-            <p className="text-xs text-gray-text mt-0.5">Send confirmation email when a booking is created.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">Booking Confirmation Email</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">Send confirmation email when a booking is created.</p>
           </div>
           <button
             type="button"
             onClick={() => toggleField('email_booking_confirmation')}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-              isEnabled('email_booking_confirmation') ? 'bg-green' : 'bg-gray-300'
+              isEnabled('email_booking_confirmation') ? 'bg-[#6B7F5E]' : 'bg-gray-300'
             }`}
           >
             <span
@@ -455,14 +465,14 @@ export default function Settings() {
         {/* Toggle: Payment Reminder */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-bold text-brown">Payment Reminder Email</p>
-            <p className="text-xs text-gray-text mt-0.5">Allow sending payment reminder emails to customers.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">Payment Reminder Email</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">Allow sending payment reminder emails to customers.</p>
           </div>
           <button
             type="button"
             onClick={() => toggleField('email_payment_reminder')}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-              isEnabled('email_payment_reminder') ? 'bg-green' : 'bg-gray-300'
+              isEnabled('email_payment_reminder') ? 'bg-[#6B7F5E]' : 'bg-gray-300'
             }`}
           >
             <span
@@ -476,14 +486,14 @@ export default function Settings() {
         {/* Toggle: Admin New Booking Alert */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-bold text-brown">Admin New Booking Alert</p>
-            <p className="text-xs text-gray-text mt-0.5">Send notification to admin when a new booking is created.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">Admin New Booking Alert</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">Send notification to admin when a new booking is created.</p>
           </div>
           <button
             type="button"
             onClick={() => toggleField('email_admin_new_booking')}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
-              isEnabled('email_admin_new_booking') ? 'bg-green' : 'bg-gray-300'
+              isEnabled('email_admin_new_booking') ? 'bg-[#6B7F5E]' : 'bg-gray-300'
             }`}
           >
             <span
@@ -509,20 +519,20 @@ export default function Settings() {
 
   return (
     <>
-      <TopBar title={t('title')} />
-      <div className="flex-1 flex bg-cream-bg overflow-hidden">
+      {isMobile && <AdminTopBar title={t('title')} />}
+      <div className="flex-1 flex overflow-hidden">
         {/* Settings Sidebar */}
-        <div className="w-[220px] bg-white border-r border-beige p-4 flex flex-col gap-1 shrink-0">
-          <div className="text-lg font-bold text-brown mb-2">{t('sidebarTitle')}</div>
-          <div className="text-xs text-gray-text mb-4">{t('sidebarSubtitle')}</div>
+        <div className="w-[220px] bg-white border-r border-[#E8ECE4] p-4 flex flex-col gap-1 shrink-0 hidden md:flex">
+          <div className="text-lg font-semibold text-[#1A1208] font-serif mb-2">{t('sidebarTitle')}</div>
+          <div className="text-xs text-[#8C8478] mb-4">{t('sidebarSubtitle')}</div>
           {settingsTabs.map((tab, i) => (
             <button
               key={tab.label}
               onClick={() => setActiveTab(i as TabIndex)}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                 activeTab === i
-                  ? 'bg-amber text-white font-semibold'
-                  : 'text-brown hover:bg-cream-bg'
+                  ? 'bg-[#6B7F5E] text-white font-semibold'
+                  : 'text-[#1A1208] hover:bg-[#F8F7F4]'
               }`}
             >
               <tab.icon size={16} />
@@ -531,12 +541,72 @@ export default function Settings() {
           ))}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-8 overflow-auto flex flex-col">
-          <div className="max-w-2xl flex-1">
+        {/* Mobile tab selector */}
+        <div className="md:hidden w-full">
+          <div className="flex overflow-x-auto gap-1 p-3 border-b border-[#E8ECE4] bg-white">
+            {settingsTabs.map((tab, i) => (
+              <button
+                key={tab.label}
+                onClick={() => setActiveTab(i as TabIndex)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-colors ${
+                  activeTab === i
+                    ? 'bg-[#6B7F5E] text-white font-semibold'
+                    : 'text-[#1A1208] bg-[#F8F7F4]'
+                }`}
+              >
+                <tab.icon size={14} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile content */}
+          <div className="flex-1 p-4 overflow-auto flex flex-col">
+            <div className="flex-1">
+              {!settings ? (
+                <div className="flex items-center justify-center py-12">
+                  <span className="text-sm text-[#8C8478]">Loading settings...</span>
+                </div>
+              ) : (
+                TAB_RENDERERS[activeTab]()
+              )}
+            </div>
+
+            {/* Mobile Footer */}
+            {settings && (
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#E8ECE4]">
+                <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-[#6B7F5E]' : saveSuccess ? 'text-[#6B7F5E]' : 'text-transparent'}`}>
+                  {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.')}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDiscard}
+                    disabled={!hasChanges}
+                    className={`px-3 py-1.5 text-sm border border-[#E8ECE4] rounded-lg transition-colors ${hasChanges ? 'text-[#1A1208]' : 'text-[#8C8478] opacity-50'}`}
+                  >
+                    {t('footer.discard')}
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={!hasChanges || saving}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors ${
+                      hasChanges && !saving ? 'bg-[#6B7F5E] text-white hover:bg-[#5A6E4F]' : 'bg-gray-200 text-[#8C8478]'
+                    }`}
+                  >
+                    {saving ? 'Saving...' : t('footer.saveChanges')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Content */}
+        <div className="flex-1 p-8 overflow-auto flex-col hidden md:flex">
+          <div className="max-w-2xl mx-auto flex-1 w-full">
             {!settings ? (
               <div className="flex items-center justify-center py-12">
-                <span className="text-sm text-gray-text">Loading settings...</span>
+                <span className="text-sm text-[#8C8478]">Loading settings...</span>
               </div>
             ) : (
               TAB_RENDERERS[activeTab]()
@@ -545,23 +615,23 @@ export default function Settings() {
 
           {/* Footer */}
           {settings && (
-            <div className="max-w-2xl flex items-center justify-between pt-6 border-t border-beige">
-              <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-amber' : saveSuccess ? 'text-green' : 'text-transparent'}`}>
+            <div className="max-w-2xl mx-auto w-full flex items-center justify-between pt-6 border-t border-[#E8ECE4]">
+              <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-[#6B7F5E]' : saveSuccess ? 'text-[#6B7F5E]' : 'text-transparent'}`}>
                 {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.')}
               </span>
               <div className="flex gap-3">
                 <button
                   onClick={handleDiscard}
                   disabled={!hasChanges}
-                  className={`px-4 py-2 text-sm border border-beige rounded-md ${hasChanges ? 'text-brown' : 'text-gray-text opacity-50'}`}
+                  className={`px-4 py-2 text-sm border border-[#E8ECE4] rounded-lg transition-colors ${hasChanges ? 'text-[#1A1208] hover:bg-[#F8F7F4]' : 'text-[#8C8478] opacity-50'}`}
                 >
                   {t('footer.discard')}
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={!hasChanges || saving}
-                  className={`px-4 py-2 text-sm font-semibold rounded-md ${
-                    hasChanges && !saving ? 'bg-green text-white' : 'bg-gray-200 text-gray-text'
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                    hasChanges && !saving ? 'bg-[#6B7F5E] text-white hover:bg-[#5A6E4F]' : 'bg-gray-200 text-[#8C8478]'
                   }`}
                 >
                   {saving ? 'Saving...' : t('footer.saveChanges')}
