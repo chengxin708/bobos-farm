@@ -37,19 +37,24 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="h-screen bg-[#1E1A14] flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl p-8 w-full max-w-[420px] shadow-2xl">
-        {/* Title */}
-        <h1 className="font-serif text-2xl text-[#2A1F14] text-center mb-1">
-          Admin Portal
-        </h1>
-        <p className="text-sm text-[#8C857A] text-center mb-8">
-          Bobo&apos;s Farm Management
-        </p>
+    <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-[400px] w-full">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="font-[family-name:var(--font-logo)] text-3xl text-[#2A1F14] mb-1">
+            Bobo&apos;s Farm
+          </h1>
+          <p className="font-serif text-sm text-[#8C857A] mb-2">
+            波姐农家乐
+          </p>
+          <span className="text-xs text-[#6B7F5E] font-medium tracking-wide">
+            管理后台
+          </span>
+        </div>
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 text-[#C4453A] rounded-xl p-3 text-sm mb-4">
+          <div className="bg-[#DC3545]/10 text-[#DC3545] rounded-xl p-3 text-sm mb-4">
             {error}
           </div>
         )}
@@ -64,8 +69,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ border: '1px solid #E4DDD2', outline: 'none' }}
-              className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#8C857A] text-[#2A1F14] focus:!border-[#B8860B] transition-colors"
+              className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#8C857A] text-[#2A1F14] border border-[#E8ECE4] outline-none focus:border-[#6B7F5E] transition-colors"
             />
           </div>
 
@@ -78,8 +82,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ border: '1px solid #E4DDD2', outline: 'none' }}
-              className="w-full h-[52px] rounded-xl pl-11 pr-12 text-sm bg-white placeholder:text-[#8C857A] text-[#2A1F14] focus:!border-[#B8860B] transition-colors"
+              className="w-full h-[52px] rounded-xl pl-11 pr-12 text-sm bg-white placeholder:text-[#8C857A] text-[#2A1F14] border border-[#E8ECE4] outline-none focus:border-[#6B7F5E] transition-colors"
             />
             <button
               type="button"
@@ -96,12 +99,17 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-[#B8860B] text-white rounded-xl py-3 w-full text-base font-medium cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed transition-opacity hover:bg-[#A0750A]"
+            className="bg-[#6B7F5E] text-white rounded-full py-3 w-full text-base font-medium cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed transition-colors hover:bg-[#5A6E4F]"
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
       </div>
+
+      {/* Footer */}
+      <p className="text-xs text-[#8C857A]/60 mt-6">
+        &copy; 2026 Bobo&apos;s Farm
+      </p>
     </div>
   )
 }
