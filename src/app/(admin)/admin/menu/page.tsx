@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
-  Plus, Pencil, Trash2, X, Upload, GripVertical, Image as ImageIcon,
+  Plus, Pencil, Trash2, X, Upload, Image as ImageIcon,
 } from 'lucide-react'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -390,6 +390,29 @@ export default function MenuManagement() {
       alert(error instanceof Error ? error.message : 'Save failed')
     } finally {
       setSavingCategory(false)
+    }
+  }
+
+  const handleDeleteCategory = async (cat: MenuCategory) => {
+    if ((cat._count?.items ?? 0) > 0) {
+      alert('此分类下仍有菜品，请先移除或删除所有菜品后再删除分类。')
+      return
+    }
+    if (!confirm('确定要删除此分类吗？此操作不可撤销。')) return
+    try {
+      const res = await fetch(`/api/menu/categories?id=${cat.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to delete category')
+        return
+      }
+      if (activeCategoryId === cat.id) {
+        setActiveCategoryId(null)
+      }
+      await mutateCategories()
+      showSuccess('Category deleted.')
+    } catch {
+      alert('Failed to delete category')
     }
   }
 
@@ -898,7 +921,17 @@ export default function MenuManagement() {
                   />
                 </div>
               </div>
-              <div className="p-5 pt-0 flex justify-end gap-3">
+              <div className="p-5 pt-0 flex items-center gap-3">
+                {editingCategory && (
+                  <button
+                    onClick={() => { setCategoryModalOpen(false); handleDeleteCategory(editingCategory) }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#DC3545] border border-[#DC3545]/30 rounded-lg hover:bg-[#DC3545]/5 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </button>
+                )}
+                <div className="flex-1" />
                 <button
                   onClick={() => setCategoryModalOpen(false)}
                   className="px-4 py-2 text-sm text-[#8C8478] border border-[#E8ECE4] rounded-lg hover:bg-[#F8F7F4] transition-colors"

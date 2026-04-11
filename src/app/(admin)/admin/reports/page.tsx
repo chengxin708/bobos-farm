@@ -312,7 +312,10 @@ export default function Reports() {
             >
               <Download size={14} /> {t('export.csv')}
             </button>
-            <button className="flex items-center gap-1.5 text-sm text-[#1A1208] border border-[#E8ECE4] bg-white px-3 py-1.5 rounded-lg hover:bg-[#F8F7F4] transition-colors">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-sm text-[#1A1208] border border-[#E8ECE4] bg-white px-3 py-1.5 rounded-lg hover:bg-[#F8F7F4] transition-colors"
+            >
               <Download size={14} /> {t('export.pdf')}
             </button>
           </div>

@@ -8,7 +8,7 @@ import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
   Plus, Edit, Eye, Users, AlertTriangle, X, ChevronRight,
-  ChevronLeft, Save, Calendar,
+  ChevronLeft, Save, Calendar, Trash2,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -197,6 +197,22 @@ export default function VenuesPage() {
       setYurtSaving(false)
     }
   }, [yurtForm, editingYurt, mutateYurts, showSuccess])
+
+  const handleDeleteYurt = useCallback(async (yurt: Yurt) => {
+    if (!confirm('确定要删除此蒙古包吗？此操作不可撤销。')) return
+    try {
+      const res = await fetch(`/api/yurts/${yurt.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to delete yurt')
+        return
+      }
+      mutateYurts()
+      showSuccess(`${yurt.name} deleted successfully.`)
+    } catch {
+      alert('Failed to delete yurt')
+    }
+  }, [mutateYurts, showSuccess])
 
   // ════════════════════════════════════════════════════════════════
   // AVAILABILITY TAB STATE
@@ -547,7 +563,13 @@ export default function VenuesPage() {
                   <button className="flex items-center gap-1.5 text-sm text-[#3D2B1F] cursor-pointer bg-transparent border-none">
                     <Eye size={14} /> {tY('actions.viewDetails')}
                   </button>
-                  <ChevronRight size={14} className="text-[#8C8478]" />
+                  <button
+                    onClick={() => handleDeleteYurt(yurt)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#DC3545] border border-[#DC3545]/30 rounded-lg hover:bg-[#DC3545]/5 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </button>
                 </div>
               </div>
             ))}
