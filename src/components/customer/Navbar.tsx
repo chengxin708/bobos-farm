@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { setLocale } from '@/lib/locale-actions'
+import { ChevronDown, Check } from 'lucide-react'
 
 export default function Navbar() {
   const t = useTranslations('nav')
@@ -16,6 +17,9 @@ export default function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [scrolled, setScrolled] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  const langMobileRef = useRef<HTMLDivElement>(null)
+  const langDesktopRef = useRef<HTMLDivElement>(null)
 
   const user = session?.user
   const initials = user?.name
@@ -29,6 +33,20 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node
+      const inMobile = langMobileRef.current?.contains(target)
+      const inDesktop = langDesktopRef.current?.contains(target)
+      if (!inMobile && !inDesktop) {
+        setLangOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   async function handleSetLocale(newLocale: 'en' | 'zh') {
@@ -61,30 +79,38 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Language toggle */}
-        <div className="flex items-center gap-1 w-16 justify-end">
+        {/* Language dropdown */}
+        <div className="relative w-16 flex justify-end" ref={langMobileRef}>
           <button
-            onClick={() => handleSetLocale('en')}
-            className={`text-[11px] font-semibold cursor-pointer border-0 px-2 py-0.5 rounded-full transition-colors ${
-              locale === 'en'
-                ? 'bg-[#6B7F5E] text-white'
-                : 'bg-transparent text-[#8C8478]'
-            }`}
+            onClick={() => setLangOpen(prev => !prev)}
+            className="text-sm text-[#1A1208] flex items-center gap-1 cursor-pointer border-0 bg-transparent"
             aria-label={tLang('switchTo')}
           >
-            {tLang('en')}
+            {locale === 'en' ? 'EN' : '中文'}
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
           </button>
-          <button
-            onClick={() => handleSetLocale('zh')}
-            className={`text-[11px] font-semibold cursor-pointer border-0 px-2 py-0.5 rounded-full transition-colors ${
-              locale === 'zh'
-                ? 'bg-[#6B7F5E] text-white'
-                : 'bg-transparent text-[#8C8478]'
-            }`}
-            aria-label={tLang('switchTo')}
-          >
-            {tLang('zh')}
-          </button>
+          {langOpen && (
+            <div className="absolute right-0 mt-8 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[140px] z-50">
+              <button
+                onClick={() => { handleSetLocale('en'); setLangOpen(false) }}
+                className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
+                  locale === 'en' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
+                }`}
+              >
+                English
+                {locale === 'en' && <Check className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => { handleSetLocale('zh'); setLangOpen(false) }}
+                className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
+                  locale === 'zh' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
+                }`}
+              >
+                中文
+                {locale === 'zh' && <Check className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,30 +151,38 @@ export default function Navbar() {
 
         {/* Right side: language toggle + auth */}
         <div className="flex items-center gap-4 shrink-0">
-          {/* Language toggle */}
-          <div className="flex items-center gap-1">
+          {/* Language dropdown */}
+          <div className="relative" ref={langDesktopRef}>
             <button
-              onClick={() => handleSetLocale('en')}
-              className={`text-xs font-semibold cursor-pointer border-0 px-2.5 py-1 rounded-full transition-colors ${
-                locale === 'en'
-                  ? 'bg-[#6B7F5E] text-white'
-                  : 'bg-transparent text-[#8C8478]'
-              }`}
+              onClick={() => setLangOpen(prev => !prev)}
+              className="text-sm text-[#1A1208] flex items-center gap-1 cursor-pointer border-0 bg-transparent"
               aria-label={tLang('switchTo')}
             >
-              {tLang('en')}
+              {locale === 'en' ? 'EN' : '中文'}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
             </button>
-            <button
-              onClick={() => handleSetLocale('zh')}
-              className={`text-xs font-semibold cursor-pointer border-0 px-2.5 py-1 rounded-full transition-colors ${
-                locale === 'zh'
-                  ? 'bg-[#6B7F5E] text-white'
-                  : 'bg-transparent text-[#8C8478]'
-              }`}
-              aria-label={tLang('switchTo')}
-            >
-              {tLang('zh')}
-            </button>
+            {langOpen && (
+              <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[140px] z-50">
+                <button
+                  onClick={() => { handleSetLocale('en'); setLangOpen(false) }}
+                  className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
+                    locale === 'en' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
+                  }`}
+                >
+                  English
+                  {locale === 'en' && <Check className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => { handleSetLocale('zh'); setLangOpen(false) }}
+                  className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
+                    locale === 'zh' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
+                  }`}
+                >
+                  中文
+                  {locale === 'zh' && <Check className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Auth: avatar or login link */}
