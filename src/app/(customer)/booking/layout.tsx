@@ -5,7 +5,7 @@ import { BookingProvider } from '@/contexts/BookingContext'
 export default function BookingLayout({ children }: { children: React.ReactNode }) {
   return (
     <BookingProvider>
-      <div className="bg-[#F8F7F4] flex flex-col" style={{ height: '100dvh' }}>
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {children}
       </div>
     </BookingProvider>

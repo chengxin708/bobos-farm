@@ -449,7 +449,7 @@ export default function BookingConfirmPage() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row gap-6">
 

@@ -123,7 +123,7 @@ export default function BookingYurtPage() {
       </div>
 
       {/* Yurt Cards */}
-      <div className="flex-1 overflow-y-auto px-4 pb-28">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-28">
         <div className="max-w-[560px] mx-auto flex flex-col gap-4">
           {loadingYurts ? (
             /* Loading skeletons */

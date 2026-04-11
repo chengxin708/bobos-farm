@@ -204,3 +204,9 @@ html { scroll-behavior: smooth; }
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Prevent pull-to-refresh on locked frames */
+.overscroll-none {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
