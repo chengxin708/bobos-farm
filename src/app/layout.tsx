@@ -45,13 +45,6 @@ export const metadata: Metadata = {
   title: "Bobo's Farm — 波姐农家乐",
   description:
     "Whole roasted lamb in a yurt — the Hudson Valley's most unique dining experience. By appointment only.",
-  manifest: '/manifest.json',
-  themeColor: '#6B7F5E',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: "Bobo's Farm 管理",
-  },
 };
 
 export default async function RootLayout({
