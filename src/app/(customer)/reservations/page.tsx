@@ -149,22 +149,23 @@ export default function ReservationsPage() {
     setLoginError('')
     setLoginLoading(true)
     try {
-      const { signIn } = await import('next-auth/react')
-      const result = await signIn('credentials', {
-        email: loginEmail,
-        password: loginPassword,
-        redirect: false,
+      const { getCsrfToken } = await import('next-auth/react')
+      const csrfToken = await getCsrfToken()
+      const res = await fetch('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ email: loginEmail, password: loginPassword, csrfToken: csrfToken || '' }),
+        redirect: 'follow',
+        credentials: 'include',
       })
-      if (result && typeof result === 'object' && 'error' in result) {
+      if (res.url && res.url.includes('error')) {
         setLoginError('Invalid email or password')
         setLoginLoading(false)
         return
       }
-      // Success — reload page to get authenticated state
       window.location.reload()
     } catch {
-      // signIn might throw on success in v5 — reload
-      window.location.reload()
+      setLoginError('Something went wrong. Please try again.')
     } finally {
       setLoginLoading(false)
     }
