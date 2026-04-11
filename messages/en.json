@@ -449,7 +449,8 @@
       "availability": "Availability",
       "customers": "Customers",
       "settings": "Settings",
-      "reports": "Reports"
+      "reports": "Reports",
+      "orders": "Orders"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -780,6 +781,66 @@
       "success": {
         "yurtOpened": "Yurt opened for this date.",
         "yurtClosed": "Yurt closed for this date."
+      }
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Manage customer pre-orders",
+      "searchPlaceholder": "Search by guest name or email...",
+      "clearFilters": "Clear Filters",
+      "loading": "Loading orders...",
+      "noResults": "No orders yet",
+      "tabs": {
+        "all": "All",
+        "SUBMITTED": "Submitted",
+        "LOCKED": "Locked"
+      },
+      "table": {
+        "guest": "GUEST",
+        "date": "RESERVATION DATE",
+        "yurt": "YURT",
+        "items": "ITEMS",
+        "total": "TOTAL",
+        "status": "STATUS",
+        "action": "ACTION"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "SUBMITTED": "Submitted",
+        "LOCKED": "Locked"
+      },
+      "actions": {
+        "view": "View",
+        "lock": "Lock Order",
+        "unlock": "Unlock Order",
+        "close": "Close",
+        "confirmLock": "Are you sure you want to lock this order? The customer will no longer be able to edit it.",
+        "confirmUnlock": "Are you sure you want to unlock this order? The customer will be able to edit it again."
+      },
+      "detail": {
+        "title": "Order Details",
+        "orderId": "Order ID",
+        "reservationInfo": "Reservation Info",
+        "date": "Date",
+        "yurt": "Yurt",
+        "guests": "Guests",
+        "guestInfo": "Guest Info",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "notProvided": "Not provided",
+        "orderItems": "Order Items",
+        "item": "Item",
+        "qty": "Qty",
+        "price": "Price",
+        "subtotal": "Subtotal",
+        "kitchenNotes": "Kitchen Notes",
+        "generalNotes": "General Kitchen Notes",
+        "estimatedTotal": "Estimated Total",
+        "timeline": "Timeline",
+        "submitted": "Submitted",
+        "locked": "Locked",
+        "created": "Created"
       }
     },
     "reports": {

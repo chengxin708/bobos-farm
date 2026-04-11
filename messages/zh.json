@@ -449,7 +449,8 @@
       "availability": "可用性管理",
       "customers": "客户管理",
       "settings": "系统设置",
-      "reports": "数据报告"
+      "reports": "数据报告",
+      "orders": "订单管理"
     },
     "dashboard": {
       "title": "仪表盘",
@@ -780,6 +781,66 @@
       "success": {
         "yurtOpened": "该日期营地已开放。",
         "yurtClosed": "该日期营地已关闭。"
+      }
+    },
+    "orders": {
+      "title": "订单管理",
+      "subtitle": "管理客户预订单",
+      "searchPlaceholder": "按客人姓名或邮箱搜索...",
+      "clearFilters": "清除筛选",
+      "loading": "加载订单中...",
+      "noResults": "暂无订单",
+      "tabs": {
+        "all": "全部",
+        "SUBMITTED": "已提交",
+        "LOCKED": "已锁定"
+      },
+      "table": {
+        "guest": "客人",
+        "date": "预订日期",
+        "yurt": "营地",
+        "items": "菜品数",
+        "total": "总计",
+        "status": "状态",
+        "action": "操作"
+      },
+      "status": {
+        "DRAFT": "草稿",
+        "SUBMITTED": "已提交",
+        "LOCKED": "已锁定"
+      },
+      "actions": {
+        "view": "查看",
+        "lock": "锁定订单",
+        "unlock": "解锁订单",
+        "close": "关闭",
+        "confirmLock": "确定要锁定此订单吗？客户将无法再编辑。",
+        "confirmUnlock": "确定要解锁此订单吗？客户将可以再次编辑。"
+      },
+      "detail": {
+        "title": "订单详情",
+        "orderId": "订单编号",
+        "reservationInfo": "预订信息",
+        "date": "日期",
+        "yurt": "营地",
+        "guests": "人数",
+        "guestInfo": "客人信息",
+        "name": "姓名",
+        "email": "邮箱",
+        "phone": "电话",
+        "notProvided": "未提供",
+        "orderItems": "订单菜品",
+        "item": "菜品",
+        "qty": "数量",
+        "price": "价格",
+        "subtotal": "小计",
+        "kitchenNotes": "厨房备注",
+        "generalNotes": "总体厨房备注",
+        "estimatedTotal": "预估总计",
+        "timeline": "时间线",
+        "submitted": "提交时间",
+        "locked": "锁定时间",
+        "created": "创建时间"
       }
     },
     "reports": {

@@ -27,6 +27,8 @@ export async function GET(
 
     const { id } = await params;
 
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+
     const order = await prisma.order.findUnique({
       where: { id },
       include: {
@@ -44,7 +46,14 @@ export async function GET(
           },
         },
         reservation: {
-          select: { userId: true },
+          select: {
+            userId: true,
+            id: true,
+            date: true,
+            guestCount: true,
+            yurt: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, email: true, phone: true } },
+          },
         },
       },
     });
@@ -54,12 +63,15 @@ export async function GET(
     }
 
     // Auth check: only order owner or admin
-    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
     if (!isAdmin && order.reservation.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Strip reservation from response (caller already has it)
+    // Admin gets full reservation info; customer gets stripped response
+    if (isAdmin) {
+      return NextResponse.json(order);
+    }
+
     const { reservation: _reservation, ...orderData } = order;
     return NextResponse.json(orderData);
   } catch (error) {
@@ -82,8 +94,98 @@ export async function PATCH(
     }
 
     const { id } = await params;
-
     const body = await req.json();
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+
+    // ── Admin lock/unlock actions ──────────────────────────────
+    if (body.action === "lock" || body.action === "unlock") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const order = await prisma.order.findUnique({
+        where: { id },
+        select: { id: true, status: true },
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      if (body.action === "lock") {
+        if (order.status !== "SUBMITTED") {
+          return NextResponse.json(
+            { error: "Only submitted orders can be locked" },
+            { status: 400 }
+          );
+        }
+
+        const orderInclude = {
+            items: {
+              include: {
+                menuItem: {
+                  select: { id: true, nameEn: true, nameZh: true, price: true, imageUrl: true },
+                },
+              },
+            },
+            reservation: {
+              select: {
+                id: true,
+                userId: true,
+                date: true,
+                guestCount: true,
+                yurt: { select: { id: true, name: true } },
+                user: { select: { id: true, name: true, email: true, phone: true } },
+              },
+            },
+          };
+
+        const updated = await prisma.order.update({
+          where: { id },
+          data: { status: "LOCKED", lockedAt: new Date() },
+          include: orderInclude,
+        });
+        return NextResponse.json(updated);
+      }
+
+      if (body.action === "unlock") {
+        if (order.status !== "LOCKED") {
+          return NextResponse.json(
+            { error: "Only locked orders can be unlocked" },
+            { status: 400 }
+          );
+        }
+
+        const orderInclude = {
+            items: {
+              include: {
+                menuItem: {
+                  select: { id: true, nameEn: true, nameZh: true, price: true, imageUrl: true },
+                },
+              },
+            },
+            reservation: {
+              select: {
+                id: true,
+                userId: true,
+                date: true,
+                guestCount: true,
+                yurt: { select: { id: true, name: true } },
+                user: { select: { id: true, name: true, email: true, phone: true } },
+              },
+            },
+          };
+
+        const updated = await prisma.order.update({
+          where: { id },
+          data: { status: "SUBMITTED", lockedAt: null },
+          include: orderInclude,
+        });
+        return NextResponse.json(updated);
+      }
+    }
+
+    // ── Customer item update ──────────────────────────────────
     const parsed = orderUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -109,7 +211,6 @@ export async function PATCH(
     }
 
     // Auth check: only order owner or admin
-    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
     if (!isAdmin && order.reservation.userId !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

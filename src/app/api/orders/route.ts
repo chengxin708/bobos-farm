@@ -16,6 +16,68 @@ const orderCreateSchema = z.object({
   notes: z.string().optional(),
 });
 
+// GET /api/orders — Admin only: list all orders
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+
+    const where: Record<string, unknown> = {};
+
+    // Filter by status
+    const status = searchParams.get("status");
+    const validStatuses = ["DRAFT", "SUBMITTED", "LOCKED"];
+    if (status && validStatuses.includes(status)) {
+      where.status = status;
+    }
+
+    // Search by guest name or email
+    const search = searchParams.get("search");
+    if (search) {
+      where.reservation = {
+        OR: [
+          { user: { name: { contains: search, mode: "insensitive" } } },
+          { user: { email: { contains: search, mode: "insensitive" } } },
+        ],
+      };
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        reservation: {
+          select: {
+            id: true,
+            date: true,
+            guestCount: true,
+            yurt: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, email: true, phone: true } },
+          },
+        },
+        _count: { select: { items: true } },
+      },
+      orderBy: { reservation: { date: "asc" } },
+    });
+
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("Failed to fetch orders:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch orders" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();

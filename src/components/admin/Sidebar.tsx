@@ -8,6 +8,7 @@ import {
   Calendar,
   BookOpen,
   CreditCard,
+  ClipboardList,
   UtensilsCrossed,
   Tent,
   CalendarCheck,
@@ -48,6 +49,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/calendar', icon: Calendar, label: '日历' },
       { href: '/admin/reservations', icon: BookOpen, label: '预订管理' },
+      { href: '/admin/orders', icon: ClipboardList, label: '订单管理' },
       { href: '/admin/deposits', icon: CreditCard, label: '定金管理' },
     ],
   },
