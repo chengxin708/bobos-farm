@@ -7,7 +7,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { setLocale } from '@/lib/locale-actions'
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown, Check, User, Settings, LogOut } from 'lucide-react'
 
 export default function Navbar() {
   const t = useTranslations('nav')
@@ -18,8 +18,10 @@ export default function Navbar() {
   const { data: session } = useSession()
   const [scrolled, setScrolled] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
+  const [avatarOpen, setAvatarOpen] = useState(false)
   const langMobileRef = useRef<HTMLDivElement>(null)
   const langDesktopRef = useRef<HTMLDivElement>(null)
+  const avatarRef = useRef<HTMLDivElement>(null)
 
   const user = session?.user
   const initials = user?.name
@@ -37,14 +39,15 @@ export default function Navbar() {
     return () => scrollEl.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node
-      const inMobile = langMobileRef.current?.contains(target)
-      const inDesktop = langDesktopRef.current?.contains(target)
-      if (!inMobile && !inDesktop) {
+      if (!langMobileRef.current?.contains(target) && !langDesktopRef.current?.contains(target)) {
         setLangOpen(false)
+      }
+      if (!avatarRef.current?.contains(target)) {
+        setAvatarOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -193,14 +196,54 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Auth: avatar or login link */}
+          {/* Auth: avatar dropdown or login link */}
           {user ? (
-            <Link
-              href="/settings"
-              className="w-9 h-9 bg-[#6B7F5E] rounded-full flex items-center justify-center no-underline transition-opacity hover:opacity-90"
-            >
-              <span className="text-white text-sm font-bold">{initials}</span>
-            </Link>
+            <div className="relative" ref={avatarRef}>
+              <button
+                onClick={() => setAvatarOpen(prev => !prev)}
+                className="w-9 h-9 bg-[#6B7F5E] rounded-full flex items-center justify-center cursor-pointer border-none transition-opacity hover:opacity-90"
+              >
+                <span className="text-white text-sm font-bold">{initials}</span>
+              </button>
+              {avatarOpen && (
+                <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[180px] z-50">
+                  <div className="px-4 py-2.5 border-b border-[#E8ECE4]">
+                    <p className="text-sm font-medium text-[#1A1208] truncate">{user.name || user.email}</p>
+                    <p className="text-xs text-[#8C8478] truncate">{user.email}</p>
+                  </div>
+                  <Link
+                    href="/reservations"
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#1A1208] no-underline hover:bg-[#E8ECE4] transition-colors"
+                  >
+                    <User size={16} className="text-[#8C8478]" />
+                    {t('my')}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#1A1208] no-underline hover:bg-[#E8ECE4] transition-colors"
+                  >
+                    <Settings size={16} className="text-[#8C8478]" />
+                    Settings
+                  </Link>
+                  <div className="border-t border-[#E8ECE4] mt-1 pt-1">
+                    <button
+                      onClick={async () => {
+                        setAvatarOpen(false)
+                        const { signOut } = await import('next-auth/react')
+                        await signOut({ redirect: false })
+                        window.location.href = '/'
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[#C4453A] bg-transparent border-none cursor-pointer hover:bg-[#C4453A]/5 transition-colors"
+                    >
+                      <LogOut size={16} />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <Link
               href="/login"
