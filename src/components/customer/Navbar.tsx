@@ -74,7 +74,7 @@ export default function Navbar() {
 
         {/* Centered logo */}
         <Link href="/" className="no-underline">
-          <span className="font-serif text-lg font-bold text-off-black">
+          <span className="font-[family-name:var(--font-logo)] italic text-lg font-bold text-off-black tracking-[0.02em]">
             Bobo&apos;s Farm
           </span>
         </Link>
@@ -118,7 +118,7 @@ export default function Navbar() {
       <div className="hidden md:flex items-center justify-between h-16 px-8 lg:px-16">
         {/* Logo */}
         <Link href="/" className="no-underline shrink-0">
-          <span className="font-serif text-xl font-bold text-off-black">
+          <span className="font-[family-name:var(--font-logo)] italic text-xl font-bold text-off-black tracking-[0.02em]">
             Bobo&apos;s Farm
           </span>
         </Link>

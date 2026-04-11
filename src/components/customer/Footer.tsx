@@ -30,7 +30,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-8">
           {/* Logo + Tagline */}
           <div className="flex flex-col gap-2">
-            <span className="font-serif text-xl text-[#F8F7F4]">
+            <span className="font-[family-name:var(--font-logo)] italic text-xl text-[#F8F7F4] tracking-[0.02em]">
               Bobo&apos;s Farm
             </span>
             <span className="text-xs text-[#F8F7F4]/50">

@@ -46,6 +46,8 @@
   --font-serif: var(--font-dm-serif), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
   --font-sans: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
 
+  --font-logo-display: var(--font-logo), serif;
+
   /* === Legacy aliases (admin pages still reference these) === */
   --font-playfair: var(--font-dm-serif), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
   --font-lato: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;

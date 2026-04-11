@@ -39,7 +39,7 @@ export default function Landing() {
       <Navbar />
 
       {/* ── Section 1: Hero ── */}
-      <section className="relative h-[100svh] w-full overflow-hidden">
+      <section className="relative min-h-[100svh] w-full overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600"
           alt="Golden farm landscape at Bobo's Farm"
@@ -51,9 +51,9 @@ export default function Landing() {
         {/* Bottom gradient — light, no dark overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#F8F7F4] via-[#F8F7F4]/60 to-transparent" style={{ top: '60%' }} />
 
-        <div className="relative z-10 flex flex-col justify-end h-full pb-24 md:pb-32 px-6 md:px-12 lg:px-20">
+        <div className="relative z-10 flex flex-col justify-end min-h-[100svh] pb-24 md:pb-32 px-6 md:px-12 lg:px-20">
           <motion.div {...fadeUp} className="max-w-[1200px] mx-auto w-full">
-            <h1 className="font-serif text-4xl md:text-6xl text-[#1A1208] leading-[1.1] tracking-[-0.01em]">
+            <h1 className="font-[family-name:var(--font-logo)] italic text-5xl md:text-7xl text-[#1A1208] leading-[1.1] tracking-[0.02em]">
               Bobo&apos;s Farm
             </h1>
             <p className="mt-2 text-sm font-sans text-[#8C8478] tracking-[0.15em] uppercase">
