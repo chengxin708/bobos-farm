@@ -74,7 +74,7 @@ export default function Navbar() {
 
         {/* Centered logo */}
         <Link href="/" className="no-underline flex flex-col items-center leading-none">
-          <span className="font-[family-name:var(--font-logo)] text-lg font-normal text-off-black tracking-[0.01em]">
+          <span className="font-[family-name:var(--font-logo)] text-lg font-semibold text-off-black tracking-[0.01em]">
             Bobo&apos;s Farm
           </span>
           <span className="font-serif text-[10px] text-off-black/50 tracking-[0.05em]">
@@ -121,7 +121,7 @@ export default function Navbar() {
       <div className="hidden md:flex items-center justify-between h-16 px-8 lg:px-16">
         {/* Logo */}
         <Link href="/" className="no-underline shrink-0 flex flex-col leading-none">
-          <span className="font-[family-name:var(--font-logo)] text-xl font-normal text-off-black tracking-[0.01em]">
+          <span className="font-[family-name:var(--font-logo)] text-xl font-semibold text-off-black tracking-[0.01em]">
             Bobo&apos;s Farm
           </span>
           <span className="font-serif text-xs text-off-black/50 tracking-[0.05em]">

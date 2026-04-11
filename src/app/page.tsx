@@ -53,7 +53,7 @@ export default function Landing() {
 
         <div className="relative z-10 flex flex-col justify-end h-full pb-20 md:pb-24 px-6 md:px-12 lg:px-20">
           <motion.div {...fadeUp} className="max-w-[1200px] mx-auto w-full">
-            <h1 className="font-[family-name:var(--font-logo)] text-5xl md:text-7xl font-normal text-[#1A1208] leading-[1.1] tracking-[0.01em]">
+            <h1 className="font-[family-name:var(--font-logo)] text-5xl md:text-7xl font-semibold text-[#1A1208] leading-[1.1] tracking-[0.01em]">
               Bobo&apos;s Farm
             </h1>
             <p className="mt-1 font-serif text-lg md:text-xl text-[#1A1208]/60 tracking-[0.05em]">
