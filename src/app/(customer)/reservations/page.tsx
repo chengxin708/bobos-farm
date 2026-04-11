@@ -650,6 +650,20 @@ export default function ReservationsPage() {
             })}
           </div>
         )}
+
+        {/* Account section */}
+        <div className="mt-8 pt-6 border-t border-[#E8ECE4]">
+          <button
+            onClick={async () => {
+              const { signOut } = await import('next-auth/react')
+              await signOut({ redirect: false })
+              window.location.href = '/'
+            }}
+            className="w-full py-3 rounded-full border border-[#C4453A]/30 text-[#C4453A] text-sm font-medium bg-transparent cursor-pointer hover:bg-[#C4453A]/5 transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* ── Modify Bottom Sheet ─────────────────────────────── */}

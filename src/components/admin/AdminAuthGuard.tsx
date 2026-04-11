@@ -17,7 +17,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
     if (status === "loading") return
 
     if (status === "unauthenticated") {
-      router.replace("/login?callbackUrl=/admin/dashboard")
+      router.replace("/admin/login?callbackUrl=/admin/dashboard")
       return
     }
 

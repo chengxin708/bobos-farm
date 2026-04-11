@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -36,15 +36,7 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password')
       } else if (result?.ok) {
-        const session = await getSession()
-        const role = (session?.user as { role?: string })?.role
-        let target = '/'
-        if (callbackUrl !== '/') {
-          target = callbackUrl
-        } else if (role === 'ADMIN') {
-          target = '/admin/dashboard'
-        }
-        // Use window.location for cross-layout navigation (auth → customer/admin)
+        const target = callbackUrl !== '/' ? callbackUrl : '/'
         window.location.href = target
       }
     } catch {
