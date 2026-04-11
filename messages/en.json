@@ -87,22 +87,48 @@
       "bookVisit": "Book a Visit"
     },
     "story": {
-      "title": "From Our Farm to Your Table",
-      "description": "Nestled in New Paltz, Bobo's Farm is a gathering place where whole roasted lamb meets Mongolian yurts, farm-raised poultry meets homegrown vegetables, and every meal is a celebration worth sharing."
+      "title": "Escape to the Countryside",
+      "description": "Bo Jie's Farmhouse is a family restaurant specializing in Mongolian and Northeastern cuisine. Savor the signature roasted whole lamb or the iron pot stewed goose, all made with fresh, local ingredients. Enjoy a unique dining experience surrounded by nature."
     },
-    "experience": {
-      "title": "The Experience",
+    "facilities": {
+      "title": "What Awaits You",
       "lamb": {
         "title": "Whole Roasted Lamb",
-        "desc": "A 35-lb lamb slow-roasted with cumin and Sichuan spices. Feeds 8-15 guests — gloves provided."
+        "desc": "Signature 35-lb lamb slow-roasted to perfection. Feeds 8+ guests."
       },
       "yurt": {
         "title": "Yurt Dining",
-        "desc": "Three colorful Mongolian yurts nestled among the trees. Warm in winter, breezy in summer."
+        "desc": "Authentic Mongolian yurts for a unique private dining experience."
       },
-      "farm": {
-        "title": "Farm Walk",
-        "desc": "Meet our farm-raised geese and poultry, stroll through the garden, and see where your meal begins."
+      "mahjong": {
+        "title": "Mahjong Room",
+        "desc": "Private room to enjoy a game with friends and family after your meal."
+      },
+      "ktv": {
+        "title": "KTV",
+        "desc": "Sing your heart out in our private karaoke room."
+      },
+      "kids": {
+        "title": "Kids' Playground",
+        "desc": "Safe outdoor play area for children to enjoy while you dine."
+      },
+      "pets": {
+        "title": "Pet Garden",
+        "desc": "Bring your furry friends — pets are welcome in our outdoor area."
+      }
+    },
+    "booking": {
+      "title": "How to Reserve",
+      "advance": {
+        "title": "Book One Week Ahead",
+        "desc": "Please call to make a reservation at least one week in advance."
+      },
+      "group": {
+        "title": "Minimum 8 Guests",
+        "desc": "As a whole roast lamb is around 35 lbs, we suggest a minimum of eight guests."
+      },
+      "phone": {
+        "title": "Call Us"
       }
     },
     "cta": {
