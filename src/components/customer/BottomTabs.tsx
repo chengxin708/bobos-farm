@@ -26,7 +26,7 @@ export default function BottomTabs() {
 
   return (
     <nav
-      className="h-16 bg-[#F8F7F4] border-t border-[#E8ECE4] safe-area-bottom md:hidden"
+      className="h-16 bg-[#F8F7F4] border-t border-[#E8ECE4] safe-area-bottom lg:hidden"
       aria-label="Bottom navigation"
     >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2">

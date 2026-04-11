@@ -276,7 +276,7 @@ export default function ReservationsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between px-4 pt-6 pb-2">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-[#1A1208]">
+          <h1 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208]">
             {t('title')}
           </h1>
         </div>
