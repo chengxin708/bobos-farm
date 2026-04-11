@@ -69,6 +69,23 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* Google Map */}
+          <div className="w-full mt-2">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2949.8!2d-74.0878!3d41.7495!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89dd1f3e0e5e5e5d%3A0x0!2s891+Albany+Post+Rd%2C+New+Paltz%2C+NY+12561!5e0!3m2!1sen!2sus!4v1"
+              width="100%"
+              height="160"
+              style={{ border: 0, borderRadius: '12px' }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Bobo's Farm location"
+            />
+            <p className="text-xs text-[#F8F7F4]/50 mt-2">
+              891 Albany Post Rd, New Paltz, NY 12561
+            </p>
+          </div>
+
           {/* Legal + Copyright — stacked on mobile, right-aligned on desktop */}
           <div className="flex flex-col gap-3 md:items-end">
             <div className="flex items-center gap-1.5 text-xs text-[#F8F7F4]/50">
