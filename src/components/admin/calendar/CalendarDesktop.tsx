@@ -150,6 +150,7 @@ export default function CalendarDesktop() {
   const [weekBase, setWeekBase] = useState(today)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createModalDate, setCreateModalDate] = useState<string | undefined>(undefined)
+  const [createModalYurtId, setCreateModalYurtId] = useState<string | undefined>(undefined)
 
   // Redirect non-admin
   useEffect(() => {
@@ -325,7 +326,7 @@ export default function CalendarDesktop() {
           transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
           ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
         `}
-        onClick={() => { setCreateModalDate(dateStr); setShowCreateModal(true) }}
+        onClick={() => { setCreateModalDate(dateStr); setCreateModalYurtId(undefined); setShowCreateModal(true) }}
         title="Click to create reservation"
       >
         {/* Date number */}
@@ -480,12 +481,20 @@ export default function CalendarDesktop() {
                       )
                     }
 
-                    // Available cell
+                    // Available cell — click to create reservation with date + yurt prefill
                     return (
                       <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
-                        <div className="p-3 rounded-lg bg-[#5B8C3E]/5">
-                          <div className="text-[11px] text-[#5B8C3E] font-medium">{t('status.available')}</div>
-                        </div>
+                        <button
+                          onClick={() => {
+                            setCreateModalDate(dateStr)
+                            setCreateModalYurtId(yurt.id)
+                            setShowCreateModal(true)
+                          }}
+                          className="w-full p-3 rounded-lg bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/10 transition-colors cursor-pointer text-left group/avail"
+                          title="Click to create reservation"
+                        >
+                          <div className="text-[11px] text-[#5B8C3E] font-medium group-hover/avail:text-[#4A7A2D]">{t('status.available')}</div>
+                        </button>
                       </td>
                     )
                   })}
@@ -589,7 +598,7 @@ export default function CalendarDesktop() {
               {t('today')}
             </button>
             <button
-              onClick={() => { setCreateModalDate(undefined); setShowCreateModal(true) }}
+              onClick={() => { setCreateModalDate(undefined); setCreateModalYurtId(undefined); setShowCreateModal(true) }}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-[#6B7F5E] hover:bg-[#5A6E4F] transition-colors cursor-pointer"
             >
               <Plus size={14} />
@@ -630,6 +639,7 @@ export default function CalendarDesktop() {
         onClose={() => setShowCreateModal(false)}
         onCreated={() => { mutateReservations() }}
         defaultDate={createModalDate}
+        defaultYurtId={createModalYurtId}
       />
     </>
   )

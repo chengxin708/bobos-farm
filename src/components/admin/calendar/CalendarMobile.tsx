@@ -132,6 +132,7 @@ export default function CalendarMobile() {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(today))
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createYurtId, setCreateYurtId] = useState<string | undefined>(undefined)
 
   // Redirect non-admin
   useEffect(() => {
@@ -309,7 +310,7 @@ export default function CalendarMobile() {
             </button>
             </div>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => { setCreateYurtId(undefined); setShowCreateModal(true) }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
             >
               <CalendarPlus size={14} />
@@ -423,17 +424,21 @@ export default function CalendarMobile() {
               )
             }
 
-            // Available card
+            // Available card — tap to create reservation with date + yurt prefill
             return (
-              <div
+              <button
                 key={yurt.id}
-                className="bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3"
+                onClick={() => {
+                  setCreateYurtId(yurt.id)
+                  setShowCreateModal(true)
+                }}
+                className="w-full bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 text-left hover:border-[#6B7F5E]/40 hover:bg-[#6B7F5E]/[0.02] transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
-                  <span className="text-[13px] text-[#8A7E6B]">{t('available')}</span>
+                  <span className="text-[13px] text-[#6B7F5E]">{t('available')} — 点击预订</span>
                 </div>
-              </div>
+              </button>
             )
           })}
 
@@ -450,6 +455,7 @@ export default function CalendarMobile() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         defaultDate={selectedDateStr}
+        defaultYurtId={createYurtId}
         onCreated={() => {
           setShowCreateModal(false)
           mutateReservations()

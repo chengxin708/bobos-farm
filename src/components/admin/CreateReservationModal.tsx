@@ -16,6 +16,7 @@ interface CreateReservationModalProps {
   onClose: () => void
   onCreated: () => void
   defaultDate?: string
+  defaultYurtId?: string
 }
 
 const fetcher = (url: string) => fetch(url).then(r => {
@@ -28,12 +29,13 @@ export default function CreateReservationModal({
   onClose,
   onCreated,
   defaultDate,
+  defaultYurtId,
 }: CreateReservationModalProps) {
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [date, setDate] = useState(defaultDate || '')
-  const [yurtId, setYurtId] = useState('')
+  const [yurtId, setYurtId] = useState(defaultYurtId || '')
   const [guestCount, setGuestCount] = useState(1)
   const [specialRequests, setSpecialRequests] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -53,7 +55,7 @@ export default function CreateReservationModal({
       setGuestEmail('')
       setGuestPhone('')
       setDate(defaultDate || '')
-      setYurtId('')
+      setYurtId(defaultYurtId || '')
       setGuestCount(1)
       setSpecialRequests('')
       setError('')
@@ -65,7 +67,7 @@ export default function CreateReservationModal({
     } else {
       setVisible(false)
     }
-  }, [isOpen, defaultDate])
+  }, [isOpen, defaultDate, defaultYurtId])
 
   // Escape key to close
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -169,8 +171,8 @@ export default function CreateReservationModal({
                   color: '#2C2416',
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -193,8 +195,8 @@ export default function CreateReservationModal({
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -216,8 +218,8 @@ export default function CreateReservationModal({
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -239,8 +241,8 @@ export default function CreateReservationModal({
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -261,8 +263,8 @@ export default function CreateReservationModal({
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150 bg-white"
                 style={{ borderColor: '#E8E2D9', color: yurtId ? '#2C2416' : '#8A7E6B' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -292,8 +294,8 @@ export default function CreateReservationModal({
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -316,8 +318,8 @@ export default function CreateReservationModal({
                 className="px-3 py-2.5 rounded-lg border outline-none transition-all duration-150 resize-none"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#8B6914'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,105,20,0.15)'
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#E8E2D9'
@@ -351,7 +353,7 @@ export default function CreateReservationModal({
               type="submit"
               disabled={submitting}
               className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60 flex items-center gap-2"
-              style={{ backgroundColor: submitting ? '#A88B3D' : '#8B6914' }}
+              style={{ backgroundColor: submitting ? '#5A6E4F' : '#6B7F5E' }}
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
               {submitting ? '创建中...' : '创建预订'}
