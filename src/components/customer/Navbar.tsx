@@ -73,9 +73,12 @@ export default function Navbar() {
         <div className="w-16" />
 
         {/* Centered logo */}
-        <Link href="/" className="no-underline">
-          <span className="font-[family-name:var(--font-logo)] italic text-lg font-bold text-off-black tracking-[0.02em]">
+        <Link href="/" className="no-underline flex flex-col items-center leading-none">
+          <span className="font-[family-name:var(--font-logo)] text-lg font-normal text-off-black tracking-[0.01em]">
             Bobo&apos;s Farm
+          </span>
+          <span className="font-serif text-[10px] text-off-black/50 tracking-[0.05em]">
+            波姐农家乐
           </span>
         </Link>
 
@@ -117,9 +120,12 @@ export default function Navbar() {
       {/* ── Desktop top bar (md and above) ── */}
       <div className="hidden md:flex items-center justify-between h-16 px-8 lg:px-16">
         {/* Logo */}
-        <Link href="/" className="no-underline shrink-0">
-          <span className="font-[family-name:var(--font-logo)] italic text-xl font-bold text-off-black tracking-[0.02em]">
+        <Link href="/" className="no-underline shrink-0 flex flex-col leading-none">
+          <span className="font-[family-name:var(--font-logo)] text-xl font-normal text-off-black tracking-[0.01em]">
             Bobo&apos;s Farm
+          </span>
+          <span className="font-serif text-xs text-off-black/50 tracking-[0.05em]">
+            波姐农家乐
           </span>
         </Link>
 
