@@ -19,6 +19,10 @@ import {
   UtensilsCrossed,
   Check,
   User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -132,24 +136,144 @@ export default function ReservationsPage() {
     fetcher
   )
 
-  // Show inline login prompt instead of redirecting (keeps BottomTabs visible)
+  // Unauthenticated: show prompt + full-screen login modal
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginShowPw, setLoginShowPw] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoginError('')
+    setLoginLoading(true)
+    try {
+      const { signIn } = await import('next-auth/react')
+      const result = await signIn('credentials', {
+        email: loginEmail,
+        password: loginPassword,
+        redirect: false,
+      })
+      if (result?.error) {
+        setLoginError('Invalid email or password')
+      } else if (result?.ok) {
+        setShowLoginModal(false)
+        router.refresh()
+      }
+    } catch {
+      setLoginError('Something went wrong. Please try again.')
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
   if (sessionStatus === 'unauthenticated') {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-        <User size={48} className="text-[#6B7F5E] mb-4" strokeWidth={1.5} />
-        <h2 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208] mb-2">
-          {t('title')}
-        </h2>
-        <p className="text-sm text-[#8C8478] mb-6 max-w-[280px]">
-          Sign in to view and manage your reservations
-        </p>
-        <Link
-          href="/login?callbackUrl=%2Freservations"
-          className="bg-[#6B7F5E] text-white rounded-full px-8 py-3 text-base font-medium no-underline transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
-        >
-          Sign In
-        </Link>
-      </div>
+      <>
+        <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+          <User size={48} className="text-[#6B7F5E] mb-4" strokeWidth={1.5} />
+          <h2 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208] mb-2">
+            {t('title')}
+          </h2>
+          <p className="text-sm text-[#8C8478] mb-6 max-w-[280px]">
+            Sign in to view and manage your reservations
+          </p>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="bg-[#6B7F5E] text-white rounded-full px-8 py-3 text-base font-medium border-none cursor-pointer transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
+          >
+            Sign In
+          </button>
+        </div>
+
+        {/* Full-screen login modal */}
+        {showLoginModal && (
+          <div className="fixed inset-0 z-[100] bg-[#F8F7F4] flex flex-col overflow-y-auto">
+            {/* Close button */}
+            <div className="flex justify-end p-4">
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="w-10 h-10 rounded-full bg-transparent border border-[#E8ECE4] flex items-center justify-center cursor-pointer hover:bg-[#E8ECE4] transition-colors"
+              >
+                <X size={20} className="text-[#1A1208]" />
+              </button>
+            </div>
+
+            {/* Login form */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10">
+              <div className="w-full max-w-[400px]">
+                <h1 className="font-[family-name:var(--font-logo)] text-3xl font-semibold text-[#1A1208] text-center mb-1">
+                  Bobo&apos;s Farm
+                </h1>
+                <p className="text-sm text-[#8C8478] text-center mb-10">
+                  波姐农家乐
+                </p>
+
+                <h2 className="font-serif text-xl font-semibold text-[#1A1208] mb-6">
+                  Sign In
+                </h2>
+
+                {loginError && (
+                  <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm mb-4">
+                    {loginError}
+                  </div>
+                )}
+
+                <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                  <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+                    <Mail size={18} className="text-[#8C8478] shrink-0" />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-[#8C8478] text-[#1A1208]"
+                    />
+                  </div>
+
+                  <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
+                    <Lock size={18} className="text-[#8C8478] shrink-0" />
+                    <input
+                      type={loginShowPw ? 'text' : 'password'}
+                      placeholder="Password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-[#8C8478] text-[#1A1208]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLoginShowPw(!loginShowPw)}
+                      className="bg-transparent border-none p-0 cursor-pointer shrink-0"
+                    >
+                      {loginShowPw
+                        ? <Eye size={18} className="text-[#8C8478]" />
+                        : <EyeOff size={18} className="text-[#8C8478]" />}
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full h-[52px] rounded-full bg-[#6B7F5E] text-white text-base font-medium border-none cursor-pointer transition-all hover:bg-[#5A6E4F] active:scale-[0.97] disabled:opacity-50"
+                  >
+                    {loginLoading ? 'Signing in...' : 'Sign In'}
+                  </button>
+                </form>
+
+                <p className="text-sm text-[#8C8478] text-center mt-6">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/register" className="text-[#6B7F5E] font-medium no-underline">
+                    Sign Up
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     )
   }
 
