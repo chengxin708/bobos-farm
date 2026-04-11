@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
@@ -26,16 +26,8 @@ export default function AdminLoginPage() {
       if (result?.error) {
         setError('Invalid email or password')
       } else if (result?.ok) {
-        const session = await getSession()
-        const role = (session?.user as { role?: string })?.role
-        if (role !== 'ADMIN') {
-          // Sign out non-admin users
-          const { signOut } = await import('next-auth/react')
-          await signOut({ redirect: false })
-          setError('This account does not have admin access')
-        } else {
-          window.location.href = '/admin/dashboard'
-        }
+        // Middleware will verify ADMIN role on /admin/dashboard
+        window.location.href = '/admin/dashboard'
       }
     } catch {
       setError('Something went wrong')
