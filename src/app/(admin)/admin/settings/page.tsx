@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, FormEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
@@ -69,12 +69,60 @@ export default function Settings() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const saveSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Cleanup timer on unmount
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwSuccess, setPwSuccess] = useState(false)
+  const [pwError, setPwError] = useState<string | null>(null)
+  const pwSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (saveSuccessTimerRef.current) clearTimeout(saveSuccessTimerRef.current)
+      if (pwSuccessTimerRef.current) clearTimeout(pwSuccessTimerRef.current)
     }
   }, [])
+
+  const handlePasswordChange = useCallback(async (e: FormEvent) => {
+    e.preventDefault()
+    setPwError(null)
+    setPwSuccess(false)
+
+    if (newPassword !== confirmPassword) {
+      setPwError('New password and confirmation do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setPwError('New password must be at least 8 characters.')
+      return
+    }
+
+    setPwSaving(true)
+    try {
+      const res = await fetch('/api/users/me/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to update password')
+      }
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setPwSuccess(true)
+      if (pwSuccessTimerRef.current) clearTimeout(pwSuccessTimerRef.current)
+      pwSuccessTimerRef.current = setTimeout(() => setPwSuccess(false), 3000)
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : 'Failed to update password.')
+    } finally {
+      setPwSaving(false)
+    }
+  }, [currentPassword, newPassword, confirmPassword])
 
   const { data: settings, mutate } = useSWR<SystemSetting[]>('/api/settings', fetcher)
 
@@ -210,6 +258,72 @@ export default function Settings() {
             placeholder="123 Farm Road, Hudson Valley, NY"
           />
           <p className="text-xs text-[#8C8478] mt-1">Physical address of your business.</p>
+        </div>
+
+        {/* Password Change Section */}
+        <div className="border-t border-[#E8ECE4] pt-8 mt-4">
+          <h2 className="text-base font-semibold text-[#1A1208] font-serif">Change Password</h2>
+          <p className="text-sm text-[#8C8478] mt-1 mb-6">Update your account password.</p>
+
+          <form onSubmit={handlePasswordChange} className="space-y-5">
+            <div>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={e => { setCurrentPassword(e.target.value); setPwError(null) }}
+                className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm w-full max-w-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setPwError(null) }}
+                className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm w-full max-w-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-[#8C8478] mt-1">Must be at least 8 characters.</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setPwError(null) }}
+                className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm w-full max-w-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+
+            {pwError && (
+              <p className="text-sm text-[#DC3545] font-medium">{pwError}</p>
+            )}
+            {pwSuccess && (
+              <p className="text-sm text-[#6B7F5E] font-medium">Password updated successfully!</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={pwSaving || !currentPassword || !newPassword || !confirmPassword}
+              className={`bg-[#6B7F5E] text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                pwSaving || !currentPassword || !newPassword || !confirmPassword
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-[#5A6E4F]'
+              }`}
+            >
+              {pwSaving ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
         </div>
       </div>
     )
