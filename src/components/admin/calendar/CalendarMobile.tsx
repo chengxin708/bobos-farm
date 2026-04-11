@@ -5,9 +5,11 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
+import Link from 'next/link'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -129,6 +131,7 @@ export default function CalendarMobile() {
 
   const [weekStart, setWeekStart] = useState(() => getWeekStart(today))
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Redirect non-admin
   useEffect(() => {
@@ -156,7 +159,7 @@ export default function CalendarMobile() {
 
   const { data: yurts } = useSWR<Yurt[]>('/api/yurts', fetcher)
 
-  const { data: reservations, isLoading: loadingRes } = useSWR<Reservation[]>(
+  const { data: reservations, isLoading: loadingRes, mutate: mutateReservations } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${dateRange.start}&endDate=${dateRange.end}`,
     fetcher
   )
@@ -286,7 +289,9 @@ export default function CalendarMobile() {
         {/* ── Week Selector Header ────────────────────────── */}
         <div className="bg-white border-b border-[#E8ECE4] px-4 pt-3 pb-2">
           {/* Week navigation row */}
-          <div className="flex items-center justify-center gap-4 mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <div /> {/* spacer */}
+            <div className="flex items-center gap-4">
             <button
               onClick={prevWeek}
               className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
@@ -301,6 +306,14 @@ export default function CalendarMobile() {
               className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
             >
               <ChevronRight size={20} className="text-[#2C2416]" />
+            </button>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
+            >
+              <CalendarPlus size={14} />
+              新建
             </button>
           </div>
 
@@ -359,11 +372,12 @@ export default function CalendarMobile() {
             const isClosed = closedByDateYurt.get(selectedDateStr)?.has(yurt.id)
 
             if (res) {
-              // Booked card
+              // Booked card — tap to view reservation detail
               return (
-                <div
+                <Link
                   key={yurt.id}
-                  className="bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3"
+                  href={`/admin/reservations/${res.id}`}
+                  className="block bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 no-underline"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
@@ -387,7 +401,10 @@ export default function CalendarMobile() {
                       </p>
                     )}
                   </div>
-                </div>
+                  <span className="text-[11px] text-[#6B7F5E] mt-2 block">
+                    点击查看详情 &rarr;
+                  </span>
+                </Link>
               )
             }
 
@@ -428,6 +445,16 @@ export default function CalendarMobile() {
           )}
         </div>
       </div>
+
+      <CreateReservationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        defaultDate={selectedDateStr}
+        onCreated={() => {
+          setShowCreateModal(false)
+          mutateReservations()
+        }}
+      />
     </>
   )
 }

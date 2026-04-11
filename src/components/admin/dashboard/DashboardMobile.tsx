@@ -1,15 +1,20 @@
 'use client'
 
+import { useCallback } from 'react'
 import Link from 'next/link'
 import {
+  CalendarPlus,
   Clock4,
   TriangleAlert,
   Activity,
   Users,
   ChevronRight,
+  Check,
+  XCircle,
 } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
+import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import {
   useDashboardData,
   getGreeting,
@@ -30,20 +35,52 @@ export default function DashboardMobile() {
     statCards,
     expiringSoon,
     remindingSoon,
+    showCreateModal,
+    setShowCreateModal,
+    mutateAll,
     handleRemind,
   } = useDashboardData()
 
   const greeting = getGreeting()
+
+  const handleConfirmDeposit = useCallback(async (id: string) => {
+    if (!confirm('确认此定金？')) return
+    await fetch(`/api/reservations/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() }),
+    })
+    mutateAll()
+  }, [mutateAll])
+
+  const handleRejectDeposit = useCallback(async (id: string) => {
+    if (!confirm('拒绝此定金？')) return
+    await fetch(`/api/reservations/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'CANCELLED', depositStatus: 'REFUNDED' }),
+    })
+    mutateAll()
+  }, [mutateAll])
 
   return (
     <div className="flex flex-col min-h-full">
       <AdminTopBar title={`${greeting}${userName ? `，${userName}` : ''}`} />
 
       <div className="flex-1 overflow-auto px-4 pb-24">
-        {/* Date subtitle */}
-        <p className="text-[13px] mt-2 mb-4" style={{ color: '#8A7E6B' }}>
-          {formatTodayDate()}
-        </p>
+        {/* Date subtitle + Create button */}
+        <div className="flex items-center justify-between mt-2 mb-4">
+          <p className="text-[13px]" style={{ color: '#8A7E6B' }}>
+            {formatTodayDate()}
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#6B7F5E] text-white rounded-full text-sm font-medium cursor-pointer"
+          >
+            <CalendarPlus size={16} />
+            新建预订
+          </button>
+        </div>
 
         {/* Error Banner */}
         {hasError && (
@@ -153,25 +190,47 @@ export default function DashboardMobile() {
             </div>
             <div className="flex flex-col gap-2">
               {pendingDeposits?.slice(0, 5).map((res) => (
-                <Link
+                <div
                   key={res.id}
-                  href={`/admin/reservations/${res.id}`}
-                  className="rounded-xl p-4 flex items-center gap-3 no-underline"
+                  className="rounded-xl p-4 flex flex-col gap-3"
                   style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
                 >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF8E1' }}>
-                    <Clock4 size={16} style={{ color: '#8B6914' }} />
+                  <Link
+                    href={`/admin/reservations/${res.id}`}
+                    className="flex items-center gap-3 no-underline"
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF8E1' }}>
+                      <Clock4 size={16} style={{ color: '#8B6914' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[13px] font-semibold block truncate" style={{ color: '#2C2416' }}>
+                        {res.user.name || res.user.email}
+                      </span>
+                      <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
+                        {res.yurt.name} · {new Date(res.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <StatusBadge type="deposit" status="PENDING" label="待审核" />
+                  </Link>
+                  <div className="flex items-center gap-2 justify-end">
+                    <button
+                      onClick={() => handleRejectDeposit(res.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-colors"
+                      style={{ backgroundColor: '#FEF2F2', color: '#C4533A' }}
+                    >
+                      <XCircle size={13} />
+                      拒绝
+                    </button>
+                    <button
+                      onClick={() => handleConfirmDeposit(res.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-semibold cursor-pointer transition-colors"
+                      style={{ backgroundColor: '#E8F5E9', color: '#4A7C59' }}
+                    >
+                      <Check size={13} />
+                      确认
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[13px] font-semibold block truncate" style={{ color: '#2C2416' }}>
-                      {res.user.name || res.user.email}
-                    </span>
-                    <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
-                      {res.yurt.name} · {new Date(res.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <StatusBadge type="deposit" status="PENDING" label="待审核" />
-                </Link>
+                </div>
               ))}
             </div>
           </section>
@@ -276,6 +335,15 @@ export default function DashboardMobile() {
           )}
         </section>
       </div>
+
+      <CreateReservationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={() => {
+          setShowCreateModal(false)
+          mutateAll()
+        }}
+      />
     </div>
   )
 }
