@@ -35,10 +35,10 @@ export default function Landing() {
   const t = useTranslations('landing')
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] overscroll-none"
+    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]"
          style={{ height: '100dvh' }}>
-      <Navbar />
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="shrink-0"><Navbar /></div>
+      <div className="flex-1 overflow-y-auto overscroll-contain" id="main-scroll">
 
       {/* ── Section 1: Hero ── */}
       <section className="relative w-full overflow-hidden shrink-0" style={{ height: '100dvh' }}>
@@ -168,7 +168,7 @@ export default function Landing() {
 
       <Footer />
       </div>
-      <BottomTabs />
+      <div className="shrink-0 md:hidden"><BottomTabs /></div>
     </div>
   )
 }

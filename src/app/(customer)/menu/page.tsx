@@ -349,9 +349,9 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Page Header — fixed */}
-      <div className="flex flex-col items-center pt-6 pb-4 shrink-0">
+    <div className="flex flex-col bg-[#F8F7F4]">
+      {/* Page Header */}
+      <div className="flex flex-col items-center pt-6 pb-4">
         <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
         <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
       </div>
@@ -370,7 +370,7 @@ export default function MenuPage() {
           </div>
         </div>
       ) : (
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar shrink-0">
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar">
           {(categories ?? []).map((cat) => {
             const isActive = cat.id === resolvedTabId
             const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
@@ -395,8 +395,8 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Content — scrollable */}
-      <div className="flex-1 overflow-y-auto overscroll-contain flex flex-col pb-4">
+      {/* Content */}
+      <div className="flex flex-col pb-4">
         {/* Info Banner for Whole Lamb */}
         {activeCategoryName === 'Whole Lamb' && (
           <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">

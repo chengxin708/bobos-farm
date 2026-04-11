@@ -10,25 +10,24 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const isBooking = pathname.startsWith('/booking')
 
   if (isBooking) {
-    // Booking flow: full screen, no navbar/footer/tabs, frame locked
     return (
-      <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] overscroll-none touch-none"
+      <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]"
            style={{ height: '100dvh' }}>
-        <main className="flex-1 flex flex-col min-h-0 touch-auto">{children}</main>
+        <main className="flex-1 flex flex-col min-h-0">{children}</main>
       </div>
     )
   }
 
-  // App-like layout: navbar + tabs fixed, only content scrolls
   return (
-    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] overscroll-none"
+    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]"
          style={{ height: '100dvh' }}>
-      <Navbar />
-      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
+      <div className="shrink-0"><Navbar /></div>
+      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain"
+            id="main-scroll">
         {children}
         <Footer />
       </main>
-      <BottomTabs />
+      <div className="shrink-0 md:hidden"><BottomTabs /></div>
     </div>
   )
 }

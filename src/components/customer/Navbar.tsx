@@ -27,12 +27,14 @@ export default function Navbar() {
     : user?.email?.[0]?.toUpperCase() ?? '?'
 
   useEffect(() => {
+    const scrollEl = document.getElementById('main-scroll')
+    if (!scrollEl) return
     function handleScroll() {
-      setScrolled(window.scrollY > 10)
+      setScrolled(scrollEl!.scrollTop > 10)
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => scrollEl.removeEventListener('scroll', handleScroll)
   }, [])
 
   // Close dropdown on click outside
@@ -65,7 +67,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${bgClass}`}
+      className={`z-50 w-full transition-all duration-300 ${bgClass}`}
     >
       {/* ── Mobile top bar (below md) ── */}
       <div className="flex md:hidden items-center justify-between h-14 px-4">

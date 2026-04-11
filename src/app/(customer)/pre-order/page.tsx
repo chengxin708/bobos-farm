@@ -328,7 +328,7 @@ function PreOrderPage() {
     : null
 
   return (
-    <div className="flex flex-col flex-1 bg-[#F8F7F4] pb-4">
+    <div className="flex flex-col bg-[#F8F7F4] pb-4">
       {/* ── Header ────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 bg-[#F8F7F4] border-b border-[#F2EDE6]">
         {/* Title bar */}
