@@ -140,7 +140,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
             <button
               type="button"
@@ -211,7 +211,7 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
             <button
               type="button"

@@ -177,7 +177,7 @@ export default function SettingsPage() {
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="flex-1 bg-transparent outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
+                    className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
                     placeholder="Enter your name"
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function SettingsPage() {
                     type="email"
                     value={user?.email || ''}
                     disabled
-                    className="flex-1 bg-transparent outline-none text-base text-[#8C8478]"
+                    className="flex-1 bg-transparent border-none outline-none text-base text-[#8C8478]"
                   />
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
                     type="tel"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    className="flex-1 bg-transparent outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
+                    className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                       type={showCurrentPw ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={e => setCurrentPassword(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-base text-[#1A1208]"
+                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
                     />
                     <button onClick={() => setShowCurrentPw(!showCurrentPw)} className="bg-transparent border-none cursor-pointer p-1">
                       {showCurrentPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                       type={showNewPw ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-base text-[#1A1208]"
+                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
                     />
                     <button onClick={() => setShowNewPw(!showNewPw)} className="bg-transparent border-none cursor-pointer p-1">
                       {showNewPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
@@ -328,7 +328,7 @@ export default function SettingsPage() {
                       type={showConfirmPw ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-base text-[#1A1208]"
+                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
                     />
                     <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="bg-transparent border-none cursor-pointer p-1">
                       {showConfirmPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}

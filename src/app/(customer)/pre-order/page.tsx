@@ -402,7 +402,7 @@ function PreOrderPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className="flex-1 bg-transparent outline-none text-sm text-[#1A1208] placeholder:text-[#BFBFBF]"
+            className="flex-1 bg-transparent border-none outline-none text-sm text-[#1A1208] placeholder:text-[#BFBFBF]"
           />
           {searchTerm && (
             <button onClick={() => setSearchTerm('')} className="text-[#8C8478] bg-transparent border-none cursor-pointer p-0">

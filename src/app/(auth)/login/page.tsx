@@ -87,7 +87,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
+              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
             />
             <button
               type="button"

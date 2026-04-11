@@ -150,7 +150,7 @@ export default function BookingDetailsPage() {
                 placeholder={`${t('contactName')} *`}
                 aria-label={t('contactName')}
                 aria-invalid={touched.contactName && !!errors.contactName}
-                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
               />
             </div>
             {touched.contactName && errors.contactName && (
@@ -177,7 +177,7 @@ export default function BookingDetailsPage() {
                 placeholder={`${t('email')} *`}
                 aria-label={t('email')}
                 aria-invalid={touched.contactEmail && !!errors.contactEmail}
-                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
               />
             </div>
             {touched.contactEmail && errors.contactEmail && (
@@ -199,7 +199,7 @@ export default function BookingDetailsPage() {
                 onBlur={() => handleBlur('contactPhone')}
                 placeholder={`${t('phoneNumber')} (${tCommon('optional')})`}
                 aria-label={t('phoneNumber')}
-                className="flex-1 text-base bg-transparent outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
               />
             </div>
           </div>
