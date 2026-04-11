@@ -134,7 +134,7 @@ export default function ReservationsPage() {
   // Redirect unauthenticated users
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
-      router.push('/auth/login')
+      router.push('/login?callbackUrl=%2Freservations')
     }
   }, [sessionStatus, router])
 
