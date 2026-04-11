@@ -172,27 +172,27 @@ export default function SettingsPage() {
               {/* Full Name */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#1A1208]">{t('profile.fullName')}</label>
-                <div className="flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
-                    placeholder="Enter your name"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                  placeholder="Enter your name"
+                />
               </div>
 
               {/* Email (locked) */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#1A1208]">{t('profile.email')}</label>
-                <div className="flex items-center gap-3 h-[52px] px-4 rounded-xl border border-[#E8ECE4] bg-[#F8F7F4]">
-                  <Lock size={16} className="text-[#8C8478]" />
+                <div className="relative">
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
                   <input
                     type="email"
                     value={user?.email || ''}
                     disabled
-                    className="flex-1 bg-transparent border-none outline-none text-base text-[#8C8478]"
+                    style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                    className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-[#F8F7F4] text-[#8C8478]"
                   />
                 </div>
               </div>
@@ -200,15 +200,14 @@ export default function SettingsPage() {
               {/* Phone */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#1A1208]">{t('profile.phone')}</label>
-                <div className="flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208] placeholder:text-[#8C8478]"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                  placeholder="+1 (555) 123-4567"
+                />
               </div>
 
               {/* Language */}
@@ -281,14 +280,15 @@ export default function SettingsPage() {
                 {/* Current Password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#1A1208]">{t('password.currentPassword')}</label>
-                  <div className="flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
+                  <div className="relative">
                     <input
                       type={showCurrentPw ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={e => setCurrentPassword(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
+                      style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                      className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
-                    <button onClick={() => setShowCurrentPw(!showCurrentPw)} className="bg-transparent border-none cursor-pointer p-1">
+                    <button onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
                       {showCurrentPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
                     </button>
                   </div>
@@ -297,14 +297,15 @@ export default function SettingsPage() {
                 {/* New Password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#1A1208]">{t('password.newPassword')}</label>
-                  <div className="flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
+                  <div className="relative">
                     <input
                       type={showNewPw ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
+                      style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                      className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
-                    <button onClick={() => setShowNewPw(!showNewPw)} className="bg-transparent border-none cursor-pointer p-1">
+                    <button onClick={() => setShowNewPw(!showNewPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
                       {showNewPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
                     </button>
                   </div>
@@ -323,14 +324,15 @@ export default function SettingsPage() {
                 {/* Confirm Password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#1A1208]">{t('password.confirmNewPassword')}</label>
-                  <div className="flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
+                  <div className="relative">
                     <input
                       type={showConfirmPw ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-base text-[#1A1208]"
+                      style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                      className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
-                    <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="bg-transparent border-none cursor-pointer p-1">
+                    <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
                       {showConfirmPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
                     </button>
                   </div>

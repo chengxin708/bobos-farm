@@ -395,17 +395,18 @@ function PreOrderPage() {
 
       {/* ── Search Bar ────────────────────────────────────────── */}
       <div className="px-4 pt-3 pb-1">
-        <div className="flex items-center gap-2.5 h-11 px-3.5 bg-white rounded-full border border-[#E8E2D9] focus-within:border-[#6B7F5E] transition-colors">
-          <Search size={18} className="text-[#8C8478] shrink-0" />
+        <div className="relative">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-[#1A1208] placeholder:text-[#BFBFBF]"
+            style={{ border: '1px solid #E8E2D9', outline: 'none' }}
+            className="w-full h-11 rounded-full pl-10 pr-10 bg-white text-sm text-[#1A1208] placeholder:text-[#BFBFBF] focus:!border-[#6B7F5E] transition-colors"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="text-[#8C8478] bg-transparent border-none cursor-pointer p-0">
+            <button onClick={() => setSearchTerm('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8C8478] bg-transparent border-none cursor-pointer p-0">
               <X size={16} />
             </button>
           )}
@@ -593,7 +594,8 @@ function PreOrderPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t('kitchenNotesPlaceholder')}
-                    className="h-20 px-3.5 py-3 bg-[#F8F7F4] rounded-xl border border-[#E8E2D9] text-[13px] resize-none outline-none placeholder:text-[#BFBFBF] text-[#1A1208] focus:border-[#6B7F5E] transition-colors"
+                    style={{ border: '1px solid #E8E2D9', outline: 'none' }}
+                    className="h-20 px-3.5 py-3 bg-[#F8F7F4] rounded-xl text-[13px] resize-none placeholder:text-[#BFBFBF] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                   />
                 </div>
 

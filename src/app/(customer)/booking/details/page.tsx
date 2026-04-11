@@ -136,12 +136,8 @@ export default function BookingDetailsPage() {
 
           {/* Contact Name */}
           <div className="flex flex-col gap-1">
-            <div className={`relative flex items-center h-[52px] px-4 rounded-xl border transition-colors ${
-              touched.contactName && errors.contactName
-                ? 'border-[#C4453A]'
-                : 'border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20'
-            }`}>
-              <User size={18} className="text-[#8C8478] shrink-0 mr-3" />
+            <div className="relative">
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
               <input
                 type="text"
                 value={contactName}
@@ -150,7 +146,8 @@ export default function BookingDetailsPage() {
                 placeholder={`${t('contactName')} *`}
                 aria-label={t('contactName')}
                 aria-invalid={touched.contactName && !!errors.contactName}
-                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                style={{ border: touched.contactName && errors.contactName ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
             {touched.contactName && errors.contactName && (
@@ -163,12 +160,8 @@ export default function BookingDetailsPage() {
 
           {/* Email */}
           <div className="flex flex-col gap-1">
-            <div className={`relative flex items-center h-[52px] px-4 rounded-xl border transition-colors ${
-              touched.contactEmail && errors.contactEmail
-                ? 'border-[#C4453A]'
-                : 'border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20'
-            }`}>
-              <Mail size={18} className="text-[#8C8478] shrink-0 mr-3" />
+            <div className="relative">
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
               <input
                 type="email"
                 value={contactEmail}
@@ -177,7 +170,8 @@ export default function BookingDetailsPage() {
                 placeholder={`${t('email')} *`}
                 aria-label={t('email')}
                 aria-invalid={touched.contactEmail && !!errors.contactEmail}
-                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                style={{ border: touched.contactEmail && errors.contactEmail ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
             {touched.contactEmail && errors.contactEmail && (
@@ -190,8 +184,8 @@ export default function BookingDetailsPage() {
 
           {/* Phone */}
           <div className="flex flex-col gap-1">
-            <div className="relative flex items-center h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] focus-within:ring-1 focus-within:ring-[#6B7F5E]/20 transition-colors">
-              <Phone size={18} className="text-[#8C8478] shrink-0 mr-3" />
+            <div className="relative">
+              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
               <input
                 type="tel"
                 value={contactPhone}
@@ -199,7 +193,8 @@ export default function BookingDetailsPage() {
                 onBlur={() => handleBlur('contactPhone')}
                 placeholder={`${t('phoneNumber')} (${tCommon('optional')})`}
                 aria-label={t('phoneNumber')}
-                className="flex-1 text-base bg-transparent border-none outline-none text-[#1A1208] placeholder:text-[#8C8478]"
+                style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
           </div>
@@ -259,7 +254,8 @@ export default function BookingDetailsPage() {
               onChange={(e) => setSpecialRequests(e.target.value)}
               placeholder={t('specialRequestsPlaceholder')}
               aria-label={t('specialRequests')}
-              className="min-h-[100px] px-4 py-3 rounded-xl border border-[#E8ECE4] focus:border-[#6B7F5E] focus:ring-1 focus:ring-[#6B7F5E]/20 text-base text-[#1A1208] resize-none outline-none placeholder:text-[#8C8478] bg-transparent transition-colors"
+              style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+              className="min-h-[100px] px-4 py-3 rounded-xl text-base text-[#1A1208] resize-none placeholder:text-[#8C8478] bg-white focus:!border-[#6B7F5E] transition-colors"
             />
           </div>
         </div>

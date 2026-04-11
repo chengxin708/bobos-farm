@@ -78,42 +78,40 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Email */}
-        <div>
-          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <Mail size={18} className="text-[#1A1208]/30 shrink-0" />
-            <input
-              type="email"
-              placeholder={t('emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
-            />
-          </div>
+        <div className="relative">
+          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1A1208]/30 pointer-events-none" />
+          <input
+            type="email"
+            placeholder={t('emailPlaceholder')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+            className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#1A1208]/30 text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+          />
         </div>
 
         {/* Password */}
-        <div>
-          <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-            <Lock size={18} className="text-[#1A1208]/30 shrink-0" />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder={t('passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#1A1208]/30 text-[#1A1208]"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="bg-transparent border-none p-0 cursor-pointer shrink-0"
-            >
-              {showPassword
-                ? <Eye size={18} className="text-[#1A1208]/30" />
-                : <EyeOff size={18} className="text-[#1A1208]/30" />}
-            </button>
-          </div>
+        <div className="relative">
+          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1A1208]/30 pointer-events-none" />
+          <input
+            type={showPassword ? 'text' : 'password'}
+            placeholder={t('passwordPlaceholder')}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+            className="w-full h-[52px] rounded-xl pl-11 pr-12 text-sm bg-white placeholder:text-[#1A1208]/30 text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none p-0 cursor-pointer"
+          >
+            {showPassword
+              ? <Eye size={18} className="text-[#1A1208]/30" />
+              : <EyeOff size={18} className="text-[#1A1208]/30" />}
+          </button>
         </div>
 
         {/* Remember me + Forgot password */}
