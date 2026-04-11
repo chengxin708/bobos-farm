@@ -18,6 +18,7 @@ import {
   ChevronRight,
   UtensilsCrossed,
   Check,
+  User,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -131,12 +132,26 @@ export default function ReservationsPage() {
     fetcher
   )
 
-  // Redirect unauthenticated users
-  useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.push('/login?callbackUrl=%2Freservations')
-    }
-  }, [sessionStatus, router])
+  // Show inline login prompt instead of redirecting (keeps BottomTabs visible)
+  if (sessionStatus === 'unauthenticated') {
+    return (
+      <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+        <User size={48} className="text-[#6B7F5E] mb-4" strokeWidth={1.5} />
+        <h2 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208] mb-2">
+          {t('title')}
+        </h2>
+        <p className="text-sm text-[#8C8478] mb-6 max-w-[280px]">
+          Sign in to view and manage your reservations
+        </p>
+        <Link
+          href="/login?callbackUrl=%2Freservations"
+          className="bg-[#6B7F5E] text-white rounded-full px-8 py-3 text-base font-medium no-underline transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
+        >
+          Sign In
+        </Link>
+      </div>
+    )
+  }
 
   // Sort: upcoming first (by date asc), then past (by date desc)
   const { upcoming, past } = useMemo(() => {

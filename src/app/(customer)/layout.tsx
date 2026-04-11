@@ -11,14 +11,14 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   if (isBooking) {
     return (
-      <div className="h-[100dvh] flex flex-col bg-[#F8F7F4]">
+      <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
         {children}
       </div>
     )
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-[#F8F7F4]">
+    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
       <Navbar />
       <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain" id="main-scroll">
         {children}
