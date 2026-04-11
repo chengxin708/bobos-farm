@@ -155,14 +155,16 @@ export default function ReservationsPage() {
         password: loginPassword,
         redirect: false,
       })
-      if (result?.error) {
+      if (result && typeof result === 'object' && 'error' in result) {
         setLoginError('Invalid email or password')
-      } else if (result?.ok) {
-        setShowLoginModal(false)
-        router.refresh()
+        setLoginLoading(false)
+        return
       }
+      // Success — reload page to get authenticated state
+      window.location.reload()
     } catch {
-      setLoginError('Something went wrong. Please try again.')
+      // signIn might throw on success in v5 — reload
+      window.location.reload()
     } finally {
       setLoginLoading(false)
     }

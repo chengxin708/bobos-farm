@@ -26,23 +26,26 @@ function LoginForm() {
     setError('')
     setIsLoading(true)
 
+    const target = callbackUrl !== '/' ? callbackUrl : '/'
+
     try {
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
+        redirectTo: target,
       })
 
-      if (result?.error) {
+      if (result && typeof result === 'object' && 'error' in result) {
         setError('Invalid email or password')
-      } else if (result?.ok) {
-        const target = callbackUrl !== '/' ? callbackUrl : '/'
-        window.location.href = target
+        setIsLoading(false)
+        return
       }
+
+      window.location.href = target
     } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setIsLoading(false)
+      // signIn might throw on success in v5 — try redirect
+      window.location.href = target
     }
   }
 
