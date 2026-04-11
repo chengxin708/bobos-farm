@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Lock, UtensilsCrossed, Info, Clock, X } from 'lucide-react'
+import { UtensilsCrossed, Info, Clock, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ---------------------------------------------------------------------------
@@ -106,52 +106,6 @@ function ListSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
-// Auth overlay
-// ---------------------------------------------------------------------------
-
-function AuthOverlay() {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8F7F4CC] backdrop-blur-sm">
-      <div
-        className="w-[340px] max-w-[90vw] bg-[#F8F7F4] rounded-2xl flex flex-col items-center gap-5 px-8 py-9"
-        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04)' }}
-      >
-        {/* Lock icon */}
-        <div className="w-16 h-16 rounded-full bg-[#E8ECE4] flex items-center justify-center">
-          <Lock size={28} color="#6B7F5E" strokeWidth={1.8} />
-        </div>
-
-        {/* Title */}
-        <h2 className="font-serif text-xl font-bold text-[#1A1208] text-center">
-          Sign in to view our menu
-        </h2>
-
-        {/* Description */}
-        <p className="text-sm text-[#8C8478] text-center leading-relaxed whitespace-pre-line">
-          {"Create an account or sign in to explore\nour authentic dishes and place orders"}
-        </p>
-
-        {/* Sign In button */}
-        <Link
-          href="/login"
-          className="w-full h-[46px] rounded-full bg-[#6B7F5E] text-white text-sm font-semibold flex items-center justify-center no-underline transition-colors duration-200 hover:bg-[#5A6D4F]"
-        >
-          Sign In
-        </Link>
-
-        {/* Create Account button */}
-        <Link
-          href="/register"
-          className="w-full h-[46px] rounded-full bg-transparent border border-[#6B7F5E]/30 text-[#1A1208] text-sm font-semibold flex items-center justify-center no-underline transition-colors duration-200 hover:border-[#6B7F5E]/50"
-        >
-          Create Account
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Menu Item Row
 // ---------------------------------------------------------------------------
 
@@ -163,6 +117,7 @@ function MenuItemRow({
   secondaryName,
   description,
   t,
+  isAuthenticated,
 }: {
   item: MenuItem
   isExpanded: boolean
@@ -171,6 +126,7 @@ function MenuItemRow({
   secondaryName: string
   description: string
   t: ReturnType<typeof useTranslations<'menu'>>
+  isAuthenticated: boolean
 }) {
   return (
     <div className="border-b border-[#F2EDE6]">
@@ -211,9 +167,19 @@ function MenuItemRow({
             </span>
           )}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-[#C47D52] font-medium text-[14px]">
-              ${Math.round(item.price)}
-            </span>
+            {isAuthenticated ? (
+              <span className="text-[#C47D52] font-medium text-[14px]">
+                ${Math.round(item.price)}
+              </span>
+            ) : (
+              <Link
+                href="/login?callbackUrl=/menu"
+                className="text-[#6B7F5E] text-[13px] no-underline hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Sign in to reveal price
+              </Link>
+            )}
             {item.tags && item.tags.length > 0 && item.tags.map((tag) => {
               const label = TAG_LABELS[tag]
               if (!label) return null
@@ -384,94 +350,88 @@ export default function MenuPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F8F7F4]">
-      {/* Auth overlay for unauthenticated users */}
-      {authStatus !== 'loading' && !isAuthenticated && <AuthOverlay />}
+      {/* Page Header */}
+      <div className="flex flex-col items-center pt-6 pb-4">
+        <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
+        <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
+      </div>
 
-      {/* Blurred background content when not authenticated */}
-      <div className={!isAuthenticated && authStatus !== 'loading' ? 'opacity-20 pointer-events-none' : ''}>
-
-        {/* Page Header */}
-        <div className="flex flex-col items-center pt-6 pb-4">
-          <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
-          <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
-        </div>
-
-        {/* Category Tabs */}
-        {catLoading ? (
-          <TabsSkeleton />
-        ) : !categories || categories.length === 0 ? (
-          <div className="flex items-center justify-center py-20 px-4">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <UtensilsCrossed size={32} color="#8C8478" strokeWidth={1.5} />
-              <h3 className="font-serif text-lg text-[#1A1208]">Menu Coming Soon</h3>
-              <p className="text-sm text-[#8C8478] max-w-[280px]">
-                Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.
-              </p>
-            </div>
+      {/* Category Tabs */}
+      {catLoading ? (
+        <TabsSkeleton />
+      ) : !categories || categories.length === 0 ? (
+        <div className="flex items-center justify-center py-20 px-4">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <UtensilsCrossed size={32} color="#8C8478" strokeWidth={1.5} />
+            <h3 className="font-serif text-lg text-[#1A1208]">Menu Coming Soon</h3>
+            <p className="text-sm text-[#8C8478] max-w-[280px]">
+              Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.
+            </p>
           </div>
-        ) : (
-          <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar">
-            {(categories ?? []).map((cat) => {
-              const isActive = cat.id === resolvedTabId
-              const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setActiveTabId(cat.id)
-                    setExpandedItemId(null)
-                  }}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
-                    isActive
-                      ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
-                      : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
-                  }`}
-                >
-                  <span>{emoji}</span>
-                  <span>{categoryLabel(cat)}</span>
-                </button>
-              )
-            })}
+        </div>
+      ) : (
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar">
+          {(categories ?? []).map((cat) => {
+            const isActive = cat.id === resolvedTabId
+            const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setActiveTabId(cat.id)
+                  setExpandedItemId(null)
+                }}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
+                  isActive
+                    ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
+                    : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
+                }`}
+              >
+                <span>{emoji}</span>
+                <span>{categoryLabel(cat)}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex flex-col pb-16">
+        {/* Info Banner for Whole Lamb */}
+        {activeCategoryName === 'Whole Lamb' && (
+          <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
+            <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
+            <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
+              {t('lambNotice')}
+            </p>
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex flex-col pb-16">
-          {/* Info Banner for Whole Lamb */}
-          {activeCategoryName === 'Whole Lamb' && (
-            <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
-              <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
-              <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
-                {t('lambNotice')}
-              </p>
-            </div>
-          )}
-
-          {/* Item List */}
-          {itemsLoading || catLoading ? (
-            <ListSkeleton />
-          ) : !items || items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
-              <p className="text-[#8C8478] text-sm">No items in this category</p>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              {items.map((item) => (
-                <MenuItemRow
-                  key={item.id}
-                  item={item}
-                  isExpanded={expandedItemId === item.id}
-                  onToggle={() => toggleExpanded(item.id)}
-                  displayName={itemDisplayName(item)}
-                  secondaryName={itemSecondaryName(item)}
-                  description={itemDescription(item)}
-                  t={t}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Item List */}
+        {itemsLoading || catLoading ? (
+          <ListSkeleton />
+        ) : !items || items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
+            <p className="text-[#8C8478] text-sm">No items in this category</p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {items.map((item) => (
+              <MenuItemRow
+                key={item.id}
+                item={item}
+                isExpanded={expandedItemId === item.id}
+                onToggle={() => toggleExpanded(item.id)}
+                displayName={itemDisplayName(item)}
+                secondaryName={itemSecondaryName(item)}
+                description={itemDescription(item)}
+                t={t}
+                isAuthenticated={isAuthenticated}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
