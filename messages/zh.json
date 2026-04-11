@@ -867,6 +867,12 @@
         "avgPartySize": "平均人数",
         "cancelRate": "取消率"
       },
+      "orderStats": {
+        "totalOrders": "总订单数",
+        "preOrderRevenue": "预订收入",
+        "submitted": "已提交",
+        "locked": "已锁定"
+      },
       "charts": {
         "reservationTrend": "预订趋势",
         "reservations": "预订",
@@ -875,7 +881,13 @@
         "last7Months": "近7个月",
         "popularDishes": "热门菜品",
         "totalOrdersPerItem": "各菜品总订单数",
-        "yurtUtilization": "营地使用率"
+        "yurtUtilization": "营地使用率",
+        "monthlyOrders": "月度订单",
+        "last6Months": "近6个月",
+        "orderCount": "订单数",
+        "orderRevenue": "收入",
+        "categoryBreakdown": "分类统计",
+        "noOrderData": "暂无订单数据"
       }
     }
   }

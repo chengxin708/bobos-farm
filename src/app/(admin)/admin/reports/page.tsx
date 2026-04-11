@@ -4,10 +4,10 @@ import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import TopBar from '@/components/admin/TopBar'
-import { Download, Calendar, DollarSign, Users, TrendingDown, ClipboardList } from 'lucide-react'
+import { Download, Calendar, DollarSign, Users, TrendingDown, ClipboardList, ShoppingCart, Lock, Send } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -24,6 +24,18 @@ interface Reservation {
   createdAt: string
   user: { id: string; name: string | null; email: string }
   yurt: { id: string; name: string; capacity: number }
+}
+
+interface OrderReportData {
+  topItems: { nameEn: string; nameZh: string | null; totalQuantity: number; totalRevenue: number }[]
+  stats: {
+    totalOrders: number
+    submittedOrders: number
+    lockedOrders: number
+    totalRevenue: number
+  }
+  monthlyOrders: { month: string; count: number; revenue: number }[]
+  categoryBreakdown: { category: string; itemCount: number; revenue: number }[]
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -91,6 +103,7 @@ function getDateRange(range: TimeRange): { start: string; end: string; label: st
 }
 
 const YURT_COLORS = ['#8B6914', '#5B8C3E', '#C4724B', '#3B82F6', '#9333EA']
+const CATEGORY_COLORS = ['#8B6914', '#C4724B', '#5B8C3E', '#3B82F6', '#9333EA', '#D97706', '#7C3AED', '#059669']
 
 // ── Component ──────────────────────────────────────────────────────
 
@@ -103,6 +116,12 @@ export default function Reports() {
   // Fetch all reservations in range
   const { data: reservations } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${dateRange.start}&endDate=${dateRange.end}`,
+    fetcher
+  )
+
+  // Fetch order analytics
+  const { data: orderData } = useSWR<OrderReportData>(
+    '/api/reports/orders',
     fetcher
   )
 
@@ -194,6 +213,29 @@ export default function Reports() {
 
   const totalUtilization = yurtData.reduce((s, y) => s + y.value, 0)
 
+  // ── Popular dishes data (for bar chart) ─────────────────────────
+
+  const popularDishesData = useMemo(() => {
+    if (!orderData?.topItems) return []
+    return orderData.topItems.map(item => ({
+      name: item.nameEn.length > 20 ? item.nameEn.slice(0, 18) + '...' : item.nameEn,
+      quantity: item.totalQuantity,
+      revenue: item.totalRevenue,
+    }))
+  }, [orderData])
+
+  // ── Category pie data ───────────────────────────────────────────
+
+  const categoryPieData = useMemo(() => {
+    if (!orderData?.categoryBreakdown) return []
+    return orderData.categoryBreakdown.map((cat, i) => ({
+      name: cat.category,
+      value: cat.revenue,
+      itemCount: cat.itemCount,
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+    }))
+  }, [orderData])
+
   const timeRanges: { key: TimeRange; label: string }[] = [
     { key: 'week', label: t('timeRanges.thisWeek') },
     { key: 'month', label: t('timeRanges.thisMonth') },
@@ -208,6 +250,13 @@ export default function Reports() {
     { value: String(stats.avgParty), label: t('stats.avgPartySize'), bg: 'bg-[#C4724B]', icon: Users },
     { value: `${stats.cancelRate}%`, label: t('stats.cancelRate'), bg: 'bg-brown', icon: TrendingDown },
   ]
+
+  const orderStatCards = orderData ? [
+    { value: String(orderData.stats.totalOrders), label: t('orderStats.totalOrders'), bg: 'bg-amber', icon: ClipboardList },
+    { value: `$${orderData.stats.totalRevenue.toLocaleString()}`, label: t('orderStats.preOrderRevenue'), bg: 'bg-green', icon: ShoppingCart },
+    { value: String(orderData.stats.submittedOrders), label: t('orderStats.submitted'), bg: 'bg-[#C4724B]', icon: Send },
+    { value: String(orderData.stats.lockedOrders), label: t('orderStats.locked'), bg: 'bg-brown', icon: Lock },
+  ] : []
 
   // ── CSV export ──────────────────────────────────────────────────
 
@@ -265,7 +314,7 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Stat Cards */}
+        {/* Reservation Stat Cards */}
         <div className="flex gap-4">
           {statCards.map((card) => (
             <div key={card.label} className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm flex items-center gap-4">
@@ -279,6 +328,23 @@ export default function Reports() {
             </div>
           ))}
         </div>
+
+        {/* Order Stat Cards */}
+        {orderStatCards.length > 0 && (
+          <div className="flex gap-4">
+            {orderStatCards.map((card) => (
+              <div key={card.label} className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm flex items-center gap-4">
+                <div className={`w-10 h-10 ${card.bg} rounded-full flex items-center justify-center text-white`}>
+                  <card.icon size={20} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-brown">{card.value}</div>
+                  <div className="text-xs text-gray-text">{card.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Charts Row 1 */}
         <div className="flex gap-5">
@@ -325,19 +391,45 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Charts Row 2 */}
+        {/* Charts Row 2 — Popular Dishes + Yurt Utilization */}
         <div className="flex gap-5">
-          {/* Popular Dishes */}
+          {/* Popular Dishes — horizontal bar chart */}
           <div className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-brown">{t('charts.popularDishes')}</span>
+              <span className="text-xs text-gray-text">{t('charts.totalOrdersPerItem')}</span>
             </div>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ClipboardList size={32} className="text-beige mb-3" />
-              <p className="text-sm text-gray-text">
-                Pre-order data will appear here once orders are placed
-              </p>
-            </div>
+            {popularDishesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={Math.max(200, popularDishesData.length * 36)}>
+                <BarChart data={popularDishesData} layout="vertical" margin={{ left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E8DFD0" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#8A8A8A' }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={120}
+                    tick={{ fontSize: 11, fill: '#8A8A8A' }}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      const v = Number(value ?? 0)
+                      return [
+                        name === 'quantity' ? `${v} ordered` : `$${v.toFixed(2)}`,
+                        name === 'quantity' ? 'Quantity' : 'Revenue',
+                      ]
+                    }}
+                  />
+                  <Bar dataKey="quantity" fill="#B8860B" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <ClipboardList size={32} className="text-beige mb-3" />
+                <p className="text-sm text-gray-text">
+                  {t('charts.noOrderData')}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Yurt Utilization */}
@@ -379,6 +471,85 @@ export default function Reports() {
               ) : (
                 <div className="w-full text-center py-8 text-sm text-gray-text">
                   No reservation data available for this period
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Row 3 — Monthly Orders Trend + Category Breakdown */}
+        <div className="flex gap-5">
+          {/* Monthly Orders Trend */}
+          <div className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-bold text-brown">{t('charts.monthlyOrders')}</span>
+              <span className="text-xs text-gray-text">{t('charts.last6Months')}</span>
+            </div>
+            {orderData?.monthlyOrders && orderData.monthlyOrders.some(m => m.count > 0) ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={orderData.monthlyOrders}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E8DFD0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8A8A8A' }} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#8A8A8A' }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#8A8A8A' }} />
+                  <Tooltip />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11 }}
+                    formatter={(value: string) =>
+                      value === 'count' ? t('charts.orderCount') : t('charts.orderRevenue')
+                    }
+                  />
+                  <Line yAxisId="left" type="monotone" dataKey="count" stroke="#8B6914" strokeWidth={2} dot={{ fill: '#8B6914', r: 3 }} name="count" />
+                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#C4724B" strokeWidth={2} dot={{ fill: '#C4724B', r: 3 }} name="revenue" />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <ClipboardList size={32} className="text-beige mb-3" />
+                <p className="text-sm text-gray-text">{t('charts.noOrderData')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Category Breakdown */}
+          <div className="flex-1 bg-white rounded-xl p-5 border border-beige shadow-sm">
+            <span className="text-sm font-bold text-brown block mb-4">{t('charts.categoryBreakdown')}</span>
+            <div className="flex items-center gap-6">
+              {categoryPieData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width={180} height={180}>
+                    <PieChart>
+                      <Pie
+                        data={categoryPieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        dataKey="value"
+                        strokeWidth={0}
+                      >
+                        {categoryPieData.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [`$${Number(value ?? 0).toFixed(2)}`, 'Revenue']}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-2">
+                    {categoryPieData.map((c) => (
+                      <div key={c.name} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: c.color }} />
+                        <span className="text-xs text-brown">{c.name}</span>
+                        <span className="text-xs font-semibold text-brown">${c.value.toFixed(0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="w-full text-center py-8 text-sm text-gray-text">
+                  {t('charts.noOrderData')}
                 </div>
               )}
             </div>

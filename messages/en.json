@@ -867,6 +867,12 @@
         "avgPartySize": "Avg Party Size",
         "cancelRate": "Cancel Rate"
       },
+      "orderStats": {
+        "totalOrders": "Total Orders",
+        "preOrderRevenue": "Pre-order Revenue",
+        "submitted": "Submitted",
+        "locked": "Locked"
+      },
       "charts": {
         "reservationTrend": "Reservation Trend",
         "reservations": "Reservations",
@@ -875,7 +881,13 @@
         "last7Months": "Last 7 months",
         "popularDishes": "Popular Dishes",
         "totalOrdersPerItem": "Total orders per item",
-        "yurtUtilization": "Yurt Utilization"
+        "yurtUtilization": "Yurt Utilization",
+        "monthlyOrders": "Monthly Orders",
+        "last6Months": "Last 6 months",
+        "orderCount": "Order Count",
+        "orderRevenue": "Revenue",
+        "categoryBreakdown": "Category Breakdown",
+        "noOrderData": "No order data available yet"
       }
     }
   }
