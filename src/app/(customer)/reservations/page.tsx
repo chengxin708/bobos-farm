@@ -221,32 +221,34 @@ export default function ReservationsPage() {
                 )}
 
                 <form onSubmit={handleLogin} className="flex flex-col gap-4">
-                  <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-                    <Mail size={18} className="text-[#8C8478] shrink-0" />
+                  <div className="relative">
+                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
                     <input
                       type="email"
                       placeholder="Email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
-                      className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-[#8C8478] text-[#1A1208]"
+                      style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                      className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white placeholder:text-[#8C8478] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                   </div>
 
-                  <div className="flex items-center h-[52px] rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] transition-colors px-4 gap-3 bg-white">
-                    <Lock size={18} className="text-[#8C8478] shrink-0" />
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
                     <input
                       type={loginShowPw ? 'text' : 'password'}
                       placeholder="Password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-[#8C8478] text-[#1A1208]"
+                      style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                      className="w-full h-[52px] rounded-xl pl-11 pr-12 text-base bg-white placeholder:text-[#8C8478] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setLoginShowPw(!loginShowPw)}
-                      className="bg-transparent border-none p-0 cursor-pointer shrink-0"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none p-0 cursor-pointer"
                     >
                       {loginShowPw
                         ? <Eye size={18} className="text-[#8C8478]" />
