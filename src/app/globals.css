@@ -55,6 +55,13 @@
 
 @layer base {
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  input, textarea, select {
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+  }
   html, body, #__next {
     height: 100%;
     overflow: hidden;
