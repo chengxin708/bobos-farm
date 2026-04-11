@@ -272,7 +272,7 @@ export default function ReservationsPage() {
   // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-0 flex-1 bg-[#FAF9F6] overflow-auto pb-24">
+    <div className="flex flex-col flex-1 bg-[#F8F7F4] pb-4">
       {/* Page Header */}
       <div className="flex items-center justify-between px-4 pt-6 pb-2">
         <div>

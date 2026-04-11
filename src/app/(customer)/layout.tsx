@@ -19,11 +19,15 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     )
   }
 
+  // App-like layout: navbar + tabs fixed, only content scrolls
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] overscroll-none"
+         style={{ height: '100dvh' }}>
       <Navbar />
-      <main className="flex-1 flex flex-col pb-20 md:pb-0">{children}</main>
-      <Footer />
+      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
+        {children}
+        <Footer />
+      </main>
       <BottomTabs />
     </div>
   )

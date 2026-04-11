@@ -35,11 +35,13 @@ export default function Landing() {
   const t = useTranslations('landing')
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F7F4]">
+    <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] overscroll-none"
+         style={{ height: '100dvh' }}>
       <Navbar />
+      <div className="flex-1 overflow-y-auto overscroll-contain">
 
       {/* ── Section 1: Hero ── */}
-      <section className="relative w-full overflow-hidden -mt-14 md:-mt-16" style={{ height: '100dvh' }}>
+      <section className="relative w-full overflow-hidden shrink-0" style={{ height: '100dvh' }}>
         <Image
           src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600"
           alt="Golden farm landscape at Bobo's Farm"
@@ -164,10 +166,8 @@ export default function Landing() {
         </div>
       </motion.section>
 
-      {/* Bottom spacing before footer */}
-      <div className="pb-16 md:hidden" />
-
       <Footer />
+      </div>
       <BottomTabs />
     </div>
   )

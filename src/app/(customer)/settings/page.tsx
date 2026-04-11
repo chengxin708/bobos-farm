@@ -141,7 +141,7 @@ export default function SettingsPage() {
   const [langOpen, setLangOpen] = useState(false)
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8F7F4]">
+    <div className="flex flex-col flex-1 bg-[#F8F7F4] pb-4">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-6 pb-2 max-w-[560px] mx-auto w-full">
         <button

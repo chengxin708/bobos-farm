@@ -349,7 +349,7 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col bg-[#F8F7F4] overflow-hidden" style={{ height: 'calc(100dvh - 64px)' }}>
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Page Header — fixed */}
       <div className="flex flex-col items-center pt-6 pb-4 shrink-0">
         <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
