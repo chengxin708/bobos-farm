@@ -55,7 +55,7 @@
 
 @layer base {
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
+  html, body, #__next {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
