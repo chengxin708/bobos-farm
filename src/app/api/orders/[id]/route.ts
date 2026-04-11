@@ -15,6 +15,35 @@ const orderUpdateSchema = z.object({
   notes: z.string().optional(),
 });
 
+/** Shared include for returning full order details */
+const orderIncludeAll = {
+  items: {
+    include: {
+      menuItem: {
+        select: {
+          id: true,
+          nameEn: true,
+          nameZh: true,
+          price: true,
+          imageUrl: true,
+        },
+      },
+    },
+  },
+  reservation: {
+    select: {
+      id: true,
+      userId: true,
+      date: true,
+      guestCount: true,
+      yurt: { select: { id: true, name: true } },
+      user: {
+        select: { id: true, name: true, email: true, phone: true },
+      },
+    },
+  },
+} as const;
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -120,30 +149,10 @@ export async function PATCH(
           );
         }
 
-        const orderInclude = {
-            items: {
-              include: {
-                menuItem: {
-                  select: { id: true, nameEn: true, nameZh: true, price: true, imageUrl: true },
-                },
-              },
-            },
-            reservation: {
-              select: {
-                id: true,
-                userId: true,
-                date: true,
-                guestCount: true,
-                yurt: { select: { id: true, name: true } },
-                user: { select: { id: true, name: true, email: true, phone: true } },
-              },
-            },
-          };
-
         const updated = await prisma.order.update({
           where: { id },
           data: { status: "LOCKED", lockedAt: new Date() },
-          include: orderInclude,
+          include: orderIncludeAll,
         });
         return NextResponse.json(updated);
       }
@@ -156,33 +165,191 @@ export async function PATCH(
           );
         }
 
-        const orderInclude = {
-            items: {
-              include: {
-                menuItem: {
-                  select: { id: true, nameEn: true, nameZh: true, price: true, imageUrl: true },
-                },
-              },
-            },
-            reservation: {
-              select: {
-                id: true,
-                userId: true,
-                date: true,
-                guestCount: true,
-                yurt: { select: { id: true, name: true } },
-                user: { select: { id: true, name: true, email: true, phone: true } },
-              },
-            },
-          };
-
         const updated = await prisma.order.update({
           where: { id },
           data: { status: "SUBMITTED", lockedAt: null },
-          include: orderInclude,
+          include: orderIncludeAll,
         });
         return NextResponse.json(updated);
       }
+    }
+
+    // ── Admin bill action ─────────────────────────────────────
+    if (body.action === "bill") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+          items: {
+            include: {
+              menuItem: { select: { price: true } },
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      if (order.status !== "SUBMITTED" && order.status !== "LOCKED") {
+        return NextResponse.json(
+          { error: "Only submitted or locked orders can be billed" },
+          { status: 400 }
+        );
+      }
+
+      const discount = Number(body.discount ?? 0);
+      const subtotal = order.items.reduce(
+        (sum, item) => sum + item.quantity * item.menuItem.price,
+        0
+      );
+      const finalTotal = Math.max(subtotal - discount, 0);
+
+      const updated = await prisma.order.update({
+        where: { id },
+        data: {
+          status: "BILLED",
+          discount,
+          finalTotal,
+        },
+        include: orderIncludeAll,
+      });
+      return NextResponse.json(updated);
+    }
+
+    // ── Admin pay action ──────────────────────────────────────
+    if (body.action === "pay") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const order = await prisma.order.findUnique({
+        where: { id },
+        select: { id: true, status: true, reservationId: true },
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      if (order.status !== "BILLED") {
+        return NextResponse.json(
+          { error: "Only billed orders can be marked as paid" },
+          { status: 400 }
+        );
+      }
+
+      if (!body.paymentMethod) {
+        return NextResponse.json(
+          { error: "paymentMethod is required" },
+          { status: 400 }
+        );
+      }
+
+      const updated = await prisma.$transaction(async (tx) => {
+        const updatedOrder = await tx.order.update({
+          where: { id },
+          data: {
+            status: "PAID",
+            paidAt: new Date(),
+            paymentMethod: body.paymentMethod,
+          },
+          include: orderIncludeAll,
+        });
+
+        // Mark reservation as completed
+        await tx.reservation.update({
+          where: { id: order.reservationId },
+          data: { status: "COMPLETED" },
+        });
+
+        return updatedOrder;
+      });
+
+      return NextResponse.json(updated);
+    }
+
+    // ── Admin edit action ─────────────────────────────────────
+    if (body.action === "admin-edit") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const adminEditSchema = z.object({
+        action: z.literal("admin-edit"),
+        items: z
+          .array(
+            z.object({
+              menuItemId: z.string().min(1),
+              quantity: z.number().int().min(1),
+            })
+          )
+          .min(1, "At least one item is required"),
+        notes: z.string().optional(),
+      });
+
+      const parsed = adminEditSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsed.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      const order = await prisma.order.findUnique({
+        where: { id },
+        select: { id: true, status: true, notes: true },
+      });
+
+      if (!order) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      const editableStatuses = ["SUBMITTED", "LOCKED"];
+      if (!editableStatuses.includes(order.status)) {
+        return NextResponse.json(
+          { error: "Order cannot be edited in its current status" },
+          { status: 400 }
+        );
+      }
+
+      const { items: editItems, notes: editNotes } = parsed.data;
+
+      const menuItemIds = editItems.map((i) => i.menuItemId);
+      const menuItems = await prisma.menuItem.findMany({
+        where: { id: { in: menuItemIds } },
+        select: { id: true, price: true },
+      });
+
+      const priceMap = new Map(menuItems.map((mi) => [mi.id, mi.price]));
+      const estimatedTotal = editItems.reduce((sum, item) => {
+        const price = priceMap.get(item.menuItemId) || 0;
+        return sum + price * item.quantity;
+      }, 0);
+
+      const updated = await prisma.$transaction(async (tx) => {
+        await tx.orderItem.deleteMany({ where: { orderId: id } });
+        return tx.order.update({
+          where: { id },
+          data: {
+            notes: editNotes !== undefined ? (editNotes || null) : order.notes,
+            estimatedTotal,
+            items: {
+              create: editItems.map((item) => ({
+                menuItemId: item.menuItemId,
+                quantity: item.quantity,
+              })),
+            },
+          },
+          include: orderIncludeAll,
+        });
+      });
+
+      return NextResponse.json(updated);
     }
 
     // ── Customer item update ──────────────────────────────────

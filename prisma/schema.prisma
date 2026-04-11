@@ -43,6 +43,8 @@ enum OrderStatus {
   DRAFT
   SUBMITTED
   LOCKED
+  BILLED
+  PAID
 }
 
 // ============ USERS ============
@@ -175,6 +177,10 @@ model Order {
   status         OrderStatus @default(DRAFT)
   notes          String?
   estimatedTotal Float?
+  finalTotal     Decimal?
+  discount       Decimal?    @default(0)
+  paymentMethod  String?
+  paidAt         DateTime?
   submittedAt    DateTime?
   lockedAt       DateTime?
   createdAt      DateTime    @default(now())

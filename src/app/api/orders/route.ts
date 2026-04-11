@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     // Filter by status
     const status = searchParams.get("status");
-    const validStatuses = ["DRAFT", "SUBMITTED", "LOCKED"];
+    const validStatuses = ["DRAFT", "SUBMITTED", "LOCKED", "BILLED", "PAID"];
     if (status && validStatuses.includes(status)) {
       where.status = status;
     }
@@ -108,7 +108,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (reservation.userId !== session.user.id) {
+    const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+
+    if (!isAdmin && reservation.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Reservation does not belong to you" },
         { status: 403 }
