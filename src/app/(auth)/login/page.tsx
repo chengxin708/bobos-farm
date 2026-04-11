@@ -38,14 +38,14 @@ function LoginForm() {
       } else if (result?.ok) {
         const session = await getSession()
         const role = (session?.user as { role?: string })?.role
-        router.refresh()
+        let target = '/'
         if (callbackUrl !== '/') {
-          router.push(callbackUrl)
+          target = callbackUrl
         } else if (role === 'ADMIN') {
-          router.push('/admin/dashboard')
-        } else {
-          router.push('/')
+          target = '/admin/dashboard'
         }
+        // Use window.location for cross-layout navigation (auth → customer/admin)
+        window.location.href = target
       }
     } catch {
       setError('Something went wrong. Please try again.')

@@ -94,11 +94,9 @@ export default function RegisterPage() {
       })
 
       if (result?.ok) {
-        router.refresh()
-        router.push('/')
+        window.location.href = '/'
       } else {
-        // Registration succeeded but auto-login failed — send to login page
-        router.push('/login')
+        window.location.href = '/login'
       }
     } catch {
       setError('Something went wrong. Please try again.')
