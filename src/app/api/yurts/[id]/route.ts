@@ -114,3 +114,52 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session || (session.user as { role?: string }).role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const existing = await prisma.yurt.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Yurt not found" }, { status: 404 });
+    }
+
+    // Check for active reservations
+    const activeReservations = await prisma.reservation.count({
+      where: {
+        yurtId: id,
+        status: { notIn: ["CANCELLED", "EXPIRED"] },
+      },
+    });
+
+    if (activeReservations > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete yurt with ${activeReservations} active reservation(s). Cancel or complete them first.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete related availability entries first
+    await prisma.yurtAvailability.deleteMany({ where: { yurtId: id } });
+
+    // Delete the yurt
+    await prisma.yurt.delete({ where: { id } });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Failed to delete yurt:", error);
+    return NextResponse.json(
+      { error: "Failed to delete yurt" },
+      { status: 500 }
+    );
+  }
+}

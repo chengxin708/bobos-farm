@@ -217,3 +217,13 @@ html { scroll-behavior: smooth; }
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ============================================================
+   Print styles — hide chrome, show only report content
+   ============================================================ */
+@media print {
+  nav, header, aside, .no-print { display: none !important; }
+  main { overflow: visible !important; }
+  body { background: white !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+

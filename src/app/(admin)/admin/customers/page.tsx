@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import TopBar from '@/components/admin/TopBar'
+import AdminTopBar from '@/components/admin/AdminTopBar'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { Search, X, Save } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -61,8 +62,8 @@ const fetcher = (url: string) => fetch(url).then(r => {
 })
 
 const AVATAR_COLORS = [
-  'bg-[#C4724B]', 'bg-amber', 'bg-green', 'bg-blue', 'bg-[#DC3545]',
-  'bg-[#8B6914]', 'bg-[#5B8C3E]', 'bg-[#3B82F6]', 'bg-[#9333EA]', 'bg-[#EC4899]',
+  'bg-[#C4724B]', 'bg-[#6B7F5E]', 'bg-[#2980B9]', 'bg-[#8C8478]', 'bg-[#DC3545]',
+  'bg-[#C47D52]', 'bg-[#5B8C3E]', 'bg-[#3B82F6]', 'bg-[#9333EA]', 'bg-[#EC4899]',
 ]
 
 function getInitials(name: string | null, email: string): string {
@@ -81,8 +82,8 @@ function getAvatarColor(id: string): string {
 }
 
 function computeTag(totalVisits: number): { tag: string; tagColor: string } {
-  if (totalVisits >= 10) return { tag: 'VIP', tagColor: 'bg-[#FEF3CD] text-amber' }
-  if (totalVisits >= 1) return { tag: 'Regular', tagColor: 'bg-light-blue-bg text-blue' }
+  if (totalVisits >= 10) return { tag: 'VIP', tagColor: 'bg-[#F0EDE4] text-[#6B7F5E]' }
+  if (totalVisits >= 1) return { tag: 'Regular', tagColor: 'bg-[#EBF0E8] text-[#6B7F5E]' }
   return { tag: '', tagColor: '' }
 }
 
@@ -96,6 +97,7 @@ type FilterType = 'all' | 'vip' | 'regular' | 'blocked'
 
 export default function Customers() {
   const t = useTranslations('admin.customers')
+  const isMobile = useIsMobile()
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -251,43 +253,45 @@ export default function Customers() {
   ]
 
   const STATUS_COLORS: Record<string, string> = {
-    Confirmed: 'text-green',
-    Completed: 'text-[#4A4A4A]',
+    Confirmed: 'text-[#6B7F5E]',
+    Completed: 'text-[#1A1208]',
     Cancelled: 'text-[#DC3545]',
-    Pending: 'text-[#D4A017]',
-    Submitted: 'text-[#C4724B]',
+    Pending: 'text-[#C47D52]',
+    Submitted: 'text-[#C47D52]',
   }
 
   return (
     <>
-      <TopBar title={t('title')} />
-      <div className="flex-1 flex bg-cream-bg overflow-hidden">
+      {isMobile && <AdminTopBar title={t('title')} />}
+      <div className="flex-1 flex overflow-hidden">
         {/* Left - Table */}
-        <div className="flex-1 p-6 overflow-auto flex flex-col gap-5">
+        <div className="flex-1 p-4 md:p-6 overflow-auto flex flex-col gap-4">
           {/* Search & Filters */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-white border border-beige rounded-md px-3 py-2 gap-2 flex-1 max-w-md">
-              <Search size={16} className="text-gray-text" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center bg-white border border-[#E8ECE4] rounded-lg px-3 py-2 gap-2 flex-1 w-full sm:max-w-md">
+              <Search size={16} className="text-[#8C8478]" />
               <input
                 type="text"
                 placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="text-sm bg-transparent outline-none flex-1"
+                className="text-sm bg-transparent outline-none flex-1 text-[#1A1208] placeholder:text-[#8C8478]"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')}>
-                  <X size={14} className="text-gray-text" />
+                  <X size={14} className="text-[#8C8478]" />
                 </button>
               )}
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {filterKeys.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setActiveFilter(f.key)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md border ${
-                    activeFilter === f.key ? 'bg-amber text-white border-amber' : 'bg-white text-brown border-beige'
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+                    activeFilter === f.key
+                      ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
+                      : 'bg-white text-[#1A1208] border-[#E8ECE4] hover:bg-[#F8F7F4]'
                   }`}
                 >
                   {f.label}
@@ -299,75 +303,77 @@ export default function Customers() {
           {/* Table */}
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-sm text-gray-text">Loading customers...</div>
+              <div className="text-sm text-[#8C8478]">Loading customers...</div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-beige overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-beige">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.name')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.email')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.phone')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.visits')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.lastVisit')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.tag')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-text">{t('table.action')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-text">
-                        No customers found
-                      </td>
+            <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-[#E8ECE4]">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.name')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.email')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.phone')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.visits')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.lastVisit')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.tag')}</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[#8C8478] uppercase">{t('table.action')}</th>
                     </tr>
-                  )}
-                  {filtered.map((c) => (
-                    <tr
-                      key={c.id}
-                      className={`border-b border-beige last:border-b-0 hover:bg-cream-bg/50 cursor-pointer ${
-                        selectedId === c.id && detailOpen ? 'bg-amber-light-bg' : ''
-                      }`}
-                      onClick={() => handleRowClick(c.id)}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 ${c.initialsColor} rounded-full flex items-center justify-center text-white text-xs font-semibold`}>
-                            {c.initials}
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-[#8C8478]">
+                          No customers found
+                        </td>
+                      </tr>
+                    )}
+                    {filtered.map((c) => (
+                      <tr
+                        key={c.id}
+                        className={`border-b border-[#E8ECE4] last:border-b-0 hover:bg-[#F8F7F4] cursor-pointer transition-colors ${
+                          selectedId === c.id && detailOpen ? 'bg-[#EBF0E8]' : ''
+                        }`}
+                        onClick={() => handleRowClick(c.id)}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 ${c.initialsColor} rounded-full flex items-center justify-center text-white text-xs font-semibold`}>
+                              {c.initials}
+                            </div>
+                            <span className="text-sm font-medium text-[#1A1208]">{c.name}</span>
                           </div>
-                          <span className="text-sm font-medium text-brown">{c.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-text">{c.email}</td>
-                      <td className="px-4 py-3 text-sm text-brown">{c.phone}</td>
-                      <td className="px-4 py-3 text-sm text-brown">{c.totalVisits}</td>
-                      <td className="px-4 py-3 text-sm text-brown">{c.lastVisit}</td>
-                      <td className="px-4 py-3">
-                        {c.tag && (
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${c.tagColor}`}>
-                            {c.tag}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="text-xs font-semibold text-amber">{t('actions.view')}</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#8C8478]">{c.email}</td>
+                        <td className="px-4 py-3 text-sm text-[#1A1208]">{c.phone}</td>
+                        <td className="px-4 py-3 text-sm text-[#1A1208]">{c.totalVisits}</td>
+                        <td className="px-4 py-3 text-sm text-[#1A1208]">{c.lastVisit}</td>
+                        <td className="px-4 py-3">
+                          {c.tag && (
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${c.tagColor}`}>
+                              {c.tag}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button className="text-xs font-semibold text-[#6B7F5E] hover:underline">{t('actions.view')}</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
 
         {/* Right - Customer Detail */}
         {detailOpen && selectedCustomer && (
-          <div className="w-[380px] bg-white border-l border-beige p-5 flex flex-col gap-4 overflow-auto shrink-0">
+          <div className="w-[380px] bg-white border-l border-[#E8ECE4] p-5 flex flex-col gap-4 overflow-auto shrink-0">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-brown">{t('detail.title')}</span>
-              <button onClick={() => setDetailOpen(false)}>
-                <X size={16} className="text-gray-text" />
+              <span className="text-sm font-bold text-[#1A1208]">{t('detail.title')}</span>
+              <button onClick={() => setDetailOpen(false)} className="p-1 rounded-lg hover:bg-[#F8F7F4] transition-colors">
+                <X size={16} className="text-[#8C8478]" />
               </button>
             </div>
 
@@ -375,10 +381,10 @@ export default function Customers() {
               <div className={`w-14 h-14 ${selectedCustomer.initialsColor} rounded-full flex items-center justify-center text-white text-xl font-bold`}>
                 {selectedCustomer.initials}
               </div>
-              <span className="text-base font-bold text-brown">{selectedCustomer.name}</span>
-              <span className="text-xs text-gray-text">{selectedCustomer.email}</span>
-              <span className="text-xs text-gray-text">{selectedCustomer.phone}</span>
-              <span className="text-xs text-gray-text">{t('detail.memberSince')} {selectedCustomer.memberSince}</span>
+              <span className="text-base font-bold text-[#1A1208]">{selectedCustomer.name}</span>
+              <span className="text-xs text-[#8C8478]">{selectedCustomer.email}</span>
+              <span className="text-xs text-[#8C8478]">{selectedCustomer.phone}</span>
+              <span className="text-xs text-[#8C8478]">{t('detail.memberSince')} {selectedCustomer.memberSince}</span>
             </div>
 
             {selectedCustomer.tag && (
@@ -396,25 +402,25 @@ export default function Customers() {
                 { value: `${selectedCustomer.cancelRate}%`, label: t('detail.stats.cancelRate') },
                 { value: String(selectedCustomer.cancelCount), label: t('detail.stats.noShows') },
               ].map((s) => (
-                <div key={s.label} className="bg-cream-bg rounded-lg p-2">
-                  <div className="text-base font-bold text-brown">{s.value}</div>
-                  <div className="text-[10px] text-gray-text">{s.label}</div>
+                <div key={s.label} className="bg-[#F8F7F4] rounded-lg p-2">
+                  <div className="text-base font-bold text-[#1A1208]">{s.value}</div>
+                  <div className="text-[10px] text-[#8C8478]">{s.label}</div>
                 </div>
               ))}
             </div>
 
             <div>
-              <span className="text-xs font-bold text-brown">{t('detail.reservationHistory')}</span>
+              <span className="text-xs font-bold text-[#1A1208]">{t('detail.reservationHistory')}</span>
               <div className="mt-2 flex flex-col gap-2">
                 {selectedCustomer.reservations.slice(0, 5).map((r, i) => (
                   <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-brown">{r.date}</span>
-                    <span className="text-gray-text">{r.yurtName}</span>
-                    <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-gray-text'}`}>{r.status}</span>
+                    <span className="text-[#1A1208]">{r.date}</span>
+                    <span className="text-[#8C8478]">{r.yurtName}</span>
+                    <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
                   </div>
                 ))}
                 {selectedCustomer.reservations.length > 5 && (
-                  <button className="text-xs text-amber font-semibold mt-1">
+                  <button className="text-xs text-[#6B7F5E] font-semibold mt-1 hover:underline">
                     {t('detail.showMore', { count: selectedCustomer.reservations.length - 5 })}
                   </button>
                 )}
@@ -422,9 +428,9 @@ export default function Customers() {
             </div>
 
             <div>
-              <span className="text-xs font-bold text-brown">{t('detail.adminNotes')}</span>
+              <span className="text-xs font-bold text-[#1A1208]">{t('detail.adminNotes')}</span>
               <textarea
-                className="w-full border border-beige rounded-md p-2 text-xs h-20 resize-none mt-2"
+                className="w-full border border-[#E8ECE4] rounded-lg p-2 text-xs h-20 resize-none mt-2 text-[#1A1208] placeholder:text-[#8C8478] focus:outline-none focus:border-[#6B7F5E] transition-colors"
                 value={notes[selectedCustomer.id] ?? ''}
                 onChange={e => setNotes(prev => ({ ...prev, [selectedCustomer.id]: e.target.value }))}
                 placeholder="Add notes about this customer..."
@@ -432,7 +438,7 @@ export default function Customers() {
               <button
                 onClick={() => handleSaveNote(selectedCustomer.id)}
                 disabled={noteSaving}
-                className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-md mt-2 ${noteSaving ? 'bg-green/60 cursor-not-allowed' : 'bg-green'}`}
+                className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-lg mt-2 transition-colors ${noteSaving ? 'bg-[#6B7F5E]/60 cursor-not-allowed' : 'bg-[#6B7F5E] hover:bg-[#5A6E4F]'}`}
               >
                 <Save size={12} /> {noteSaved ? 'Saved!' : noteSaving ? 'Saving...' : t('detail.saveNote')}
               </button>

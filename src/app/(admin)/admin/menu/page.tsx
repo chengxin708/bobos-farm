@@ -5,9 +5,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import TopBar from '@/components/admin/TopBar'
+import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
-  Plus, Pencil, Trash2, X, Upload, GripVertical, Image as ImageIcon,
+  Plus, Pencil, Trash2, X, Upload, Image as ImageIcon,
 } from 'lucide-react'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -393,6 +393,29 @@ export default function MenuManagement() {
     }
   }
 
+  const handleDeleteCategory = async (cat: MenuCategory) => {
+    if ((cat._count?.items ?? 0) > 0) {
+      alert('此分类下仍有菜品，请先移除或删除所有菜品后再删除分类。')
+      return
+    }
+    if (!confirm('确定要删除此分类吗？此操作不可撤销。')) return
+    try {
+      const res = await fetch(`/api/menu/categories?id=${cat.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Failed to delete category')
+        return
+      }
+      if (activeCategoryId === cat.id) {
+        setActiveCategoryId(null)
+      }
+      await mutateCategories()
+      showSuccess('Category deleted.')
+    } catch {
+      alert('Failed to delete category')
+    }
+  }
+
   const activeCategory = categories.find(c => c.id === activeCategoryId)
   const itemCount = activeCategory?._count?.items ?? items.length
 
@@ -400,9 +423,9 @@ export default function MenuManagement() {
   if (status === 'loading') {
     return (
       <>
-        <TopBar title={t('title')} />
-        <div className="flex-1 flex items-center justify-center bg-cream-bg">
-          <div className="text-gray-text">Loading...</div>
+        <AdminTopBar title={t('title')} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-[#8C8478]">Loading...</div>
         </div>
       </>
     )
@@ -410,29 +433,29 @@ export default function MenuManagement() {
 
   return (
     <>
-      <TopBar title={t('title')} />
-      <div className="flex-1 flex bg-cream-bg overflow-hidden relative">
-        {/* ── Category Sidebar ── */}
-        <div className="w-[180px] bg-white border-r border-beige p-4 flex flex-col gap-1 shrink-0">
-          <div className="text-sm font-bold text-brown mb-2">{t('categories')}</div>
+      <AdminTopBar title={t('title')} />
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* ── Category Sidebar (desktop) / Horizontal pills (mobile) ── */}
+        <div className="hidden md:flex w-[180px] bg-white border-r border-[#E8ECE4] p-4 flex-col gap-1 shrink-0">
+          <div className="text-sm font-bold text-[#3D2B1F] mb-2">{t('categories')}</div>
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className={`group flex items-center gap-1 text-sm px-3 py-2 rounded-md cursor-pointer transition-colors ${
+              className={`group flex items-center gap-1 text-sm px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                 activeCategoryId === cat.id
-                  ? 'bg-amber text-white font-semibold'
-                  : 'text-brown hover:bg-cream-bg'
+                  ? 'bg-[#6B7F5E] text-white font-semibold'
+                  : 'text-[#3D2B1F] hover:bg-[#F8F7F4]'
               }`}
               onClick={() => setActiveCategoryId(cat.id)}
             >
               <span className="flex-1 truncate">{cat.nameEn}</span>
-              <span className={`text-xs ${activeCategoryId === cat.id ? 'text-white/70' : 'text-gray-text'}`}>
+              <span className={`text-xs ${activeCategoryId === cat.id ? 'text-white/70' : 'text-[#8C8478]'}`}>
                 {cat._count?.items ?? 0}
               </span>
               <button
                 onClick={(e) => { e.stopPropagation(); openEditCategory(cat) }}
                 className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 ${
-                  activeCategoryId === cat.id ? 'text-white/80 hover:text-white' : 'text-gray-text hover:text-brown'
+                  activeCategoryId === cat.id ? 'text-white/80 hover:text-white' : 'text-[#8C8478] hover:text-[#3D2B1F]'
                 }`}
                 title={t('editCategory')}
               >
@@ -442,17 +465,39 @@ export default function MenuManagement() {
           ))}
           <button
             onClick={openAddCategory}
-            className="text-left text-sm text-amber font-medium px-3 py-2 mt-2 hover:bg-amber-light-bg rounded-md transition-colors"
+            className="text-left text-sm text-[#6B7F5E] font-medium px-3 py-2 mt-2 hover:bg-[#EAF2E3] rounded-lg transition-colors"
           >
             {t('addCategory')}
           </button>
         </div>
+        {/* Mobile: horizontal scrolling category pills */}
+        <div className="flex md:hidden overflow-x-auto gap-2 px-4 py-3 border-b border-[#E8ECE4] shrink-0">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategoryId(cat.id)}
+              className={`shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                activeCategoryId === cat.id
+                  ? 'bg-[#6B7F5E] text-white'
+                  : 'bg-transparent text-[#8C8478] border border-[#E8ECE4]'
+              }`}
+            >
+              {cat.nameEn} <span className="text-xs opacity-70">{cat._count?.items ?? 0}</span>
+            </button>
+          ))}
+          <button
+            onClick={openAddCategory}
+            className="shrink-0 px-4 py-2 text-sm font-medium rounded-full text-[#6B7F5E] border border-dashed border-[#6B7F5E]/40"
+          >
+            + {t('addCategory')}
+          </button>
+        </div>
 
         {/* ── Main Content ── */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
           {/* Success Message */}
           {successMsg && (
-            <div className="bg-[#EAF2E3] border border-[#5B8C3E]/30 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between mb-4">
+            <div className="bg-[#EAF2E3] border border-[#6B7F5E]/20 text-[#2D5016] rounded-lg px-4 py-3 text-sm font-medium flex items-center justify-between mb-4">
               {successMsg}
               <button onClick={() => setSuccessMsg(null)} className="text-[#2D5016]/60 hover:text-[#2D5016]">
                 <span className="text-lg leading-none">&times;</span>
@@ -460,29 +505,29 @@ export default function MenuManagement() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-lg font-bold text-brown font-playfair">
+              <span className="text-lg font-bold text-[#3D2B1F] font-playfair">
                 {activeCategory?.nameEn || ''}
               </span>
-              <span className="text-sm text-gray-text">
+              <span className="text-sm text-[#8C8478]">
                 {itemCount} {t('dishes')}
               </span>
             </div>
             <button
               onClick={openAddDrawer}
-              className="flex items-center gap-1.5 bg-amber text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-amber/90 transition-colors"
+              className="flex items-center gap-1.5 bg-[#6B7F5E] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#5A6E4F] transition-colors"
             >
               <Plus size={14} /> {t('addDish')}
             </button>
           </div>
 
           {/* ── Item Grid ── */}
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-beige overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Image */}
                 <div className="h-[140px] bg-gray-100 relative overflow-hidden">
@@ -493,8 +538,8 @@ export default function MenuManagement() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-beige/30">
-                      <ImageIcon size={32} className="text-beige" />
+                    <div className="w-full h-full flex items-center justify-center bg-[#E8ECE4]/30">
+                      <ImageIcon size={32} className="text-[#E8ECE4]" />
                     </div>
                   )}
                   {/* Active toggle pill */}
@@ -502,7 +547,7 @@ export default function MenuManagement() {
                     onClick={() => handleToggleActive(item)}
                     className={`absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
                       item.isActive
-                        ? 'bg-green text-white'
+                        ? 'bg-[#6B7F5E] text-white'
                         : 'bg-gray-400 text-white'
                     }`}
                   >
@@ -512,25 +557,25 @@ export default function MenuManagement() {
                   <div className="absolute top-2 right-2 flex gap-1">
                     <button
                       onClick={() => openEditDrawer(item)}
-                      className="w-7 h-7 bg-white/90 rounded-md flex items-center justify-center hover:bg-white transition-colors"
+                      className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center hover:bg-white transition-colors"
                     >
-                      <Pencil size={12} className="text-brown" />
+                      <Pencil size={12} className="text-[#3D2B1F]" />
                     </button>
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="w-7 h-7 bg-white/90 rounded-md flex items-center justify-center hover:bg-white transition-colors"
+                      className="w-7 h-7 bg-white/90 rounded-lg flex items-center justify-center hover:bg-white transition-colors"
                     >
-                      <Trash2 size={12} className="text-red" />
+                      <Trash2 size={12} className="text-[#C4533A]" />
                     </button>
                   </div>
                 </div>
                 {/* Body */}
                 <div className="p-4 flex flex-col gap-2">
-                  <div className="text-sm font-bold text-brown truncate">{item.nameEn}</div>
+                  <div className="text-sm font-bold text-[#3D2B1F] truncate">{item.nameEn}</div>
                   {item.nameZh && (
-                    <div className="text-[13px] text-brown/50 truncate">{item.nameZh}</div>
+                    <div className="text-[13px] text-[#3D2B1F]/50 truncate">{item.nameZh}</div>
                   )}
-                  <div className="text-base font-bold text-amber">
+                  <div className="text-base font-bold text-[#6B7F5E]">
                     ${item.price.toFixed(2)}
                   </div>
                   {item.tags.length > 0 && (
@@ -552,10 +597,10 @@ export default function MenuManagement() {
             {/* Add New Dish Card */}
             <div
               onClick={openAddDrawer}
-              className="bg-cream-bg rounded-xl border-2 border-dashed border-beige flex flex-col items-center justify-center min-h-[260px] cursor-pointer hover:border-amber transition-colors"
+              className="bg-[#F8F7F4] rounded-xl border-2 border-dashed border-[#E8ECE4] flex flex-col items-center justify-center min-h-[260px] cursor-pointer hover:border-[#6B7F5E] transition-colors"
             >
-              <Plus size={24} className="text-amber mb-2" />
-              <span className="text-sm font-semibold text-amber">{t('addNewDish')}</span>
+              <Plus size={24} className="text-[#6B7F5E] mb-2" />
+              <span className="text-sm font-semibold text-[#6B7F5E]">{t('addNewDish')}</span>
             </div>
           </div>
         </div>
@@ -565,18 +610,18 @@ export default function MenuManagement() {
           <>
             {/* Overlay */}
             <div
-              className="absolute inset-0 bg-brown/20 z-10"
+              className="absolute inset-0 bg-black/20 z-10"
               onClick={closeDrawer}
             />
             {/* Drawer */}
-            <div className="absolute right-0 top-0 bottom-0 w-[420px] bg-white border-l border-beige flex flex-col z-20 shadow-xl">
+            <div className="absolute right-0 top-0 bottom-0 w-full md:w-[420px] bg-white border-l border-[#E8ECE4] flex flex-col z-20 shadow-xl">
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-beige">
-                <span className="text-base font-bold text-brown">
+              <div className="flex items-center justify-between p-5 border-b border-[#E8ECE4]">
+                <span className="text-base font-bold text-[#3D2B1F]">
                   {editingItem ? t('editDish.title') : t('editDish.addTitle')}
                 </span>
-                <button onClick={closeDrawer} className="hover:bg-cream-bg rounded-md p-1 transition-colors">
-                  <X size={20} className="text-gray-text" />
+                <button onClick={closeDrawer} className="hover:bg-[#F8F7F4] rounded-lg p-1 transition-colors">
+                  <X size={20} className="text-[#8C8478]" />
                 </button>
               </div>
 
@@ -584,11 +629,11 @@ export default function MenuManagement() {
               <div className="flex-1 overflow-auto p-5 flex flex-col gap-4">
                 {/* Name EN */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.nameEn')}
                   </label>
                   <input
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={form.nameEn}
                     onChange={(e) => updateForm('nameEn', e.target.value)}
                     placeholder="Grilled Lamb Chops"
@@ -597,11 +642,11 @@ export default function MenuManagement() {
 
                 {/* Name ZH */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.nameZh')}
                   </label>
                   <input
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={form.nameZh}
                     onChange={(e) => updateForm('nameZh', e.target.value)}
                     placeholder="烤羊排"
@@ -611,11 +656,11 @@ export default function MenuManagement() {
                 {/* Category + Price row */}
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs font-semibold text-brown mb-1 block">
+                    <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                       {t('editDish.category')}
                     </label>
                     <select
-                      className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors bg-white"
+                      className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors bg-white"
                       value={form.categoryId}
                       onChange={(e) => updateForm('categoryId', e.target.value)}
                     >
@@ -626,14 +671,14 @@ export default function MenuManagement() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-semibold text-brown mb-1 block">
+                    <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                       {t('editDish.price')}
                     </label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
-                      className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                      className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                       value={form.price}
                       onChange={(e) => updateForm('price', e.target.value)}
                       placeholder="28.00"
@@ -643,11 +688,11 @@ export default function MenuManagement() {
 
                 {/* Description EN */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.descriptionEn')}
                   </label>
                   <textarea
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm h-20 resize-none focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm h-20 resize-none focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={form.descriptionEn}
                     onChange={(e) => updateForm('descriptionEn', e.target.value)}
                     placeholder="A tender and perfectly seasoned cut..."
@@ -656,11 +701,11 @@ export default function MenuManagement() {
 
                 {/* Description ZH */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.descriptionZh')}
                   </label>
                   <textarea
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm h-16 resize-none focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm h-16 resize-none focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={form.descriptionZh}
                     onChange={(e) => updateForm('descriptionZh', e.target.value)}
                     placeholder="经典的烤羊排..."
@@ -669,13 +714,14 @@ export default function MenuManagement() {
 
                 {/* Image Upload */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.image')}
                   </label>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0]
@@ -684,7 +730,7 @@ export default function MenuManagement() {
                   />
                   {imagePreview ? (
                     <div
-                      className="relative rounded-md overflow-hidden border border-beige cursor-pointer group"
+                      className="relative rounded-lg overflow-hidden border border-[#E8ECE4] cursor-pointer group"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <img
@@ -700,24 +746,24 @@ export default function MenuManagement() {
                     </div>
                   ) : (
                     <div
-                      className="border border-dashed border-beige rounded-md p-6 flex flex-col items-center justify-center text-sm text-gray-text gap-2 cursor-pointer hover:border-amber transition-colors"
+                      className="border border-dashed border-[#E8ECE4] rounded-lg p-6 flex flex-col items-center justify-center text-sm text-[#8C8478] gap-2 cursor-pointer hover:border-[#6B7F5E] transition-colors"
                       onClick={() => fileInputRef.current?.click()}
                       onDrop={handleDrop}
                       onDragOver={(e) => e.preventDefault()}
                     >
-                      <Upload size={20} className="text-beige" />
+                      <Upload size={20} className="text-[#E8ECE4]" />
                       <span>{t('editDish.imageUpload')}</span>
-                      <span className="text-[11px] text-muted-beige">JPG, PNG, WebP (max 5MB)</span>
+                      <span className="text-[11px] text-[#C4BDB2]">JPG, PNG, WebP (max 5MB)</span>
                     </div>
                   )}
                   {uploading && (
-                    <div className="mt-1 text-xs text-amber">{t('editDish.uploading')}</div>
+                    <div className="mt-1 text-xs text-[#6B7F5E]">{t('editDish.uploading')}</div>
                   )}
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('editDish.tags')}
                   </label>
                   <div className="flex gap-1.5 flex-wrap mb-2">
@@ -738,7 +784,7 @@ export default function MenuManagement() {
                   </div>
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 border border-beige rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-amber transition-colors"
+                      className="flex-1 border border-[#E8ECE4] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -751,7 +797,7 @@ export default function MenuManagement() {
                     />
                     <button
                       onClick={addTag}
-                      className="text-xs text-amber font-medium px-2 py-1 border border-amber/30 rounded-md hover:bg-amber-light-bg transition-colors"
+                      className="text-xs text-[#6B7F5E] font-medium px-2 py-1 border border-[#6B7F5E]/30 rounded-lg hover:bg-[#EAF2E3] transition-colors"
                     >
                       {t('editDish.addTag')}
                     </button>
@@ -761,25 +807,25 @@ export default function MenuManagement() {
                 {/* Advance Days + Sort Order row */}
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs font-semibold text-brown mb-1 block">
+                    <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                       {t('editDish.advanceOrder')}
                     </label>
                     <input
                       type="number"
                       min="0"
-                      className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                      className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                       value={form.advanceDaysRequired}
                       onChange={(e) => updateForm('advanceDaysRequired', e.target.value)}
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-semibold text-brown mb-1 block">
+                    <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                       {t('editDish.sortOrder')}
                     </label>
                     <input
                       type="number"
                       min="0"
-                      className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                      className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                       value={form.sortOrder}
                       onChange={(e) => updateForm('sortOrder', e.target.value)}
                     />
@@ -788,11 +834,11 @@ export default function MenuManagement() {
 
                 {/* Is Active toggle */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-brown">{t('editDish.active')}</span>
+                  <span className="text-sm font-semibold text-[#3D2B1F]">{t('editDish.active')}</span>
                   <button
                     onClick={() => updateForm('isActive', !form.isActive)}
                     className={`w-10 h-5 rounded-full flex items-center transition-colors ${
-                      form.isActive ? 'bg-green justify-end' : 'bg-gray-300 justify-start'
+                      form.isActive ? 'bg-[#6B7F5E] justify-end' : 'bg-gray-300 justify-start'
                     }`}
                   >
                     <div className="w-4 h-4 bg-white rounded-full mx-0.5 shadow-sm" />
@@ -801,17 +847,17 @@ export default function MenuManagement() {
               </div>
 
               {/* Footer */}
-              <div className="p-5 border-t border-beige flex justify-end gap-3">
+              <div className="p-5 border-t border-[#E8ECE4] flex justify-end gap-3">
                 <button
                   onClick={closeDrawer}
-                  className="px-4 py-2 text-sm text-brown border border-beige rounded-md hover:bg-cream-bg transition-colors"
+                  className="px-4 py-2 text-sm text-[#8C8478] border border-[#E8ECE4] rounded-lg hover:bg-[#F8F7F4] transition-colors"
                 >
                   {t('editDish.cancel')}
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !form.nameEn.trim() || !form.categoryId || !form.price}
-                  className="px-4 py-2 text-sm bg-amber text-white font-semibold rounded-md hover:bg-amber/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm bg-[#6B7F5E] text-white font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? t('saving') : t('editDish.saveChanges')}
                 </button>
@@ -824,68 +870,78 @@ export default function MenuManagement() {
         {categoryModalOpen && (
           <>
             <div
-              className="absolute inset-0 bg-brown/20 z-30"
+              className="absolute inset-0 bg-black/20 z-30"
               onClick={() => setCategoryModalOpen(false)}
             />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] bg-white rounded-xl shadow-xl z-40 border border-beige">
-              <div className="flex items-center justify-between p-5 border-b border-beige">
-                <span className="text-base font-bold text-brown">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[380px] bg-white rounded-xl shadow-xl z-40 border border-[#E8ECE4]">
+              <div className="flex items-center justify-between p-5 border-b border-[#E8ECE4]">
+                <span className="text-base font-bold text-[#3D2B1F]">
                   {editingCategory ? t('editCategory') : t('addCategory')}
                 </span>
                 <button
                   onClick={() => setCategoryModalOpen(false)}
-                  className="hover:bg-cream-bg rounded-md p-1 transition-colors"
+                  className="hover:bg-[#F8F7F4] rounded-lg p-1 transition-colors"
                 >
-                  <X size={18} className="text-gray-text" />
+                  <X size={18} className="text-[#8C8478]" />
                 </button>
               </div>
               <div className="p-5 flex flex-col gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('categoryName')}
                   </label>
                   <input
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={categoryForm.nameEn}
                     onChange={(e) => setCategoryForm(prev => ({ ...prev, nameEn: e.target.value }))}
                     placeholder="Mains"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('categoryNameZh')}
                   </label>
                   <input
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={categoryForm.nameZh}
                     onChange={(e) => setCategoryForm(prev => ({ ...prev, nameZh: e.target.value }))}
                     placeholder="主菜"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-brown mb-1 block">
+                  <label className="text-xs font-semibold text-[#3D2B1F] mb-1 block">
                     {t('categorySortOrder')}
                   </label>
                   <input
                     type="number"
                     min="0"
-                    className="w-full border border-beige rounded-md px-3 py-2 text-sm focus:outline-none focus:border-amber transition-colors"
+                    className="w-full border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                     value={categoryForm.sortOrder}
                     onChange={(e) => setCategoryForm(prev => ({ ...prev, sortOrder: e.target.value }))}
                   />
                 </div>
               </div>
-              <div className="p-5 pt-0 flex justify-end gap-3">
+              <div className="p-5 pt-0 flex items-center gap-3">
+                {editingCategory && (
+                  <button
+                    onClick={() => { setCategoryModalOpen(false); handleDeleteCategory(editingCategory) }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#DC3545] border border-[#DC3545]/30 rounded-lg hover:bg-[#DC3545]/5 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </button>
+                )}
+                <div className="flex-1" />
                 <button
                   onClick={() => setCategoryModalOpen(false)}
-                  className="px-4 py-2 text-sm text-brown border border-beige rounded-md hover:bg-cream-bg transition-colors"
+                  className="px-4 py-2 text-sm text-[#8C8478] border border-[#E8ECE4] rounded-lg hover:bg-[#F8F7F4] transition-colors"
                 >
                   {t('editDish.cancel')}
                 </button>
                 <button
                   onClick={handleSaveCategory}
                   disabled={savingCategory || !categoryForm.nameEn.trim()}
-                  className="px-4 py-2 text-sm bg-amber text-white font-semibold rounded-md hover:bg-amber/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm bg-[#6B7F5E] text-white font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingCategory ? t('saving') : t('editDish.saveChanges')}
                 </button>
