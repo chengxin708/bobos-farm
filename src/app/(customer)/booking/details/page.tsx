@@ -112,9 +112,9 @@ export default function BookingDetailsPage() {
   if (!booking.selectedDate || !booking.selectedYurtId) return null
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push('/booking/yurt')}
           className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
@@ -126,12 +126,12 @@ export default function BookingDetailsPage() {
       </div>
 
       {/* Page Title */}
-      <div className="text-center mt-4 mb-6 px-4">
+      <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">{t('title')}</h1>
       </div>
 
-      {/* Form Container */}
-      <div className="flex-1 px-4 pb-28">
+      {/* Form Container — scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
         <div className="max-w-[560px] mx-auto flex flex-col gap-5">
 
           {/* Contact Name */}
@@ -265,8 +265,8 @@ export default function BookingDetailsPage() {
         </div>
       </div>
 
-      {/* Bottom Fixed Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-[#F8F7F4]">
+      {/* Bottom Bar */}
+      <div className="shrink-0 p-4 pb-6 bg-[#F8F7F4]">
         <div className="max-w-[560px] mx-auto">
           <button
             onClick={handleNext}

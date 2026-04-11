@@ -430,9 +430,9 @@ export default function BookingConfirmPage() {
   )
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push('/booking/details')}
           className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
@@ -444,12 +444,12 @@ export default function BookingConfirmPage() {
       </div>
 
       {/* Page Title */}
-      <div className="text-center mt-4 mb-6 px-4">
+      <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">Confirm &amp; Pay</h1>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row gap-6">
 

@@ -272,7 +272,7 @@ export default function ReservationsPage() {
   // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col bg-[#F8F7F4] pb-4">
+    <div className="flex flex-col pb-4">
       {/* Page Header */}
       <div className="flex items-center justify-between px-4 pt-6 pb-2">
         <div>
@@ -514,7 +514,7 @@ export default function ReservationsPage() {
       {/* ── Modify Bottom Sheet ─────────────────────────────── */}
       {modifyingReservation && (
         <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
+          className="fixed inset-0 bg-black/40 z-[100] flex items-end justify-center"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeModify()
           }}
@@ -636,7 +636,7 @@ export default function ReservationsPage() {
         const refundEligible = daysUntil >= 3
 
         return (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 w-[400px] max-w-full shadow-[0_8px_40px_rgba(0,0,0,0.15)] flex flex-col gap-4">
               <h3 className="font-serif text-xl font-bold text-[#1A1208]">
                 {t('cancelDialog.title')}

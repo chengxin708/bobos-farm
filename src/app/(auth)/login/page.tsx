@@ -187,12 +187,12 @@ function LoginForm() {
   return (
     <>
       {/* Mobile layout */}
-      <div className="md:hidden min-h-screen bg-[#FAFAF7] flex items-center justify-center pt-16 pb-10">
+      <div className="md:hidden h-full bg-[#FAFAF7] flex items-center justify-center pt-16 pb-10 overflow-y-auto">
         {formContent}
       </div>
 
       {/* Desktop split layout */}
-      <div className="hidden md:flex h-screen">
+      <div className="hidden md:flex h-full">
         {/* Left: farm photo */}
         <div className="w-1/2 relative">
           <Image

@@ -141,7 +141,7 @@ export default function SettingsPage() {
   const [langOpen, setLangOpen] = useState(false)
 
   return (
-    <div className="flex flex-col bg-[#F8F7F4] pb-4">
+    <div className="flex flex-col pb-4">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-6 pb-2 max-w-[560px] mx-auto w-full">
         <button
@@ -154,7 +154,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-serif text-[#1A1208]">{t('title')}</h1>
       </div>
 
-      <div className="flex-1 flex flex-col items-center px-4 pb-28 pt-4">
+      <div className="flex-1 flex flex-col items-center px-4 pb-4 pt-4">
         <div className="w-full max-w-[560px] flex flex-col gap-5">
 
           {/* ── Profile Card ── */}

@@ -231,9 +231,9 @@ export default function BookingDatePage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Top Bar — sticky */}
-      <div className="sticky top-0 z-10 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Top Bar */}
+      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push('/')}
           className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
@@ -245,15 +245,15 @@ export default function BookingDatePage() {
       </div>
 
       {/* Page Title */}
-      <div className="text-center mt-4 mb-6 px-4">
+      <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">Select a Date</h1>
         {locale === 'zh' && (
           <p className="text-sm text-[#8C8478] mt-1 font-sans">Choose your preferred date</p>
         )}
       </div>
 
-      {/* Calendar Card */}
-      <div className="flex-1 px-4 pb-28">
+      {/* Calendar Card — scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
         <div className="max-w-lg mx-auto bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-4">
@@ -354,8 +354,8 @@ export default function BookingDatePage() {
         </div>
       </div>
 
-      {/* Bottom Fixed Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-[#F8F7F4]">
+      {/* Bottom Bar */}
+      <div className="shrink-0 p-4 pb-6 bg-[#F8F7F4]">
         <button
           onClick={() => selectedDate && router.push('/booking/yurt')}
           disabled={!selectedDate}

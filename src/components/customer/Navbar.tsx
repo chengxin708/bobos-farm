@@ -67,7 +67,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`z-50 w-full transition-all duration-300 ${bgClass}`}
+      className={`w-full transition-all duration-300 ${bgClass}`}
     >
       {/* ── Mobile top bar (below md) ── */}
       <div className="flex md:hidden items-center justify-between h-14 px-4">
