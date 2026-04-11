@@ -130,8 +130,11 @@ const CELL_STYLES: Record<CellStatus, { bg: string; ring: string }> = {
 
 const ACTIVITY_DOT_COLOR: Record<string, string> = {
   RESERVATION_CREATED: 'bg-[#4A7C59]',
+  RESERVATION_MODIFIED: 'bg-[#8B6914]',
+  RESERVATION_RESCHEDULED: 'bg-[#3B82F6]',
   DEPOSIT_CONFIRMED: 'bg-[#8B6914]',
   ORDER_SUBMITTED: 'bg-[#E67E22]',
+  ORDER_UPDATED: 'bg-[#E67E22]',
   RESERVATION_CANCELLED: 'bg-[#C4533A]',
   SETTINGS_UPDATED: 'bg-[#3B82F6]',
 }
@@ -146,8 +149,14 @@ function activityText(log: ActivityLog): string {
       return `定金已确认: ${userName}`
     case 'ORDER_SUBMITTED':
       return `订单已提交: ${userName}`
+    case 'RESERVATION_MODIFIED':
+      return `${userName} 修改了预订信息`
+    case 'RESERVATION_RESCHEDULED':
+      return `${userName} 改期了预订`
     case 'RESERVATION_CANCELLED':
       return `已取消: ${userName}`
+    case 'ORDER_UPDATED':
+      return `${userName} 更新了预约单`
     case 'SETTINGS_UPDATED':
       return `${userName} 更新了设置`
     default:
@@ -241,12 +250,18 @@ export default function Dashboard() {
     onError: () => {/* activity logs endpoint may not exist yet, silently ignore */},
   })
 
+  // Fetch real orders counts for the stat card
+  const { data: submittedOrders } = useSWR<{ length: number }[]>('/api/orders?status=SUBMITTED', fetcher, {
+    ...swrOpts,
+    onError: () => {},
+  })
+  const submittedOrderCount = Array.isArray(submittedOrders) ? submittedOrders.length : 0
+
   const hasError = !!(todayErr || pendingDepErr || weekErr || monthErr)
 
   // Compute stats
   const todayCount = todayRes?.length ?? 0
   const pendingDepositCount = pendingDeposits?.length ?? 0
-  const pendingActionCount = pendingDeposits?.length ?? 0
   const monthRevenue = useMemo(() => {
     if (!monthRes) return 0
     return monthRes
@@ -317,8 +332,9 @@ export default function Dashboard() {
       icon: Utensils,
       iconBg: 'bg-[#FFF3E0]',
       iconColor: 'text-[#E67E22]',
-      value: String(pendingActionCount),
+      value: String(submittedOrderCount),
       label: t('stats.pendingOrders'),
+      pulse: submittedOrderCount > 0,
     },
     {
       icon: DollarSign,

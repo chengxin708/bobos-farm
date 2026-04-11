@@ -559,7 +559,12 @@
         "viewScreenshot": "查看截图",
         "timeline": "活动时间线",
         "created": "创建时间",
-        "updated": "最后更新"
+        "updated": "最后更新",
+        "modifications": "修改记录",
+        "preOrder": "预订单",
+        "itemCount": "菜品数量",
+        "estimatedTotal": "预计总额",
+        "viewFullOrder": "查看完整订单"
       },
       "noResults": "未找到预订记录",
       "loading": "加载预订中...",

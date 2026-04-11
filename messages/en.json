@@ -559,7 +559,12 @@
         "viewScreenshot": "View Screenshot",
         "timeline": "Activity Timeline",
         "created": "Created",
-        "updated": "Last Updated"
+        "updated": "Last Updated",
+        "modifications": "Modification History",
+        "preOrder": "Pre-order",
+        "itemCount": "Items",
+        "estimatedTotal": "Estimated Total",
+        "viewFullOrder": "View full order"
       },
       "noResults": "No reservations found",
       "loading": "Loading reservations...",

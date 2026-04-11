@@ -13,7 +13,16 @@ export async function GET(req: NextRequest) {
     const limitParam = parseInt(searchParams.get("limit") || "20", 10);
     const limit = Math.min(Math.max(1, limitParam || 20), 100);
 
+    // Optional filters by target
+    const targetId = searchParams.get("targetId");
+    const targetType = searchParams.get("targetType");
+
+    const where: Record<string, unknown> = {};
+    if (targetId) where.targetId = targetId;
+    if (targetType) where.targetType = targetType;
+
     const logs = await prisma.activityLog.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
