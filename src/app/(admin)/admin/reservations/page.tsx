@@ -1,9 +1,11 @@
 'use client'
 
 import { Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import ReservationsMobile from '@/components/admin/reservations/ReservationsMobile'
-import ReservationsDesktop from '@/components/admin/reservations/ReservationsDesktop'
+
+const ReservationsMobile = dynamic(() => import('@/components/admin/reservations/ReservationsMobile'), { ssr: false })
+const ReservationsDesktop = dynamic(() => import('@/components/admin/reservations/ReservationsDesktop'), { ssr: false })
 
 function ReservationsContent() {
   const isMobile = useIsMobile()

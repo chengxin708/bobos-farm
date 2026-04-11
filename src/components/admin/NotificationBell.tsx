@@ -8,7 +8,8 @@ const fetcher = (url: string) => fetch(url).then(r => r.ok ? r.json() : [])
 export default function NotificationBell() {
   const { data: pending } = useSWR('/api/reservations?status=PAYMENT_SUBMITTED', fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 30000,
+    dedupingInterval: 60000,
+    refreshInterval: 60000,
   })
   const count = Array.isArray(pending) ? pending.length : 0
 

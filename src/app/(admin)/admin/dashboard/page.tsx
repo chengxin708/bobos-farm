@@ -1,8 +1,10 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import DashboardMobile from '@/components/admin/dashboard/DashboardMobile'
-import DashboardDesktop from '@/components/admin/dashboard/DashboardDesktop'
+
+const DashboardMobile = dynamic(() => import('@/components/admin/dashboard/DashboardMobile'), { ssr: false })
+const DashboardDesktop = dynamic(() => import('@/components/admin/dashboard/DashboardDesktop'), { ssr: false })
 
 export default function DashboardPage() {
   const isMobile = useIsMobile()
