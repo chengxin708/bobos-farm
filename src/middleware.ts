@@ -21,7 +21,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
-    const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+    // In production (HTTPS), cookie name has __Secure- prefix
+    const cookieName = request.nextUrl.protocol === 'https:'
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token';
+    const token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+      cookieName,
+    });
 
     if (!token) {
       const loginUrl = new URL("/admin/login", request.url);
