@@ -859,7 +859,9 @@
       "tabs": {
         "all": "All",
         "SUBMITTED": "Submitted",
-        "LOCKED": "Locked"
+        "LOCKED": "Locked",
+        "BILLED": "Billed",
+        "PAID": "Paid"
       },
       "table": {
         "guest": "GUEST",
@@ -873,7 +875,9 @@
       "status": {
         "DRAFT": "Draft",
         "SUBMITTED": "Submitted",
-        "LOCKED": "Locked"
+        "LOCKED": "Locked",
+        "BILLED": "Billed",
+        "PAID": "Paid"
       },
       "actions": {
         "view": "View",

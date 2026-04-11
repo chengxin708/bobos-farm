@@ -36,8 +36,12 @@ export interface OrderItem {
 
 export interface Order {
   id: string
-  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED'
+  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
   estimatedTotal: number | null
+  finalTotal?: number | null
+  discount?: number | null
+  paymentMethod?: string | null
+  paidAt?: string | null
   notes: string | null
   submittedAt: string | null
   lockedAt?: string | null
@@ -78,7 +82,7 @@ export interface Reservation {
 export interface OrderListItem {
   id: string
   reservationId: string
-  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED'
+  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
   notes: string | null
   estimatedTotal: number | null
   submittedAt: string | null
@@ -97,7 +101,7 @@ export interface OrderListItem {
 
 export type ViewMode = 'all' | 'deposits' | 'orders'
 export type TabKey = 'all' | 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
-export type OrderTabKey = 'all' | 'SUBMITTED' | 'LOCKED'
+export type OrderTabKey = 'all' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -165,6 +169,8 @@ export const ORDER_STATUS_BADGE: Record<string, { bg: string; text: string; labe
   DRAFT:     { bg: 'bg-gray-100',       text: 'text-gray-500',   label: 'Draft' },
   SUBMITTED: { bg: 'bg-[#F4A623]/15',   text: 'text-[#F4A623]',  label: 'Submitted' },
   LOCKED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]',  label: 'Locked' },
+  BILLED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]',  label: 'Billed' },
+  PAID:      { bg: 'bg-[#5B8C3E]/15',   text: 'text-[#5B8C3E]',  label: 'Paid' },
 }
 
 // ── Hook ───────────────────────────────────────────────────────────
@@ -288,6 +294,8 @@ export function useReservationsData() {
     { key: 'all', label: tOrders('tabs.all') },
     { key: 'SUBMITTED', label: tOrders('tabs.SUBMITTED') },
     { key: 'LOCKED', label: tOrders('tabs.LOCKED') },
+    { key: 'BILLED', label: tOrders('tabs.BILLED') },
+    { key: 'PAID', label: tOrders('tabs.PAID') },
   ]
 
   // ── Actions ──────────────────────────────────────────────────
@@ -438,6 +446,9 @@ export function useReservationsData() {
     handleLockOrder,
     handleUnlockOrder,
     updating,
+    // Mutators (for child components to trigger refresh)
+    mutateReservations,
+    mutateOrders,
     // Success message
     successMsg,
     setSuccessMsg,

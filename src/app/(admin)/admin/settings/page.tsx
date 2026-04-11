@@ -13,6 +13,9 @@ import {
   Bell,
   ShieldAlert,
   Wallet,
+  Plus,
+  Trash2,
+  Loader2,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -54,6 +57,131 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   email_booking_confirmation: 6,
   email_payment_reminder: 6,
   email_admin_new_booking: 6,
+}
+
+// ── Payment Methods Editor ─────────────────────────────────────────
+
+function PaymentMethodsEditor() {
+  const [methods, setMethods] = useState<string[]>([])
+  const [newMethod, setNewMethod] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const saveMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    fetch('/api/settings/payment-methods')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((data: string[]) => { if (Array.isArray(data)) setMethods(data) })
+      .catch(() => setMethods(['Zelle', 'Cash']))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    return () => { if (saveMsgTimer.current) clearTimeout(saveMsgTimer.current) }
+  }, [])
+
+  const handleAdd = () => {
+    const trimmed = newMethod.trim()
+    if (!trimmed || methods.includes(trimmed)) return
+    const updated = [...methods, trimmed]
+    setMethods(updated)
+    setNewMethod('')
+    saveToServer(updated)
+  }
+
+  const handleRemove = (index: number) => {
+    if (methods.length <= 1) return
+    const updated = methods.filter((_, i) => i !== index)
+    setMethods(updated)
+    saveToServer(updated)
+  }
+
+  const saveToServer = async (data: string[]) => {
+    setSaving(true)
+    setSaveMsg(null)
+    try {
+      const res = await fetch('/api/settings/payment-methods', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to save')
+      setSaveMsg('Saved!')
+      if (saveMsgTimer.current) clearTimeout(saveMsgTimer.current)
+      saveMsgTimer.current = setTimeout(() => setSaveMsg(null), 2000)
+    } catch {
+      setSaveMsg('Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <div className="flex items-center gap-2 text-sm text-[#8C8478]">
+          <Loader2 size={16} className="animate-spin" /> Loading...
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+      <h2 className="text-base font-semibold text-[#1A1208] font-serif">Custom Payment Methods</h2>
+      <p className="text-sm text-[#8C8478] mt-1 mb-6">
+        Manage available payment methods shown during checkout.
+      </p>
+
+      {/* Current methods list */}
+      <div className="space-y-2 mb-4">
+        {methods.map((method, index) => (
+          <div
+            key={`${method}-${index}`}
+            className="flex items-center justify-between bg-[#F8F7F4] rounded-lg px-4 py-2.5"
+          >
+            <span className="text-sm text-[#1A1208] font-medium">{method}</span>
+            <button
+              onClick={() => handleRemove(index)}
+              disabled={methods.length <= 1}
+              className="p-1 text-[#8C8478] hover:text-[#DC3545] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title={methods.length <= 1 ? 'At least one payment method is required' : 'Remove'}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add new method */}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={newMethod}
+          onChange={e => setNewMethod(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
+          placeholder="New payment method name"
+          className="flex-1 border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors max-w-xs"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!newMethod.trim() || methods.includes(newMethod.trim())}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#5A6E4F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <Plus size={14} />
+          Add
+        </button>
+      </div>
+
+      {/* Status message */}
+      {(saving || saveMsg) && (
+        <p className={`text-xs mt-3 font-medium ${saveMsg === 'Saved!' ? 'text-[#6B7F5E]' : saving ? 'text-[#8C8478]' : 'text-[#DC3545]'}`}>
+          {saving ? 'Saving...' : saveMsg}
+        </p>
+      )}
+    </div>
+  )
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -470,33 +598,37 @@ export default function Settings() {
 
   function renderPaymentTab() {
     return (
-      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Payment Settings</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure Zelle payment recipient information.</p>
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+          <h2 className="text-base font-semibold text-[#1A1208] font-serif">Payment Settings</h2>
+          <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure Zelle payment recipient information.</p>
 
-        <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Name</label>
-          <input
-            type="text"
-            value={formValues.zelle_recipient_name ?? ''}
-            onChange={e => updateField('zelle_recipient_name', e.target.value)}
-            className={`${inputClass('zelle_recipient_name')} mb-1`}
-            placeholder="Enter recipient name"
-          />
-          <p className="text-xs text-[#8C8478]">Name displayed to customers during payment.</p>
+          <div className="mb-8">
+            <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Name</label>
+            <input
+              type="text"
+              value={formValues.zelle_recipient_name ?? ''}
+              onChange={e => updateField('zelle_recipient_name', e.target.value)}
+              className={`${inputClass('zelle_recipient_name')} mb-1`}
+              placeholder="Enter recipient name"
+            />
+            <p className="text-xs text-[#8C8478]">Name displayed to customers during payment.</p>
+          </div>
+
+          <div className="mb-8">
+            <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Email</label>
+            <input
+              type="email"
+              value={formValues.zelle_recipient ?? ''}
+              onChange={e => updateField('zelle_recipient', e.target.value)}
+              className={`${inputClass('zelle_recipient')} mb-1`}
+              placeholder="Enter Zelle email"
+            />
+            <p className="text-xs text-[#8C8478]">Zelle email address where customers send deposit payments.</p>
+          </div>
         </div>
 
-        <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Email</label>
-          <input
-            type="email"
-            value={formValues.zelle_recipient ?? ''}
-            onChange={e => updateField('zelle_recipient', e.target.value)}
-            className={`${inputClass('zelle_recipient')} mb-1`}
-            placeholder="Enter Zelle email"
-          />
-          <p className="text-xs text-[#8C8478]">Zelle email address where customers send deposit payments.</p>
-        </div>
+        <PaymentMethodsEditor />
       </div>
     )
   }

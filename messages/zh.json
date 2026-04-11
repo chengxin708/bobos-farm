@@ -859,7 +859,9 @@
       "tabs": {
         "all": "全部",
         "SUBMITTED": "已提交",
-        "LOCKED": "已锁定"
+        "LOCKED": "已锁定",
+        "BILLED": "已出账",
+        "PAID": "已付款"
       },
       "table": {
         "guest": "客人",
@@ -873,7 +875,9 @@
       "status": {
         "DRAFT": "草稿",
         "SUBMITTED": "已提交",
-        "LOCKED": "已锁定"
+        "LOCKED": "已锁定",
+        "BILLED": "已出账",
+        "PAID": "已付款"
       },
       "actions": {
         "view": "查看",

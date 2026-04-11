@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import useSWR from 'swr'
 import { X, ChevronRight, ShoppingBag, MessageSquare, History } from 'lucide-react'
 import {
   type Reservation,
+  type Order,
   type ActivityLog,
   STATUS_BADGE,
   DEPOSIT_BADGE,
@@ -13,6 +16,15 @@ import {
   formatDateTime,
   activityLogText,
 } from './useReservationsData'
+import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
+import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
+
+// ── Helpers ───────────────────────────────────────────────────────
+
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error('Fetch failed')
+  return r.json()
+})
 
 // ── Props ──────────────────────────────────────────────────────────
 
@@ -26,6 +38,7 @@ interface ReservationDetailProps {
     completeReservation: (id: string) => void
   }
   isUpdating: boolean
+  onOrderChanged?: () => void
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -36,9 +49,34 @@ export default function ReservationDetail({
   onClose,
   onAction,
   isUpdating,
+  onOrderChanged,
 }: ReservationDetailProps) {
   const t = useTranslations('admin.reservations')
   const panelOrder = reservation.order || null
+
+  const [showOrderEditor, setShowOrderEditor] = useState(false)
+  const [showCheckout, setShowCheckout] = useState(false)
+
+  // Fetch full order details (with items) when order exists
+  const { data: fullOrder, mutate: mutateOrder } = useSWR<Order>(
+    panelOrder?.id ? `/api/orders/${panelOrder.id}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
+  // Use fullOrder if available, fallback to panelOrder
+  const orderData = fullOrder || panelOrder
+
+  const handleOrderSaved = () => {
+    mutateOrder()
+    onOrderChanged?.()
+  }
+
+  const handleCheckoutCompleted = () => {
+    setShowCheckout(false)
+    mutateOrder()
+    onOrderChanged?.()
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -93,7 +131,7 @@ export default function ReservationDetail({
         <hr className="border-[#E8ECE4]" />
 
         {/* Pre-order Summary */}
-        {panelOrder && (
+        {orderData && (
           <>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -101,19 +139,19 @@ export default function ReservationDetail({
                   <ShoppingBag size={14} className="text-[#E67E22]" />
                   <h4 className="text-sm font-bold text-brown">{t('detail.preOrder')}</h4>
                 </div>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ORDER_STATUS_BADGE[panelOrder.status]?.bg} ${ORDER_STATUS_BADGE[panelOrder.status]?.text}`}>
-                  {ORDER_STATUS_BADGE[panelOrder.status]?.label}
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ORDER_STATUS_BADGE[orderData.status]?.bg} ${ORDER_STATUS_BADGE[orderData.status]?.text}`}>
+                  {ORDER_STATUS_BADGE[orderData.status]?.label}
                 </span>
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-xs text-[#8C8478]">{t('detail.itemCount')}</span>
-                  <span className="text-sm text-brown font-medium">{panelOrder.items?.length ?? 0} items</span>
+                  <span className="text-sm text-brown font-medium">{orderData.items?.length ?? 0} items</span>
                 </div>
-                {panelOrder.estimatedTotal != null && (
+                {orderData.estimatedTotal != null && (
                   <div className="flex justify-between">
                     <span className="text-xs text-[#8C8478]">{t('detail.estimatedTotal')}</span>
-                    <span className="text-sm text-brown font-medium">${panelOrder.estimatedTotal.toFixed(2)}</span>
+                    <span className="text-sm text-brown font-medium">${orderData.estimatedTotal.toFixed(2)}</span>
                   </div>
                 )}
               </div>
@@ -245,6 +283,36 @@ export default function ReservationDetail({
 
       {/* Panel actions */}
       <div className="px-5 py-4 border-t border-[#E8ECE4] flex flex-col gap-2">
+        {/* Order Editor - show for CONFIRMED reservations */}
+        {reservation.status === 'CONFIRMED' && (
+          <button
+            onClick={() => setShowOrderEditor(true)}
+            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#6B7F5E]/90"
+          >
+            {orderData ? '编辑订单' : '代客点单'}
+          </button>
+        )}
+
+        {/* Checkout - show when order exists and is actionable */}
+        {orderData && ['SUBMITTED', 'LOCKED', 'BILLED'].includes(orderData.status) && (
+          <button
+            onClick={() => setShowCheckout(true)}
+            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+          >
+            结账
+          </button>
+        )}
+
+        {/* View bill - show when order is PAID */}
+        {orderData && orderData.status === 'PAID' && (
+          <button
+            onClick={() => setShowCheckout(true)}
+            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+          >
+            查看账单
+          </button>
+        )}
+
         {/* Confirm Deposit - show for PAYMENT_SUBMITTED */}
         {reservation.status === 'PAYMENT_SUBMITTED' && (
           <button
@@ -286,6 +354,61 @@ export default function ReservationDetail({
           {t('actions.close')}
         </button>
       </div>
+
+      {/* AdminOrderEditor overlay */}
+      <AdminOrderEditor
+        reservationId={reservation.id}
+        customerName={reservation.user?.name || reservation.user?.email}
+        existingOrder={
+          orderData
+            ? {
+                id: orderData.id,
+                items: (orderData.items || []).map((item) => ({
+                  menuItemId: item.menuItem?.id || item.id,
+                  quantity: item.quantity,
+                  menuItem: item.menuItem,
+                })),
+                notes: orderData.notes,
+              }
+            : null
+        }
+        isOpen={showOrderEditor}
+        onClose={() => setShowOrderEditor(false)}
+        onSaved={handleOrderSaved}
+      />
+
+      {/* CheckoutPanel overlay */}
+      {orderData && (
+        <CheckoutPanel
+          reservation={{
+            id: reservation.id,
+            depositAmount: reservation.depositAmount,
+            depositStatus: reservation.depositStatus,
+            user: reservation.user,
+            yurt: reservation.yurt,
+            date: reservation.date,
+            guestCount: reservation.guestCount,
+          }}
+          order={{
+            id: orderData.id,
+            status: orderData.status,
+            estimatedTotal: orderData.estimatedTotal,
+            finalTotal: orderData.finalTotal,
+            discount: orderData.discount,
+            paymentMethod: orderData.paymentMethod,
+            paidAt: orderData.paidAt,
+            items: (orderData.items || []).map((item) => ({
+              id: item.id,
+              quantity: item.quantity,
+              specialNotes: item.specialNotes || null,
+              menuItem: item.menuItem,
+            })),
+          }}
+          isOpen={showCheckout}
+          onClose={() => setShowCheckout(false)}
+          onCompleted={handleCheckoutCompleted}
+        />
+      )}
     </div>
   )
 }

@@ -72,6 +72,8 @@ export default function ReservationsDesktop() {
     handleLockOrder,
     handleUnlockOrder,
     updating,
+    mutateReservations,
+    mutateOrders,
     successMsg, setSuccessMsg,
     t,
     tOrders,
@@ -357,6 +359,7 @@ export default function ReservationsDesktop() {
             onClose={() => setSelectedRes(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={updating}
+            onOrderChanged={() => { mutateReservations(); mutateOrders(); }}
           />
         </div>
       )}

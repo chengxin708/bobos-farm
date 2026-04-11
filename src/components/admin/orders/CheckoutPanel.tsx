@@ -144,6 +144,26 @@ export default function CheckoutPanel({
     setSubmitting(true)
 
     try {
+      // Step 1: Bill the order first if not already billed
+      if (order.status !== 'BILLED') {
+        const billRes = await fetch(`/api/orders/${order.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'bill',
+            discount: safeDiscount,
+          }),
+        })
+
+        if (!billRes.ok) {
+          const data = await billRes.json().catch(() => ({}))
+          setError(data.error || '生成账单失败，请重试')
+          setSubmitting(false)
+          return
+        }
+      }
+
+      // Step 2: Mark as paid
       const res = await fetch(`/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
