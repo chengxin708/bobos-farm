@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { LayoutDashboard, CalendarCheck, UtensilsCrossed, Calendar, MoreHorizontal } from 'lucide-react'
 
 const tabs = [
-  { key: 'home', href: '/admin/dashboard', icon: LayoutDashboard, label: '首页' },
-  { key: 'bookings', href: '/admin/reservations', icon: CalendarCheck, label: '预订' },
-  { key: 'menu', href: '/admin/menu', icon: UtensilsCrossed, label: '菜单' },
-  { key: 'calendar', href: '/admin/calendar', icon: Calendar, label: '日历' },
-  { key: 'more', href: '/admin/more', icon: MoreHorizontal, label: '更多' },
+  { key: 'home' as const, href: '/admin/dashboard', icon: LayoutDashboard },
+  { key: 'bookings' as const, href: '/admin/reservations', icon: CalendarCheck },
+  { key: 'menuMgmt' as const, href: '/admin/menu', icon: UtensilsCrossed },
+  { key: 'calendar' as const, href: '/admin/calendar', icon: Calendar },
+  { key: 'more' as const, href: '/admin/more', icon: MoreHorizontal },
 ]
 
 function isActive(href: string, pathname: string): boolean {
@@ -19,6 +20,7 @@ function isActive(href: string, pathname: string): boolean {
 
 export default function AdminBottomTabs() {
   const pathname = usePathname()
+  const t = useTranslations('admin.nav')
 
   return (
     <nav
@@ -26,7 +28,7 @@ export default function AdminBottomTabs() {
       aria-label="Admin bottom navigation"
     >
       <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2">
-        {tabs.map(({ key, href, icon: Icon, label }) => {
+        {tabs.map(({ key, href, icon: Icon }) => {
           const active = isActive(href, pathname)
           return (
             <Link
@@ -37,7 +39,7 @@ export default function AdminBottomTabs() {
               }`}
             >
               <Icon size={22} strokeWidth={active ? 2 : 1.5} />
-              <span className="text-[11px] leading-tight">{label}</span>
+              <span className="text-[11px] leading-tight">{t(key)}</span>
             </Link>
           )
         })}

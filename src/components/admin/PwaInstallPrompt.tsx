@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Download, X } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PwaInstallPrompt() {
+  const t = useTranslations('admin.common')
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
@@ -57,14 +59,14 @@ export default function PwaInstallPrompt() {
         <Download size={18} className="text-[#6B7F5E]" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-[#1A1208]">安装到主屏幕</div>
-        <div className="text-xs text-[#8C8478]">获得更快的访问和离线功能</div>
+        <div className="text-sm font-medium text-[#1A1208]">{t('pwaInstallTitle')}</div>
+        <div className="text-xs text-[#8C8478]">{t('pwaInstallDesc')}</div>
       </div>
       <button
         onClick={handleInstall}
         className="px-3 py-1.5 bg-[#6B7F5E] text-white text-xs font-medium rounded-full shrink-0 border-0 cursor-pointer"
       >
-        安装
+        {t('pwaInstall')}
       </button>
       <button
         onClick={handleDismiss}

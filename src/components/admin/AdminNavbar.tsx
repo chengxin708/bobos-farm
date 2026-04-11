@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useSession, signOut } from 'next-auth/react'
 import { ChevronDown, Settings, LogOut } from 'lucide-react'
 import { setLocale } from '@/lib/locale-actions'
@@ -96,6 +96,7 @@ export default function AdminNavbar() {
   const router = useRouter()
   const locale = useLocale()
   const { data: session } = useSession()
+  const t = useTranslations('admin.nav')
 
   const userName = session?.user?.name || ''
   const userEmail = session?.user?.email || ''
@@ -145,14 +146,14 @@ export default function AdminNavbar() {
         <span className="font-[family-name:var(--font-logo)] text-xl font-semibold text-[#1A1208] tracking-[0.01em]">
           Bobo&apos;s Farm
         </span>
-        <span className="text-xs text-[#6B7F5E] font-medium">管理</span>
+        <span className="text-xs text-[#6B7F5E] font-medium">{t('admin')}</span>
       </Link>
 
       {/* ── Nav links ── */}
       <div className="flex items-center gap-6 flex-1">
         {/* 首页 */}
         <Link href="/admin/dashboard" className={linkClass(isActive('/admin/dashboard'))}>
-          首页
+          {t('home')}
         </Link>
 
         {/* 预订管理 dropdown */}
@@ -167,7 +168,7 @@ export default function AdminNavbar() {
               reservationsActive ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208] hover:text-[#6B7F5E]'
             }`}
           >
-            预订管理
+            {t('bookingsMenu')}
             <ChevronDown
               size={14}
               className={`transition-transform duration-200 ${reservations.open ? 'rotate-180' : ''}`}
@@ -180,21 +181,21 @@ export default function AdminNavbar() {
                 active={pathname === '/admin/reservations'}
                 onClick={() => reservations.setOpen(false)}
               >
-                全部预订
+                {t('allReservations')}
               </DropdownLink>
               <DropdownLink
                 href="/admin/reservations?view=deposits"
                 active={pathname === '/admin/reservations' && false}
                 onClick={() => reservations.setOpen(false)}
               >
-                待审定金
+                {t('pendingDeposits')}
               </DropdownLink>
               <DropdownLink
                 href="/admin/reservations?view=orders"
                 active={pathname === '/admin/reservations' && false}
                 onClick={() => reservations.setOpen(false)}
               >
-                预点单
+                {t('preOrders')}
               </DropdownLink>
             </div>
           )}
@@ -202,12 +203,12 @@ export default function AdminNavbar() {
 
         {/* 菜单管理 */}
         <Link href="/admin/menu" className={linkClass(isActive('/admin/menu') || pathname.startsWith('/admin/menu'))}>
-          菜单管理
+          {t('menuMgmt')}
         </Link>
 
         {/* 日历 */}
         <Link href="/admin/calendar" className={linkClass(isActive('/admin/calendar'))}>
-          日历
+          {t('calendar')}
         </Link>
 
         {/* 运营 dropdown */}
@@ -222,7 +223,7 @@ export default function AdminNavbar() {
               operationsActive ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208] hover:text-[#6B7F5E]'
             }`}
           >
-            运营
+            {t('operations')}
             <ChevronDown
               size={14}
               className={`transition-transform duration-200 ${operations.open ? 'rotate-180' : ''}`}
@@ -235,21 +236,21 @@ export default function AdminNavbar() {
                 active={isActive('/admin/venues')}
                 onClick={() => operations.setOpen(false)}
               >
-                场地管理
+                {t('venues')}
               </DropdownLink>
               <DropdownLink
                 href="/admin/customers"
                 active={isActive('/admin/customers')}
                 onClick={() => operations.setOpen(false)}
               >
-                客户管理
+                {t('customers')}
               </DropdownLink>
               <DropdownLink
                 href="/admin/reports"
                 active={isActive('/admin/reports')}
                 onClick={() => operations.setOpen(false)}
               >
-                数据报表
+                {t('reports')}
               </DropdownLink>
             </div>
           )}
@@ -323,7 +324,7 @@ export default function AdminNavbar() {
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1A1208] bg-transparent border-0 cursor-pointer transition-colors hover:bg-[#E8ECE4]"
               >
                 <Settings size={15} className="text-[#8C8478]" />
-                个人设置
+                {t('profileSettings')}
               </button>
 
               {/* Logout */}
@@ -333,7 +334,7 @@ export default function AdminNavbar() {
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#DC3545] bg-transparent border-0 cursor-pointer transition-colors hover:bg-red-50"
                 >
                   <LogOut size={15} className="text-[#DC3545]" />
-                  退出登录
+                  {t('logout')}
                 </button>
               </div>
             </div>

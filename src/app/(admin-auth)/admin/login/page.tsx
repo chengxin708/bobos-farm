@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
+  const t = useTranslations('admin.login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -24,14 +26,14 @@ export default function AdminLoginPage() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        setError(t('invalidCredentials'))
         setIsLoading(false)
       } else {
         // Cookie is set. Use full page navigation.
         window.location.assign('/admin/dashboard')
       }
     } catch {
-      setError('Something went wrong')
+      setError(t('error'))
       setIsLoading(false)
     }
   }
@@ -45,10 +47,10 @@ export default function AdminLoginPage() {
             Bobo&apos;s Farm
           </h1>
           <p className="font-serif text-sm text-[#8C857A] mb-2">
-            波姐农家乐
+            {t('subtitle')}
           </p>
           <span className="text-xs text-[#6B7F5E] font-medium tracking-wide">
-            管理后台
+            {t('tagline')}
           </span>
         </div>
 
@@ -65,7 +67,7 @@ export default function AdminLoginPage() {
             <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C857A] pointer-events-none" />
             <input
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -78,7 +80,7 @@ export default function AdminLoginPage() {
             <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C857A] pointer-events-none" />
             <input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -101,7 +103,7 @@ export default function AdminLoginPage() {
             disabled={isLoading}
             className="bg-[#6B7F5E] text-white rounded-full py-3 w-full text-base font-medium cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed transition-colors hover:bg-[#5A6E4F]"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? t('signingIn') : t('signIn')}
           </button>
         </form>
       </div>
