@@ -1,12 +1,21 @@
 import webpush from "web-push";
 import { prisma } from "./prisma";
 
-// Configure VAPID credentials for Web Push
-webpush.setVapidDetails(
-  "mailto:admin@bobosfarm.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Lazy-init VAPID — only configure when keys are available
+let vapidConfigured = false;
+
+function ensureVapid(): boolean {
+  if (vapidConfigured) return true;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) {
+    console.warn("[Push] VAPID keys not configured — push notifications disabled");
+    return false;
+  }
+  webpush.setVapidDetails("mailto:admin@bobosfarm.com", publicKey, privateKey);
+  vapidConfigured = true;
+  return true;
+}
 
 export interface PushPayload {
   title: string;
@@ -21,6 +30,8 @@ export interface PushPayload {
  * Automatically cleans up expired/invalid subscriptions (410 Gone, 404).
  */
 export async function sendPushToUser(userId: string, payload: PushPayload) {
+  if (!ensureVapid()) return [];
+
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId },
   });
