@@ -125,8 +125,8 @@ export default function CheckoutPanel({
 
   // ── Computed values ──
 
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.menuItem.price * item.quantity,
+  const subtotal = (order.items || []).reduce(
+    (sum, item) => sum + (item.menuItem?.price ?? 0) * item.quantity,
     0,
   )
   const safeDiscount = Math.max(0, Math.min(discount, subtotal))

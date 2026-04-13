@@ -862,6 +862,7 @@
     },
     "calendar": {
       "title": "日历",
+      "back": "返回",
       "views": {
         "month": "月视图",
         "week": "周视图"

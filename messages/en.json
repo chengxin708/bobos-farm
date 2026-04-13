@@ -862,6 +862,7 @@
     },
     "calendar": {
       "title": "Calendar",
+      "back": "Back",
       "views": {
         "month": "Month",
         "week": "Week"
