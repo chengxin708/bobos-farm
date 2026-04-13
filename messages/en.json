@@ -1041,6 +1041,8 @@
       "editorTitleEdit": "Edit {name}'s Order",
       "editorTitleNew": "Place Order",
       "editOrder": "Edit Order",
+      "lockOrder": "Lock Order",
+      "unlockOrder": "Unlock Order",
       "placeOrder": "Place Order",
       "saveOrder": "Save Order",
       "updateOrder": "Update Order",

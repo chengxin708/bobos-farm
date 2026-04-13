@@ -332,6 +332,40 @@ export default function ReservationDetail({
           </button>
         )}
 
+        {/* Lock/Unlock order */}
+        {orderData && orderData.status === 'SUBMITTED' && (
+          <button
+            onClick={async () => {
+              await fetch(`/api/orders/${orderData.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'lock' }),
+              })
+              mutateOrder()
+              onOrderChanged?.()
+            }}
+            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#E67E22] text-[#E67E22] hover:bg-[#E67E22]/5"
+          >
+            {tOrders('lockOrder')}
+          </button>
+        )}
+        {orderData && orderData.status === 'LOCKED' && (
+          <button
+            onClick={async () => {
+              await fetch(`/api/orders/${orderData.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'unlock' }),
+              })
+              mutateOrder()
+              onOrderChanged?.()
+            }}
+            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#8C8478] text-[#8C8478] hover:bg-[#8C8478]/5"
+          >
+            {tOrders('unlockOrder')}
+          </button>
+        )}
+
         {/* Checkout - show when order exists and is actionable */}
         {orderData && ['SUBMITTED', 'LOCKED', 'BILLED'].includes(orderData.status) && (
           <button

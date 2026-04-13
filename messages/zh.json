@@ -1041,6 +1041,8 @@
       "editorTitleEdit": "编辑 {name} 的订单",
       "editorTitleNew": "代客点单",
       "editOrder": "编辑订单",
+      "lockOrder": "锁定订单",
+      "unlockOrder": "解锁订单",
       "placeOrder": "代客点单",
       "saveOrder": "保存订单",
       "updateOrder": "更新订单",
