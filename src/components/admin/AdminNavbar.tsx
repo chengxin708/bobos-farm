@@ -259,6 +259,17 @@ export default function AdminNavbar() {
 
       {/* ── Right side controls ── */}
       <div className="flex items-center gap-3 shrink-0">
+        {/* Settings (store settings) */}
+        <Link
+          href="/admin/settings"
+          className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors no-underline ${
+            pathname.startsWith('/admin/settings') ? 'bg-[#E8ECE4] text-[#6B7F5E]' : 'text-[#1A1208] hover:bg-[#E8ECE4]'
+          }`}
+          title={t('settings')}
+        >
+          <Settings size={20} />
+        </Link>
+
         {/* Notification bell */}
         <NotificationBell />
 
@@ -315,20 +326,8 @@ export default function AdminNavbar() {
                 </div>
               )}
 
-              {/* Settings */}
-              <button
-                onClick={() => {
-                  setAvatarOpen(false)
-                  router.push('/admin/settings')
-                }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1A1208] bg-transparent border-0 cursor-pointer transition-colors hover:bg-[#E8ECE4]"
-              >
-                <Settings size={15} className="text-[#8C8478]" />
-                {t('profileSettings')}
-              </button>
-
               {/* Logout */}
-              <div className="border-t border-[#E8ECE4] mt-1 pt-1">
+              <div className="pt-1">
                 <button
                   onClick={() => signOut({ callbackUrl: '/login' })}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#DC3545] bg-transparent border-0 cursor-pointer transition-colors hover:bg-red-50"
