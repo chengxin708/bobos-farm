@@ -320,15 +320,17 @@ export function useReservationsData() {
       }
     }
 
-    // Apply filter chip
-    if (filter === 'action-needed') {
-      list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED')
-    } else if (filter === 'confirmed') {
-      list = list.filter(r => r.status === 'CONFIRMED')
-    } else if (filter === 'completed') {
-      list = list.filter(r => r.status === 'COMPLETED')
+    // Apply filter chip — only in active (non-history) mode
+    if (!showHistory) {
+      if (filter === 'action-needed') {
+        list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED')
+      } else if (filter === 'confirmed') {
+        list = list.filter(r => r.status === 'CONFIRMED')
+      } else if (filter === 'completed') {
+        list = list.filter(r => r.status === 'COMPLETED')
+      }
+      // 'all' — no additional filter
     }
-    // 'all' — no additional filter
 
     // Sort by date ascending (upcoming first) when not history, descending for history
     list = [...list].sort((a, b) => {
