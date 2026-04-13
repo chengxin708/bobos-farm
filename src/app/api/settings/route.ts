@@ -30,6 +30,9 @@ const ALLOWED_SETTING_KEYS = [
   "email_payment_reminder",
   "email_admin_new_booking",
   "resend_api_key",
+  // Web Push VAPID keys (backup, primary config via env vars)
+  "vapid_public_key",
+  "vapid_private_key",
   // Legacy seed keys (kept for backward compatibility with existing DB rows)
   "max_advance_months",
   "min_advance_days",

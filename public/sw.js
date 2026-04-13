@@ -50,3 +50,44 @@ self.addEventListener('fetch', (event) => {
     fetch(request).catch(() => caches.match(request))
   )
 })
+
+// ============ Web Push Notifications ============
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  const data = event.data.json()
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon.svg',
+    badge: '/icon.svg',
+    data: { url: data.url || '/admin/dashboard' },
+    vibrate: [200, 100, 200],
+    tag: data.tag || 'default',
+    renotify: true,
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/admin/dashboard'
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If an existing window is open, focus it and navigate
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.focus()
+          client.navigate(url)
+          return
+        }
+      }
+      // Otherwise open a new window
+      return clients.openWindow(url)
+    })
+  )
+})
