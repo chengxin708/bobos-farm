@@ -196,7 +196,7 @@ export default function DashboardMobile() {
                   style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
                 >
                   <Link
-                    href="/admin/reservations?view=deposits"
+                    href="/admin/reservations"
                     className="flex items-center gap-3 no-underline"
                   >
                     <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF8E1' }}>

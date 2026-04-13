@@ -1,51 +1,106 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X, Calendar, Lock, Unlock } from 'lucide-react'
+import { Search, X, History, AlertCircle, ShoppingBag } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import ReservationDetail from './ReservationDetail'
 import {
   useReservationsData,
-  type ViewMode,
-  type TabKey,
-  type OrderTabKey,
-  formatDateDisplay,
-  ORDER_STATUS_BADGE,
+  type Reservation,
 } from './useReservationsData'
 
-// ── Segmented Control ──────────────────────────────────────────────
+// ── Filter Chip ───────────────────────────────────────────────────
 
-function SegmentedControl({
-  value,
-  onChange,
-  labels,
+function FilterChip({
+  label,
+  count,
+  active,
+  onClick,
 }: {
-  value: ViewMode
-  onChange: (v: ViewMode) => void
-  labels: Record<ViewMode, string>
+  label: string
+  count?: number
+  active: boolean
+  onClick: () => void
 }) {
-  const segments: { key: ViewMode; label: string }[] = [
-    { key: 'all', label: labels.all },
-    { key: 'deposits', label: labels.deposits },
-    { key: 'orders', label: labels.orders },
-  ]
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 px-3 py-1.5 text-xs font-medium rounded-full transition-colors flex items-center gap-1.5 ${
+        active
+          ? 'bg-[#6B7F5E] text-white'
+          : 'bg-white border border-[#E8ECE4] text-[#8C8478]'
+      }`}
+    >
+      {label}
+      {count != null && count > 0 && (
+        <span className={`text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center ${
+          active ? 'bg-white/25 text-white' : 'bg-[#6B7F5E]/10 text-[#6B7F5E]'
+        }`}>
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ── Reservation Card ──────────────────────────────────────────────
+
+function ReservationCard({
+  reservation,
+  onClick,
+  onConfirmDeposit,
+  onRejectDeposit,
+  isUpdating,
+  t,
+}: {
+  reservation: Reservation
+  onClick: () => void
+  onConfirmDeposit: (id: string) => void
+  onRejectDeposit: (id: string) => void
+  isUpdating: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: any) => string
+}) {
+  const r = reservation
+  const isPaymentSubmitted = r.status === 'PAYMENT_SUBMITTED'
 
   return (
-    <div className="flex gap-1 bg-[#F0EDE8] rounded-full p-1">
-      {segments.map((s) => (
-        <button
-          key={s.key}
-          onClick={() => onChange(s.key)}
-          className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-            value === s.key
-              ? 'bg-[#6B7F5E] text-white'
-              : 'bg-transparent text-[#8C8478]'
-          }`}
-        >
-          {s.label}
-        </button>
-      ))}
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 active:bg-[#F8F7F4]/80 cursor-pointer"
+    >
+      <div className="flex items-start justify-between">
+        <div className="text-sm font-semibold text-brown">{r.user?.name || 'N/A'}</div>
+        <StatusBadge
+          type="reservation"
+          status={r.status}
+          label={t(`status.${r.status}`)}
+        />
+      </div>
+      <div className="text-xs text-[#8C8478]">
+        {r.yurt?.name} · {t('guestsSuffix', { count: r.guestCount })}
+      </div>
+
+      {/* Inline action buttons for PAYMENT_SUBMITTED */}
+      {isPaymentSubmitted && (
+        <div className="flex items-center gap-2 mt-1 pt-2 border-t border-[#E8ECE4]">
+          <button
+            onClick={(e) => { e.stopPropagation(); onConfirmDeposit(r.id) }}
+            disabled={isUpdating}
+            className="flex-1 py-1.5 text-xs font-semibold rounded-lg bg-[#5B8C3E] text-white disabled:opacity-50"
+          >
+            {t('actions.confirm')}
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onRejectDeposit(r.id) }}
+            disabled={isUpdating}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#DC3545]/30 text-[#DC3545] disabled:opacity-50"
+          >
+            {t('actions.reject')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -55,20 +110,17 @@ function SegmentedControl({
 export default function ReservationsMobile() {
   const data = useReservationsData()
   const [showSearch, setShowSearch] = useState(false)
-  const [showDateFilter, setShowDateFilter] = useState(false)
 
   const {
     sessionStatus,
-    view, setView,
-    activeTab, setActiveTab,
+    filter, setFilter,
+    showHistory, setShowHistory,
     search, setSearch,
-    startDate, setStartDate,
-    endDate, setEndDate,
-    reservationTabs,
-    orderTab, setOrderTab,
-    orderTabs,
-    reservations,
-    orders,
+    pendingDepositCount,
+    pendingOrderCount,
+    actionNeededCount,
+    confirmedCount,
+    groupedReservations,
     isLoading,
     selectedRes, setSelectedRes,
     detailRes,
@@ -76,15 +128,11 @@ export default function ReservationsMobile() {
     confirmDeposit,
     cancelReservation,
     completeReservation,
-    handleLockOrder,
-    handleUnlockOrder,
     updating,
     mutateReservations,
-    mutateOrders,
     mutateDetail,
     successMsg, setSuccessMsg,
     t,
-    tOrders,
   } = data
 
   // ── Loading ──────────────────────────────────────────────────
@@ -112,16 +160,11 @@ export default function ReservationsMobile() {
           onClose={() => setSelectedRes(null)}
           onAction={{ confirmDeposit, cancelReservation, completeReservation }}
           isUpdating={updating}
-          onOrderChanged={() => { mutateReservations(); mutateOrders(); mutateDetail(); }}
+          onOrderChanged={() => { mutateReservations(); mutateDetail() }}
         />
       </div>
     )
   }
-
-  // ── Status chips for reservations ────────────────────────────
-
-  const statusChips: { key: TabKey; label: string }[] = reservationTabs
-  const orderStatusChips: { key: OrderTabKey; label: string }[] = orderTabs
 
   return (
     <>
@@ -137,10 +180,7 @@ export default function ReservationsMobile() {
           </div>
         )}
 
-        {/* Segmented Control */}
-        <SegmentedControl value={view} onChange={setView} labels={{ all: t('viewSegments.all'), deposits: t('viewSegments.deposits'), orders: t('viewSegments.orders') }} />
-
-        {/* Search + Date filter toggle */}
+        {/* Search + History toggle */}
         <div className="flex items-center gap-2">
           {showSearch ? (
             <div className="flex-1 flex items-center bg-white border border-[#E8ECE4] rounded-lg px-3 py-2 gap-2">
@@ -167,71 +207,59 @@ export default function ReservationsMobile() {
             </button>
           )}
           <button
-            onClick={() => setShowDateFilter(!showDateFilter)}
-            className={`p-2 rounded-lg border ${showDateFilter || startDate || endDate ? 'border-[#6B7F5E] bg-[#6B7F5E]/10' : 'border-[#E8ECE4] bg-white'}`}
+            onClick={() => setShowHistory(!showHistory)}
+            className={`p-2 rounded-lg border ${
+              showHistory ? 'border-[#6B7F5E] bg-[#6B7F5E]/10' : 'border-[#E8ECE4] bg-white'
+            }`}
           >
-            <Calendar size={18} className={showDateFilter || startDate || endDate ? 'text-[#6B7F5E]' : 'text-[#8C8478]'} />
+            <History size={18} className={showHistory ? 'text-[#6B7F5E]' : 'text-[#8C8478]'} />
           </button>
         </div>
 
-        {/* Date filters (collapsible) */}
-        {showDateFilter && view !== 'orders' && (
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-[10px] text-[#8C8478] uppercase">{t('startDate')}</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full text-sm border border-[#E8ECE4] rounded-lg px-2 py-1.5 bg-white text-brown"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[10px] text-[#8C8478] uppercase">{t('endDate')}</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full text-sm border border-[#E8ECE4] rounded-lg px-2 py-1.5 bg-white text-brown"
-              />
-            </div>
+        {/* Action alerts — only when not in history mode */}
+        {!showHistory && (pendingDepositCount > 0 || pendingOrderCount > 0) && (
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+            {pendingDepositCount > 0 && (
+              <button
+                onClick={() => { setFilter('action-needed'); setShowHistory(false) }}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E67E22]/10 border border-[#E67E22]/20 text-[#E67E22] text-xs font-semibold"
+              >
+                <AlertCircle size={14} />
+                {t('pendingDeposits', { count: pendingDepositCount })}
+              </button>
+            )}
+            {pendingOrderCount > 0 && (
+              <button
+                onClick={() => { setFilter('all'); setShowHistory(false) }}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E67E22]/10 border border-[#E67E22]/20 text-[#E67E22] text-xs font-semibold"
+              >
+                <ShoppingBag size={14} />
+                {t('pendingOrders', { count: pendingOrderCount })}
+              </button>
+            )}
           </div>
         )}
 
-        {/* Status chips (horizontal scrolling) */}
-        {view === 'all' && (
+        {/* Filter chips */}
+        {!showHistory && (
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-            {statusChips.map((chip) => (
-              <button
-                key={chip.key}
-                onClick={() => setActiveTab(chip.key)}
-                className={`shrink-0 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                  activeTab === chip.key
-                    ? 'bg-[#6B7F5E] text-white'
-                    : 'bg-white border border-[#E8ECE4] text-[#8C8478]'
-                }`}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {view === 'orders' && (
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-            {orderStatusChips.map((chip) => (
-              <button
-                key={chip.key}
-                onClick={() => setOrderTab(chip.key)}
-                className={`shrink-0 px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                  orderTab === chip.key
-                    ? 'bg-[#6B7F5E] text-white'
-                    : 'bg-white border border-[#E8ECE4] text-[#8C8478]'
-                }`}
-              >
-                {chip.label}
-              </button>
-            ))}
+            <FilterChip
+              label={t('filters.actionNeeded')}
+              count={actionNeededCount}
+              active={filter === 'action-needed'}
+              onClick={() => setFilter('action-needed')}
+            />
+            <FilterChip
+              label={t('filters.confirmed')}
+              count={confirmedCount}
+              active={filter === 'confirmed'}
+              onClick={() => setFilter('confirmed')}
+            />
+            <FilterChip
+              label={t('filters.all')}
+              active={filter === 'all'}
+              onClick={() => setFilter('all')}
+            />
           </div>
         )}
 
@@ -240,118 +268,35 @@ export default function ReservationsMobile() {
           <div className="flex-1 flex items-center justify-center py-12">
             <p className="text-[#8C8478] text-sm">{t('loading')}</p>
           </div>
-        ) : view === 'orders' ? (
-          /* ── Orders card list ──────────────────────────────── */
-          orders.length === 0 ? (
-            <div className="bg-white rounded-xl border border-[#E8ECE4] p-8 text-center">
-              <p className="text-[#8C8478] text-sm">{tOrders('noResults')}</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {orders.map((o) => {
-                const badge = ORDER_STATUS_BADGE[o.status] || ORDER_STATUS_BADGE.DRAFT
-                return (
-                  <div
-                    key={o.id}
-                    className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 active:bg-[#F8F7F4]/80"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-brown">{o.reservation.user?.name || 'N/A'}</div>
-                        <div className="text-xs text-[#8C8478]">{o.reservation.user?.email}</div>
-                      </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
-                        {tOrders(`status.${o.status}`)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-[#8C8478]">
-                      {formatDateDisplay(o.reservation.date)} · {o.reservation.yurt?.name} · {t('itemsSuffix', { count: o._count.items })}
-                    </div>
-                    {o.estimatedTotal != null && (
-                      <div className="text-sm font-semibold text-brown">${o.estimatedTotal.toFixed(2)}</div>
-                    )}
-                    {/* Quick actions */}
-                    <div className="flex items-center gap-2 justify-end mt-1">
-                      {o.status === 'SUBMITTED' && (
-                        <button
-                          onClick={() => handleLockOrder(o.id)}
-                          disabled={updating}
-                          className="flex items-center gap-1 px-3 py-1 bg-[#5B8C3E] text-white text-xs font-semibold rounded-md disabled:opacity-50"
-                        >
-                          <Lock size={12} /> {tOrders('actions.lock')}
-                        </button>
-                      )}
-                      {o.status === 'LOCKED' && (
-                        <button
-                          onClick={() => handleUnlockOrder(o.id)}
-                          disabled={updating}
-                          className="flex items-center gap-1 px-3 py-1 border border-[#F4A623] text-[#F4A623] text-xs font-semibold rounded-md disabled:opacity-50"
-                        >
-                          <Unlock size={12} /> {tOrders('actions.unlock')}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )
+        ) : groupedReservations.length === 0 ? (
+          <div className="bg-white rounded-xl border border-[#E8ECE4] p-8 text-center">
+            <p className="text-[#8C8478] text-sm">{t('noResults')}</p>
+          </div>
         ) : (
-          /* ── Reservations / Deposits card list ────────────── */
-          reservations.length === 0 ? (
-            <div className="bg-white rounded-xl border border-[#E8ECE4] p-8 text-center">
-              <p className="text-[#8C8478] text-sm">{t('noResults')}</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {reservations.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRes(r)}
-                  className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 active:bg-[#F8F7F4]/80 cursor-pointer"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="text-sm font-semibold text-brown">{r.user?.name || 'N/A'}</div>
-                    <div className="flex items-center gap-1.5">
-                      <StatusBadge
-                        type="reservation"
-                        status={r.status}
-                        label={t(`status.${r.status}`)}
-                      />
-                      <StatusBadge
-                        type="deposit"
-                        status={r.depositStatus}
-                        label={t(`depositStatus.${r.depositStatus}`)}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-xs text-[#8C8478]">
-                    {formatDateDisplay(r.date)} · {r.yurt?.name} · {t('guestsSuffix', { count: r.guestCount })}
-                  </div>
-
-                  {/* Deposits view: prominent action buttons */}
-                  {view === 'deposits' && r.status === 'PAYMENT_SUBMITTED' && (
-                    <div className="flex items-center gap-2 justify-end mt-1">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); confirmDeposit(r.id) }}
-                        disabled={updating}
-                        className="px-3 py-1 bg-[#5B8C3E] text-white text-xs font-semibold rounded-md disabled:opacity-50"
-                      >
-                        {t('actions.confirm')}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); cancelReservation(r.id) }}
-                        disabled={updating}
-                        className="px-3 py-1 text-[#DC3545] text-xs font-semibold hover:underline disabled:opacity-50"
-                      >
-                        {t('actions.reject')}
-                      </button>
-                    </div>
-                  )}
+          <div className="flex flex-col gap-4">
+            {groupedReservations.map((group) => (
+              <div key={group.dateKey}>
+                {/* Date group header */}
+                <div className="text-xs font-semibold text-[#8C8478] uppercase tracking-wider mb-2">
+                  {group.dateLabel}
                 </div>
-              ))}
-            </div>
-          )
+                {/* Cards */}
+                <div className="flex flex-col gap-2">
+                  {group.reservations.map((r) => (
+                    <ReservationCard
+                      key={r.id}
+                      reservation={r}
+                      onClick={() => setSelectedRes(r)}
+                      onConfirmDeposit={confirmDeposit}
+                      onRejectDeposit={cancelReservation}
+                      isUpdating={updating}
+                      t={t}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </>

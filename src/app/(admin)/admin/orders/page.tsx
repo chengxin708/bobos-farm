@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function OrdersPage() {
-  redirect('/admin/reservations?view=orders')
+  redirect('/admin/reservations')
 }

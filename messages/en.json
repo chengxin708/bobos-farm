@@ -777,11 +777,30 @@
         "created": "Created",
         "updated": "Last Updated",
         "modifications": "Modification History",
+        "tabs": {
+          "info": "Reservation",
+          "preOrder": "Pre-order"
+        },
         "preOrder": "Pre-order",
         "itemCount": "Items",
         "estimatedTotal": "Estimated Total",
         "viewFullOrder": "View full order"
       },
+      "pendingDeposits": "{count} deposits pending",
+      "pendingOrders": "{count} orders pending",
+      "filters": {
+        "actionNeeded": "Action Needed",
+        "confirmed": "Confirmed",
+        "all": "All"
+      },
+      "history": "History",
+      "dateGroup": {
+        "today": "Today",
+        "tomorrow": "Tomorrow"
+      },
+      "orderPending": "Pending",
+      "orderConfirmed": "Confirmed",
+      "noOrder": "No pre-order yet",
       "noResults": "No reservations found",
       "loading": "Loading reservations...",
       "dateRange": "Date Range",
@@ -1058,6 +1077,7 @@
       "editOrder": "Edit Order",
       "lockOrder": "Lock Order",
       "unlockOrder": "Unlock Order",
+      "confirmLock": "Confirm & Lock",
       "placeOrder": "Place Order",
       "saveOrder": "Save Order",
       "updateOrder": "Update Order",

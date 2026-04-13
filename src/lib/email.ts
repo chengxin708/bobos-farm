@@ -443,7 +443,7 @@ export async function sendAdminDepositSubmitted(
         infoRow("定金金额", `$${data.depositAmount}`)
       )}
 
-      ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations?view=deposits`)}
+      ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations`)}
     `);
 
     await client.emails.send({

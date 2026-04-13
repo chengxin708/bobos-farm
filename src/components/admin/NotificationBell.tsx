@@ -97,7 +97,7 @@ export default function NotificationBell() {
                   key={item.id}
                   onClick={() => {
                     setOpen(false)
-                    router.push('/admin/reservations?view=deposits')
+                    router.push('/admin/reservations')
                   }}
                   className="w-full flex items-start gap-3 px-4 py-3 text-left bg-transparent border-0 cursor-pointer transition-colors hover:bg-[#F8F7F4] border-b border-[#E8ECE4] last:border-b-0"
                 >
@@ -126,7 +126,7 @@ export default function NotificationBell() {
             <button
               onClick={() => {
                 setOpen(false)
-                router.push('/admin/reservations?view=deposits')
+                router.push('/admin/reservations')
               }}
               className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium text-[#6B7F5E] bg-[#F8F7F4] border-0 border-t border-[#E8ECE4] cursor-pointer hover:bg-[#E8ECE4] transition-colors"
             >

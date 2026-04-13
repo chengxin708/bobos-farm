@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 
@@ -48,6 +48,11 @@ export interface Order {
   items: OrderItem[]
 }
 
+export interface OrderSummary {
+  id: string
+  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
+}
+
 export interface ActivityLog {
   id: string
   action: string
@@ -76,32 +81,16 @@ export interface Reservation {
   updatedAt: string
   user: ReservationUser
   yurt: ReservationYurt
-  order?: Order | null
+  order?: Order | OrderSummary | null
 }
 
-export interface OrderListItem {
-  id: string
-  reservationId: string
-  status: 'DRAFT' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
-  notes: string | null
-  estimatedTotal: number | null
-  submittedAt: string | null
-  lockedAt: string | null
-  createdAt: string
-  updatedAt: string
-  reservation: {
-    id: string
-    date: string
-    guestCount: number
-    yurt: { id: string; name: string }
-    user: ReservationUser
-  }
-  _count: { items: number }
-}
+export type FilterMode = 'action-needed' | 'confirmed' | 'all'
 
-export type ViewMode = 'all' | 'deposits' | 'orders'
-export type TabKey = 'all' | 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
-export type OrderTabKey = 'all' | 'SUBMITTED' | 'LOCKED' | 'BILLED' | 'PAID'
+export interface DateGroup {
+  dateLabel: string
+  dateKey: string
+  reservations: Reservation[]
+}
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -174,6 +163,31 @@ export const ORDER_STATUS_BADGE: Record<string, { bg: string; text: string }> = 
   PAID:      { bg: 'bg-[#5B8C3E]/15',   text: 'text-[#5B8C3E]' },
 }
 
+/** Build a human-readable date group label. */
+function buildDateLabel(
+  dateStr: string,
+  locale: string,
+  tToday: string,
+  tTomorrow: string,
+): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const todayStr = now.toISOString().slice(0, 10)
+  const tomorrowDate = new Date(now)
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrowStr = tomorrowDate.toISOString().slice(0, 10)
+  const isoDate = d.toISOString().slice(0, 10)
+
+  const dayOfWeek = d.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { weekday: 'short' })
+  const monthDay = d.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', { month: 'numeric', day: 'numeric' })
+
+  if (isoDate === todayStr) return `${tToday} ${monthDay} ${dayOfWeek}`
+  if (isoDate === tomorrowStr) return `${tTomorrow} ${monthDay} ${dayOfWeek}`
+  return `${monthDay} ${dayOfWeek}`
+}
+
+const TERMINAL_STATUSES = ['COMPLETED', 'CANCELLED', 'EXPIRED']
+
 // ── Hook ───────────────────────────────────────────────────────────
 
 export function useReservationsData() {
@@ -181,27 +195,11 @@ export function useReservationsData() {
   const tOrders = useTranslations('admin.orders')
   const { data: session, status: sessionStatus } = useSession()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
-  // View state synced with URL
-  const urlView = (searchParams.get('view') as ViewMode) || 'all'
-  const [view, setView] = useState<ViewMode>(
-    ['all', 'deposits', 'orders'].includes(urlView) ? urlView : 'all'
-  )
-
-  // Sync view when URL search params change (e.g. navbar dropdown clicks)
-  useEffect(() => {
-    const newView = (searchParams.get('view') as ViewMode) || 'all'
-    if (['all', 'deposits', 'orders'].includes(newView) && newView !== view) {
-      setView(newView)
-    }
-  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [activeTab, setActiveTab] = useState<TabKey>('all')
-  const [orderTab, setOrderTab] = useState<OrderTabKey>('all')
+  // Filter state
+  const [filter, setFilter] = useState<FilterMode>('action-needed')
+  const [showHistory, setShowHistory] = useState(false)
   const [search, setSearch] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
   const [updating, setUpdating] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -220,58 +218,20 @@ export function useReservationsData() {
     }
   }, [sessionStatus, session, router])
 
-  // Update URL when view changes (without triggering navigation)
-  const handleViewChange = useCallback((newView: ViewMode) => {
-    setView(newView)
-    const url = newView === 'all'
-      ? '/admin/reservations'
-      : `/admin/reservations?view=${newView}`
-    window.history.replaceState(null, '', url)
-  }, [])
-
-  // ── Reservations API URL ─────────────────────────────────────
+  // ── Reservations API — fetch all, filter on client ──────────
 
   const reservationsApiUrl = useMemo(() => {
     const params = new URLSearchParams()
-    if (view === 'deposits') {
-      params.set('status', 'PAYMENT_SUBMITTED')
-    } else if (view === 'all' && activeTab !== 'all') {
-      params.set('status', activeTab)
-    }
-    if (startDate) params.set('startDate', startDate)
-    if (endDate) params.set('endDate', endDate)
-    if (search.trim() && view !== 'orders') params.set('search', search.trim())
-    const qs = params.toString()
-    return `/api/reservations${qs ? `?${qs}` : ''}`
-  }, [view, activeTab, startDate, endDate, search])
-
-  const {
-    data: reservations,
-    isLoading: reservationsLoading,
-    mutate: mutateReservations
-  } = useSWR<Reservation[]>(
-    view !== 'orders' ? reservationsApiUrl : null,
-    fetcher
-  )
-
-  // ── Orders API URL ───────────────────────────────────────────
-
-  const ordersApiUrl = useMemo(() => {
-    const params = new URLSearchParams()
-    if (orderTab !== 'all') params.set('status', orderTab)
     if (search.trim()) params.set('search', search.trim())
     const qs = params.toString()
-    return `/api/orders${qs ? `?${qs}` : ''}`
-  }, [orderTab, search])
+    return `/api/reservations${qs ? `?${qs}` : ''}`
+  }, [search])
 
   const {
-    data: orders,
-    isLoading: ordersLoading,
-    mutate: mutateOrders
-  } = useSWR<OrderListItem[]>(
-    view === 'orders' ? ordersApiUrl : null,
-    fetcher
-  )
+    data: rawReservations,
+    isLoading,
+    mutate: mutateReservations
+  } = useSWR<Reservation[]>(reservationsApiUrl, fetcher)
 
   // ── Fetch detail + activity logs for selected reservation ───
 
@@ -287,25 +247,80 @@ export function useReservationsData() {
     { revalidateOnFocus: false }
   )
 
-  // ── Tab definitions ──────────────────────────────────────────
+  // ── Derived data ────────────────────────────────────────────
 
-  const reservationTabs: { key: TabKey; label: string }[] = [
-    { key: 'all', label: t('tabs.all') },
-    { key: 'PENDING_PAYMENT', label: t('tabs.pendingPayment') },
-    { key: 'PAYMENT_SUBMITTED', label: t('tabs.paymentSubmitted') },
-    { key: 'CONFIRMED', label: t('tabs.confirmed') },
-    { key: 'COMPLETED', label: t('tabs.completed') },
-    { key: 'CANCELLED', label: t('tabs.cancelled') },
-    { key: 'EXPIRED', label: t('tabs.expired') },
-  ]
+  const allReservations = rawReservations || []
 
-  const orderTabs: { key: OrderTabKey; label: string }[] = [
-    { key: 'all', label: tOrders('tabs.all') },
-    { key: 'SUBMITTED', label: tOrders('tabs.SUBMITTED') },
-    { key: 'LOCKED', label: tOrders('tabs.LOCKED') },
-    { key: 'BILLED', label: tOrders('tabs.BILLED') },
-    { key: 'PAID', label: tOrders('tabs.PAID') },
-  ]
+  // Counts (always computed from full dataset before filter)
+  const pendingDepositCount = useMemo(
+    () => allReservations.filter(r => r.status === 'PAYMENT_SUBMITTED').length,
+    [allReservations]
+  )
+  const pendingOrderCount = useMemo(
+    () => allReservations.filter(r => r.order && r.order.status === 'SUBMITTED').length,
+    [allReservations]
+  )
+  const actionNeededCount = useMemo(
+    () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED').length,
+    [allReservations]
+  )
+  const confirmedCount = useMemo(
+    () => allReservations.filter(r => r.status === 'CONFIRMED').length,
+    [allReservations]
+  )
+
+  // Filter + sort
+  const filteredReservations = useMemo(() => {
+    let list = allReservations
+
+    // When not showing history: only upcoming (today+) and exclude terminal states
+    const todayStr = new Date().toISOString().slice(0, 10)
+    if (!showHistory) {
+      list = list.filter(r => {
+        const dateStr = new Date(r.date).toISOString().slice(0, 10)
+        return dateStr >= todayStr && !TERMINAL_STATUSES.includes(r.status)
+      })
+    } else {
+      // History mode: show only past OR terminal-status reservations
+      list = list.filter(r => {
+        const dateStr = new Date(r.date).toISOString().slice(0, 10)
+        return dateStr < todayStr || TERMINAL_STATUSES.includes(r.status)
+      })
+    }
+
+    // Apply filter chip
+    if (filter === 'action-needed') {
+      list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED')
+    } else if (filter === 'confirmed') {
+      list = list.filter(r => r.status === 'CONFIRMED')
+    }
+    // 'all' — no additional filter
+
+    // Sort by date ascending (upcoming first) when not history, descending for history
+    list = [...list].sort((a, b) => {
+      const da = new Date(a.date).getTime()
+      const db = new Date(b.date).getTime()
+      return showHistory ? db - da : da - db
+    })
+
+    return list
+  }, [allReservations, filter, showHistory])
+
+  // Group by date
+  const groupedReservations: DateGroup[] = useMemo(() => {
+    const groups: Map<string, Reservation[]> = new Map()
+    for (const r of filteredReservations) {
+      const key = new Date(r.date).toISOString().slice(0, 10)
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(r)
+    }
+    const locale = typeof window !== 'undefined' ? (document.documentElement.lang || 'en') : 'en'
+    return Array.from(groups.entries()).map(([dateKey, reservations]) => ({
+      dateKey,
+      dateLabel: buildDateLabel(dateKey, locale, t('dateGroup.today'), t('dateGroup.tomorrow')),
+      reservations,
+    }))
+  }, [filteredReservations, t])
 
   // ── Actions ──────────────────────────────────────────────────
 
@@ -340,7 +355,7 @@ export function useReservationsData() {
     } finally {
       setUpdating(false)
     }
-  }, [selectedRes, mutateReservations])
+  }, [selectedRes, mutateReservations, mutateDetail, mutateActivityLogs, t])
 
   const confirmDeposit = useCallback(async (id: string) => {
     const ok = await handleAction(id, 'admin', {
@@ -375,14 +390,14 @@ export function useReservationsData() {
         alert(err.error || tOrders('lockFailed'))
         return
       }
-      mutateOrders()
+      mutateReservations()
       showSuccess(tOrders('lockSuccess'))
     } catch {
       alert(tOrders('lockFailed'))
     } finally {
       setUpdating(false)
     }
-  }, [mutateOrders, showSuccess, tOrders])
+  }, [mutateReservations, showSuccess, tOrders])
 
   const handleUnlockOrder = useCallback(async (id: string) => {
     if (!confirm(tOrders('actions.confirmUnlock'))) return
@@ -398,49 +413,40 @@ export function useReservationsData() {
         alert(err.error || tOrders('unlockFailed'))
         return
       }
-      mutateOrders()
+      mutateReservations()
       showSuccess(tOrders('unlockSuccess'))
     } catch {
       alert(tOrders('unlockFailed'))
     } finally {
       setUpdating(false)
     }
-  }, [mutateOrders, showSuccess, tOrders])
+  }, [mutateReservations, showSuccess, tOrders])
 
   const clearFilters = useCallback(() => {
-    setActiveTab('all')
-    setOrderTab('all')
+    setFilter('action-needed')
     setSearch('')
-    setStartDate('')
-    setEndDate('')
+    setShowHistory(false)
   }, [])
-
-  const isLoading = view === 'orders' ? ordersLoading : reservationsLoading
 
   return {
     // Session
     sessionStatus,
-    // View
-    view,
-    setView: handleViewChange,
-    // Reservation filters
-    activeTab,
-    setActiveTab,
+    // Filters
+    filter,
+    setFilter,
+    showHistory,
+    setShowHistory,
     search,
     setSearch,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
     clearFilters,
-    reservationTabs,
-    // Order filters
-    orderTab,
-    setOrderTab,
-    orderTabs,
+    // Counts
+    pendingDepositCount,
+    pendingOrderCount,
+    actionNeededCount,
+    confirmedCount,
     // Data
-    reservations: reservations || [],
-    orders: orders || [],
+    reservations: filteredReservations,
+    groupedReservations,
     isLoading,
     // Detail
     selectedRes,
@@ -454,9 +460,8 @@ export function useReservationsData() {
     handleLockOrder,
     handleUnlockOrder,
     updating,
-    // Mutators (for child components to trigger refresh)
+    // Mutators
     mutateReservations,
-    mutateOrders,
     mutateDetail,
     // Success message
     successMsg,

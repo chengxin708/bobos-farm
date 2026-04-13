@@ -777,11 +777,30 @@
         "created": "创建时间",
         "updated": "最后更新",
         "modifications": "修改记录",
+        "tabs": {
+          "info": "预订信息",
+          "preOrder": "预点单"
+        },
         "preOrder": "预订单",
         "itemCount": "菜品数量",
         "estimatedTotal": "预计总额",
         "viewFullOrder": "查看完整订单"
       },
+      "pendingDeposits": "{count} 笔定金待确认",
+      "pendingOrders": "{count} 笔订单待确认",
+      "filters": {
+        "actionNeeded": "需要处理",
+        "confirmed": "已确认",
+        "all": "全部"
+      },
+      "history": "历史",
+      "dateGroup": {
+        "today": "今天",
+        "tomorrow": "明天"
+      },
+      "orderPending": "待确认",
+      "orderConfirmed": "已确认",
+      "noOrder": "暂无预点单",
       "noResults": "未找到预订记录",
       "loading": "加载预订中...",
       "dateRange": "日期范围",
@@ -1058,6 +1077,7 @@
       "editOrder": "编辑订单",
       "lockOrder": "锁定订单",
       "unlockOrder": "解锁订单",
+      "confirmLock": "确认锁定",
       "placeOrder": "代客点单",
       "saveOrder": "保存订单",
       "updateOrder": "更新订单",

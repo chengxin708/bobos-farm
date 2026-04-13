@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -57,6 +57,7 @@ export default function ReservationDetail({
   const locale = useLocale()
   const panelOrder = reservation.order || null
 
+  const [detailTab, setDetailTab] = useState<'info' | 'order'>('info')
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
@@ -97,17 +98,32 @@ export default function ReservationDetail({
     onOrderChanged?.()
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Panel header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8ECE4]">
-        <h3 className="text-base font-bold text-brown">{t('detail.title')}</h3>
-        <button onClick={onClose} className="p-1 hover:bg-[#E8ECE4]/30 rounded">
-          <X size={18} className="text-[#8C8478]" />
-        </button>
-      </div>
+  const handleLockOrder = async () => {
+    if (!orderData) return
+    await fetch(`/api/orders/${orderData.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lock' }),
+    })
+    mutateOrder()
+    onOrderChanged?.()
+  }
 
-      {/* Panel body */}
+  const handleUnlockOrder = async () => {
+    if (!orderData) return
+    await fetch(`/api/orders/${orderData.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unlock' }),
+    })
+    mutateOrder()
+    onOrderChanged?.()
+  }
+
+  // ── Tab: Reservation Info ────────────────────────────────────
+
+  function renderInfoTab() {
+    return (
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
         {/* Status badge */}
         <div className="flex items-center gap-2">
@@ -148,64 +164,6 @@ export default function ReservationDetail({
         )}
 
         <hr className="border-[#E8ECE4]" />
-
-        {/* Pre-order Details — full item list */}
-        {orderData && (
-          <>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <ShoppingBag size={14} className="text-[#E67E22]" />
-                  <h4 className="text-sm font-bold text-brown">{t('detail.preOrder')}</h4>
-                </div>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ORDER_STATUS_BADGE[orderData.status]?.bg} ${ORDER_STATUS_BADGE[orderData.status]?.text}`}>
-                  {tOrders(`status.${orderData.status}`)}
-                </span>
-              </div>
-
-              {/* Full item list */}
-              {orderData.items && orderData.items.length > 0 ? (
-                <div className="bg-[#F8F7F4] rounded-xl p-3 space-y-2">
-                  {orderData.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between text-sm">
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[#1A1208]">
-                          {locale === 'zh' && item.menuItem?.nameZh ? item.menuItem.nameZh : item.menuItem?.nameEn}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[#8C8478]">&times;{item.quantity}</span>
-                        <span className="text-[#1A1208] font-medium w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                          ${((item.menuItem?.price ?? 0) * item.quantity).toFixed(0)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Subtotal */}
-                  <div className="border-t border-[#E8ECE4] pt-2 mt-2 flex justify-between text-sm font-semibold">
-                    <span className="text-[#8C8478]">{tOrders('subtotal')}</span>
-                    <span className="text-[#1A1208]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${orderData.estimatedTotal?.toFixed(0) ?? '\u2014'}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-xs text-[#8C8478]">
-                  {t('itemsSuffix', { count: 0 })}
-                </div>
-              )}
-
-              {/* Notes */}
-              {orderData.notes && (
-                <div className="text-xs text-[#8C8478] italic">
-                  {tOrders('notes')}: {orderData.notes}
-                </div>
-              )}
-            </div>
-            <hr className="border-[#E8ECE4]" />
-          </>
-        )}
 
         {/* Guest Info */}
         <div className="space-y-3">
@@ -321,20 +279,180 @@ export default function ReservationDetail({
           )}
         </div>
       </div>
+    )
+  }
 
-      {/* Panel actions */}
+  // ── Tab: Pre-order ──────────────────────────────────────────
+
+  function renderOrderTab() {
+    // No order state
+    if (!orderData) {
+      return (
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col items-center justify-center gap-4">
+          <ShoppingBag size={40} className="text-[#E8ECE4]" />
+          <p className="text-sm text-[#8C8478]">{t('noOrder')}</p>
+          {reservation.status === 'CONFIRMED' && (
+            <button
+              onClick={() => setShowOrderEditor(true)}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#6B7F5E]/90"
+            >
+              {tOrders('placeOrder')}
+            </button>
+          )}
+        </div>
+      )
+    }
+
+    // Has order
+    const order = orderData as Order
+    const badge = ORDER_STATUS_BADGE[order.status] || ORDER_STATUS_BADGE.DRAFT
+
+    return (
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {/* Order content */}
+        <div className="p-5 flex flex-col gap-4 flex-1">
+          {/* Order status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <ShoppingBag size={14} className="text-[#E67E22]" />
+              <h4 className="text-sm font-bold text-brown">{t('detail.preOrder')}</h4>
+            </div>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
+              {tOrders(`status.${order.status}`)}
+            </span>
+          </div>
+
+          {/* Confirmed lock indicator */}
+          {order.status === 'LOCKED' && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#5B8C3E]/10 border border-[#5B8C3E]/20">
+              <Lock size={14} className="text-[#5B8C3E]" />
+              <span className="text-xs font-semibold text-[#5B8C3E]">{t('orderConfirmed')}</span>
+            </div>
+          )}
+
+          {/* Full item list */}
+          {order.items && order.items.length > 0 ? (
+            <div className="bg-[#F8F7F4] rounded-xl p-3 space-y-2">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between text-sm">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[#1A1208]">
+                      {locale === 'zh' && item.menuItem?.nameZh ? item.menuItem.nameZh : item.menuItem?.nameEn}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[#8C8478]">&times;{item.quantity}</span>
+                    <span className="text-[#1A1208] font-medium w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      ${((item.menuItem?.price ?? 0) * item.quantity).toFixed(0)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Subtotal */}
+              <div className="border-t border-[#E8ECE4] pt-2 mt-2 flex justify-between text-sm font-semibold">
+                <span className="text-[#8C8478]">{tOrders('subtotal')}</span>
+                <span className="text-[#1A1208]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  ${order.estimatedTotal?.toFixed(0) ?? '\u2014'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-[#8C8478]">
+              {t('itemsSuffix', { count: 0 })}
+            </div>
+          )}
+
+          {/* Notes */}
+          {order.notes && (
+            <div className="text-xs text-[#8C8478] italic">
+              {tOrders('notes')}: {order.notes}
+            </div>
+          )}
+        </div>
+
+        {/* Order action buttons — sticky bottom */}
+        <div className="px-5 py-4 border-t border-[#E8ECE4] flex flex-col gap-2">
+          {/* Confirm & Lock — for SUBMITTED */}
+          {order.status === 'SUBMITTED' && (
+            <>
+              <button
+                onClick={handleLockOrder}
+                className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 flex items-center justify-center gap-1.5"
+              >
+                <Lock size={14} />
+                {tOrders('confirmLock')}
+              </button>
+              <button
+                onClick={() => setShowOrderEditor(true)}
+                className="w-full py-2 text-sm font-semibold rounded-lg border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5"
+              >
+                {tOrders('editOrder')}
+              </button>
+              <button
+                onClick={() => setShowCheckout(true)}
+                className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+              >
+                {tOrders('checkout')}
+              </button>
+            </>
+          )}
+
+          {/* LOCKED: Unlock + Edit + Checkout */}
+          {order.status === 'LOCKED' && (
+            <>
+              <button
+                onClick={handleUnlockOrder}
+                className="w-full py-2 text-sm font-semibold rounded-lg border border-[#8C8478] text-[#8C8478] hover:bg-[#8C8478]/5 flex items-center justify-center gap-1.5"
+              >
+                <Unlock size={14} />
+                {tOrders('unlockOrder')}
+              </button>
+              <button
+                onClick={() => setShowOrderEditor(true)}
+                className="w-full py-2 text-sm font-semibold rounded-lg border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5"
+              >
+                {tOrders('editOrder')}
+              </button>
+              <button
+                onClick={() => setShowCheckout(true)}
+                className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+              >
+                {tOrders('checkout')}
+              </button>
+            </>
+          )}
+
+          {/* BILLED: Checkout */}
+          {order.status === 'BILLED' && (
+            <button
+              onClick={() => setShowCheckout(true)}
+              className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+            >
+              {tOrders('checkout')}
+            </button>
+          )}
+
+          {/* PAID: View Bill */}
+          {order.status === 'PAID' && (
+            <button
+              onClick={() => setShowCheckout(true)}
+              className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
+            >
+              {tOrders('viewBill')}
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Info tab action buttons ─────────────────────────────────
+
+  function renderInfoActions() {
+    return (
       <div className="px-5 py-4 border-t border-[#E8ECE4] flex flex-col gap-2">
-        {/* Order Editor - show for CONFIRMED reservations */}
-        {reservation.status === 'CONFIRMED' && (
-          <button
-            onClick={() => setShowOrderEditor(true)}
-            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#6B7F5E]/90"
-          >
-            {orderData ? tOrders('editOrder') : tOrders('placeOrder')}
-          </button>
-        )}
-
-        {/* Edit Reservation - show for non-terminal states */}
+        {/* Edit Reservation — non-terminal states */}
         {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
           <button
             onClick={() => setShowEditEditor(true)}
@@ -344,61 +462,7 @@ export default function ReservationDetail({
           </button>
         )}
 
-        {/* Lock/Unlock order */}
-        {orderData && orderData.status === 'SUBMITTED' && (
-          <button
-            onClick={async () => {
-              await fetch(`/api/orders/${orderData.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'lock' }),
-              })
-              mutateOrder()
-              onOrderChanged?.()
-            }}
-            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#E67E22] text-[#E67E22] hover:bg-[#E67E22]/5"
-          >
-            {tOrders('lockOrder')}
-          </button>
-        )}
-        {orderData && orderData.status === 'LOCKED' && (
-          <button
-            onClick={async () => {
-              await fetch(`/api/orders/${orderData.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'unlock' }),
-              })
-              mutateOrder()
-              onOrderChanged?.()
-            }}
-            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#8C8478] text-[#8C8478] hover:bg-[#8C8478]/5"
-          >
-            {tOrders('unlockOrder')}
-          </button>
-        )}
-
-        {/* Checkout - show when order exists and is actionable */}
-        {orderData && ['SUBMITTED', 'LOCKED', 'BILLED'].includes(orderData.status) && (
-          <button
-            onClick={() => setShowCheckout(true)}
-            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
-          >
-            {tOrders('checkout')}
-          </button>
-        )}
-
-        {/* View bill - show when order is PAID */}
-        {orderData && orderData.status === 'PAID' && (
-          <button
-            onClick={() => setShowCheckout(true)}
-            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
-          >
-            {tOrders('viewBill')}
-          </button>
-        )}
-
-        {/* Confirm Deposit - show for PAYMENT_SUBMITTED */}
+        {/* Confirm Deposit — PAYMENT_SUBMITTED */}
         {reservation.status === 'PAYMENT_SUBMITTED' && (
           <button
             onClick={() => setConfirmAction('deposit')}
@@ -409,7 +473,7 @@ export default function ReservationDetail({
           </button>
         )}
 
-        {/* Complete - show for CONFIRMED */}
+        {/* Complete — CONFIRMED */}
         {reservation.status === 'CONFIRMED' && (
           <button
             onClick={() => setConfirmAction('complete')}
@@ -420,7 +484,7 @@ export default function ReservationDetail({
           </button>
         )}
 
-        {/* Cancel - show for non-terminal states */}
+        {/* Cancel — non-terminal states */}
         {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
           <button
             onClick={() => setConfirmAction('cancel')}
@@ -439,21 +503,76 @@ export default function ReservationDetail({
           {t('actions.close')}
         </button>
       </div>
+    )
+  }
+
+  // ── Main render ──────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8ECE4]">
+        <h3 className="text-base font-bold text-brown">{t('detail.title')}</h3>
+        <button onClick={onClose} className="p-1 hover:bg-[#E8ECE4]/30 rounded">
+          <X size={18} className="text-[#8C8478]" />
+        </button>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex border-b border-[#E8ECE4]">
+        <button
+          onClick={() => setDetailTab('info')}
+          className={`flex-1 py-3 text-sm font-medium transition-colors ${
+            detailTab === 'info'
+              ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E]'
+              : 'text-[#8C8478] hover:text-brown'
+          }`}
+        >
+          {t('detail.tabs.info')}
+        </button>
+        <button
+          onClick={() => setDetailTab('order')}
+          className={`flex-1 py-3 text-sm font-medium relative transition-colors ${
+            detailTab === 'order'
+              ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E]'
+              : 'text-[#8C8478] hover:text-brown'
+          }`}
+        >
+          {t('detail.tabs.preOrder')}
+          {/* Order status badge on tab */}
+          {orderData && orderData.status === 'SUBMITTED' && (
+            <span className="ml-1.5 text-[10px] text-[#E67E22] font-semibold">&#9888;{t('orderPending')}</span>
+          )}
+          {orderData && orderData.status === 'LOCKED' && (
+            <span className="ml-1.5 text-[10px] text-[#5B8C3E] font-semibold">&#10003;</span>
+          )}
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {detailTab === 'info' ? (
+        <>
+          {renderInfoTab()}
+          {renderInfoActions()}
+        </>
+      ) : (
+        renderOrderTab()
+      )}
 
       {/* AdminOrderEditor overlay */}
       <AdminOrderEditor
         reservationId={reservation.id}
         customerName={reservation.user?.name || reservation.user?.email}
         existingOrder={
-          orderData
+          orderData && 'items' in orderData
             ? {
                 id: orderData.id,
-                items: (orderData.items || []).map((item) => ({
+                items: ((orderData as Order).items || []).map((item) => ({
                   menuItemId: item.menuItem?.id || item.id,
                   quantity: item.quantity,
                   menuItem: item.menuItem,
                 })),
-                notes: orderData.notes,
+                notes: (orderData as Order).notes,
               }
             : null
         }
@@ -478,7 +597,7 @@ export default function ReservationDetail({
       />
 
       {/* CheckoutPanel overlay */}
-      {orderData && (
+      {orderData && 'items' in orderData && (
         <CheckoutPanel
           reservation={{
             id: reservation.id,
@@ -492,12 +611,12 @@ export default function ReservationDetail({
           order={{
             id: orderData.id,
             status: orderData.status,
-            estimatedTotal: orderData.estimatedTotal,
-            finalTotal: orderData.finalTotal,
-            discount: orderData.discount,
-            paymentMethod: orderData.paymentMethod,
-            paidAt: orderData.paidAt,
-            items: (orderData.items || []).map((item) => ({
+            estimatedTotal: (orderData as Order).estimatedTotal,
+            finalTotal: (orderData as Order).finalTotal,
+            discount: (orderData as Order).discount,
+            paymentMethod: (orderData as Order).paymentMethod,
+            paidAt: (orderData as Order).paidAt,
+            items: ((orderData as Order).items || []).map((item) => ({
               id: item.id,
               quantity: item.quantity,
               specialNotes: item.specialNotes || null,
