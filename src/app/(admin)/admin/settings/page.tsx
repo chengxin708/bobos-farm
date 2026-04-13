@@ -59,6 +59,98 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   email_admin_new_booking: 6,
 }
 
+// ── Push Permission Button ─────────────────────────────────────────
+
+function PushPermissionButton() {
+  const [status, setStatus] = useState<'loading' | 'granted' | 'denied' | 'default' | 'unsupported'>('loading')
+
+  useEffect(() => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      setStatus('unsupported')
+      return
+    }
+    setStatus(Notification.permission as 'granted' | 'denied' | 'default')
+  }, [])
+
+  async function handleEnable() {
+    try {
+      const permission = await Notification.requestPermission()
+      setStatus(permission as 'granted' | 'denied' | 'default')
+
+      if (permission === 'granted') {
+        // Re-subscribe to push
+        const reg = await navigator.serviceWorker.ready
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidKey) return
+
+        const padding = '='.repeat((4 - vapidKey.length % 4) % 4)
+        const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/')
+        const rawData = window.atob(base64)
+        const outputArray = new Uint8Array(rawData.length)
+        for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i)
+
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: outputArray,
+        })
+
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))),
+              auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!))),
+            },
+          }),
+        })
+      }
+    } catch (err) {
+      console.error('[Push] Permission request failed:', err)
+    }
+  }
+
+  if (status === 'loading') return null
+
+  if (status === 'unsupported') {
+    return <p className="text-sm text-[#8C8478]">This browser does not support push notifications.</p>
+  }
+
+  if (status === 'granted') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-[#5B8C3E]" />
+        <span className="text-sm text-[#5B8C3E] font-medium">Push notifications enabled</span>
+      </div>
+    )
+  }
+
+  if (status === 'denied') {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#DC3545]" />
+          <span className="text-sm text-[#DC3545] font-medium">Push notifications blocked</span>
+        </div>
+        <p className="text-xs text-[#8C8478]">
+          To re-enable, click the lock icon in your browser address bar → Site settings → Notifications → Allow
+        </p>
+      </div>
+    )
+  }
+
+  // default — not yet asked
+  return (
+    <button
+      onClick={handleEnable}
+      className="px-4 py-2 bg-[#6B7F5E] text-white text-sm font-medium rounded-lg border-0 cursor-pointer hover:bg-[#5A6E4F] transition-colors"
+    >
+      Enable Push Notifications
+    </button>
+  )
+}
+
 // ── Payment Methods Editor ─────────────────────────────────────────
 
 function PaymentMethodsEditor() {
@@ -748,6 +840,13 @@ export default function Settings() {
               }`}
             />
           </button>
+        </div>
+
+        {/* Push Notifications */}
+        <div className="border-t border-[#E8ECE4] pt-6 mt-6">
+          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">Push Notifications</h3>
+          <p className="text-xs text-[#8C8478] mb-4">Receive instant push notifications on this device for new bookings and deposit submissions.</p>
+          <PushPermissionButton />
         </div>
       </div>
     )
