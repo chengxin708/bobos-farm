@@ -37,7 +37,7 @@ async function getEmailFrom(): Promise<string> {
   }).catch(() => null);
 
   const name = setting?.value || "Bobo's Farm";
-  return `${name} <onboarding@resend.dev>`;
+  return `${name} <no-reply@mail.bobos.farm>`;
 }
 
 // ── Shared HTML helpers ─────────────────────────────────────────────
