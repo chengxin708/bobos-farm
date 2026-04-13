@@ -143,33 +143,18 @@ function MenuItemRow({
         onClick={onToggle}
         className="w-full flex gap-4 py-4 md:py-5 px-4 md:px-6 text-left bg-transparent border-none cursor-pointer hover:bg-[#F2EDE6]/50 transition-colors"
       >
-        {/* Image */}
-        <div className="w-[60px] h-[60px] md:w-[72px] md:h-[72px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
-          {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={displayName}
-              width={72}
-              height={72}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <UtensilsCrossed size={22} color="#8C8478" strokeWidth={1.5} />
-          )}
-        </div>
-
-        {/* Text */}
+        {/* Text — left side */}
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <span className="font-serif text-[16px] text-[#1A1208] leading-snug truncate">
             {displayName}
           </span>
           {secondaryName && (
-            <span className="font-sans text-[13px] text-[#8C8478] leading-snug truncate">
+            <span className="text-[13px] text-[#8C8478] leading-snug truncate">
               {secondaryName}
             </span>
           )}
           {description && (
-            <span className="font-sans text-[14px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
+            <span className="text-[14px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
               {description}
             </span>
           )}
@@ -202,6 +187,19 @@ function MenuItemRow({
             })}
           </div>
         </div>
+
+        {/* Image — right side, only if exists */}
+        {item.imageUrl && (
+          <div className="w-[72px] h-[72px] md:w-[88px] md:h-[88px] rounded-xl overflow-hidden shrink-0 self-center">
+            <Image
+              src={item.imageUrl}
+              alt={displayName}
+              width={88}
+              height={88}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
       </button>
 
       {/* Expanded detail */}
