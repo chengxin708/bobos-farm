@@ -183,11 +183,19 @@ export function useReservationsData() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // View state from URL
-  const initialView = (searchParams.get('view') as ViewMode) || 'all'
+  // View state synced with URL
+  const urlView = (searchParams.get('view') as ViewMode) || 'all'
   const [view, setView] = useState<ViewMode>(
-    ['all', 'deposits', 'orders'].includes(initialView) ? initialView : 'all'
+    ['all', 'deposits', 'orders'].includes(urlView) ? urlView : 'all'
   )
+
+  // Sync view when URL search params change (e.g. navbar dropdown clicks)
+  useEffect(() => {
+    const newView = (searchParams.get('view') as ViewMode) || 'all'
+    if (['all', 'deposits', 'orders'].includes(newView) && newView !== view) {
+      setView(newView)
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [orderTab, setOrderTab] = useState<OrderTabKey>('all')

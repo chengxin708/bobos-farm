@@ -156,50 +156,10 @@ export default function AdminNavbar() {
           {t('home')}
         </Link>
 
-        {/* 预订管理 dropdown */}
-        <div
-          ref={reservations.ref}
-          className="relative"
-          onMouseEnter={reservations.enter}
-          onMouseLeave={reservations.leave}
-        >
-          <button
-            className={`${linkBase} flex items-center gap-1 bg-transparent border-0 cursor-pointer p-0 ${
-              reservationsActive ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208] hover:text-[#6B7F5E]'
-            }`}
-          >
-            {t('bookingsMenu')}
-            <ChevronDown
-              size={14}
-              className={`transition-transform duration-200 ${reservations.open ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {reservations.open && (
-            <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[160px] z-50">
-              <DropdownLink
-                href="/admin/reservations"
-                active={pathname === '/admin/reservations'}
-                onClick={() => reservations.setOpen(false)}
-              >
-                {t('allReservations')}
-              </DropdownLink>
-              <DropdownLink
-                href="/admin/reservations?view=deposits"
-                active={pathname === '/admin/reservations' && false}
-                onClick={() => reservations.setOpen(false)}
-              >
-                {t('pendingDeposits')}
-              </DropdownLink>
-              <DropdownLink
-                href="/admin/reservations?view=orders"
-                active={pathname === '/admin/reservations' && false}
-                onClick={() => reservations.setOpen(false)}
-              >
-                {t('preOrders')}
-              </DropdownLink>
-            </div>
-          )}
-        </div>
+        {/* 预订管理 */}
+        <Link href="/admin/reservations" className={linkClass(reservationsActive)}>
+          {t('bookingsMenu')}
+        </Link>
 
         {/* 菜单管理 */}
         <Link href="/admin/menu" className={linkClass(isActive('/admin/menu') || pathname.startsWith('/admin/menu'))}>
