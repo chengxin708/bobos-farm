@@ -6,6 +6,7 @@ import {
   sendReservationCreated,
   sendAdminNewReservation,
 } from "@/lib/email";
+import { sendPushToAdmins } from "@/lib/push";
 
 const createReservationBodySchema = z.object({
   yurtId: z.string().min(1).optional(), // optional for customers (auto-assigned)
@@ -415,6 +416,14 @@ export async function POST(req: NextRequest) {
         guestCount,
       });
     }
+
+    // Fire-and-forget: push notification to admins
+    sendPushToAdmins({
+      title: "New Reservation",
+      body: `${reservation.user.name || reservation.user.email} booked ${assignedYurtName} on ${date}`,
+      url: "/admin/reservations",
+      tag: "new-reservation",
+    }).catch(() => {});
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {

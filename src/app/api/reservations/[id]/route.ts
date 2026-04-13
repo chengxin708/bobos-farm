@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { sendAdminDepositSubmitted, sendReservationCancelled, sendYurtAssigned } from "@/lib/email";
+import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -279,6 +280,14 @@ export async function PATCH(
           depositAmount: reservation.depositAmount,
         });
       }
+
+      // Fire-and-forget: push notification to admins
+      sendPushToAdmins({
+        title: "Deposit Pending Review",
+        body: `${updated.user.name || updated.user.email} submitted $${reservation.depositAmount} deposit`,
+        url: "/admin/reservations",
+        tag: "deposit-submitted",
+      }).catch(() => {});
 
       return NextResponse.json(updated);
     }
@@ -584,6 +593,19 @@ export async function PATCH(
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
+
+      // Fire-and-forget: push notification to customer when deposit is confirmed
+      if (
+        parsedAdmin.data.depositStatus === "CONFIRMED" &&
+        reservation.depositStatus !== "CONFIRMED"
+      ) {
+        sendPushToUser(updated.userId, {
+          title: "Deposit Confirmed",
+          body: "Your reservation is confirmed! You can now pre-order menu items.",
+          url: "/pre-order",
+          tag: "deposit-confirmed",
+        }).catch(() => {});
+      }
 
       return NextResponse.json(updated);
     }
