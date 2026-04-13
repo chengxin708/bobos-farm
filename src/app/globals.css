@@ -44,13 +44,13 @@
 
   /* === Font Stacks === */
   --font-serif: var(--font-dm-serif), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
-  --font-sans: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-logo), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
 
   --font-logo-display: var(--font-logo), serif;
 
   /* === Legacy aliases (admin pages still reference these) === */
   --font-playfair: var(--font-dm-serif), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
-  --font-lato: var(--font-dm-sans), var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-lato: var(--font-logo), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
 }
 
 @layer base {
@@ -68,7 +68,7 @@
     overscroll-behavior: none;
   }
   body {
-    font-family: var(--font-logo-display), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
+    font-family: var(--font-logo), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
     background-color: #F8F7F4;
     color: #1A1208;
     -webkit-font-smoothing: antialiased;
