@@ -149,31 +149,6 @@ export default function CalendarMobile() {
     { revalidateOnFocus: false }
   )
 
-  // Reservation actions
-  const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
-    setActionUpdating(true)
-    try {
-      const body = action === 'cancel' ? { action: 'cancel' } : { ...data }
-      const res = await fetch(`/api/reservations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (res.ok) { mutateReservations(); mutateSelectedRes() }
-    } catch { /* ignore */ }
-    finally { setActionUpdating(false) }
-  }, [mutateReservations, mutateSelectedRes])
-
-  const confirmDeposit = useCallback((id: string) => {
-    handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
-  }, [handleResAction])
-  const cancelReservation = useCallback((id: string) => {
-    handleResAction(id, 'cancel')
-  }, [handleResAction])
-  const completeReservation = useCallback((id: string) => {
-    handleResAction(id, 'admin', { status: 'COMPLETED' })
-  }, [handleResAction])
-
   // Redirect non-admin
   useEffect(() => {
     if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
@@ -209,6 +184,31 @@ export default function CalendarMobile() {
     `/api/availability?startDate=${dateRange.start}&endDate=${dateRange.end}`,
     fetcher
   )
+
+  // ── Reservation actions (must be after SWR declarations) ────
+  const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
+    setActionUpdating(true)
+    try {
+      const body = action === 'cancel' ? { action: 'cancel' } : { ...data }
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) { mutateReservations(); mutateSelectedRes() }
+    } catch { /* ignore */ }
+    finally { setActionUpdating(false) }
+  }, [mutateReservations, mutateSelectedRes])
+
+  const confirmDeposit = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
+  }, [handleResAction])
+  const cancelReservation = useCallback((id: string) => {
+    handleResAction(id, 'cancel')
+  }, [handleResAction])
+  const completeReservation = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'COMPLETED' })
+  }, [handleResAction])
 
   // ── Indexed lookups ──────────────────────────────────────────
 
