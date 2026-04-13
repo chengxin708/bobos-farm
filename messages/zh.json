@@ -217,7 +217,7 @@
       "email": "邮箱",
       "phoneNumber": "联系电话",
       "numberOfGuests": "用餐人数",
-      "capacityNotice": "我们的蒙古包可容纳6至20位宾客。建议最少6人，以获得完整的用餐体验。",
+      "capacityNotice": "我们的蒙古包可容纳{min}至{max}位宾客。建议最少{min}人，以获得完整的用餐体验。",
       "specialRequests": "特殊要求 / 过敏信息",
       "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求..."
     },

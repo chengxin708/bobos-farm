@@ -30,6 +30,13 @@ const ALLOWED_SETTING_KEYS = [
   "email_payment_reminder",
   "email_admin_new_booking",
   "resend_api_key",
+  // Legacy seed keys (kept for backward compatibility with existing DB rows)
+  "max_advance_months",
+  "min_advance_days",
+  "cancel_refund_days",
+  "payment_memo_format",
+  "order_deadline_days",
+  "paymentMethods",
 ] as const;
 
 const settingsUpdateSchema = z.record(

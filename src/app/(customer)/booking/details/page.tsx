@@ -242,7 +242,7 @@ export default function BookingDetailsPage() {
             <div className="bg-[#E8ECE4] rounded-xl p-3 flex items-start gap-2.5">
               <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
               <p className="text-sm text-[#3D4A35] leading-relaxed flex-1">
-                {t('capacityNotice')}
+                {t('capacityNotice', { min: MIN_RECOMMENDED_GUESTS, max: maxGuests })}
               </p>
               <button
                 onClick={() => setCapacityNoticeDismissed(true)}

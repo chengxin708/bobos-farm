@@ -217,7 +217,7 @@
       "email": "Email",
       "phoneNumber": "Phone Number",
       "numberOfGuests": "Number of Guests",
-      "capacityNotice": "Our yurts can handle 6-20 guests per meal. We recommend a minimum of 6 people for a full dining experience.",
+      "capacityNotice": "Our yurts can handle {min}-{max} guests per meal. We recommend a minimum of {min} people for a full dining experience.",
       "specialRequests": "Special Requests / Allergies",
       "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests..."
     },
