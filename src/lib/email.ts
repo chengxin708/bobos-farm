@@ -1,5 +1,14 @@
 import { Resend } from "resend";
 import { prisma } from "./prisma";
+import {
+  emailWrapper,
+  formatDate,
+  infoRow,
+  infoTable,
+  primaryButton,
+} from "./email-template";
+import type { Lang } from "./email-template";
+import { emailStrings } from "./email-strings";
 
 // Lazy-initialized Resend client — reads API key from DB first, then env fallback
 let _resend: Resend | null = null;
@@ -40,76 +49,14 @@ async function getEmailFrom(): Promise<string> {
   return `${name} <no-reply@mail.bobos.farm>`;
 }
 
-// ── Shared HTML helpers ─────────────────────────────────────────────
+// ── User language preference ────────────────────────────────────────
 
-function emailWrapper(body: string): string {
-  return `<!DOCTYPE html>
-<html lang="zh">
-<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
-<body style="margin:0;padding:0;background-color:#F8F7F4;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F7F4;">
-<tr><td align="center" style="padding:32px 16px;">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E8ECE4;">
-  <!-- Header -->
-  <tr>
-    <td style="background-color:#1A1208;padding:24px 32px;text-align:center;">
-      <h1 style="margin:0;font-size:22px;font-weight:bold;color:#FFF8F0;font-family:Georgia,'Times New Roman',serif;">
-        Bobo's Farm
-      </h1>
-      <p style="margin:4px 0 0;font-size:13px;color:#6B7F5E;">波姐农家乐</p>
-    </td>
-  </tr>
-  <!-- Body -->
-  <tr>
-    <td style="padding:32px;">
-      ${body}
-    </td>
-  </tr>
-  <!-- Footer -->
-  <tr>
-    <td style="padding:20px 32px;background-color:#F8F7F4;text-align:center;border-top:1px solid #E8ECE4;">
-      <p style="margin:0;font-size:11px;color:#8A7E6B;">
-        Bobo's Farm &mdash; 891 Albany Post Rd, New Paltz, NY 12561<br/>
-        This is an automated message. Please do not reply directly.
-      </p>
-    </td>
-  </tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
-}
-
-function formatDate(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
+async function getUserLang(email: string): Promise<Lang> {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { preferredLanguage: true },
   });
-}
-
-function infoRow(label: string, value: string): string {
-  return `<tr>
-    <td style="padding:8px 12px;font-size:13px;color:#8A7E6B;white-space:nowrap;vertical-align:top;">${label}</td>
-    <td style="padding:8px 12px;font-size:14px;color:#3D2B1F;font-weight:600;">${value}</td>
-  </tr>`;
-}
-
-function infoTable(rows: string): string {
-  return `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#F8F7F4;border-radius:8px;border:1px solid #E8ECE4;margin:16px 0;">
-    ${rows}
-  </table>`;
-}
-
-function primaryButton(text: string, href: string): string {
-  return `<table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-    <tr><td style="background-color:#6B7F5E;border-radius:8px;padding:12px 28px;text-align:center;">
-      <a href="${href}" style="color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;">${text}</a>
-    </td></tr>
-  </table>`;
+  return user?.preferredLanguage === "ZH" ? "zh" : "en";
 }
 
 // ── Return type ─────────────────────────────────────────────────────
@@ -139,64 +86,49 @@ export async function sendReservationCreated(
   data: ReservationCreatedData
 ): Promise<EmailResult> {
   const client = await getResend();
-  if (!client) {
-    return { success: false, error: "API key not configured" };
-  }
+  if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.reservationCreated[lang];
+  const l = emailStrings.labels[lang];
 
   try {
-    const deadlineStr = data.paymentDeadline
-      ? formatDate(data.paymentDeadline)
-      : "N/A";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const deadlineStr = data.paymentDeadline ? formatDate(data.paymentDeadline, lang) : "N/A";
 
     const paymentInfo = data.zelleRecipient
       ? `<p style="font-size:13px;color:#3D2B1F;margin:12px 0 4px;">
-          <strong>Zelle 收款信息:</strong><br/>
-          收款人: ${data.zelleRecipientName || data.zelleRecipient}<br/>
+          <strong>${l.zelleTitle}</strong><br/>
+          ${l.zelleRecipient}: ${data.zelleRecipientName || data.zelleRecipient}<br/>
           Zelle: ${data.zelleRecipient}
-          ${data.memoCode ? `<br/>备注码: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
+          ${data.memoCode ? `<br/>${l.zelleMemo}: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
         </p>`
       : "";
 
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
-
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">预订已创建</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        您的预订已成功创建，请在截止时间前完成付款。
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("营地", data.yurtName) +
-        infoRow("人数", `${data.guestCount} 人`) +
-        infoRow("定金金额", `$${data.depositAmount}`) +
-        infoRow("付款截止", deadlineStr)
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount)) +
+        infoRow(l.deposit, `$${data.depositAmount}`) +
+        infoRow(l.deadline, deadlineStr)
       )}
 
       ${paymentInfo}
 
-      <p style="font-size:13px;color:#C4533A;margin:16px 0 0;">
-        请在截止时间前通过 Zelle 支付定金，逾期预订将自动取消。
-      </p>
+      <p style="font-size:13px;color:#C4533A;margin:16px 0 0;">${s.warning}</p>
 
-      ${primaryButton("查看我的预订", `${siteUrl}/reservations`)}
-    `);
+      ${primaryButton(s.button, `${siteUrl}/reservations`)}
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 预订已创建",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendReservationCreated failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
@@ -215,48 +147,36 @@ export async function sendDepositConfirmed(
   data: DepositConfirmedData
 ): Promise<EmailResult> {
   const client = await getResend();
-  if (!client) {
-    return { success: false, error: "API key not configured" };
-  }
+  if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.depositConfirmed[lang];
+  const l = emailStrings.labels[lang];
 
   try {
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">定金已确认</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        您的定金已确认，预订正式生效！您可以提前预点菜品。
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("营地", data.yurtName) +
-        infoRow("人数", `${data.guestCount} 人`) +
-        infoRow("状态", '<span style="color:#4A7C59;font-weight:bold;">已确认</span>')
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount)) +
+        infoRow(l.status, `<span style="color:#4A7C59;font-weight:bold;">${l.confirmed}</span>`)
       )}
 
-      ${primaryButton("预点菜品", `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
+      ${primaryButton(s.button, `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
-        如有任何问题，请通过网站联系我们。期待您的到来！
-      </p>
-    `);
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 定金已确认",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendDepositConfirmed failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
@@ -278,15 +198,16 @@ export async function sendPaymentReminder(
   data: PaymentReminderData
 ): Promise<EmailResult> {
   const client = await getResend();
-  if (!client) {
-    return { success: false, error: "API key not configured" };
-  }
+  if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.paymentReminder[lang];
+  const l = emailStrings.labels[lang];
 
   try {
     const deadlineStr = data.paymentDeadline
-      ? formatDate(data.paymentDeadline)
-      : "即将到期";
+      ? formatDate(data.paymentDeadline, lang)
+      : s.expiringSoon;
 
     const remainingHours = data.paymentDeadline
       ? Math.max(0, Math.round((new Date(data.paymentDeadline).getTime() - Date.now()) / 3600000))
@@ -295,57 +216,44 @@ export async function sendPaymentReminder(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#C4533A;">付款提醒</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        您的预订定金尚未支付，请尽快完成付款以保留预订。
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#C4533A;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       <div style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin:16px 0;">
         <p style="margin:0;font-size:14px;color:#C4533A;font-weight:bold;">
-          剩余时间: ${remainingHours} 小时
+          ${s.remaining}: ${s.hours(remainingHours)}
         </p>
         <p style="margin:4px 0 0;font-size:12px;color:#991B1B;">
-          截止时间: ${deadlineStr}
+          ${s.deadlineLabel}: ${deadlineStr}
         </p>
       </div>
 
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("营地", data.yurtName) +
-        infoRow("定金金额", `$${data.depositAmount}`)
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.deposit, `$${data.depositAmount}`)
       )}
 
       ${data.zelleRecipient
         ? `<p style="font-size:13px;color:#3D2B1F;margin:12px 0 4px;">
-            <strong>Zelle 收款信息:</strong><br/>
-            收款人: ${data.zelleRecipientName || data.zelleRecipient}<br/>
+            <strong>${l.zelleTitle}</strong><br/>
+            ${l.zelleRecipient}: ${data.zelleRecipientName || data.zelleRecipient}<br/>
             Zelle: ${data.zelleRecipient}
-            ${data.memoCode ? `<br/>备注码: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
+            ${data.memoCode ? `<br/>${l.zelleMemo}: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
           </p>`
         : ""
       }
 
-      ${primaryButton("立即付款", `${siteUrl}/reservations`)}
+      ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:12px;color:#C4533A;margin:16px 0 0;">
-        逾期未付款，预订将自动取消。
-      </p>
-    `);
+      <p style="font-size:12px;color:#C4533A;margin:16px 0 0;">${s.warning}</p>
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 付款提醒",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendPaymentReminder failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
@@ -364,9 +272,7 @@ export async function sendAdminNewReservation(
   data: AdminNewReservationData
 ): Promise<EmailResult> {
   const client = await getResend();
-  if (!client) {
-    return { success: false, error: "API key not configured" };
-  }
+  if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
 
   try {
@@ -380,13 +286,13 @@ export async function sendAdminNewReservation(
 
       ${infoTable(
         infoRow("客人", data.guestName) +
-        infoRow("预订日期", formatDate(data.date)) +
+        infoRow("预订日期", formatDate(data.date, "zh")) +
         infoRow("营地", data.yurtName) +
         infoRow("人数", `${data.guestCount} 人`)
       )}
 
       ${primaryButton("查看仪表盘", `${siteUrl}/admin/dashboard`)}
-    `);
+    `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
       from: emailFrom,
@@ -398,10 +304,7 @@ export async function sendAdminNewReservation(
     return { success: true };
   } catch (error) {
     console.error("[email] sendAdminNewReservation failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
@@ -421,9 +324,7 @@ export async function sendAdminDepositSubmitted(
   data: AdminDepositSubmittedData
 ): Promise<EmailResult> {
   const client = await getResend();
-  if (!client) {
-    return { success: false, error: "API key not configured" };
-  }
+  if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
 
   try {
@@ -437,14 +338,14 @@ export async function sendAdminDepositSubmitted(
 
       ${infoTable(
         infoRow("客人", data.guestName) +
-        infoRow("预订日期", formatDate(data.date)) +
+        infoRow("预订日期", formatDate(data.date, "zh")) +
         infoRow("营地", data.yurtName) +
         infoRow("人数", `${data.guestCount} 人`) +
         infoRow("定金金额", `$${data.depositAmount}`)
       )}
 
       ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations`)}
-    `);
+    `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
       from: emailFrom,
@@ -456,14 +357,11 @@ export async function sendAdminDepositSubmitted(
     return { success: true };
   } catch (error) {
     console.error("[email] sendAdminDepositSubmitted failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
-// ── 6. Yurt Assigned (通知客户蒙古包已分配) ────────────────────────────
+// ── 6. Yurt Assigned ────────────────────────────────────────────────
 
 interface YurtAssignedData {
   date: string | Date;
@@ -481,48 +379,38 @@ export async function sendYurtAssigned(
   const client = await getResend();
   if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.yurtAssigned[lang];
+  const l = emailStrings.labels[lang];
 
   try {
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">蒙古包已分配</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        您的蒙古包已由我们的团队分配，请查看以下详情。
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("蒙古包", data.yurtName) +
-        (data.yurtDescription ? infoRow("描述", data.yurtDescription) : "") +
-        infoRow("人数", `${data.guestCount} 人`)
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        (data.yurtDescription ? infoRow(s.description, data.yurtDescription) : "") +
+        infoRow(l.guests, l.guestUnit(data.guestCount))
       )}
 
-      ${primaryButton("查看预订详情", `${siteUrl}/reservations`)}
+      ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
-        如有任何问题，请联系我们。期待您的到来！
-      </p>
-    `);
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 蒙古包已分配",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendYurtAssigned failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
-// ── 7. Reservation Modified (通知客户预订已更新) ──────────────────────
+// ── 7. Reservation Modified ─────────────────────────────────────────
 
 interface ReservationModifiedData {
   date: string | Date;
@@ -544,26 +432,28 @@ export async function sendReservationModified(
   const client = await getResend();
   if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.reservationModified[lang];
+  const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl =
-      data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
 
     // Build change rows
     let changeRows = "";
     if (data.changes.date) {
       changeRows += `<tr>
-        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">日期</td>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">${l.date}</td>
         <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
-          <span style="text-decoration:line-through;color:#8A7E6B;">${formatDate(data.changes.date.from)}</span>
+          <span style="text-decoration:line-through;color:#8A7E6B;">${formatDate(data.changes.date.from, lang)}</span>
           &nbsp;&rarr;&nbsp;
-          <strong>${formatDate(data.changes.date.to)}</strong>
+          <strong>${formatDate(data.changes.date.to, lang)}</strong>
         </td>
       </tr>`;
     }
     if (data.changes.yurt) {
       changeRows += `<tr>
-        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">蒙古包</td>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">${l.yurt}</td>
         <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
           <span style="text-decoration:line-through;color:#8A7E6B;">${data.changes.yurt.from}</span>
           &nbsp;&rarr;&nbsp;
@@ -573,11 +463,11 @@ export async function sendReservationModified(
     }
     if (data.changes.guestCount) {
       changeRows += `<tr>
-        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">人数</td>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">${l.guests}</td>
         <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
-          <span style="text-decoration:line-through;color:#8A7E6B;">${data.changes.guestCount.from} 人</span>
+          <span style="text-decoration:line-through;color:#8A7E6B;">${l.guestUnit(data.changes.guestCount.from)}</span>
           &nbsp;&rarr;&nbsp;
-          <strong>${data.changes.guestCount.to} 人</strong>
+          <strong>${l.guestUnit(data.changes.guestCount.to)}</strong>
         </td>
       </tr>`;
     }
@@ -589,45 +479,32 @@ export async function sendReservationModified(
       : "";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">预订已更新</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        您的预订信息已更新，请查看以下变更：
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       ${changesTable}
 
-      <p style="margin:16px 0 8px;font-size:14px;color:#3D2B1F;font-weight:bold;">更新后的预订信息：</p>
+      <p style="margin:16px 0 8px;font-size:14px;color:#3D2B1F;font-weight:bold;">${s.updatedInfo}</p>
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("营地", data.yurtName) +
-        infoRow("人数", `${data.guestCount} 人`)
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount))
       )}
 
-      ${primaryButton("查看我的预订", `${siteUrl}/reservations`)}
+      ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
-        如有任何问题，请联系我们。期待您的到来！
-      </p>
-    `);
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 预订已更新",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendReservationModified failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
-// ── 8. Reservation Cancelled (通知客户) ─────────────────────────────
+// ── 8. Reservation Cancelled ────────────────────────────────────────
 
 interface ReservationCancelledData {
   date: string | Date;
@@ -635,7 +512,7 @@ interface ReservationCancelledData {
   guestCount: number;
   cancelReason?: string;
   depositAmount: number;
-  depositStatus: string; // CONFIRMED → 会退款; UNPAID/PENDING → 不退
+  depositStatus: string; // CONFIRMED → will refund; UNPAID/PENDING → no refund
   siteUrl?: string;
 }
 
@@ -646,51 +523,46 @@ export async function sendReservationCancelled(
   const client = await getResend();
   if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.reservationCancelled[lang];
+  const l = emailStrings.labels[lang];
 
   try {
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
-    const willRefund = data.depositStatus === 'CONFIRMED';
+    const willRefund = data.depositStatus === "CONFIRMED";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#DC3545;">预订已取消</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        很遗憾，您的预订已被取消。
-      </p>
+      <h2 style="margin:0 0 8px;font-size:20px;color:#DC3545;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
 
       ${infoTable(
-        infoRow("预订日期", formatDate(data.date)) +
-        infoRow("营地", data.yurtName) +
-        infoRow("人数", `${data.guestCount} 人`) +
-        infoRow("状态", '<span style="color:#DC3545;font-weight:bold;">已取消</span>')
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount)) +
+        infoRow(l.status, `<span style="color:#DC3545;font-weight:bold;">${l.cancelled}</span>`)
       )}
 
       ${data.cancelReason ? `
         <div style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin:16px 0;">
-          <p style="margin:0;font-size:13px;color:#991B1B;"><strong>取消原因:</strong> ${data.cancelReason}</p>
+          <p style="margin:0;font-size:13px;color:#991B1B;"><strong>${s.cancelReason}:</strong> ${data.cancelReason}</p>
         </div>
-      ` : ''}
+      ` : ""}
 
       ${willRefund ? `
         <p style="font-size:14px;color:#5A5A5A;margin:16px 0;">
-          您已支付的定金 <strong>$${data.depositAmount}</strong> 将按照退款政策处理。
+          ${s.refundNote(data.depositAmount)}
         </p>
-      ` : ''}
+      ` : ""}
 
-      ${primaryButton("重新预订", `${siteUrl}/booking/date`)}
+      ${primaryButton(s.button, `${siteUrl}/booking/date`)}
 
       <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
-        如有任何疑问，请联系我们：<br/>
+        ${s.contact}<br/>
         中文: (516) 272-9999 &nbsp;|&nbsp; English: (917) 502-0445
       </p>
-    `);
+    `, { lang, type: "transactional", siteUrl });
 
-    await client.emails.send({
-      from: emailFrom,
-      to,
-      subject: "Bobo's Farm — 预订已取消",
-      html,
-    });
-
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
     return { success: true };
   } catch (error) {
     console.error("[email] sendReservationCancelled failed:", error);
