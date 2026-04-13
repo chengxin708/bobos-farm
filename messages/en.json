@@ -194,7 +194,9 @@
         "available": "Available",
         "selective": "Selective",
         "limited": "Limited",
-        "full": "Full"
+        "limitedShort": "Few",
+        "full": "Full",
+        "fullShort": "Full"
       },
       "days": {
         "sun": "Sun",
