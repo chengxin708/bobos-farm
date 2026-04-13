@@ -101,6 +101,7 @@ function formatDateISO(year: number, month: number, day: number): string {
 export default function VenuesPage() {
   const tY = useTranslations('admin.yurts')
   const tA = useTranslations('admin.availability')
+  const tV = useTranslations('admin.venues')
   const { data: session, status: sessionStatus } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -159,11 +160,11 @@ export default function VenuesPage() {
   }, [])
 
   const handleSaveYurt = useCallback(async () => {
-    if (!yurtForm.name.trim()) { alert('Name is required'); return }
-    if (yurtForm.capacity < 1) { alert('Capacity must be at least 1'); return }
+    if (!yurtForm.name.trim()) { alert(tV('nameRequired')); return }
+    if (yurtForm.capacity < 1) { alert(tV('capacityMin')); return }
 
     if (editingYurt && editingYurt.status === 'ACTIVE' && yurtForm.status === 'MAINTENANCE') {
-      if (!confirm(`Set ${yurtForm.name} to Maintenance? It will be unavailable for new bookings.`)) return
+      if (!confirm(tV('confirmMaintenance', { name: yurtForm.name }))) return
     }
 
     setYurtSaving(true)
@@ -185,34 +186,34 @@ export default function VenuesPage() {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to save yurt')
+        alert(err.error || tV('saveFailed'))
         return
       }
       mutateYurts()
       setYurtModalOpen(false)
-      showSuccess(editingYurt ? `${yurtForm.name} updated successfully.` : `${yurtForm.name} created successfully.`)
+      showSuccess(editingYurt ? tV('updateSuccess', { name: yurtForm.name }) : tV('createSuccess', { name: yurtForm.name }))
     } catch {
-      alert('Failed to save yurt')
+      alert(tV('saveFailed'))
     } finally {
       setYurtSaving(false)
     }
-  }, [yurtForm, editingYurt, mutateYurts, showSuccess])
+  }, [yurtForm, editingYurt, mutateYurts, showSuccess, tV])
 
   const handleDeleteYurt = useCallback(async (yurt: Yurt) => {
-    if (!confirm('确定要删除此蒙古包吗？此操作不可撤销。')) return
+    if (!confirm(tV('confirmDelete'))) return
     try {
       const res = await fetch(`/api/yurts/${yurt.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to delete yurt')
+        alert(err.error || tV('deleteFailed'))
         return
       }
       mutateYurts()
-      showSuccess(`${yurt.name} deleted successfully.`)
+      showSuccess(tV('deleteSuccess', { name: yurt.name }))
     } catch {
-      alert('Failed to delete yurt')
+      alert(tV('deleteFailed'))
     }
-  }, [mutateYurts, showSuccess])
+  }, [mutateYurts, showSuccess, tV])
 
   // ════════════════════════════════════════════════════════════════
   // AVAILABILITY TAB STATE
@@ -343,11 +344,11 @@ export default function VenuesPage() {
       mutateAvailability()
       showSuccess(isOpen ? tA('success.yurtOpened') : tA('success.yurtClosed'))
     } catch {
-      alert('Failed to update availability')
+      alert(tV('availability.toggleFailed'))
     } finally {
       setAvailSaving(false)
     }
-  }, [selectedDate, currentYear, currentMonth, mutateAvailability, showSuccess, tA])
+  }, [selectedDate, currentYear, currentMonth, mutateAvailability, showSuccess, tA, tV])
 
   const handleSaveNote = useCallback(async () => {
     if (selectedDate === null || !yurts?.length) return
@@ -368,17 +369,17 @@ export default function VenuesPage() {
         })
       }))
       mutateAvailability()
-      showSuccess('Note saved.')
+      showSuccess(tV('availability.noteSaved'))
     } catch {
-      alert('Failed to save note')
+      alert(tV('availability.noteFailed'))
     } finally {
       setAvailSaving(false)
     }
-  }, [selectedDate, currentYear, currentMonth, yurts, adminNote, availabilityIndex, mutateAvailability, showSuccess])
+  }, [selectedDate, currentYear, currentMonth, yurts, adminNote, availabilityIndex, mutateAvailability, showSuccess, tV])
 
   const handleBulkAction = useCallback(async (isOpen: boolean, start: string, end: string) => {
-    if (!start || !end) { alert('Please fill both start and end dates'); return }
-    if (!isOpen && !confirm(`Close all yurts from ${start} to ${end}? Existing reservations will not be affected.`)) return
+    if (!start || !end) { alert(tV('availability.fillDates')); return }
+    if (!isOpen && !confirm(tV('availability.confirmClose', { start, end }))) return
     setAvailSaving(true)
     try {
       const res = await fetch('/api/availability/bulk', {
@@ -388,21 +389,21 @@ export default function VenuesPage() {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to update')
+        alert(err.error || tV('availability.bulkFailed'))
         return
       }
       mutateAvailability()
-      showSuccess(`All yurts ${isOpen ? 'opened' : 'closed'} from ${start} to ${end}.`)
+      showSuccess(tV('availability.bulkSuccess', { action: isOpen ? tV('availability.opened') : tV('availability.closed'), start, end }))
     } catch {
-      alert('Failed to bulk update')
+      alert(tV('availability.bulkFailed'))
     } finally {
       setAvailSaving(false)
     }
-  }, [mutateAvailability, showSuccess])
+  }, [mutateAvailability, showSuccess, tV])
 
   const handleBatchSelected = useCallback(async (isOpen: boolean) => {
     if (selectedDates.size === 0) return
-    if (!isOpen && !confirm(`Close all yurts for ${selectedDates.size} selected dates?`)) return
+    if (!isOpen && !confirm(tV('availability.confirmBatchClose', { count: selectedDates.size }))) return
     setAvailSaving(true)
     try {
       const dates = Array.from(selectedDates).sort()
@@ -413,13 +414,13 @@ export default function VenuesPage() {
       })
       mutateAvailability()
       setSelectedDates(new Set())
-      showSuccess(`${selectedDates.size} dates ${isOpen ? 'opened' : 'closed'} successfully.`)
+      showSuccess(tV('availability.batchSuccess', { count: selectedDates.size, action: isOpen ? tV('availability.opened') : tV('availability.closed') }))
     } catch {
-      alert('Failed to batch update')
+      alert(tV('availability.batchFailed'))
     } finally {
       setAvailSaving(false)
     }
-  }, [selectedDates, mutateAvailability, showSuccess])
+  }, [selectedDates, mutateAvailability, showSuccess, tV])
 
   const selectedDateKey = selectedDate !== null ? formatDateISO(currentYear, currentMonth, selectedDate) : null
   const selectedDateAvail = selectedDateKey ? (availabilityIndex[selectedDateKey] || {}) : {}
@@ -441,7 +442,7 @@ export default function VenuesPage() {
       <>
         <AdminTopBar title={tY('title')} />
         <div className="flex-1 p-6 flex items-center justify-center">
-          <p className="text-[#8C8478]">Loading...</p>
+          <p className="text-[#8C8478]">{tV('availability.loading')}</p>
         </div>
       </>
     )
@@ -509,14 +510,14 @@ export default function VenuesPage() {
             {/* Loading */}
             {yurtsLoading && (
               <div className="bg-white rounded-xl border border-[#E8ECE4] p-12 text-center">
-                <p className="text-[#8C8478] text-sm">Loading yurts...</p>
+                <p className="text-[#8C8478] text-sm">{tV('loadingYurts')}</p>
               </div>
             )}
 
             {/* Empty state */}
             {!yurtsLoading && (!yurts || yurts.length === 0) && (
               <div className="bg-white rounded-xl border border-[#E8ECE4] p-12 text-center">
-                <p className="text-[#8C8478] text-sm">No yurts found. Add your first yurt to get started.</p>
+                <p className="text-[#8C8478] text-sm">{tV('noYurts')}</p>
               </div>
             )}
 
@@ -540,7 +541,7 @@ export default function VenuesPage() {
                 {yurt.status === 'MAINTENANCE' && (
                   <div className="flex items-center gap-2 bg-[#FFF8E1] border border-[#FFE082] rounded-lg px-4 py-2.5">
                     <AlertTriangle size={14} className="text-[#F4A623] shrink-0" />
-                    <span className="text-xs text-[#3D2B1F]">This yurt is currently under maintenance and unavailable for booking.</span>
+                    <span className="text-xs text-[#3D2B1F]">{tV('maintenanceWarning')}</span>
                   </div>
                 )}
 
@@ -549,7 +550,7 @@ export default function VenuesPage() {
                     <Users size={14} className="text-[#8C8478]" /> {tY('capacity')} {yurt.capacity} {tY('guests')}
                   </span>
                   {yurt.imageUrl && (
-                    <span className="text-[#6B7F5E] text-xs">Has image</span>
+                    <span className="text-[#6B7F5E] text-xs">{tV('hasImage')}</span>
                   )}
                 </div>
 
@@ -568,7 +569,7 @@ export default function VenuesPage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#DC3545] border border-[#DC3545]/30 rounded-lg hover:bg-[#DC3545]/5 transition-colors"
                   >
                     <Trash2 size={14} />
-                    删除
+                    {tV('deleteBtn')}
                   </button>
                 </div>
               </div>
@@ -736,7 +737,7 @@ export default function VenuesPage() {
                           <div className="mt-0.5 md:mt-1 flex flex-col gap-0.5">
                             {status.hasReservations && (
                               <span className="text-[9px] md:text-[10px] text-[#6B7F5E] font-medium">
-                                {status.resCount} res
+                                {tV('availability.resCount', { count: status.resCount })}
                               </span>
                             )}
                             {status.hasMixed && (
@@ -755,7 +756,7 @@ export default function VenuesPage() {
                 {/* Multi-select batch actions */}
                 {selectedDates.size > 0 && (
                   <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl px-4 md:px-5 py-3 md:py-3.5 border border-[#E8ECE4]">
-                    <span className="text-sm text-[#3D2B1F] font-medium">{selectedDates.size} dates selected</span>
+                    <span className="text-sm text-[#3D2B1F] font-medium">{tV('availability.datesSelected', { count: selectedDates.size })}</span>
                     <button
                       onClick={() => handleBatchSelected(true)}
                       disabled={availSaving}
@@ -774,7 +775,7 @@ export default function VenuesPage() {
                       onClick={() => setSelectedDates(new Set())}
                       className="text-sm text-[#8C8478] hover:text-[#3D2B1F] ml-auto transition-colors cursor-pointer"
                     >
-                      Clear selection
+                      {tV('availability.clearSelection')}
                     </button>
                   </div>
                 )}
@@ -828,7 +829,7 @@ export default function VenuesPage() {
                       {selectedDateRes.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-3">
                           <Calendar size={20} className="text-[#E8ECE4]" />
-                          <span className="text-xs text-[#8C8478]">No reservations</span>
+                          <span className="text-xs text-[#8C8478]">{tV('availability.noReservations')}</span>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -856,7 +857,7 @@ export default function VenuesPage() {
                         value={adminNote}
                         onChange={(e) => setAdminNote(e.target.value)}
                         className="border border-[#E8ECE4] rounded-lg p-3 text-sm h-24 resize-none text-[#3D2B1F] placeholder:text-[#C4BDB2] focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/40 focus:border-[#6B7F5E] transition-shadow"
-                        placeholder="Private note (e.g. overflow / extra shift needed)"
+                        placeholder={tV('availability.notePlaceholder')}
                       />
                       <button
                         onClick={handleSaveNote}
@@ -873,8 +874,8 @@ export default function VenuesPage() {
                       <Calendar size={24} className="text-[#C4BDB2]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-[#8C8478]">Click a date to see details</p>
-                      <p className="text-xs text-[#C4BDB2] mt-1.5">Hold Shift + click to multi-select</p>
+                      <p className="text-sm text-[#8C8478]">{tV('availability.clickDateHint')}</p>
+                      <p className="text-xs text-[#C4BDB2] mt-1.5">{tV('availability.shiftClickHint')}</p>
                     </div>
                   </div>
                 )}
@@ -891,7 +892,7 @@ export default function VenuesPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 md:px-6 py-4 border-b border-[#E8ECE4]">
               <h3 className="text-lg font-bold text-[#3D2B1F] font-playfair">
-                {editingYurt ? `Edit ${editingYurt.name}` : 'Add New Yurt'}
+                {editingYurt ? tV('modal.editTitle', { name: editingYurt.name }) : tV('modal.addTitle')}
               </h3>
               <button
                 onClick={() => setYurtModalOpen(false)}
@@ -905,30 +906,30 @@ export default function VenuesPage() {
             <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5 flex flex-col gap-4">
               {/* Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">Name</label>
+                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.name')}</label>
                 <input
                   type="text"
                   value={yurtForm.name}
                   onChange={(e) => setYurtForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Golden Meadow"
+                  placeholder={tV('modal.namePlaceholder')}
                   className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
                 />
               </div>
 
               {/* Description */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">Description</label>
+                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.description')}</label>
                 <textarea
                   value={yurtForm.description}
                   onChange={(e) => setYurtForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Describe the yurt, its features, and setting..."
+                  placeholder={tV('modal.descriptionPlaceholder')}
                   className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] h-24 resize-none outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
                 />
               </div>
 
               {/* Capacity */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">Capacity (guests)</label>
+                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.capacity')}</label>
                 <input
                   type="number"
                   min={1}
@@ -941,7 +942,7 @@ export default function VenuesPage() {
 
               {/* Status */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">Status</label>
+                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.status')}</label>
                 <select
                   value={yurtForm.status}
                   onChange={(e) => setYurtForm(f => ({ ...f, status: e.target.value as 'ACTIVE' | 'MAINTENANCE' }))}
@@ -954,12 +955,12 @@ export default function VenuesPage() {
 
               {/* Image URL */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">Image URL</label>
+                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.imageUrl')}</label>
                 <input
                   type="text"
                   value={yurtForm.imageUrl}
                   onChange={(e) => setYurtForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  placeholder="https://..."
+                  placeholder={tV('modal.imageUrlPlaceholder')}
                   className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
                 />
               </div>
@@ -971,14 +972,14 @@ export default function VenuesPage() {
                 onClick={() => setYurtModalOpen(false)}
                 className="px-5 py-2 text-sm font-semibold text-[#8C8478] border border-[#E8ECE4] rounded-lg bg-white cursor-pointer hover:bg-[#F8F7F4]"
               >
-                Cancel
+                {tV('modal.cancel')}
               </button>
               <button
                 onClick={handleSaveYurt}
                 disabled={yurtSaving}
                 className="px-5 py-2 text-sm font-semibold text-white bg-[#6B7F5E] rounded-lg cursor-pointer disabled:opacity-50 hover:bg-[#5A6E4F] border-none"
               >
-                {yurtSaving ? 'Saving...' : editingYurt ? 'Save Changes' : 'Add Yurt'}
+                {yurtSaving ? tV('modal.saving') : editingYurt ? tV('modal.saveChanges') : tV('modal.addYurt')}
               </button>
             </div>
           </div>

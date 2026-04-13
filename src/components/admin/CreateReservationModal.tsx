@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { X, Loader2 } from 'lucide-react'
 
@@ -31,6 +32,7 @@ export default function CreateReservationModal({
   defaultDate,
   defaultYurtId,
 }: CreateReservationModalProps) {
+  const t = useTranslations('admin.createReservation')
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -108,7 +110,7 @@ export default function CreateReservationModal({
 
       if (!res.ok) {
         const data = await res.json()
-        setError(data.error || 'Failed to create reservation')
+        setError(data.error || t('createFailed'))
         setSubmitting(false)
         return
       }
@@ -116,7 +118,7 @@ export default function CreateReservationModal({
       onCreated()
       onClose()
     } catch {
-      setError('Network error. Please try again.')
+      setError(t('networkError'))
       setSubmitting(false)
     }
   }
@@ -139,7 +141,7 @@ export default function CreateReservationModal({
             className="text-xl font-bold"
             style={{ fontFamily: 'var(--font-playfair)', color: '#2C2416' }}
           >
-            创建预订
+            {t('title')}
           </h2>
           <button
             onClick={onClose}
@@ -155,7 +157,7 @@ export default function CreateReservationModal({
             {/* Guest Name */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                客户姓名 <span className="text-red-500">*</span>
+                {t('guestName')} <span className="text-red-500">*</span>
               </label>
               <input
                 ref={nameInputRef}
@@ -163,7 +165,7 @@ export default function CreateReservationModal({
                 required
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                placeholder="Enter guest name"
+                placeholder={t('guestNamePlaceholder')}
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150 focus:ring-2"
                 style={{
                   borderColor: '#E8E2D9',
@@ -184,7 +186,7 @@ export default function CreateReservationModal({
             {/* Guest Email */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                客户邮箱 <span className="text-red-500">*</span>
+                {t('guestEmail')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -208,13 +210,13 @@ export default function CreateReservationModal({
             {/* Guest Phone */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                客户电话
+                {t('guestPhone')}
               </label>
               <input
                 type="tel"
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(e.target.value)}
-                placeholder="(optional)"
+                placeholder={t('phonePlaceholder')}
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
@@ -231,7 +233,7 @@ export default function CreateReservationModal({
             {/* Date */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                预订日期 <span className="text-red-500">*</span>
+                {t('date')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -254,7 +256,7 @@ export default function CreateReservationModal({
             {/* Yurt Select */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                选择营地 <span className="text-red-500">*</span>
+                {t('selectYurt')} <span className="text-red-500">*</span>
               </label>
               <select
                 required
@@ -271,10 +273,10 @@ export default function CreateReservationModal({
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               >
-                <option value="" disabled>Select a yurt...</option>
+                <option value="" disabled>{t('selectYurtPlaceholder')}</option>
                 {activeYurts.map(y => (
                   <option key={y.id} value={y.id}>
-                    {y.name} (capacity: {y.capacity})
+                    {t('yurtCapacity', { name: y.name, capacity: y.capacity })}
                   </option>
                 ))}
               </select>
@@ -283,7 +285,7 @@ export default function CreateReservationModal({
             {/* Guest Count */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                人数 <span className="text-red-500">*</span>
+                {t('guestCount')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -307,14 +309,14 @@ export default function CreateReservationModal({
             {/* Special Requests */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                特殊要求
+                {t('specialRequests')}
               </label>
               <textarea
                 value={specialRequests}
                 onChange={(e) => setSpecialRequests(e.target.value)}
                 maxLength={500}
                 rows={3}
-                placeholder="Any special requests... (optional)"
+                placeholder={t('specialRequestsPlaceholder')}
                 className="px-3 py-2.5 rounded-lg border outline-none transition-all duration-150 resize-none"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {
@@ -347,7 +349,7 @@ export default function CreateReservationModal({
               className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-[#F5F2ED]"
               style={{ color: '#2C2416' }}
             >
-              取消
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -356,7 +358,7 @@ export default function CreateReservationModal({
               style={{ backgroundColor: submitting ? '#5A6E4F' : '#6B7F5E' }}
             >
               {submitting && <Loader2 size={14} className="animate-spin" />}
-              {submitting ? '创建中...' : '创建预订'}
+              {submitting ? t('creating') : t('submit')}
             </button>
           </div>
         </form>

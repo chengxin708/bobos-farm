@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { ArrowLeft, Check, Loader2, Printer } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ export default function CheckoutPanel({
   onClose,
   onCompleted,
 }: CheckoutPanelProps) {
+  const t = useTranslations('admin.orders')
   const [discount, setDiscount] = useState<number>(order.discount ?? 0)
   const [paymentMethod, setPaymentMethod] = useState<string>(order.paymentMethod ?? '')
   const [paymentMethods, setPaymentMethods] = useState<string[]>(DEFAULT_PAYMENT_METHODS)
@@ -157,7 +159,7 @@ export default function CheckoutPanel({
 
         if (!billRes.ok) {
           const data = await billRes.json().catch(() => ({}))
-          setError(data.error || '生成账单失败，请重试')
+          setError(data.error || t('billError'))
           setSubmitting(false)
           return
         }
@@ -176,14 +178,14 @@ export default function CheckoutPanel({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error || '结账失败，请重试')
+        setError(data.error || t('checkoutError'))
         setSubmitting(false)
         return
       }
 
       onCompleted()
     } catch {
-      setError('网络错误，请重试')
+      setError(t('networkError'))
       setSubmitting(false)
     }
   }
@@ -210,7 +212,7 @@ export default function CheckoutPanel({
           className="text-lg font-bold text-[#1A1208]"
           style={{ fontFamily: 'var(--font-playfair)' }}
         >
-          结账
+          {t('checkout')}
         </h2>
       </div>
 
@@ -237,13 +239,13 @@ export default function CheckoutPanel({
                 {' · '}
                 {formatDate(reservation.date)}
                 {' · '}
-                {reservation.guestCount}人
+                {t('guests', { count: reservation.guestCount })}
               </p>
             </div>
 
             {/* Order items */}
             <section className="mb-5">
-              <SectionHeading>订单明细</SectionHeading>
+              <SectionHeading>{t('orderDetails')}</SectionHeading>
               <div className="space-y-2 mt-3">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-baseline justify-between">
@@ -272,11 +274,11 @@ export default function CheckoutPanel({
 
             {/* Bill section */}
             <section className="mb-5">
-              <SectionHeading>账单</SectionHeading>
+              <SectionHeading>{t('bill')}</SectionHeading>
               <div className="mt-3 space-y-2.5">
                 {/* Subtotal */}
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-[#8C8478]">小计</span>
+                  <span className="text-sm text-[#8C8478]">{t('subtotalLabel')}</span>
                   <span className="text-sm text-[#1A1208] font-[tabular-nums]">
                     {formatCurrency(subtotal)}
                   </span>
@@ -284,7 +286,7 @@ export default function CheckoutPanel({
 
                 {/* Discount */}
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[#8C8478]">折扣</span>
+                  <span className="text-sm text-[#8C8478]">{t('discount')}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-[#8C8478]">-$</span>
                     <input
@@ -308,7 +310,7 @@ export default function CheckoutPanel({
 
                 {/* Total due */}
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-medium text-[#1A1208]">应付金额</span>
+                  <span className="text-sm font-medium text-[#1A1208]">{t('amountDue')}</span>
                   <span className="text-sm font-semibold text-[#1A1208] font-[tabular-nums]">
                     {formatCurrency(totalDue)}
                   </span>
@@ -317,7 +319,7 @@ export default function CheckoutPanel({
                 {/* Deposit credit */}
                 {depositCredit > 0 && (
                   <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-[#8C8478]">已付定金</span>
+                    <span className="text-sm text-[#8C8478]">{t('depositPaid')}</span>
                     <span className="text-sm text-[#5B8C3E] font-[tabular-nums]">
                       -{formatCurrency(depositCredit)}
                     </span>
@@ -328,7 +330,7 @@ export default function CheckoutPanel({
 
                 {/* Amount to pay */}
                 <div className="flex justify-between items-baseline pt-1">
-                  <span className="text-base font-bold text-[#1A1208]">待付金额</span>
+                  <span className="text-base font-bold text-[#1A1208]">{t('balanceDue')}</span>
                   <span className="text-2xl font-bold text-[#1A1208] font-[tabular-nums]">
                     {formatCurrency(amountToPay)}
                   </span>
@@ -338,7 +340,7 @@ export default function CheckoutPanel({
 
             {/* Payment method */}
             <section className="mb-5">
-              <SectionHeading>支付方式</SectionHeading>
+              <SectionHeading>{t('paymentMethod')}</SectionHeading>
               <div className="flex flex-wrap gap-2.5 mt-3">
                 {paymentMethods.map((method) => (
                   <button
@@ -362,7 +364,7 @@ export default function CheckoutPanel({
             {isBilled && (
               <div className="rounded-lg bg-[#F4A623]/10 border border-[#F4A623]/20 px-4 py-3 mb-3">
                 <p className="text-sm text-[#8B6914] font-medium">
-                  账单已生成，等待客户付款
+                  {t('billGenerated')}
                 </p>
               </div>
             )}
@@ -388,10 +390,10 @@ export default function CheckoutPanel({
             {submitting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                处理中...
+                {t('processing')}
               </>
             ) : (
-              '确认结账'
+              t('confirmCheckout')
             )}
           </button>
         </div>
@@ -424,6 +426,7 @@ function PaidSummary({
   depositCredit: number
   onPrint: () => void
 }) {
+  const t = useTranslations('admin.orders')
   const discount = order.discount ?? 0
   const totalDue = subtotal - discount
   const amountPaid = order.finalTotal ?? Math.max(0, totalDue - depositCredit)
@@ -438,24 +441,24 @@ function PaidSummary({
         className="text-xl font-bold text-[#1A1208] mb-1"
         style={{ fontFamily: 'var(--font-playfair)' }}
       >
-        已结账
+        {t('paid')}
       </h3>
-      <p className="text-sm text-[#8C8478] mb-6">该订单已完成付款</p>
+      <p className="text-sm text-[#8C8478] mb-6">{t('paidDesc')}</p>
 
       {/* Payment details card */}
       <div className="w-full rounded-xl border border-[#E8ECE4] bg-white p-5 space-y-3">
-        <DetailRow label="付款时间" value={order.paidAt ? formatDateTime(order.paidAt) : '-'} />
-        <DetailRow label="支付方式" value={order.paymentMethod ?? '-'} />
+        <DetailRow label={t('paidAt')} value={order.paidAt ? formatDateTime(order.paidAt) : '-'} />
+        <DetailRow label={t('paymentMethod')} value={order.paymentMethod ?? '-'} />
         <DetailRow
-          label="实付金额"
+          label={t('paidAmount')}
           value={formatCurrency(amountPaid)}
           bold
         />
         {discount > 0 && (
-          <DetailRow label="折扣" value={`-${formatCurrency(discount)}`} />
+          <DetailRow label={t('discount')} value={`-${formatCurrency(discount)}`} />
         )}
         {depositCredit > 0 && (
-          <DetailRow label="定金抵扣" value={`-${formatCurrency(depositCredit)}`} />
+          <DetailRow label={t('depositPaid')} value={`-${formatCurrency(depositCredit)}`} />
         )}
       </div>
 
@@ -465,7 +468,7 @@ function PaidSummary({
         className="mt-6 flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-[#1A1208] rounded-full border border-[#E8ECE4] hover:bg-[#E8ECE4]/30 transition-colors"
       >
         <Printer size={16} className="text-[#8C8478]" />
-        打印小票
+        {t('printReceipt')}
       </button>
     </div>
   )

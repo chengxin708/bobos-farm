@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import Image from 'next/image'
 import {
@@ -114,6 +115,7 @@ export default function AdminOrderEditor({
   onClose,
   onSaved,
 }: AdminOrderEditorProps) {
+  const t = useTranslations('admin.orders')
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [notes, setNotes] = useState('')
@@ -281,10 +283,10 @@ export default function AdminOrderEditor({
 
   const isEdit = !!existingOrder
   const headerTitle = customerName
-    ? `${isEdit ? '编辑' : '为'} ${customerName} ${isEdit ? '的订单' : '点单'}`
+    ? (isEdit ? t('editorTitleEdit', { name: customerName }) : t('editorTitle', { name: customerName }))
     : isEdit
-      ? '编辑订单'
-      : '代客点单'
+      ? t('editOrder')
+      : t('placeOrder')
 
   return (
     <div className="fixed inset-0 z-50 bg-[#F8F7F4] flex flex-col">
@@ -338,7 +340,7 @@ export default function AdminOrderEditor({
               className="text-[#8C8478]"
               strokeWidth={1.5}
             />
-            <p className="text-[#8C8478] text-sm">该分类暂无菜品</p>
+            <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3 p-4">
@@ -400,7 +402,7 @@ export default function AdminOrderEditor({
                         </span>
                         {item.advanceDaysRequired > 0 && (
                           <span className="text-[11px] text-[#8B6914] bg-[#8B6914]/10 px-1.5 py-0.5 rounded">
-                            需提前{item.advanceDaysRequired}天预订
+                            {t('advanceNotice', { days: item.advanceDaysRequired })}
                           </span>
                         )}
                       </div>
@@ -447,12 +449,12 @@ export default function AdminOrderEditor({
       <div className="bg-white border-t border-[#E8ECE4] p-4 shrink-0 space-y-3">
         {/* Notes */}
         <div className="flex items-center gap-3">
-          <label className="text-sm text-[#8C8478] shrink-0">备注:</label>
+          <label className="text-sm text-[#8C8478] shrink-0">{t('notes')}:</label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="特殊要求、过敏信息等"
+            placeholder={t('notesPlaceholder')}
             className="flex-1 h-9 rounded-lg border border-[#E8ECE4] px-3 text-sm text-[#3D2B1F] placeholder:text-[#BFBFBF] focus:border-[#6B7F5E] focus:outline-none transition-colors bg-[#F8F7F4]"
           />
         </div>
@@ -460,11 +462,10 @@ export default function AdminOrderEditor({
         {/* Subtotal */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-[#8C8478]">
-            小计: ${Math.round(orderSummary.subtotal)}
+            {t('subtotal')}: ${Math.round(orderSummary.subtotal)}
             {orderSummary.dishCount > 0 && (
               <span className="ml-1">
-                ({orderSummary.dishCount} 道菜,{' '}
-                {orderSummary.itemCount} 份)
+                ({t('dishes', { count: orderSummary.dishCount, qty: orderSummary.itemCount })})
               </span>
             )}
           </span>
@@ -490,10 +491,10 @@ export default function AdminOrderEditor({
         >
           {submitting && <Loader2 size={18} className="animate-spin" />}
           {submitting
-            ? '保存中...'
+            ? t('saving')
             : isEdit
-              ? '更新订单'
-              : '保存订单'}
+              ? t('updateOrder')
+              : t('saveOrder')}
         </button>
       </div>
     </div>
