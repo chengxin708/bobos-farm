@@ -12,7 +12,7 @@ const orderUpdateSchema = z.object({
       })
     )
     .min(1, "At least one item is required"),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
 });
 
 /** Shared include for returning full order details */
@@ -289,7 +289,7 @@ export async function PATCH(
             })
           )
           .min(1, "At least one item is required"),
-        notes: z.string().optional(),
+        notes: z.string().nullish(),
       });
 
       const parsed = adminEditSchema.safeParse(body);

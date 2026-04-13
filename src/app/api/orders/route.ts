@@ -13,7 +13,7 @@ const orderCreateSchema = z.object({
       })
     )
     .min(1, "At least one item is required"),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
 });
 
 // GET /api/orders — Admin only: list all orders
