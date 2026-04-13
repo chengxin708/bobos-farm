@@ -93,7 +93,7 @@ export async function sendReservationCreated(
   const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
     const deadlineStr = data.paymentDeadline ? formatDate(data.paymentDeadline, lang) : "N/A";
 
     const paymentInfo = data.zelleRecipient
@@ -154,7 +154,7 @@ export async function sendDepositConfirmed(
   const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
       <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
@@ -213,7 +213,7 @@ export async function sendPaymentReminder(
       ? Math.max(0, Math.round((new Date(data.paymentDeadline).getTime() - Date.now()) / 3600000))
       : 0;
 
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
       <h2 style="margin:0 0 8px;font-size:20px;color:#C4533A;">${s.title}</h2>
@@ -276,7 +276,7 @@ export async function sendAdminNewReservation(
   const emailFrom = await getEmailFrom();
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
       <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">新预订通知</h2>
@@ -291,7 +291,7 @@ export async function sendAdminNewReservation(
         infoRow("人数", `${data.guestCount} 人`)
       )}
 
-      ${primaryButton("查看仪表盘", `${siteUrl}/admin/dashboard`)}
+      ${primaryButton("查看仪表盘", "https://admin.bobos.farm/admin/dashboard")}
     `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
@@ -328,7 +328,7 @@ export async function sendAdminDepositSubmitted(
   const emailFrom = await getEmailFrom();
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
       <h2 style="margin:0 0 8px;font-size:20px;color:#8B6914;">定金待确认</h2>
@@ -344,7 +344,7 @@ export async function sendAdminDepositSubmitted(
         infoRow("定金金额", `$${data.depositAmount}`)
       )}
 
-      ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations`)}
+      ${primaryButton("前往确认定金", "https://admin.bobos.farm/admin/reservations")}
     `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
@@ -384,7 +384,7 @@ export async function sendYurtAssigned(
   const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
       <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
@@ -437,7 +437,7 @@ export async function sendReservationModified(
   const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     // Build change rows
     let changeRows = "";
@@ -528,7 +528,7 @@ export async function sendReservationCancelled(
   const l = emailStrings.labels[lang];
 
   try {
-    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
     const willRefund = data.depositStatus === "CONFIRMED";
 
     const html = emailWrapper(`
@@ -585,7 +585,7 @@ export async function sendMarketingEmail(
   if (!client) return { success: false, error: "API key not configured" };
   const emailFrom = await getEmailFrom();
   const lang = await getUserLang(to);
-  const siteUrl = process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+  const siteUrl = process.env.NEXTAUTH_URL || "https://bobos.farm";
 
   const user = await prisma.user.findUnique({
     where: { email: to },
