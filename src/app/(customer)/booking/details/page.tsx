@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
+import { formatPhoneUS } from '@/lib/phone-mask'
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
@@ -44,7 +45,14 @@ export default function BookingDetailsPage() {
   // Dismiss state for the capacity notice
   const [capacityNoticeDismissed, setCapacityNoticeDismissed] = useState(false)
 
-  // Update from session when it loads
+  // Fetch user profile for phone auto-fill
+  const { data: userProfile } = useSWR(
+    session?.user ? '/api/users/me' : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
+  // Update from session + profile when loaded
   useEffect(() => {
     if (session?.user) {
       if (!contactName && session.user.name) setContactName(session.user.name)
@@ -52,6 +60,13 @@ export default function BookingDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
+
+  useEffect(() => {
+    if (userProfile?.phone && !contactPhone) {
+      setContactPhone(formatPhoneUS(userProfile.phone))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile])
 
   const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
     revalidateOnFocus: false,
@@ -199,7 +214,7 @@ export default function BookingDetailsPage() {
               <input
                 type="tel"
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
+                onChange={(e) => setContactPhone(formatPhoneUS(e.target.value))}
                 onBlur={() => handleBlur('contactPhone')}
                 placeholder={`${t('phoneNumber')} *`}
                 aria-label={t('phoneNumber')}

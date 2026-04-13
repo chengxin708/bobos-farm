@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { X, Loader2, ArrowLeft } from 'lucide-react'
+import { formatPhoneUS } from '@/lib/phone-mask'
 
 interface Yurt {
   id: string
@@ -230,7 +231,7 @@ export default function CreateReservationModal({
                 type="tel"
                 required
                 value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
+                onChange={(e) => setGuestPhone(formatPhoneUS(e.target.value))}
                 placeholder={t('phonePlaceholder')}
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Lock, EyeOff, Eye, ChevronDown, ChevronLeft, Trash2, Loader2 } from 'lucide-react'
+import { formatPhoneUS } from '@/lib/phone-mask'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 
@@ -221,7 +222,7 @@ export default function SettingsPage() {
                   type="tel"
                   required
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={e => setPhone(formatPhoneUS(e.target.value))}
                   onBlur={() => setPhoneTouched(true)}
                   style={{ border: phoneTouched && !phone.trim() ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
                   className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"

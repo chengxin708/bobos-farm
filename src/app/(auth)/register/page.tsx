@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { formatPhoneUS } from '@/lib/phone-mask'
 
 type StrengthKey = 'weak' | 'medium' | 'good' | 'strong'
 
@@ -168,7 +169,7 @@ export default function RegisterPage() {
             type="tel"
             placeholder={t('phonePlaceholder')}
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatPhoneUS(e.target.value))}
             required
             style={{ border: '1px solid #E8ECE4', outline: 'none' }}
             className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#1A1208]/30 text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
