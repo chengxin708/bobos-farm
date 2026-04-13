@@ -349,7 +349,7 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col max-w-[800px] mx-auto w-full">
       {/* Page Header */}
       <div className="flex flex-col items-center pt-6 pb-4">
         <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>

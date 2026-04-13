@@ -61,11 +61,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Get occupying reservations (PAYMENT_SUBMITTED + CONFIRMED) in the date range
+    // Get occupying reservations (PAYMENT_SUBMITTED + CONFIRMED) on ACTIVE yurts only
     const reservations = await prisma.reservation.findMany({
       where: {
         date: { gte: startDateObj, lte: endDateObj },
         status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] },
+        yurtId: { in: [...activeYurtIds] },
       },
       select: { yurtId: true, date: true },
     });
