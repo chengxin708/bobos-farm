@@ -507,7 +507,9 @@
       "offline": "Offline mode — data may not be current",
       "pwaInstallTitle": "Add to Home Screen",
       "pwaInstallDesc": "Get faster access and offline features",
-      "pwaInstall": "Install"
+      "pwaInstall": "Install",
+      "notifications": "Notifications",
+      "noNotifications": "No pending items"
     },
     "more": {
       "title": "More",

@@ -507,7 +507,9 @@
       "offline": "离线模式 — 数据可能不是最新",
       "pwaInstallTitle": "安装到主屏幕",
       "pwaInstallDesc": "获得更快的访问和离线功能",
-      "pwaInstall": "安装"
+      "pwaInstall": "安装",
+      "notifications": "通知",
+      "noNotifications": "暂无待处理事项"
     },
     "more": {
       "title": "更多",
