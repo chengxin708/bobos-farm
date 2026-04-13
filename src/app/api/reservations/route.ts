@@ -20,7 +20,7 @@ const createReservationBodySchema = z.object({
 const adminCreateReservationSchema = createReservationBodySchema.extend({
   guestName: z.string().min(1, "guestName is required"),
   guestEmail: z.string().email("Invalid email"),
-  guestPhone: z.string().optional(),
+  guestPhone: z.string().min(1, "guestPhone is required"),
 });
 
 export async function GET(req: NextRequest) {
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
           data: {
             email: guestEmail,
             name: guestName,
-            phone: guestPhone || null,
+            phone: guestPhone,
             role: "CUSTOMER",
           },
         });

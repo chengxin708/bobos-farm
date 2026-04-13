@@ -74,6 +74,8 @@ export default function SettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
 
+  const [phoneTouched, setPhoneTouched] = useState(false)
+
   // Password form — collapsible
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -109,6 +111,11 @@ export default function SettingsPage() {
 
   const handleSaveProfile = useCallback(async () => {
     if (profileSaving) return
+    setPhoneTouched(true)
+    if (!phone.trim()) {
+      setProfileError('Phone number is required')
+      return
+    }
     setProfileSaving(true)
     setProfileSuccess(false)
     setProfileError(null)
@@ -118,7 +125,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name || undefined,
-          phone: phone || undefined,
+          phone: phone.trim(),
           preferredLanguage: language,
         }),
       })
@@ -199,15 +206,20 @@ export default function SettingsPage() {
 
               {/* Phone */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-[#1A1208]">{t('profile.phone')}</label>
+                <label className="text-sm font-medium text-[#1A1208]">{t('profile.phone')} <span className="text-[#C4453A]">*</span></label>
                 <input
                   type="tel"
+                  required
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                  onBlur={() => setPhoneTouched(true)}
+                  style={{ border: phoneTouched && !phone.trim() ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
                   className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
                   placeholder="+1 (555) 123-4567"
                 />
+                {phoneTouched && !phone.trim() && (
+                  <span className="text-xs text-[#C4453A]">{t('profile.phoneRequired')}</span>
+                )}
               </div>
 
               {/* Language */}

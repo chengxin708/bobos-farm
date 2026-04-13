@@ -69,14 +69,14 @@ export default function BookingDetailsPage() {
       : !contactEmail.includes('@') || !contactEmail.includes('.')
         ? 'Please enter a valid email address'
         : null
-    e.contactPhone = null // phone is optional
+    e.contactPhone = contactPhone.trim().length === 0 ? 'Please enter your phone number' : null
     e.guestCount = guestCount < 1
       ? 'At least 1 guest required'
       : guestCount > maxGuests
         ? `Maximum ${maxGuests} guests for this yurt`
         : null
     return e
-  }, [contactName, contactEmail, guestCount, maxGuests])
+  }, [contactName, contactEmail, contactPhone, guestCount, maxGuests])
 
   const isValid = useMemo(() => {
     return Object.values(errors).every((e) => e === null)
@@ -191,12 +191,19 @@ export default function BookingDetailsPage() {
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
                 onBlur={() => handleBlur('contactPhone')}
-                placeholder={`${t('phoneNumber')} (${tCommon('optional')})`}
+                placeholder={`${t('phoneNumber')} *`}
                 aria-label={t('phoneNumber')}
-                style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+                aria-invalid={touched.contactPhone && !!errors.contactPhone}
+                style={{ border: touched.contactPhone && errors.contactPhone ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
                 className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
+            {touched.contactPhone && errors.contactPhone && (
+              <div className="flex items-center gap-1.5 text-[#C4453A] mt-1">
+                <AlertCircle size={14} className="shrink-0" />
+                <span className="text-sm">{errors.contactPhone}</span>
+              </div>
+            )}
           </div>
 
           {/* Guest Counter */}

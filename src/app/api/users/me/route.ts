@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const profileUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
-  phone: z.string().optional(),
+  phone: z.string().min(1, "Phone number is required").optional(),
   preferredLanguage: z.enum(["EN", "ZH"]).optional(),
 });
 

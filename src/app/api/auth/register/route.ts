@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         email,
-        phone: phone || null,
+        phone,
         passwordHash,
         role: "CUSTOMER",
       },

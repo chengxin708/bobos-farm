@@ -100,7 +100,7 @@ export default function CreateReservationModal({
         body: JSON.stringify({
           guestName,
           guestEmail,
-          guestPhone: guestPhone || undefined,
+          guestPhone,
           date,
           yurtId,
           guestCount,
@@ -210,10 +210,11 @@ export default function CreateReservationModal({
             {/* Guest Phone */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                {t('guestPhone')}
+                {t('guestPhone')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
+                required
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(e.target.value)}
                 placeholder={t('phonePlaceholder')}

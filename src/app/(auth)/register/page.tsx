@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 type StrengthKey = 'weak' | 'medium' | 'good' | 'strong'
@@ -29,6 +29,7 @@ export default function RegisterPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -51,6 +52,10 @@ export default function RegisterPage() {
       setError('Email is required')
       return
     }
+    if (!phone.trim()) {
+      setError('Phone number is required')
+      return
+    }
     if (password.length < 8) {
       setError('Password must be at least 8 characters')
       return
@@ -66,7 +71,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, confirmPassword }),
+        body: JSON.stringify({ name, email, phone, password, confirmPassword }),
       })
 
       const data = await res.json()
@@ -150,6 +155,20 @@ export default function RegisterPage() {
             placeholder={t('emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+            className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#1A1208]/30 text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+          />
+        </div>
+
+        {/* Phone */}
+        <div className="relative">
+          <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1A1208]/30 pointer-events-none" />
+          <input
+            type="tel"
+            placeholder={t('phonePlaceholder')}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
             style={{ border: '1px solid #E8ECE4', outline: 'none' }}
             className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white placeholder:text-[#1A1208]/30 text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
