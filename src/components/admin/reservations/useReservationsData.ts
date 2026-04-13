@@ -202,6 +202,7 @@ export function useReservationsData() {
   const [showHistory, setShowHistory] = useState(false)
   const [historyDateFrom, setHistoryDateFrom] = useState('')
   const [historyDateTo, setHistoryDateTo] = useState('')
+  const [historyStatus, setHistoryStatus] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
   const [updating, setUpdating] = useState(false)
@@ -306,6 +307,10 @@ export function useReservationsData() {
           return dateStr <= historyDateTo
         })
       }
+      // Apply status filter
+      if (historyStatus !== 'all') {
+        list = list.filter(r => r.status === historyStatus)
+      }
     }
 
     // Apply filter chip
@@ -324,7 +329,7 @@ export function useReservationsData() {
     })
 
     return list
-  }, [allReservations, filter, showHistory, historyDateFrom, historyDateTo])
+  }, [allReservations, filter, showHistory, historyDateFrom, historyDateTo, historyStatus])
 
   // Group by date
   const groupedReservations: DateGroup[] = useMemo(() => {
@@ -448,6 +453,7 @@ export function useReservationsData() {
     setShowHistory(false)
     setHistoryDateFrom('')
     setHistoryDateTo('')
+    setHistoryStatus('all')
   }, [])
 
   return {
@@ -462,6 +468,8 @@ export function useReservationsData() {
     setHistoryDateFrom,
     historyDateTo,
     setHistoryDateTo,
+    historyStatus,
+    setHistoryStatus,
     search,
     setSearch,
     clearFilters,

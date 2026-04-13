@@ -117,6 +117,7 @@ export default function ReservationsMobile() {
     showHistory, setShowHistory,
     historyDateFrom, setHistoryDateFrom,
     historyDateTo, setHistoryDateTo,
+    historyStatus, setHistoryStatus,
     search, setSearch,
     pendingDepositCount,
     pendingOrderCount,
@@ -219,31 +220,45 @@ export default function ReservationsMobile() {
           </button>
         </div>
 
-        {/* History date range filter */}
+        {/* History filters */}
         {showHistory && (
-          <div className="flex items-center gap-2 bg-white border border-[#E8ECE4] rounded-xl px-3 py-2">
-            <span className="text-[10px] font-semibold text-[#8C8478] uppercase shrink-0">{t('historyDateRange')}</span>
-            <input
-              type="date"
-              value={historyDateFrom}
-              onChange={(e) => setHistoryDateFrom(e.target.value)}
-              className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
-            />
-            <span className="text-xs text-[#8C8478]">—</span>
-            <input
-              type="date"
-              value={historyDateTo}
-              onChange={(e) => setHistoryDateTo(e.target.value)}
-              className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
-            />
-            {(historyDateFrom || historyDateTo) && (
-              <button
-                onClick={() => { setHistoryDateFrom(''); setHistoryDateTo('') }}
-                className="text-[#8C8478] hover:text-brown shrink-0"
-              >
-                <X size={14} />
-              </button>
-            )}
+          <div className="flex flex-col gap-2">
+            {/* Status chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              {['all', 'COMPLETED', 'CANCELLED', 'EXPIRED'].map(s => (
+                <FilterChip
+                  key={s}
+                  label={s === 'all' ? t('filters.all') : t(`status.${s}`)}
+                  active={historyStatus === s}
+                  onClick={() => setHistoryStatus(s)}
+                />
+              ))}
+            </div>
+            {/* Date range */}
+            <div className="flex items-center gap-2 bg-white border border-[#E8ECE4] rounded-xl px-3 py-2">
+              <span className="text-[10px] font-semibold text-[#8C8478] uppercase shrink-0">{t('historyDateRange')}</span>
+              <input
+                type="date"
+                value={historyDateFrom}
+                onChange={(e) => setHistoryDateFrom(e.target.value)}
+                className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
+              />
+              <span className="text-xs text-[#8C8478]">—</span>
+              <input
+                type="date"
+                value={historyDateTo}
+                onChange={(e) => setHistoryDateTo(e.target.value)}
+                className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
+              />
+              {(historyDateFrom || historyDateTo) && (
+                <button
+                  onClick={() => { setHistoryDateFrom(''); setHistoryDateTo('') }}
+                  className="text-[#8C8478] hover:text-brown shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
