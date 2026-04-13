@@ -200,6 +200,8 @@ export function useReservationsData() {
   // Filter state
   const [filter, setFilter] = useState<FilterMode>('action-needed')
   const [showHistory, setShowHistory] = useState(false)
+  const [historyDateFrom, setHistoryDateFrom] = useState('')
+  const [historyDateTo, setHistoryDateTo] = useState('')
   const [search, setSearch] = useState('')
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
   const [updating, setUpdating] = useState(false)
@@ -291,6 +293,19 @@ export function useReservationsData() {
         const dateStr = new Date(r.date).toISOString().slice(0, 10)
         return dateStr < todayStr || TERMINAL_STATUSES.includes(r.status)
       })
+      // Apply date range filter if set
+      if (historyDateFrom) {
+        list = list.filter(r => {
+          const dateStr = new Date(r.date).toISOString().slice(0, 10)
+          return dateStr >= historyDateFrom
+        })
+      }
+      if (historyDateTo) {
+        list = list.filter(r => {
+          const dateStr = new Date(r.date).toISOString().slice(0, 10)
+          return dateStr <= historyDateTo
+        })
+      }
     }
 
     // Apply filter chip
@@ -309,7 +324,7 @@ export function useReservationsData() {
     })
 
     return list
-  }, [allReservations, filter, showHistory])
+  }, [allReservations, filter, showHistory, historyDateFrom, historyDateTo])
 
   // Group by date
   const groupedReservations: DateGroup[] = useMemo(() => {
@@ -431,6 +446,8 @@ export function useReservationsData() {
     setFilter('action-needed')
     setSearch('')
     setShowHistory(false)
+    setHistoryDateFrom('')
+    setHistoryDateTo('')
   }, [])
 
   return {
@@ -441,6 +458,10 @@ export function useReservationsData() {
     setFilter,
     showHistory,
     setShowHistory,
+    historyDateFrom,
+    setHistoryDateFrom,
+    historyDateTo,
+    setHistoryDateTo,
     search,
     setSearch,
     clearFilters,

@@ -65,6 +65,7 @@ export default function ReservationDetail({
   const [editingDeposit, setEditingDeposit] = useState(false)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
+  const [unlockingDeposit, setUnlockingDeposit] = useState(false)
 
   const handleConfirmAction = useCallback(() => {
     if (!confirmAction) return
@@ -114,6 +115,36 @@ export default function ReservationDetail({
       if (res.ok) {
         onOrderChanged?.()
         setEditingDeposit(false)
+      }
+    } catch { /* ignore */ }
+    finally { setSavingDeposit(false) }
+  }
+
+  const handleUnlockDeposit = async () => {
+    setUnlockingDeposit(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ depositStatus: 'PENDING', depositConfirmedAt: null }),
+      })
+      if (res.ok) {
+        onOrderChanged?.()
+      }
+    } catch { /* ignore */ }
+    finally { setUnlockingDeposit(false) }
+  }
+
+  const handleRelockDeposit = async () => {
+    setSavingDeposit(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() }),
+      })
+      if (res.ok) {
+        onOrderChanged?.()
       }
     } catch { /* ignore */ }
     finally { setSavingDeposit(false) }
@@ -248,21 +279,46 @@ export default function ReservationDetail({
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm text-brown font-medium">${reservation.depositAmount}</span>
-                  <button
-                    onClick={() => { setDepositInput(String(reservation.depositAmount)); setEditingDeposit(true); }}
-                    className="p-0.5 rounded hover:bg-[#E8ECE4]/50 text-[#8C8478] hover:text-brown"
-                    title={t('detail.editDeposit')}
-                  >
-                    <Pencil size={12} />
-                  </button>
+                  {reservation.depositStatus === 'CONFIRMED' ? (
+                    /* Deposit confirmed — show lock icon, must unlock to edit */
+                    <button
+                      onClick={handleUnlockDeposit}
+                      disabled={unlockingDeposit}
+                      className="p-0.5 rounded hover:bg-[#F4A623]/10 text-[#F4A623] disabled:opacity-50"
+                      title={t('detail.unlockDeposit')}
+                    >
+                      <Lock size={12} />
+                    </button>
+                  ) : (
+                    /* Deposit not confirmed — can edit freely */
+                    <button
+                      onClick={() => { setDepositInput(String(reservation.depositAmount)); setEditingDeposit(true); }}
+                      className="p-0.5 rounded hover:bg-[#E8ECE4]/50 text-[#8C8478] hover:text-brown"
+                      title={t('detail.editDeposit')}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.depositStatus')}</span>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DEPOSIT_BADGE[reservation.depositStatus]?.bg} ${DEPOSIT_BADGE[reservation.depositStatus]?.text}`}>
-                {t(`depositStatus.${reservation.depositStatus}`)}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DEPOSIT_BADGE[reservation.depositStatus]?.bg} ${DEPOSIT_BADGE[reservation.depositStatus]?.text}`}>
+                  {t(`depositStatus.${reservation.depositStatus}`)}
+                </span>
+                {/* Re-confirm button when deposit was unlocked back to PENDING */}
+                {reservation.depositStatus === 'PENDING' && (
+                  <button
+                    onClick={handleRelockDeposit}
+                    disabled={savingDeposit}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5B8C3E]/10 text-[#5B8C3E] hover:bg-[#5B8C3E]/20 disabled:opacity-50 transition-colors"
+                  >
+                    {t('detail.reconfirmDeposit')}
+                  </button>
+                )}
+              </div>
             </div>
             {reservation.paymentReference && (
               <div className="flex justify-between">
@@ -537,15 +593,30 @@ export default function ReservationDetail({
           </button>
         )}
 
-        {/* Complete — CONFIRMED */}
+        {/* Complete — CONFIRMED, requires order to be PAID if order exists */}
         {reservation.status === 'CONFIRMED' && (
-          <button
-            onClick={() => setConfirmAction('complete')}
-            disabled={isUpdating}
-            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#2980B9] text-white hover:bg-[#2980B9]/90 disabled:opacity-50"
-          >
-            {t('actions.complete')}
-          </button>
+          (() => {
+            const hasUnpaidOrder = orderData && orderData.status !== 'PAID'
+            return (
+              <button
+                onClick={() => !hasUnpaidOrder && setConfirmAction('complete')}
+                disabled={isUpdating || !!hasUnpaidOrder}
+                title={hasUnpaidOrder ? t('actions.completeRequiresCheckout') : undefined}
+                className={`w-full py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  hasUnpaidOrder
+                    ? 'bg-[#2980B9]/40 text-white cursor-not-allowed'
+                    : 'bg-[#2980B9] text-white hover:bg-[#2980B9]/90'
+                }`}
+              >
+                {t('actions.complete')}
+                {hasUnpaidOrder && (
+                  <span className="text-[10px] font-normal opacity-80">
+                    ({t('actions.checkoutFirst')})
+                  </span>
+                )}
+              </button>
+            )
+          })()
         )}
 
         {/* Cancel — non-terminal states */}

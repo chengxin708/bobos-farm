@@ -728,6 +728,8 @@
         "reject": "Reject",
         "cancel": "Cancel",
         "complete": "Complete",
+        "completeRequiresCheckout": "Order must be checked out before completing the reservation",
+        "checkoutFirst": "checkout first",
         "close": "Close",
         "editReservation": "Edit Reservation"
       },
@@ -774,6 +776,8 @@
         "screenshot": "Payment Screenshot",
         "viewScreenshot": "View Screenshot",
         "editDeposit": "Edit deposit amount",
+        "unlockDeposit": "Deposit is confirmed — click to unlock for editing",
+        "reconfirmDeposit": "Re-confirm",
         "timeline": "Activity Timeline",
         "created": "Created",
         "updated": "Last Updated",
@@ -797,6 +801,7 @@
         "all": "All"
       },
       "history": "History",
+      "historyDateRange": "Date range",
       "dateGroup": {
         "today": "Today",
         "tomorrow": "Tomorrow"
@@ -1022,7 +1027,13 @@
         "ordering": "Ordering",
         "guestPolicies": "Guest Policies",
         "payment": "Payment",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "menu": "Menu"
+      },
+      "menuTab": {
+        "title": "Menu Management",
+        "description": "Add, edit, or remove menu categories and items. Changes are reflected on the customer-facing menu immediately.",
+        "manage": "Manage Menu"
       },
       "booking": {
         "title": "Booking Settings",

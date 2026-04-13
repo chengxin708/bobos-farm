@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import { ArrowLeft, Minus, Plus, Loader2 } from 'lucide-react'
+import { ArrowLeft, Minus, Plus, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -36,6 +36,8 @@ interface EditReservationEditorProps {
   onSaved: () => void
 }
 
+type SlotsMap = Record<string, { total: number; occupied: number; available: number }>
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 const fetcher = (url: string) =>
@@ -43,6 +45,24 @@ const fetcher = (url: string) =>
     if (!r.ok) throw new Error('Fetch failed')
     return r.json()
   })
+
+/** Return YYYY-MM-DD for a Date object (local time) */
+function toDateKey(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** Get the first day of a month and how many days it has */
+function getMonthInfo(year: number, month: number) {
+  const firstDay = new Date(year, month, 1).getDay() // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  return { firstDay, daysInMonth }
+}
+
+const WEEKDAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+const WEEKDAYS_ZH = ['日', '一', '二', '三', '四', '五', '六']
 
 // ── Component ──────────────────────────────────────────────────────
 
@@ -65,15 +85,24 @@ export default function EditReservationEditor({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Calendar month navigation
+  const initDate = new Date(originalDate + 'T00:00:00')
+  const [calYear, setCalYear] = useState(initDate.getFullYear())
+  const [calMonth, setCalMonth] = useState(initDate.getMonth())
+
   // Reset state when reservation changes or editor opens
   useEffect(() => {
     if (isOpen) {
-      setDate(reservation.date.split('T')[0])
+      const d = reservation.date.split('T')[0]
+      setDate(d)
       setYurtId(reservation.yurtId)
       setGuestCount(reservation.guestCount)
       setSpecialRequests(reservation.specialRequests || '')
       setError(null)
       setSaving(false)
+      const parsed = new Date(d + 'T00:00:00')
+      setCalYear(parsed.getFullYear())
+      setCalMonth(parsed.getMonth())
     }
   }, [isOpen, reservation])
 
@@ -88,10 +117,17 @@ export default function EditReservationEditor({
     fetcher
   )
 
-  // Fetch availability/slots for the selected date
-  const { data: slotsData } = useSWR<{ date: string; totalSlots: number; occupiedSlots: number; availableSlots: number }[]>(
-    isOpen && date ? `/api/availability/slots?startDate=${date}&endDate=${date}` : null,
-    fetcher
+  // Fetch availability/slots for the entire visible month (for calendar view)
+  const calStartDate = useMemo(() => `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`, [calYear, calMonth])
+  const calEndDate = useMemo(() => {
+    const lastDay = new Date(calYear, calMonth + 1, 0).getDate()
+    return `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  }, [calYear, calMonth])
+
+  const { data: monthSlots } = useSWR<SlotsMap>(
+    isOpen ? `/api/availability/slots?startDate=${calStartDate}&endDate=${calEndDate}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
   )
 
   const activeYurts = useMemo(
@@ -117,8 +153,8 @@ export default function EditReservationEditor({
     )
   }, [dateReservations, reservation.id])
 
-  // Available slots count
-  const availableSlots = slotsData?.[0]?.availableSlots ?? null
+  // Selected date slots
+  const selectedSlots = monthSlots?.[date] ?? null
 
   // Selected yurt capacity
   const selectedYurt = activeYurts.find((y) => y.id === yurtId)
@@ -183,6 +219,25 @@ export default function EditReservationEditor({
     }
   }, [hasChanges, saving, date, originalDate, yurtId, guestCount, specialRequests, reservation, onSaved, onClose])
 
+  // ── Calendar navigation ──────────────────────────────────────
+  const goToPrevMonth = () => {
+    if (calMonth === 0) { setCalYear(calYear - 1); setCalMonth(11) }
+    else setCalMonth(calMonth - 1)
+  }
+  const goToNextMonth = () => {
+    if (calMonth === 11) { setCalYear(calYear + 1); setCalMonth(0) }
+    else setCalMonth(calMonth + 1)
+  }
+
+  // Detect locale for weekday headers
+  const isZh = t('date').includes('日') || t('date').includes('期')
+  const weekdays = isZh ? WEEKDAYS_ZH : WEEKDAYS_EN
+  const monthLabel = new Date(calYear, calMonth, 1).toLocaleDateString(isZh ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long' })
+
+  // Build calendar grid
+  const { firstDay, daysInMonth } = getMonthInfo(calYear, calMonth)
+  const todayKey = toDateKey(new Date())
+
   if (!isOpen) return null
 
   return (
@@ -208,23 +263,117 @@ export default function EditReservationEditor({
             </div>
           )}
 
-          {/* Date */}
+          {/* Date — inline calendar */}
           <div>
             <label className="text-sm font-semibold text-[#2C2416] mb-2 block">
               {t('date')}
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[#E8ECE4] bg-white text-sm text-[#2C2416] focus:outline-none focus:border-[#6B7F5E]"
-            />
-            {availableSlots !== null && (
-              <p className={`mt-1.5 text-xs ${availableSlots > 0 ? 'text-[#6B7F5E]' : 'text-red-500'}`}>
-                {availableSlots > 0
-                  ? t('slotsAvailable', { count: availableSlots })
+
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={goToPrevMonth}
+                className="p-1.5 rounded-lg hover:bg-[#E8ECE4]/50 text-[#6B7F5E] transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-sm font-semibold text-[#2C2416]">{monthLabel}</span>
+              <button
+                onClick={goToNextMonth}
+                className="p-1.5 rounded-lg hover:bg-[#E8ECE4]/50 text-[#6B7F5E] transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 mb-1">
+              {weekdays.map((wd) => (
+                <div key={wd} className="text-center text-[10px] font-semibold text-[#8C8478] uppercase py-1">
+                  {wd}
+                </div>
+              ))}
+            </div>
+
+            {/* Day cells */}
+            <div className="grid grid-cols-7 gap-px">
+              {/* Empty cells for offset */}
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <div key={`e-${i}`} className="h-12" />
+              ))}
+
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1
+                const dateKey = toDateKey(new Date(calYear, calMonth, day))
+                const isSelected = dateKey === date
+                const isOriginal = dateKey === originalDate
+                const isToday = dateKey === todayKey
+                const isPast = dateKey < todayKey
+                const slots = monthSlots?.[dateKey]
+                const avail = slots?.available ?? null
+                const isFull = avail !== null && avail <= 0
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => !isPast && setDate(dateKey)}
+                    disabled={isPast}
+                    className={`
+                      h-12 rounded-lg flex flex-col items-center justify-center gap-0.5 text-sm transition-all relative
+                      ${isPast
+                        ? 'text-[#D0CCC4] cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-[#6B7F5E] text-white font-semibold shadow-sm'
+                          : isFull
+                            ? 'text-[#DC3545]/60 hover:bg-red-50'
+                            : 'text-[#2C2416] hover:bg-[#E8ECE4]/50 cursor-pointer'
+                      }
+                    `}
+                  >
+                    {/* Today dot */}
+                    {isToday && !isSelected && (
+                      <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#6B7F5E]" />
+                    )}
+                    {/* Original date marker */}
+                    {isOriginal && !isSelected && (
+                      <div className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-[#8B6914]" />
+                    )}
+                    <span className={isSelected ? 'font-bold' : ''}>{day}</span>
+                    {/* Slot indicator */}
+                    {!isPast && avail !== null && (
+                      <span className={`text-[9px] leading-none font-medium ${
+                        isSelected
+                          ? 'text-white/80'
+                          : avail <= 0
+                            ? 'text-[#DC3545]'
+                            : avail <= 2
+                              ? 'text-[#F4A623]'
+                              : 'text-[#6B7F5E]'
+                      }`}>
+                        {avail <= 0 ? t('noSlots') : avail}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Selected date summary */}
+            {selectedSlots && (
+              <div className={`mt-3 px-3 py-2 rounded-lg text-xs font-medium ${
+                selectedSlots.available > 0
+                  ? 'bg-[#6B7F5E]/10 text-[#6B7F5E]'
+                  : 'bg-red-50 text-[#DC3545]'
+              }`}>
+                {selectedSlots.available > 0
+                  ? t('slotsAvailable', { count: selectedSlots.available })
                   : t('noSlots')}
-              </p>
+                {selectedSlots.available > 0 && (
+                  <span className="text-[#8C8478] ml-2">
+                    ({selectedSlots.occupied}/{selectedSlots.total} {t('occupied')})
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

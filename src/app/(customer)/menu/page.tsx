@@ -134,16 +134,16 @@ function MenuItemRow({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex gap-3 py-4 px-4 text-left bg-transparent border-none cursor-pointer"
+        className="w-full flex gap-4 py-4 md:py-5 px-4 md:px-6 text-left bg-transparent border-none cursor-pointer hover:bg-[#F2EDE6]/50 transition-colors"
       >
         {/* Image */}
-        <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
+        <div className="w-[60px] h-[60px] md:w-[72px] md:h-[72px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
               alt={displayName}
-              width={60}
-              height={60}
+              width={72}
+              height={72}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -206,7 +206,7 @@ function MenuItemRow({
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 flex flex-col gap-3">
+            <div className="px-4 md:px-6 pb-4 md:pb-5 flex flex-col gap-3">
               {/* Close button */}
               <div className="flex justify-end">
                 <button
@@ -411,11 +411,11 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col max-w-[1200px] mx-auto w-full">
+    <div className="flex flex-col max-w-[900px] mx-auto w-full">
       {/* Page Header */}
-      <div className="flex flex-col items-center pt-6 pb-4 px-6 md:px-12 lg:px-20">
-        <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
-        <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
+      <div className="flex flex-col items-center pt-8 pb-5 px-6 md:px-12">
+        <h1 className="font-serif text-2xl md:text-3xl text-[#1A1208] text-center">{t('title')}</h1>
+        <div className="w-10 h-[2px] bg-[#6B7F5E] mt-3" />
       </div>
 
       {/* Category Nav — sticky */}
@@ -432,8 +432,8 @@ export default function MenuPage() {
           </div>
         </div>
       ) : (
-        <div className="sticky top-0 z-10 bg-[#F8F7F4]/95 backdrop-blur-sm py-2 px-4 border-b border-[#F2EDE6]">
-          <div ref={navRef} className="flex gap-2 overflow-x-auto hide-scrollbar">
+        <div className="sticky top-0 z-10 bg-[#F8F7F4]/95 backdrop-blur-sm py-3 px-4 md:px-8 border-b border-[#F2EDE6]">
+          <div ref={navRef} className="flex gap-2 overflow-x-auto hide-scrollbar md:justify-center">
             {groupedItems.map(({ category: cat }) => {
               const isActive = cat.id === resolvedTabId
               const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
@@ -458,7 +458,7 @@ export default function MenuPage() {
       )}
 
       {/* Waterfall Content */}
-      <div className="flex flex-col pb-4">
+      <div className="flex flex-col pb-4 md:px-4">
         {itemsLoading || catLoading ? (
           <ListSkeleton />
         ) : groupedItems.length === 0 ? (
@@ -477,15 +477,15 @@ export default function MenuPage() {
                 className="scroll-mt-14"
               >
                 {/* Section header */}
-                <div className="flex items-center gap-2 px-4 pt-6 pb-2">
+                <div className="flex items-center gap-2.5 px-4 md:px-6 pt-8 pb-3">
                   <span className="text-lg">{emoji}</span>
-                  <h2 className="font-serif text-lg text-[#1A1208]">{categoryLabel(cat)}</h2>
+                  <h2 className="font-serif text-lg md:text-xl text-[#1A1208]">{categoryLabel(cat)}</h2>
                   <div className="flex-1 h-px bg-[#E8E2D9] ml-2" />
                 </div>
 
                 {/* Whole Lamb banner */}
                 {cat.nameEn === 'Whole Lamb' && (
-                  <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
+                  <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 md:mx-6 mb-2 px-4 py-3">
                     <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
                     <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
                       {t('lambNotice')}

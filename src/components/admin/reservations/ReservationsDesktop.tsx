@@ -126,6 +126,8 @@ export default function ReservationsDesktop() {
     sessionStatus,
     filter, setFilter,
     showHistory, setShowHistory,
+    historyDateFrom, setHistoryDateFrom,
+    historyDateTo, setHistoryDateTo,
     search, setSearch,
     pendingDepositCount,
     pendingOrderCount,
@@ -218,6 +220,34 @@ export default function ReservationsDesktop() {
             />
             {search && (
               <button onClick={() => setSearch('')} className="text-[#8C8478] hover:text-brown">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* History date range filter */}
+        {showHistory && (
+          <div className="flex items-center gap-3 bg-white border border-[#E8ECE4] rounded-xl px-4 py-2.5">
+            <span className="text-xs font-semibold text-[#8C8478] uppercase shrink-0">{t('historyDateRange')}</span>
+            <input
+              type="date"
+              value={historyDateFrom}
+              onChange={(e) => setHistoryDateFrom(e.target.value)}
+              className="text-sm bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E]"
+            />
+            <span className="text-xs text-[#8C8478]">—</span>
+            <input
+              type="date"
+              value={historyDateTo}
+              onChange={(e) => setHistoryDateTo(e.target.value)}
+              className="text-sm bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E]"
+            />
+            {(historyDateFrom || historyDateTo) && (
+              <button
+                onClick={() => { setHistoryDateFrom(''); setHistoryDateTo('') }}
+                className="text-[#8C8478] hover:text-brown"
+              >
                 <X size={14} />
               </button>
             )}

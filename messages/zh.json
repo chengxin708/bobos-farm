@@ -728,6 +728,8 @@
         "reject": "拒绝",
         "cancel": "取消",
         "complete": "完成",
+        "completeRequiresCheckout": "需先结账才能完成预订",
+        "checkoutFirst": "请先结账",
         "close": "关闭",
         "editReservation": "编辑预订"
       },
@@ -774,6 +776,8 @@
         "screenshot": "付款截图",
         "viewScreenshot": "查看截图",
         "editDeposit": "编辑定金金额",
+        "unlockDeposit": "定金已确认 — 点击解锁后可编辑",
+        "reconfirmDeposit": "重新确认",
         "timeline": "活动时间线",
         "created": "创建时间",
         "updated": "最后更新",
@@ -797,6 +801,7 @@
         "all": "全部"
       },
       "history": "历史",
+      "historyDateRange": "日期范围",
       "dateGroup": {
         "today": "今天",
         "tomorrow": "明天"
@@ -1022,7 +1027,13 @@
         "ordering": "订餐设置",
         "guestPolicies": "客户政策",
         "payment": "支付设置",
-        "notifications": "通知设置"
+        "notifications": "通知设置",
+        "menu": "菜单"
+      },
+      "menuTab": {
+        "title": "菜单管理",
+        "description": "添加、编辑或删除菜单分类和菜品。更改会立即反映在客户端菜单页面。",
+        "manage": "管理菜单"
       },
       "booking": {
         "title": "预订设置",

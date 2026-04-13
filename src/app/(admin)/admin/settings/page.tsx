@@ -14,10 +14,13 @@ import {
   Bell,
   ShieldAlert,
   Wallet,
+  UtensilsCrossed,
   Plus,
   Trash2,
   Loader2,
+  ChevronRight,
 } from 'lucide-react'
+import Link from 'next/link'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -28,7 +31,7 @@ interface SystemSetting {
   description: string | null
 }
 
-type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
+type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -443,6 +446,7 @@ export default function Settings() {
     { icon: ShieldAlert, label: t('tabs.guestPolicies') },
     { icon: Wallet, label: t('tabs.payment') },
     { icon: Bell, label: t('tabs.notifications') },
+    { icon: UtensilsCrossed, label: t('tabs.menu') },
   ]
 
   // ── Shared input style helper ──────────────────────────────────
@@ -892,6 +896,23 @@ export default function Settings() {
     )
   }
 
+  function renderMenuTab() {
+    return (
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('menuTab.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-6">{t('menuTab.description')}</p>
+        <Link
+          href="/admin/menu"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#6B7F5E] text-white text-sm font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors no-underline"
+        >
+          <UtensilsCrossed size={16} />
+          {t('menuTab.manage')}
+          <ChevronRight size={14} />
+        </Link>
+      </div>
+    )
+  }
+
   const TAB_RENDERERS = [
     renderGeneralTab,
     renderBookingTab,
@@ -900,6 +921,7 @@ export default function Settings() {
     renderGuestPoliciesTab,
     renderPaymentTab,
     renderNotificationsTab,
+    renderMenuTab,
   ]
 
   return (

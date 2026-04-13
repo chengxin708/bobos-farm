@@ -115,6 +115,8 @@ export default function ReservationsMobile() {
     sessionStatus,
     filter, setFilter,
     showHistory, setShowHistory,
+    historyDateFrom, setHistoryDateFrom,
+    historyDateTo, setHistoryDateTo,
     search, setSearch,
     pendingDepositCount,
     pendingOrderCount,
@@ -216,6 +218,34 @@ export default function ReservationsMobile() {
             <History size={18} className={showHistory ? 'text-[#6B7F5E]' : 'text-[#8C8478]'} />
           </button>
         </div>
+
+        {/* History date range filter */}
+        {showHistory && (
+          <div className="flex items-center gap-2 bg-white border border-[#E8ECE4] rounded-xl px-3 py-2">
+            <span className="text-[10px] font-semibold text-[#8C8478] uppercase shrink-0">{t('historyDateRange')}</span>
+            <input
+              type="date"
+              value={historyDateFrom}
+              onChange={(e) => setHistoryDateFrom(e.target.value)}
+              className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
+            />
+            <span className="text-xs text-[#8C8478]">—</span>
+            <input
+              type="date"
+              value={historyDateTo}
+              onChange={(e) => setHistoryDateTo(e.target.value)}
+              className="text-xs bg-transparent outline-none border border-[#E8ECE4] rounded-lg px-2 py-1 text-[#2C2416] focus:border-[#6B7F5E] w-[120px]"
+            />
+            {(historyDateFrom || historyDateTo) && (
+              <button
+                onClick={() => { setHistoryDateFrom(''); setHistoryDateTo('') }}
+                className="text-[#8C8478] hover:text-brown shrink-0"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Action alerts — only when not in history mode */}
         {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0) && (

@@ -161,11 +161,6 @@ export default function AdminNavbar() {
           {t('bookingsMenu')}
         </Link>
 
-        {/* 菜单管理 */}
-        <Link href="/admin/menu" className={linkClass(isActive('/admin/menu') || pathname.startsWith('/admin/menu'))}>
-          {t('menuMgmt')}
-        </Link>
-
         {/* 日历 */}
         <Link href="/admin/calendar" className={linkClass(isActive('/admin/calendar'))}>
           {t('calendar')}
