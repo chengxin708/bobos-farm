@@ -48,7 +48,7 @@ function DayCell({ day, status, selected, disabled, today, onClick, monthName, t
       disabled={disabled}
       className={`
         relative flex flex-col items-center justify-center w-12 h-12 rounded-full
-        border-none transition-all text-[15px] font-semibold
+        border-none transition-all text-[17px] font-semibold
         ${selected
           ? 'bg-[#6B7F5E] text-white scale-105 shadow-sm'
           : status === 'full'
@@ -293,7 +293,7 @@ export default function BookingDatePage() {
           {/* Day Headers — Mo Tu We Th Fr Sa Su */}
           <div className="grid grid-cols-7 mb-1">
             {dayHeaders.map((d) => (
-              <div key={d} className="py-2 text-center text-xs font-medium uppercase tracking-wider text-[#6B6157]">
+              <div key={d} className="py-2 text-center text-[15px] font-semibold uppercase tracking-wider text-[#6B6157]">
                 {d.slice(0, 2)}
               </div>
             ))}
