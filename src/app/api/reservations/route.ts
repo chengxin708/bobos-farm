@@ -31,6 +31,7 @@ const adminCreateReservationSchema = z.object({
   guestName: z.string().min(1, "guestName is required"),
   guestEmail: z.string().email("Invalid email"),
   guestPhone: z.string().min(1, "guestPhone is required"),
+  customDeposit: z.number().min(0).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -160,9 +161,13 @@ export async function POST(req: NextRequest) {
       const depositSetting = await prisma.systemSetting.findUnique({
         where: { key: "deposit_amount" },
       });
-      const depositAmount = depositSetting ? parseFloat(depositSetting.value) : 300;
+      const systemDepositAmount = depositSetting ? parseFloat(depositSetting.value) : 300;
+      const depositAmount = parsed.data.customDeposit ?? systemDepositAmount;
+      const skipPayment = depositAmount === 0;
 
-      // Admin-created reservations skip deposit — confirmed directly
+      // Admin-created reservations: holdByAdmin=true
+      // If deposit is $0, skip payment and go straight to CONFIRMED
+      // If deposit > 0, PENDING_PAYMENT with holdByAdmin=true (holds spot but awaits payment)
       const reservation = await prisma.reservation.create({
         data: {
           userId: customer.id,
@@ -170,10 +175,12 @@ export async function POST(req: NextRequest) {
           date: reservationDate,
           guestCount,
           specialRequests: specialRequests || null,
-          status: "CONFIRMED",
+          holdByAdmin: true,
           depositAmount,
-          depositStatus: "CONFIRMED",
-          depositConfirmedAt: new Date(),
+          status: skipPayment ? "CONFIRMED" : "PENDING_PAYMENT",
+          depositStatus: skipPayment ? "CONFIRMED" : "UNPAID",
+          depositConfirmedAt: skipPayment ? new Date() : null,
+          // No paymentDeadline for admin holds — they don't auto-expire
         },
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },

@@ -43,6 +43,7 @@ const editActionSchema = z.object({
   yurtId: z.string().optional(),
   guestCount: z.number().int().positive().optional(),
   specialRequests: z.string().max(2000).nullish(),
+  depositAmount: z.number().min(0).optional(),
 });
 
 const adminUpdateSchema = z.object({
@@ -587,7 +588,7 @@ export async function PATCH(
         );
       }
 
-      const { date, yurtId, guestCount, specialRequests } = parsedEdit.data;
+      const { date, yurtId, guestCount, specialRequests, depositAmount: newDepositAmount } = parsedEdit.data;
 
       // Determine target yurt and date
       const targetYurtId = yurtId || reservation.yurtId;
@@ -644,6 +645,7 @@ export async function PATCH(
       if (yurtChanged) updateData.yurtId = yurtId;
       if (guestCount !== undefined) updateData.guestCount = guestCount;
       if (specialRequests !== undefined) updateData.specialRequests = specialRequests;
+      if (newDepositAmount !== undefined) updateData.depositAmount = newDepositAmount;
 
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json({ error: "No fields to update" }, { status: 400 });

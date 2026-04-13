@@ -45,6 +45,7 @@ interface Reservation {
   status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
   depositAmount: number
   depositStatus: string
+  holdByAdmin?: boolean
   user: ReservationUser
   yurt: ReservationYurt
 }
@@ -382,55 +383,94 @@ export default function CalendarDesktop() {
           </span>
         </div>
 
-        {/* Yurt slot rows — one row per active yurt */}
-        <div className="flex flex-col gap-px mt-1">
-          {activeYurts.map(yurt => {
-            const isClosed = closedByDateYurt.get(dateStr)?.has(yurt.id)
-            const res = dayRes.find(r => r.yurtId === yurt.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
-            // Short label: first letter of each word, e.g. "Golden Meadow" → "GM"
-            const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+        {/* Yurt slot rows — show max 4, collapse rest */}
+        {(() => {
+          const MAX_VISIBLE = 4
+          const bookedYurts = activeYurts.filter(y => {
+            const r = dayRes.find(r => r.yurtId === y.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
+            return !!r
+          })
+          const availableYurts = activeYurts.filter(y => {
+            const isClosed = closedByDateYurt.get(dateStr)?.has(y.id)
+            const r = dayRes.find(r => r.yurtId === y.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
+            return !r && !isClosed
+          })
+          const totalAvailable = availableYurts.length
 
-            if (isClosed) {
-              return (
-                <div key={yurt.id} className="flex items-center h-5 px-1 rounded text-[9px] text-[#8A7E6B]/40 whitespace-nowrap overflow-hidden">
-                  <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
-                  <span className="line-through">{t('status.closed')}</span>
-                </div>
-              )
-            }
+          // Show booked first (always), then fill remaining slots with available
+          const visibleBooked = bookedYurts.slice(0, MAX_VISIBLE)
+          const remainingSlots = MAX_VISIBLE - visibleBooked.length
+          const visibleAvailable = availableYurts.slice(0, Math.max(0, remainingSlots))
+          const hiddenCount = activeYurts.length - visibleBooked.length - visibleAvailable.length
 
-            if (res) {
-              const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
-              return (
-                <button
-                  key={yurt.id}
-                  onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
-                  className={`flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
-                >
-                  <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
-                  <span className="truncate">{getDisplayName(res.user)}</span>
-                </button>
-              )
-            }
+          return (
+            <div className="flex flex-col gap-px mt-1">
+              {/* Booked yurts */}
+              {visibleBooked.map(yurt => {
+                const res = dayRes.find(r => r.yurtId === yurt.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')!
+                const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+                const colors = isHeld
+                  ? { bg: 'bg-[#F4A623]/15', text: 'text-[#F4A623]' }
+                  : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
+                return (
+                  <button
+                    key={yurt.id}
+                    onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
+                    className={`flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
+                  >
+                    <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
+                    <span className="truncate">{getDisplayName(res.user)}</span>
+                    {isHeld && <span className="ml-auto shrink-0 text-[8px] font-bold uppercase">Held</span>}
+                  </button>
+                )
+              })}
 
-            // Available — click to create reservation
-            return (
-              <button
-                key={yurt.id}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setCreateModalDate(dateStr)
-                  setCreateModalYurtId(yurt.id)
-                  setShowCreateModal(true)
-                }}
-                className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/30 hover:text-[#6B7F5E]/60 hover:bg-[#6B7F5E]/5 transition-all"
-              >
-                <span className="w-5 shrink-0 font-bold text-center text-[#6B7F5E]/40">{initials}</span>
-                <span className="text-[#6B7F5E]/30">—</span>
-              </button>
-            )
-          })}
-        </div>
+              {/* Available summary or individual slots */}
+              {totalAvailable > 0 && visibleAvailable.length > 0 && (
+                totalAvailable <= 2 ? (
+                  // Show individual available slots if few
+                  visibleAvailable.map(yurt => {
+                    const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                    return (
+                      <button
+                        key={yurt.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCreateModalDate(dateStr)
+                          setCreateModalYurtId(yurt.id)
+                          setShowCreateModal(true)
+                        }}
+                        className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/30 hover:text-[#6B7F5E]/60 hover:bg-[#6B7F5E]/5 transition-all"
+                      >
+                        <span className="w-5 shrink-0 font-bold text-center text-[#6B7F5E]/40">{initials}</span>
+                        <span className="text-[#6B7F5E]/30">—</span>
+                      </button>
+                    )
+                  })
+                ) : (
+                  // Summarize available count if many
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCreateModalDate(dateStr)
+                      setCreateModalYurtId(undefined)
+                      setShowCreateModal(true)
+                    }}
+                    className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/50 hover:text-[#6B7F5E] hover:bg-[#6B7F5E]/5 transition-all"
+                  >
+                    <span className="text-[#6B7F5E]/50">+{totalAvailable} available</span>
+                  </button>
+                )
+              )}
+
+              {/* Hidden count */}
+              {hiddenCount > 0 && (
+                <span className="text-[8px] text-[#8A7E6B]/40 px-1">+{hiddenCount} more</span>
+              )}
+            </div>
+          )
+        })()}
       </div>
     )
   }
@@ -498,7 +538,10 @@ export default function CalendarDesktop() {
                     }
 
                     if (res) {
-                      const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
+                      const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+                      const colors = isHeld
+                        ? { border: 'border-l-[#F4A623]', bg: 'bg-[#F4A623]/10', text: 'text-[#F4A623]', dot: 'bg-[#F4A623]', initBg: 'bg-[#F4A623]' }
+                        : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
                       const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
 
                       return (
@@ -525,7 +568,7 @@ export default function CalendarDesktop() {
                               <span className="text-[11px]">{t('guests', { count: res.guestCount })}</span>
                             </div>
                             <div className={`inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
-                              {statusLabel(res.status, t)}
+                              {isHeld ? t('status.held') : statusLabel(res.status, t)}
                             </div>
                           </button>
                         </td>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X, History, AlertCircle, ShoppingBag } from 'lucide-react'
+import { Search, X, History, AlertCircle, ShoppingBag, Lock } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import ReservationDetail from './ReservationDetail'
@@ -118,6 +118,7 @@ export default function ReservationsMobile() {
     search, setSearch,
     pendingDepositCount,
     pendingOrderCount,
+    heldByAdminCount,
     actionNeededCount,
     confirmedCount,
     groupedReservations,
@@ -217,7 +218,7 @@ export default function ReservationsMobile() {
         </div>
 
         {/* Action alerts — only when not in history mode */}
-        {!showHistory && (pendingDepositCount > 0 || pendingOrderCount > 0) && (
+        {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0) && (
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
             {pendingDepositCount > 0 && (
               <button
@@ -226,6 +227,15 @@ export default function ReservationsMobile() {
               >
                 <AlertCircle size={14} />
                 {t('pendingDeposits', { count: pendingDepositCount })}
+              </button>
+            )}
+            {heldByAdminCount > 0 && (
+              <button
+                onClick={() => { setFilter('action-needed'); setShowHistory(false) }}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F4A623]/10 border border-[#F4A623]/20 text-[#F4A623] text-xs font-semibold"
+              >
+                <Lock size={14} />
+                {t('heldByAdmin', { count: heldByAdminCount })}
               </button>
             )}
             {pendingOrderCount > 0 && (

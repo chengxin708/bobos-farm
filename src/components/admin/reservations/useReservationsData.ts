@@ -75,6 +75,7 @@ export interface Reservation {
   paymentReference: string | null
   paymentScreenshotUrl: string | null
   paymentDeadline: string | null
+  holdByAdmin?: boolean
   cancelledAt: string | null
   cancelReason: string | null
   createdAt: string
@@ -260,6 +261,10 @@ export function useReservationsData() {
     () => allReservations.filter(r => r.order && r.order.status === 'SUBMITTED').length,
     [allReservations]
   )
+  const heldByAdminCount = useMemo(
+    () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' && r.holdByAdmin).length,
+    [allReservations]
+  )
   const actionNeededCount = useMemo(
     () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED').length,
     [allReservations]
@@ -442,6 +447,7 @@ export function useReservationsData() {
     // Counts
     pendingDepositCount,
     pendingOrderCount,
+    heldByAdminCount,
     actionNeededCount,
     confirmedCount,
     // Data

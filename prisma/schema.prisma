@@ -157,6 +157,7 @@ model Reservation {
   cancelledAt            DateTime?
   cancelReason           String?
   refundEligible         Boolean           @default(false)
+  holdByAdmin            Boolean           @default(false)
   rescheduledFrom        String?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt

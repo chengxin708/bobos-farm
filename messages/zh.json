@@ -773,6 +773,7 @@
         "paymentDeadline": "付款截止时间",
         "screenshot": "付款截图",
         "viewScreenshot": "查看截图",
+        "editDeposit": "编辑定金金额",
         "timeline": "活动时间线",
         "created": "创建时间",
         "updated": "最后更新",
@@ -787,6 +788,8 @@
         "viewFullOrder": "查看完整订单"
       },
       "pendingDeposits": "{count} 笔定金待确认",
+      "heldByAdmin": "{count} 笔锁位待收款",
+      "spotHeld": "已锁位",
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {
         "actionNeeded": "需要处理",
@@ -1246,6 +1249,9 @@
       "cancel": "取消",
       "creating": "创建中...",
       "submit": "创建预订",
+      "depositAmount": "定金金额",
+      "depositHint": "设为 $0 可跳过定金流程",
+      "depositDefault": "系统默认",
       "createFailed": "创建预订失败",
       "networkError": "网络错误，请重试。"
     },

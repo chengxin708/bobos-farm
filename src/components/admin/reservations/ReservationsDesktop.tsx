@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X, History, AlertCircle, ShoppingBag } from 'lucide-react'
+import { Search, X, History, AlertCircle, ShoppingBag, Lock } from 'lucide-react'
 import StatusBadge from '@/components/admin/StatusBadge'
 import ReservationDetail from './ReservationDetail'
 import {
@@ -129,6 +129,7 @@ export default function ReservationsDesktop() {
     search, setSearch,
     pendingDepositCount,
     pendingOrderCount,
+    heldByAdminCount,
     actionNeededCount,
     confirmedCount,
     groupedReservations,
@@ -224,7 +225,7 @@ export default function ReservationsDesktop() {
         )}
 
         {/* Action alerts — only when not in history mode */}
-        {!showHistory && (pendingDepositCount > 0 || pendingOrderCount > 0) && (
+        {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0) && (
           <div className="flex items-center gap-3 flex-wrap">
             {pendingDepositCount > 0 && (
               <button
@@ -233,6 +234,15 @@ export default function ReservationsDesktop() {
               >
                 <AlertCircle size={16} />
                 {t('pendingDeposits', { count: pendingDepositCount })}
+              </button>
+            )}
+            {heldByAdminCount > 0 && (
+              <button
+                onClick={() => { setFilter('action-needed'); setShowHistory(false) }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F4A623]/10 border border-[#F4A623]/20 text-[#F4A623] text-sm font-semibold hover:bg-[#F4A623]/15 transition-colors"
+              >
+                <Lock size={16} />
+                {t('heldByAdmin', { count: heldByAdminCount })}
               </button>
             )}
             {pendingOrderCount > 0 && (

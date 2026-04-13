@@ -773,6 +773,7 @@
         "paymentDeadline": "Payment Deadline",
         "screenshot": "Payment Screenshot",
         "viewScreenshot": "View Screenshot",
+        "editDeposit": "Edit deposit amount",
         "timeline": "Activity Timeline",
         "created": "Created",
         "updated": "Last Updated",
@@ -787,6 +788,8 @@
         "viewFullOrder": "View full order"
       },
       "pendingDeposits": "{count} deposits pending",
+      "heldByAdmin": "{count} spots held pending payment",
+      "spotHeld": "Spot Held",
       "pendingOrders": "{count} orders pending",
       "filters": {
         "actionNeeded": "Action Needed",
@@ -1246,6 +1249,9 @@
       "cancel": "Cancel",
       "creating": "Creating...",
       "submit": "Create Reservation",
+      "depositAmount": "Deposit Amount",
+      "depositHint": "Set to $0 to skip deposit",
+      "depositDefault": "System default",
       "createFailed": "Failed to create reservation",
       "networkError": "Network error. Please try again."
     },

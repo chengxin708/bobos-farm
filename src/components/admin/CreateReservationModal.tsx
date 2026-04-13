@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { X, Loader2 } from 'lucide-react'
 
@@ -33,6 +34,8 @@ export default function CreateReservationModal({
   defaultYurtId,
 }: CreateReservationModalProps) {
   const t = useTranslations('admin.createReservation')
+  const { data: session } = useSession()
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -40,6 +43,7 @@ export default function CreateReservationModal({
   const [yurtId, setYurtId] = useState(defaultYurtId || '')
   const [guestCount, setGuestCount] = useState(1)
   const [specialRequests, setSpecialRequests] = useState('')
+  const [customDeposit, setCustomDeposit] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [visible, setVisible] = useState(false)
@@ -60,6 +64,7 @@ export default function CreateReservationModal({
       setYurtId(defaultYurtId || '')
       setGuestCount(1)
       setSpecialRequests('')
+      setCustomDeposit('')
       setError('')
       setSubmitting(false)
       // Animate in
@@ -105,6 +110,7 @@ export default function CreateReservationModal({
           yurtId,
           guestCount,
           specialRequests: specialRequests || undefined,
+          ...(isAdmin && customDeposit !== '' ? { customDeposit: Number(customDeposit) } : {}),
         }),
       })
 
@@ -333,6 +339,37 @@ export default function CreateReservationModal({
                 {specialRequests.length}/500
               </span>
             </div>
+
+            {/* Deposit Amount (admin only) */}
+            {isAdmin && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
+                  {t('depositAmount')}
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium" style={{ color: '#2C2416' }}>$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={customDeposit}
+                    onChange={(e) => setCustomDeposit(e.target.value)}
+                    placeholder={t('depositDefault')}
+                    className="flex-1 h-11 px-3 rounded-lg border outline-none transition-all duration-150"
+                    style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#6B7F5E'
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#E8E2D9'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  />
+                </div>
+                <p className="text-xs" style={{ color: '#8C8478' }}>{t('depositHint')}</p>
+              </div>
+            )}
           </div>
 
           {/* Error */}

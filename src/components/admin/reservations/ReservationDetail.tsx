@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -62,6 +62,9 @@ export default function ReservationDetail({
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'deposit' | 'complete' | 'cancel' | null>(null)
+  const [editingDeposit, setEditingDeposit] = useState(false)
+  const [depositInput, setDepositInput] = useState('')
+  const [savingDeposit, setSavingDeposit] = useState(false)
 
   const handleConfirmAction = useCallback(() => {
     if (!confirmAction) return
@@ -98,6 +101,24 @@ export default function ReservationDetail({
     onOrderChanged?.()
   }
 
+  const handleSaveDeposit = async () => {
+    const amount = Number(depositInput)
+    if (isNaN(amount) || amount < 0) return
+    setSavingDeposit(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'edit', depositAmount: amount }),
+      })
+      if (res.ok) {
+        onOrderChanged?.()
+        setEditingDeposit(false)
+      }
+    } catch { /* ignore */ }
+    finally { setSavingDeposit(false) }
+  }
+
   const handleLockOrder = async () => {
     if (!orderData) return
     await fetch(`/api/orders/${orderData.id}`, {
@@ -126,10 +147,16 @@ export default function ReservationDetail({
     return (
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
         {/* Status badge */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${STATUS_BADGE[reservation.status]?.bg} ${STATUS_BADGE[reservation.status]?.text}`}>
             {t(`status.${reservation.status}`)}
           </span>
+          {reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' && (
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F4A623]/15 text-[#F4A623] flex items-center gap-1">
+              <Lock size={11} />
+              {t('spotHeld')}
+            </span>
+          )}
           <span className="text-xs text-[#8C8478]">#{reservation.id.slice(-8)}</span>
         </div>
 
@@ -190,9 +217,46 @@ export default function ReservationDetail({
         <div className="space-y-3">
           <h4 className="text-sm font-bold text-brown">{t('detail.paymentInfo')}</h4>
           <div className="space-y-2">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.depositAmount')}</span>
-              <span className="text-sm text-brown font-medium">${reservation.depositAmount}</span>
+              {editingDeposit ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-brown">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={depositInput}
+                    onChange={(e) => setDepositInput(e.target.value)}
+                    className="w-20 h-7 px-2 text-sm rounded border border-[#E8E2D9] outline-none focus:border-[#6B7F5E]"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveDeposit(); if (e.key === 'Escape') setEditingDeposit(false); }}
+                  />
+                  <button
+                    onClick={handleSaveDeposit}
+                    disabled={savingDeposit}
+                    className="p-1 rounded hover:bg-[#5B8C3E]/10 text-[#5B8C3E] disabled:opacity-50"
+                  >
+                    <Check size={14} />
+                  </button>
+                  <button
+                    onClick={() => setEditingDeposit(false)}
+                    className="p-1 rounded hover:bg-[#DC3545]/10 text-[#DC3545]"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-brown font-medium">${reservation.depositAmount}</span>
+                  <button
+                    onClick={() => { setDepositInput(String(reservation.depositAmount)); setEditingDeposit(true); }}
+                    className="p-0.5 rounded hover:bg-[#E8ECE4]/50 text-[#8C8478] hover:text-brown"
+                    title={t('detail.editDeposit')}
+                  >
+                    <Pencil size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.depositStatus')}</span>

@@ -6,10 +6,9 @@ import { prisma } from "@/lib/prisma";
  *
  * Returns per-date slot availability for the calendar.
  * - total: number of active yurts (that are not admin-closed on that date)
- * - occupied: reservations with status PAYMENT_SUBMITTED or CONFIRMED
+ * - occupied: reservations with status PAYMENT_SUBMITTED or CONFIRMED,
+ *   plus admin-held PENDING_PAYMENT reservations (holdByAdmin=true)
  * - available: total - occupied
- *
- * PENDING_PAYMENT reservations do NOT occupy slots.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -61,12 +60,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Get occupying reservations (PAYMENT_SUBMITTED + CONFIRMED) on ACTIVE yurts only
+    // Get occupying reservations on ACTIVE yurts only
+    // Includes PAYMENT_SUBMITTED, CONFIRMED, and admin-held PENDING_PAYMENT
     const reservations = await prisma.reservation.findMany({
       where: {
         date: { gte: startDateObj, lte: endDateObj },
-        status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] },
         yurtId: { in: [...activeYurtIds] },
+        OR: [
+          { status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] } },
+          { status: "PENDING_PAYMENT", holdByAdmin: true },
+        ],
       },
       select: { yurtId: true, date: true },
     });
