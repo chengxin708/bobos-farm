@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useSwUpdate } from '@/components/admin/ServiceWorkerRegistrar'
 import {
   Settings as SettingsIcon,
   CreditCard,
@@ -148,6 +149,38 @@ function PushPermissionButton() {
     >
       Enable Push Notifications
     </button>
+  )
+}
+
+// ── Manual Refresh Button ──────────────────────────────────────────
+
+function ManualRefreshButton() {
+  const { hasUpdate, forceRefresh } = useSwUpdate()
+  const [refreshing, setRefreshing] = useState(false)
+
+  function handleRefresh() {
+    setRefreshing(true)
+    forceRefresh()
+    // If forceRefresh doesn't cause a reload within 3 seconds, force one
+    setTimeout(() => window.location.reload(), 3000)
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {hasUpdate && (
+        <div className="flex items-center gap-2 text-sm text-[#E67E22] font-medium">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#E67E22]" />
+          New version available
+        </div>
+      )}
+      <button
+        onClick={handleRefresh}
+        disabled={refreshing}
+        className="flex items-center gap-2 px-4 py-2 bg-[#1A1208] text-white text-sm font-medium rounded-lg border-0 cursor-pointer hover:bg-[#1A1208]/80 transition-colors disabled:opacity-50 w-fit"
+      >
+        {refreshing ? 'Refreshing...' : hasUpdate ? 'Update & Refresh' : 'Force Refresh'}
+      </button>
+    </div>
   )
 }
 
@@ -847,6 +880,13 @@ export default function Settings() {
           <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">Push Notifications</h3>
           <p className="text-xs text-[#8C8478] mb-4">Receive instant push notifications on this device for new bookings and deposit submissions.</p>
           <PushPermissionButton />
+        </div>
+
+        {/* App Version & Manual Refresh */}
+        <div className="border-t border-[#E8ECE4] pt-6 mt-6">
+          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">App Version</h3>
+          <p className="text-xs text-[#8C8478] mb-4">Clear all cached data and reload the latest version of the app.</p>
+          <ManualRefreshButton />
         </div>
       </div>
     )

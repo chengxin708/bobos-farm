@@ -51,6 +51,14 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
+// ============ Skip Waiting (triggered by update banner) ============
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
 // ============ Web Push Notifications ============
 
 self.addEventListener('push', (event) => {

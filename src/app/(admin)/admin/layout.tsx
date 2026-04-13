@@ -13,17 +13,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <AdminAuthGuard>
       <AdminSwrProvider>
         <PwaHead />
-        <ServiceWorkerRegistrar />
         <PushNotificationManager />
-        <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
-          <AdminNavbar />
-          <OfflineBanner />
-          <PwaInstallPrompt />
-          <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            {children}
-          </main>
-          <AdminBottomTabs />
-        </div>
+        <ServiceWorkerRegistrar>
+          <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
+            <AdminNavbar />
+            <OfflineBanner />
+            <PwaInstallPrompt />
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {children}
+            </main>
+            <AdminBottomTabs />
+          </div>
+        </ServiceWorkerRegistrar>
       </AdminSwrProvider>
     </AdminAuthGuard>
   )
