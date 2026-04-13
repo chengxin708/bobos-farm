@@ -59,6 +59,8 @@ model User {
   preferredLanguage Language      @default(EN)
   emailVerified     DateTime?
   image             String?
+  marketingOptIn    Boolean       @default(true)
+  unsubscribeToken  String?       @unique
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
