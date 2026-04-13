@@ -676,8 +676,6 @@ export default function CalendarDesktop() {
         )}
       </div>
 
-      </div>
-
       {/* Reservation Detail Drawer */}
       {selectedRes && (
         <div className="w-[400px] border-l border-[#E8ECE4] bg-white flex flex-col overflow-hidden shrink-0">
