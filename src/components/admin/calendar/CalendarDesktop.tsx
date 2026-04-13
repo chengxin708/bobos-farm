@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -147,6 +148,8 @@ export default function CalendarDesktop() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createModalDate, setCreateModalDate] = useState<string | undefined>(undefined)
   const [createModalYurtId, setCreateModalYurtId] = useState<string | undefined>(undefined)
+  const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
+  const [actionUpdating, setActionUpdating] = useState(false)
 
   // Redirect non-admin
   useEffect(() => {
@@ -205,6 +208,35 @@ export default function CalendarDesktop() {
     }
     return map
   }, [availability])
+
+  // ── Reservation actions (for detail drawer) ─────────────────
+  const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>): Promise<void> => {
+    setActionUpdating(true)
+    try {
+      const body = action === 'cancel' ? { action: 'cancel' } : { ...data }
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        const updated = await res.json()
+        setSelectedRes(updated)
+        mutateReservations()
+      }
+    } catch { /* ignore */ }
+    finally { setActionUpdating(false) }
+  }, [mutateReservations])
+
+  const confirmDeposit = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
+  }, [handleResAction])
+  const cancelReservation = useCallback((id: string) => {
+    handleResAction(id, 'cancel')
+  }, [handleResAction])
+  const completeReservation = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'COMPLETED' })
+  }, [handleResAction])
 
   const activeYurts = useMemo(() =>
     (yurts || []).filter(y => y.status === 'ACTIVE').sort((a, b) => a.sortOrder - b.sortOrder),
@@ -346,19 +378,21 @@ export default function CalendarDesktop() {
             const name = getDisplayName(res.user)
 
             return (
-              <div
+              <button
                 key={res.id}
+                onClick={(e) => { e.stopPropagation(); setSelectedRes(res) }}
                 className={`
-                  flex items-center gap-1 px-1.5 py-0.5 rounded-full border-l-2
+                  flex items-center gap-1 px-1.5 py-0.5 rounded-full border-l-2 cursor-pointer border-0 bg-transparent w-full text-left
                   ${colors.border} ${colors.bg} ${colors.text}
                   ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
+                  hover:brightness-95 transition-all
                 `}
               >
                 <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 ${colors.initBg}`}>
                   {initials}
                 </div>
                 <span className="text-[10px] font-medium truncate">{name}</span>
-              </div>
+              </button>
             )
           })}
 
@@ -450,9 +484,11 @@ export default function CalendarDesktop() {
 
                       return (
                         <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
-                          <div
+                          <button
+                            onClick={() => setSelectedRes(res)}
                             className={`
-                              p-3 rounded-lg border-l-[3px] ${colors.border} ${colors.bg}
+                              w-full text-left p-3 rounded-lg border-l-[3px] border-0 cursor-pointer
+                              ${colors.border} ${colors.bg}
                               transition-shadow duration-150 hover:shadow-md
                               ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
                             `}
@@ -472,7 +508,7 @@ export default function CalendarDesktop() {
                             <div className={`inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
                               {statusLabel(res.status, t)}
                             </div>
-                          </div>
+                          </button>
                         </td>
                       )
                     }
@@ -530,8 +566,8 @@ export default function CalendarDesktop() {
   }, [view, currentMonth, currentYear, weekRange, t])
 
   return (
-    <>
-      <div className="max-w-[1400px] mx-auto p-6 flex flex-col gap-5 overflow-auto min-h-0 flex-1">
+    <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 p-6 flex flex-col gap-5 overflow-auto min-h-0">
 
         {/* ── Top Controls Bar ─────────────────────────────── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -640,6 +676,21 @@ export default function CalendarDesktop() {
         )}
       </div>
 
+      </div>
+
+      {/* Reservation Detail Drawer */}
+      {selectedRes && (
+        <div className="w-[400px] border-l border-[#E8ECE4] bg-white flex flex-col overflow-hidden shrink-0">
+          <ReservationDetail
+            reservation={selectedRes}
+            onClose={() => setSelectedRes(null)}
+            onAction={{ confirmDeposit, cancelReservation, completeReservation }}
+            isUpdating={actionUpdating}
+            onOrderChanged={() => mutateReservations()}
+          />
+        </div>
+      )}
+
       <CreateReservationModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -647,6 +698,6 @@ export default function CalendarDesktop() {
         defaultDate={createModalDate}
         defaultYurtId={createModalYurtId}
       />
-    </>
+    </div>
   )
 }
