@@ -5,11 +5,12 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import Link from 'next/link'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
-import { CalendarPlus, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
+import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -133,6 +134,45 @@ export default function CalendarMobile() {
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createYurtId, setCreateYurtId] = useState<string | undefined>(undefined)
+  const [selectedResId, setSelectedResId] = useState<string | null>(null)
+  const [actionUpdating, setActionUpdating] = useState(false)
+
+  // Fetch full detail for selected reservation
+  const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
+    selectedResId ? `/api/reservations/${selectedResId}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  const { data: selectedResLogs } = useSWR(
+    selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=RESERVATION` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
+  // Reservation actions
+  const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
+    setActionUpdating(true)
+    try {
+      const body = action === 'cancel' ? { action: 'cancel' } : { ...data }
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) { mutateReservations(); mutateSelectedRes() }
+    } catch { /* ignore */ }
+    finally { setActionUpdating(false) }
+  }, [mutateReservations, mutateSelectedRes])
+
+  const confirmDeposit = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
+  }, [handleResAction])
+  const cancelReservation = useCallback((id: string) => {
+    handleResAction(id, 'cancel')
+  }, [handleResAction])
+  const completeReservation = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'COMPLETED' })
+  }, [handleResAction])
 
   // Redirect non-admin
   useEffect(() => {
@@ -375,10 +415,10 @@ export default function CalendarMobile() {
             if (res) {
               // Booked card — tap to view reservation detail
               return (
-                <Link
+                <button
                   key={yurt.id}
-                  href="/admin/reservations"
-                  className="block bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 no-underline"
+                  onClick={() => setSelectedResId(res.id)}
+                  className="w-full text-left bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 cursor-pointer hover:border-[#6B7F5E]/40 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
@@ -405,7 +445,7 @@ export default function CalendarMobile() {
                   <span className="text-[11px] text-[#6B7F5E] mt-2 block">
                     {t('clickViewDetails')}
                   </span>
-                </Link>
+                </button>
               )
             }
 
@@ -461,6 +501,31 @@ export default function CalendarMobile() {
           mutateReservations()
         }}
       />
+
+      {/* Full-screen reservation detail overlay */}
+      {selectedResFull && selectedResId && (
+        <div className="fixed inset-0 z-50 bg-[#F8F7F4] flex flex-col">
+          <header className="h-11 flex items-center px-4 shrink-0 border-b border-[#E8ECE4] bg-white">
+            <button
+              onClick={() => setSelectedResId(null)}
+              className="flex items-center gap-1 text-sm text-[#6B7F5E] font-medium bg-transparent border-0 cursor-pointer"
+            >
+              <ArrowLeft size={18} />
+              {t('back')}
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+            <ReservationDetail
+              reservation={selectedResFull}
+              activityLogs={selectedResLogs}
+              onClose={() => setSelectedResId(null)}
+              onAction={{ confirmDeposit, cancelReservation, completeReservation }}
+              isUpdating={actionUpdating}
+              onOrderChanged={() => mutateReservations()}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }
