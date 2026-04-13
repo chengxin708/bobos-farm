@@ -41,10 +41,10 @@ export default function DashboardMobile() {
     handleRemind,
   } = useDashboardData()
 
-  const greeting = getGreeting()
+  const greeting = getGreeting(t)
 
   const handleConfirmDeposit = useCallback(async (id: string) => {
-    if (!confirm('确认此定金？')) return
+    if (!confirm(t('confirmDeposit'))) return
     await fetch(`/api/reservations/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -54,7 +54,7 @@ export default function DashboardMobile() {
   }, [mutateAll])
 
   const handleRejectDeposit = useCallback(async (id: string) => {
-    if (!confirm('拒绝此定金？')) return
+    if (!confirm(t('rejectDeposit'))) return
     await fetch(`/api/reservations/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -71,21 +71,21 @@ export default function DashboardMobile() {
         {/* Date subtitle + Create button */}
         <div className="flex items-center justify-between mt-2 mb-4">
           <p className="text-[13px]" style={{ color: '#8A7E6B' }}>
-            {formatTodayDate()}
+            {formatTodayDate(t)}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#6B7F5E] text-white rounded-full text-sm font-medium cursor-pointer"
           >
             <CalendarPlus size={16} />
-            新建预订
+            {t('createReservation')}
           </button>
         </div>
 
         {/* Error Banner */}
         {hasError && (
           <div className="rounded-lg px-3 py-2.5 text-[13px] mb-4" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}>
-            部分数据加载失败，请下拉刷新重试。
+            {t('dataError')}
           </div>
         )}
 
@@ -168,7 +168,7 @@ export default function DashboardMobile() {
                           : { backgroundColor: '#C4533A', color: '#FFFFFF' }
                       }
                     >
-                      {remindingSoon === row.id ? '已发送' : t('expiringSoon.remind')}
+                      {remindingSoon === row.id ? t('sent') : t('expiringSoon.remind')}
                     </button>
                   </div>
                 )
@@ -182,10 +182,10 @@ export default function DashboardMobile() {
           <section className="mb-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[14px] font-bold" style={{ color: '#2C2416' }}>
-                待处理事项
+                {t('pendingItems')}
               </span>
               <Link href="/admin/reservations?status=PAYMENT_SUBMITTED" className="text-[12px] font-medium flex items-center gap-0.5" style={{ color: '#6B7F5E' }}>
-                查看全部 <ChevronRight size={14} />
+                {t('viewAll')} <ChevronRight size={14} />
               </Link>
             </div>
             <div className="flex flex-col gap-2">
@@ -210,7 +210,7 @@ export default function DashboardMobile() {
                         {res.yurt.name} · {new Date(res.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
-                    <StatusBadge type="deposit" status="PENDING" label="待审核" />
+                    <StatusBadge type="deposit" status="PENDING" label={t('pendingReview')} />
                   </Link>
                   <div className="flex items-center gap-2 justify-end">
                     <button
@@ -219,7 +219,7 @@ export default function DashboardMobile() {
                       style={{ backgroundColor: '#FEF2F2', color: '#C4533A' }}
                     >
                       <XCircle size={13} />
-                      拒绝
+                      {t('reject')}
                     </button>
                     <button
                       onClick={() => handleConfirmDeposit(res.id)}
@@ -227,7 +227,7 @@ export default function DashboardMobile() {
                       style={{ backgroundColor: '#E8F5E9', color: '#4A7C59' }}
                     >
                       <Check size={13} />
-                      确认
+                      {t('confirmBtn')}
                     </button>
                   </div>
                 </div>
@@ -240,10 +240,10 @@ export default function DashboardMobile() {
         <section className="mb-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[14px] font-bold" style={{ color: '#2C2416' }}>
-              今日预订
+              {t('todayBookings')}
             </span>
             <Link href="/admin/calendar" className="text-[12px] font-medium flex items-center gap-0.5" style={{ color: '#6B7F5E' }}>
-              日历视图 <ChevronRight size={14} />
+              {t('calendarView')} <ChevronRight size={14} />
             </Link>
           </div>
           {todayCount === 0 ? (
@@ -251,7 +251,7 @@ export default function DashboardMobile() {
               className="rounded-xl p-6 flex flex-col items-center gap-2"
               style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
             >
-              <span className="text-sm" style={{ color: '#8A7E6B' }}>今日暂无预订</span>
+              <span className="text-sm" style={{ color: '#8A7E6B' }}>{t('noBookingsToday')}</span>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -270,18 +270,18 @@ export default function DashboardMobile() {
                       {res.user.name || res.user.email}
                     </span>
                     <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
-                      {res.yurt.name} · {res.guestCount}位
+                      {res.yurt.name} · {res.guestCount} {t('guestSuffix')}
                     </span>
                   </div>
                   <StatusBadge
                     type="reservation"
                     status={res.status}
                     label={
-                      res.status === 'CONFIRMED' ? '已确认' :
-                      res.status === 'PENDING_PAYMENT' ? '待付款' :
-                      res.status === 'PAYMENT_SUBMITTED' ? '待审核' :
-                      res.status === 'COMPLETED' ? '已完成' :
-                      res.status === 'CANCELLED' ? '已取消' : res.status
+                      res.status === 'CONFIRMED' ? t('status.confirmed') :
+                      res.status === 'PENDING_PAYMENT' ? t('status.pendingPayment') :
+                      res.status === 'PAYMENT_SUBMITTED' ? t('status.paymentSubmitted') :
+                      res.status === 'COMPLETED' ? t('status.completed') :
+                      res.status === 'CANCELLED' ? t('status.cancelled') : res.status
                     }
                   />
                 </Link>
@@ -293,7 +293,7 @@ export default function DashboardMobile() {
         {/* ─── 最近动态 ─── */}
         <section className="mb-5">
           <span className="text-[14px] font-bold block mb-3" style={{ color: '#2C2416' }}>
-            最近动态
+            {t('recentActivity')}
           </span>
           {activities.length === 0 ? (
             <div
@@ -301,7 +301,7 @@ export default function DashboardMobile() {
               style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
             >
               <Activity size={20} style={{ color: '#8A7E6B' }} />
-              <span className="text-sm" style={{ color: '#8A7E6B' }}>暂无最近活动</span>
+              <span className="text-sm" style={{ color: '#8A7E6B' }}>{t('noActivity')}</span>
             </div>
           ) : (
             <div

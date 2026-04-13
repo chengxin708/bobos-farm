@@ -52,6 +52,7 @@ export default function ReservationDetail({
   onOrderChanged,
 }: ReservationDetailProps) {
   const t = useTranslations('admin.reservations')
+  const tOrders = useTranslations('admin.orders')
   const panelOrder = reservation.order || null
 
   const [showOrderEditor, setShowOrderEditor] = useState(false)
@@ -140,13 +141,13 @@ export default function ReservationDetail({
                   <h4 className="text-sm font-bold text-brown">{t('detail.preOrder')}</h4>
                 </div>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ORDER_STATUS_BADGE[orderData.status]?.bg} ${ORDER_STATUS_BADGE[orderData.status]?.text}`}>
-                  {ORDER_STATUS_BADGE[orderData.status]?.label}
+                  {tOrders(`status.${orderData.status}`)}
                 </span>
               </div>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-xs text-[#8C8478]">{t('detail.itemCount')}</span>
-                  <span className="text-sm text-brown font-medium">{orderData.items?.length ?? 0} items</span>
+                  <span className="text-sm text-brown font-medium">{t('itemsSuffix', { count: orderData.items?.length ?? 0 })}</span>
                 </div>
                 {orderData.estimatedTotal != null && (
                   <div className="flex justify-between">
@@ -248,13 +249,13 @@ export default function ReservationDetail({
             </div>
             {reservation.cancelledAt && (
               <div className="flex justify-between">
-                <span className="text-xs text-[#DC3545]">Cancelled</span>
+                <span className="text-xs text-[#DC3545]">{t('cancelled')}</span>
                 <span className="text-xs text-brown">{formatDateTime(reservation.cancelledAt)}</span>
               </div>
             )}
             {reservation.cancelReason && (
               <div className="mt-1 p-2 rounded bg-[#DC3545]/5 text-xs text-[#DC3545]">
-                Reason: {reservation.cancelReason}
+                {t('cancelReason', { reason: reservation.cancelReason })}
               </div>
             )}
           </div>
@@ -270,7 +271,7 @@ export default function ReservationDetail({
                   <div key={log.id} className="relative flex items-start gap-2.5 py-1.5">
                     <span className="relative z-10 mt-1.5 shrink-0 w-[7px] h-[7px] rounded-full bg-[#8B6914] ring-2 ring-white" />
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs text-brown leading-snug block">{activityLogText(log)}</span>
+                      <span className="text-xs text-brown leading-snug block">{activityLogText(log, t)}</span>
                       <span className="text-[10px] text-[#8C8478]">{formatDateTime(log.createdAt)}</span>
                     </div>
                   </div>
@@ -289,7 +290,7 @@ export default function ReservationDetail({
             onClick={() => setShowOrderEditor(true)}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#6B7F5E]/90"
           >
-            {orderData ? '编辑订单' : '代客点单'}
+            {orderData ? tOrders('editOrder') : tOrders('placeOrder')}
           </button>
         )}
 
@@ -299,7 +300,7 @@ export default function ReservationDetail({
             onClick={() => setShowCheckout(true)}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
           >
-            结账
+            {tOrders('checkout')}
           </button>
         )}
 
@@ -309,7 +310,7 @@ export default function ReservationDetail({
             onClick={() => setShowCheckout(true)}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#1A1208] text-white hover:bg-[#1A1208]/90"
           >
-            查看账单
+            {tOrders('viewBill')}
           </button>
         )}
 

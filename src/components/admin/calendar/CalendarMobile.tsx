@@ -264,7 +264,7 @@ export default function CalendarMobile() {
     const month = selectedDate.getMonth() + 1
     const day = selectedDate.getDate()
     const dayName = t(`dayNames.${selectedDate.getDay()}`)
-    return `${month}月${day}日 ${dayName}`
+    return t('dateHeading', { month, day, dayName })
   }, [selectedDate, t])
 
   // ── Loading state ────────────────────────────────────────────
@@ -314,7 +314,7 @@ export default function CalendarMobile() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
             >
               <CalendarPlus size={14} />
-              新建
+              {t('createShort')}
             </button>
           </div>
 
@@ -403,7 +403,7 @@ export default function CalendarMobile() {
                     )}
                   </div>
                   <span className="text-[11px] text-[#6B7F5E] mt-2 block">
-                    点击查看详情 &rarr;
+                    {t('clickViewDetails')}
                   </span>
                 </Link>
               )
@@ -436,7 +436,7 @@ export default function CalendarMobile() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
-                  <span className="text-[13px] text-[#6B7F5E]">{t('available')} — 点击预订</span>
+                  <span className="text-[13px] text-[#6B7F5E]">{t('available')} — {t('clickToBook')}</span>
                 </div>
               </button>
             )

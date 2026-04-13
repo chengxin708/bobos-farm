@@ -15,7 +15,7 @@ import {
   formatTodayDate,
   hoursUntil,
   toDateStr,
-  DAY_LABELS,
+  DAY_LABEL_KEYS,
   CELL_STYLES,
   CellStatus,
 } from './useDashboardData'
@@ -48,7 +48,7 @@ export default function DashboardDesktop() {
           {/* Error Banner */}
           {hasError && (
             <div className="rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}>
-              Failed to load some dashboard data. Please refresh the page to try again.
+              {t('dataError')}
             </div>
           )}
 
@@ -59,10 +59,10 @@ export default function DashboardDesktop() {
           >
             <div className="flex flex-col gap-1">
               <h2 className="text-2xl font-bold font-playfair" style={{ color: '#2C2416' }}>
-                {getGreeting()}{userName ? `，${userName}` : ''}
+                {getGreeting(t)}{userName ? `，${userName}` : ''}
               </h2>
               <span className="text-sm" style={{ color: '#8A7E6B' }}>
-                {formatTodayDate()}
+                {formatTodayDate(t)}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -137,13 +137,13 @@ export default function DashboardDesktop() {
                   <thead>
                     <tr>
                       <th className="text-left py-2 pr-3 w-[110px]" />
-                      {DAY_LABELS.map((day, di) => {
+                      {DAY_LABEL_KEYS.map((di) => {
                         const isToday = toDateStr(week.dates[di]) === today
                         return (
-                          <th key={day} className="text-center py-2 px-1">
+                          <th key={di} className="text-center py-2 px-1">
                             <div className="flex flex-col items-center gap-0.5">
                               <span className="text-[11px] font-semibold" style={{ color: isToday ? '#6B7F5E' : '#8A7E6B' }}>
-                                {day}
+                                {t(`dayLabels.${di}`)}
                               </span>
                               <span
                                 className={`text-[13px] font-bold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'text-white' : ''}`}
@@ -165,7 +165,7 @@ export default function DashboardDesktop() {
                             {yurt.name}
                           </span>
                         </td>
-                        {DAY_LABELS.map((_, di) => {
+                        {DAY_LABEL_KEYS.map((di) => {
                           const cellStatus: CellStatus = weekGrid ? weekGrid[ri][di] : 'available'
                           const isLoading = !weekGrid
                           return (
@@ -186,7 +186,7 @@ export default function DashboardDesktop() {
                     {activeYurts.length === 0 && (
                       <tr>
                         <td colSpan={8} className="py-8 text-center text-sm" style={{ color: '#8A7E6B' }}>
-                          暂无营地数据
+                          {t('noYurtData')}
                         </td>
                       </tr>
                     )}
@@ -224,7 +224,7 @@ export default function DashboardDesktop() {
                   <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F5F2ED' }}>
                     <Activity size={22} style={{ color: '#8A7E6B' }} />
                   </div>
-                  <span className="text-sm" style={{ color: '#8A7E6B' }}>暂无最近活动</span>
+                  <span className="text-sm" style={{ color: '#8A7E6B' }}>{t('noActivity')}</span>
                 </div>
               ) : (
                 <div className="relative flex flex-col">
@@ -327,7 +327,7 @@ export default function DashboardDesktop() {
                           }
                         >
                           <Clock4 size={11} />
-                          {hrs} 小时
+                          {hrs} {t('hours')}
                         </span>
                       </div>
                       <div className="w-[80px] text-right">
@@ -341,7 +341,7 @@ export default function DashboardDesktop() {
                               : { backgroundColor: '#C4533A', color: '#FFFFFF' }
                           }
                         >
-                          {remindingSoon === row.id ? '已发送' : t('expiringSoon.remind')}
+                          {remindingSoon === row.id ? t('sent') : t('expiringSoon.remind')}
                         </button>
                       </div>
                     </div>

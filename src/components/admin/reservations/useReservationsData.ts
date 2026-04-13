@@ -120,32 +120,33 @@ export function formatDateTime(dateStr: string): string {
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
-export function activityLogText(log: ActivityLog): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function activityLogText(log: ActivityLog, t: (key: string, values?: any) => string): string {
   const details = log.details as Record<string, unknown> | null
   const actor = log.user?.name || log.user?.email || 'System'
   switch (log.action) {
     case 'RESERVATION_MODIFIED': {
       const parts: string[] = []
-      if (details?.guestCount) parts.push(`guest count to ${details.guestCount}`)
-      if (details?.specialRequests !== undefined) parts.push('special requests')
+      if (details?.guestCount) parts.push(t('activityLog.updatedGuestCount', { count: details.guestCount }))
+      if (details?.specialRequests !== undefined) parts.push(t('activityLog.updatedSpecialRequests'))
       return parts.length
-        ? `${actor} updated ${parts.join(' and ')}`
-        : `${actor} modified reservation`
+        ? t('activityLog.updated', { actor, parts: parts.join(t('activityLog.and')) })
+        : t('activityLog.modified', { actor })
     }
     case 'RESERVATION_RESCHEDULED':
-      return `${actor} rescheduled reservation`
+      return t('activityLog.rescheduled', { actor })
     case 'RESERVATION_CANCELLED':
-      return `${actor} cancelled reservation`
+      return t('activityLog.cancelled', { actor })
     case 'PAYMENT_SUBMITTED':
-      return `${actor} submitted payment`
+      return t('activityLog.paymentSubmitted', { actor })
     case 'DEPOSIT_CONFIRMED':
-      return `Deposit confirmed by ${actor}`
+      return t('activityLog.depositConfirmed', { actor })
     case 'ORDER_SUBMITTED':
-      return `${actor} submitted a pre-order`
+      return t('activityLog.orderSubmitted', { actor })
     case 'ORDER_UPDATED':
-      return `${actor} updated their pre-order`
+      return t('activityLog.orderUpdated', { actor })
     default:
-      return `${log.action.replace(/_/g, ' ').toLowerCase()} by ${actor}`
+      return t('activityLog.defaultAction', { action: log.action.replace(/_/g, ' ').toLowerCase(), actor })
   }
 }
 
@@ -165,12 +166,12 @@ export const DEPOSIT_BADGE: Record<string, { bg: string; text: string }> = {
   REFUNDED:  { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]' },
 }
 
-export const ORDER_STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  DRAFT:     { bg: 'bg-gray-100',       text: 'text-gray-500',   label: 'Draft' },
-  SUBMITTED: { bg: 'bg-[#F4A623]/15',   text: 'text-[#F4A623]',  label: 'Submitted' },
-  LOCKED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]',  label: 'Locked' },
-  BILLED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]',  label: 'Billed' },
-  PAID:      { bg: 'bg-[#5B8C3E]/15',   text: 'text-[#5B8C3E]',  label: 'Paid' },
+export const ORDER_STATUS_BADGE: Record<string, { bg: string; text: string }> = {
+  DRAFT:     { bg: 'bg-gray-100',       text: 'text-gray-500' },
+  SUBMITTED: { bg: 'bg-[#F4A623]/15',   text: 'text-[#F4A623]' },
+  LOCKED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]' },
+  BILLED:    { bg: 'bg-[#2980B9]/15',   text: 'text-[#2980B9]' },
+  PAID:      { bg: 'bg-[#5B8C3E]/15',   text: 'text-[#5B8C3E]' },
 }
 
 // ── Hook ───────────────────────────────────────────────────────────
@@ -315,7 +316,7 @@ export function useReservationsData() {
 
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to update reservation')
+        alert(err.error || t('updateFailed'))
         return false
       }
 
@@ -324,7 +325,7 @@ export function useReservationsData() {
       mutateReservations()
       return true
     } catch {
-      alert('Failed to update reservation')
+      alert(t('updateFailed'))
       return false
     } finally {
       setUpdating(false)
@@ -332,26 +333,26 @@ export function useReservationsData() {
   }, [selectedRes, mutateReservations])
 
   const confirmDeposit = useCallback(async (id: string) => {
-    if (!confirm('Confirm this deposit? The reservation will become active.')) return
+    if (!confirm(t('confirmDepositPrompt'))) return
     const ok = await handleAction(id, 'admin', {
       status: 'CONFIRMED',
       depositStatus: 'CONFIRMED',
       depositConfirmedAt: new Date().toISOString(),
     })
-    if (ok) showSuccess('Deposit confirmed. Reservation is now active.')
-  }, [handleAction, showSuccess])
+    if (ok) showSuccess(t('depositConfirmedSuccess'))
+  }, [handleAction, showSuccess, t])
 
   const cancelReservation = useCallback(async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this reservation? This cannot be undone.')) return
+    if (!confirm(t('confirmCancelPrompt'))) return
     const ok = await handleAction(id, 'cancel')
-    if (ok) showSuccess('Reservation cancelled successfully.')
-  }, [handleAction, showSuccess])
+    if (ok) showSuccess(t('cancelledSuccess'))
+  }, [handleAction, showSuccess, t])
 
   const completeReservation = useCallback(async (id: string) => {
-    if (!confirm('Mark this reservation as completed?')) return
+    if (!confirm(t('confirmCompletePrompt'))) return
     const ok = await handleAction(id, 'admin', { status: 'COMPLETED' })
-    if (ok) showSuccess('Reservation marked as completed.')
-  }, [handleAction, showSuccess])
+    if (ok) showSuccess(t('completedSuccess'))
+  }, [handleAction, showSuccess, t])
 
   const handleLockOrder = useCallback(async (id: string) => {
     if (!confirm(tOrders('actions.confirmLock'))) return
@@ -364,13 +365,13 @@ export function useReservationsData() {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to lock order')
+        alert(err.error || tOrders('lockFailed'))
         return
       }
       mutateOrders()
-      showSuccess('Order locked successfully.')
+      showSuccess(tOrders('lockSuccess'))
     } catch {
-      alert('Failed to lock order')
+      alert(tOrders('lockFailed'))
     } finally {
       setUpdating(false)
     }
@@ -387,13 +388,13 @@ export function useReservationsData() {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(err.error || 'Failed to unlock order')
+        alert(err.error || tOrders('unlockFailed'))
         return
       }
       mutateOrders()
-      showSuccess('Order unlocked successfully.')
+      showSuccess(tOrders('unlockSuccess'))
     } catch {
-      alert('Failed to unlock order')
+      alert(tOrders('unlockFailed'))
     } finally {
       setUpdating(false)
     }

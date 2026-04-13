@@ -19,14 +19,16 @@ import {
 function SegmentedControl({
   value,
   onChange,
+  labels,
 }: {
   value: ViewMode
   onChange: (v: ViewMode) => void
+  labels: Record<ViewMode, string>
 }) {
   const segments: { key: ViewMode; label: string }[] = [
-    { key: 'all', label: '全部预订' },
-    { key: 'deposits', label: '待审定金' },
-    { key: 'orders', label: '预点单' },
+    { key: 'all', label: labels.all },
+    { key: 'deposits', label: labels.deposits },
+    { key: 'orders', label: labels.orders },
   ]
 
   return (
@@ -89,7 +91,7 @@ export default function ReservationsMobile() {
   if (sessionStatus === 'loading') {
     return (
       <>
-        <AdminTopBar title="预订管理" />
+        <AdminTopBar title={t('title')} />
         <div className="flex-1 p-4 flex items-center justify-center">
           <p className="text-[#8C8478] text-sm">{t('loading')}</p>
         </div>
@@ -122,7 +124,7 @@ export default function ReservationsMobile() {
 
   return (
     <>
-      <AdminTopBar title="预订管理" />
+      <AdminTopBar title={t('title')} />
       <div className="flex-1 flex flex-col gap-3 p-4 overflow-auto">
         {/* Success Message */}
         {successMsg && (
@@ -135,7 +137,7 @@ export default function ReservationsMobile() {
         )}
 
         {/* Segmented Control */}
-        <SegmentedControl value={view} onChange={setView} />
+        <SegmentedControl value={view} onChange={setView} labels={{ all: t('viewSegments.all'), deposits: t('viewSegments.deposits'), orders: t('viewSegments.orders') }} />
 
         {/* Search + Date filter toggle */}
         <div className="flex items-center gap-2">
@@ -262,7 +264,7 @@ export default function ReservationsMobile() {
                       </span>
                     </div>
                     <div className="text-xs text-[#8C8478]">
-                      {formatDateDisplay(o.reservation.date)} · {o.reservation.yurt?.name} · {o._count.items} items
+                      {formatDateDisplay(o.reservation.date)} · {o.reservation.yurt?.name} · {t('itemsSuffix', { count: o._count.items })}
                     </div>
                     {o.estimatedTotal != null && (
                       <div className="text-sm font-semibold text-brown">${o.estimatedTotal.toFixed(2)}</div>
@@ -323,7 +325,7 @@ export default function ReservationsMobile() {
                     </div>
                   </div>
                   <div className="text-xs text-[#8C8478]">
-                    {formatDateDisplay(r.date)} · {r.yurt?.name} · {r.guestCount} guests
+                    {formatDateDisplay(r.date)} · {r.yurt?.name} · {t('guestsSuffix', { count: r.guestCount })}
                   </div>
 
                   {/* Deposits view: prominent action buttons */}

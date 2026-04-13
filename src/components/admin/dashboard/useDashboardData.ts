@@ -65,7 +65,8 @@ export type CellStatus = 'available' | 'pending' | 'confirmed' | 'completed'
 
 // ── Constants ──────────────────────────────────────────────────────
 
-export const DAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+// DAY_LABELS indices 0-6 map to Mon-Sun; translated via t('dayLabels.N') in components
+export const DAY_LABEL_KEYS = [0, 1, 2, 3, 4, 5, 6] as const
 
 export const STATUS_TO_CELL: Record<string, CellStatus> = {
   CONFIRMED: 'confirmed',
@@ -134,63 +135,65 @@ export function toDateStr(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-export function activityText(log: ActivityLog): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function activityText(log: ActivityLog, t: (key: string, params?: any) => string): string {
   const details = log.details as Record<string, string> | null
   const userName = log.user?.name || log.user?.email || 'Unknown'
   switch (log.action) {
     case 'RESERVATION_CREATED':
-      return `新预订: ${userName} — ${details?.date ? new Date(details.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) : ''}`
+      return t('activityLog.reservationCreated', { userName, date: details?.date ? new Date(details.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '' })
     case 'DEPOSIT_CONFIRMED':
-      return `定金已确认: ${userName}`
+      return t('activityLog.depositConfirmed', { userName })
     case 'ORDER_SUBMITTED':
-      return `订单已提交: ${userName}`
+      return t('activityLog.orderSubmitted', { userName })
     case 'RESERVATION_MODIFIED':
-      return `${userName} 修改了预订信息`
+      return t('activityLog.reservationModified', { userName })
     case 'RESERVATION_RESCHEDULED':
-      return `${userName} 改期了预订`
+      return t('activityLog.reservationRescheduled', { userName })
     case 'RESERVATION_CANCELLED':
-      return `已取消: ${userName}`
+      return t('activityLog.reservationCancelled', { userName })
     case 'ORDER_UPDATED':
-      return `${userName} 更新了预约单`
+      return t('activityLog.orderUpdated', { userName })
     case 'SETTINGS_UPDATED':
-      return `${userName} 更新了设置`
+      return t('activityLog.settingsUpdated', { userName })
     default:
-      return `${log.action}: ${userName}`
+      return t('activityLog.default', { action: log.action, userName })
   }
 }
 
-export function timeAgo(dateStr: string): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function timeAgo(dateStr: string, t: (key: string, params?: any) => string): string {
   const now = Date.now()
   const then = new Date(dateStr).getTime()
   const diff = now - then
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return '刚刚'
-  if (mins < 60) return `${mins}分钟前`
+  if (mins < 1) return t('timeAgo.justNow')
+  if (mins < 60) return t('timeAgo.minutesAgo', { minutes: mins })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}小时前`
+  if (hrs < 24) return t('timeAgo.hoursAgo', { hours: hrs })
   const days = Math.floor(hrs / 24)
-  return `${days}天前`
+  return t('timeAgo.daysAgo', { days })
 }
 
 export function hoursUntil(dateStr: string): number {
   return (new Date(dateStr).getTime() - Date.now()) / 3600000
 }
 
-export function getGreeting(): string {
+export function getGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours()
-  if (hour < 12) return '早上好'
-  if (hour < 18) return '下午好'
-  return '晚上好'
+  if (hour < 12) return t('greeting.morning')
+  if (hour < 18) return t('greeting.afternoon')
+  return t('greeting.evening')
 }
 
-export function formatTodayDate(): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function formatTodayDate(t: (key: string, params?: any) => string): string {
   const now = new Date()
-  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const day = now.getDate()
-  const weekday = weekdays[now.getDay()]
-  return `${year}年${month}月${day}日 · ${weekday}`
+  const weekday = t(`weekdays.${now.getDay()}`)
+  return t('todayDate', { year, month, day, weekday })
 }
 
 // ── Stat card type ─────────────────────────────────────────────────
@@ -323,10 +326,10 @@ export function useDashboardData() {
     if (!activityLogs || !Array.isArray(activityLogs)) return []
     return activityLogs.map(log => ({
       color: ACTIVITY_DOT_COLOR[log.action] || 'bg-[#3B82F6]',
-      text: activityText(log),
-      time: timeAgo(log.createdAt),
+      text: activityText(log, t),
+      time: timeAgo(log.createdAt, t),
     }))
-  }, [activityLogs])
+  }, [activityLogs, t])
 
   const userName = session?.user?.name || ''
 

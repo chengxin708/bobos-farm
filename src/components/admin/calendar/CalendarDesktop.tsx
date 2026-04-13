@@ -98,12 +98,8 @@ function getWeekRange(baseDate: Date): { start: Date; end: Date } {
   return { start, end }
 }
 
-const DAY_HEADERS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-]
+// DAY_HEADERS and MONTH_NAMES are now derived from i18n keys in the component
+const DAY_INDICES = [0, 1, 2, 3, 4, 5, 6] as const
 
 function statusLabel(status: string, t: ReturnType<typeof useTranslations>): string {
   const key = ({
@@ -327,7 +323,7 @@ export default function CalendarDesktop() {
           ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
         `}
         onClick={() => { setCreateModalDate(dateStr); setCreateModalYurtId(undefined); setShowCreateModal(true) }}
-        title="Click to create reservation"
+        title={t('createReservation')}
       >
         {/* Date number */}
         <div className="mb-1.5 flex items-center justify-between">
@@ -368,7 +364,7 @@ export default function CalendarDesktop() {
 
           {remaining > 0 && (
             <span className="text-[10px] text-[#6B7F5E] font-medium pl-1 cursor-pointer hover:underline">
-              +{remaining} more
+              {t('moreRemaining', { count: remaining })}
             </span>
           )}
 
@@ -406,7 +402,7 @@ export default function CalendarDesktop() {
                       `}
                     >
                       <div className="text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">
-                        {DAY_HEADERS[d.getDay()]}
+                        {t(`dayShort.${d.getDay()}`)}
                       </div>
                       <div className={`
                         text-lg font-semibold mt-0.5
@@ -491,7 +487,7 @@ export default function CalendarDesktop() {
                             setShowCreateModal(true)
                           }}
                           className="w-full p-3 rounded-lg bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/10 transition-colors cursor-pointer text-left group/avail"
-                          title="Click to create reservation"
+                          title={t('createReservation')}
                         >
                           <div className="text-[11px] text-[#5B8C3E] font-medium group-hover/avail:text-[#4A7A2D]">{t('status.available')}</div>
                         </button>
@@ -519,9 +515,19 @@ export default function CalendarDesktop() {
 
   // ── Main render ──────────────────────────────────────────────
 
-  const navLabel = view === 'month'
-    ? `${MONTH_NAMES[currentMonth]} ${currentYear}`
-    : `${MONTH_NAMES[weekRange.start.getMonth()]} ${weekRange.start.getDate()} - ${weekRange.start.getMonth() !== weekRange.end.getMonth() ? MONTH_NAMES[weekRange.end.getMonth()] + ' ' : ''}${weekRange.end.getDate()}, ${weekRange.end.getFullYear()}`
+  const navLabel = useMemo(() => {
+    if (view === 'month') {
+      return t('navLabel.month', { month: t(`monthNames.${currentMonth}`), year: currentYear })
+    }
+    const startMonth = t(`monthNames.${weekRange.start.getMonth()}`)
+    const startDay = weekRange.start.getDate()
+    const endDay = weekRange.end.getDate()
+    const year = weekRange.end.getFullYear()
+    const endLabel = weekRange.start.getMonth() !== weekRange.end.getMonth()
+      ? t('navLabel.endWithMonth', { endMonth: t(`monthNames.${weekRange.end.getMonth()}`), endDay })
+      : String(endDay)
+    return t('navLabel.weekRange', { startMonth, startDay, endLabel, year })
+  }, [view, currentMonth, currentYear, weekRange, t])
 
   return (
     <>
@@ -613,9 +619,9 @@ export default function CalendarDesktop() {
           <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden flex-1 flex flex-col">
             {/* Day Headers */}
             <div className="grid grid-cols-7 border-b border-[#E8ECE4] bg-[#FAFAF7]">
-              {DAY_HEADERS.map(d => (
-                <div key={d} className="text-center py-2.5 text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">
-                  {d}
+              {DAY_INDICES.map(di => (
+                <div key={di} className="text-center py-2.5 text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">
+                  {t(`dayShort.${di}`)}
                 </div>
               ))}
             </div>

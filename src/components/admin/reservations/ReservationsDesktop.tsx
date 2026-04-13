@@ -15,14 +15,16 @@ import {
 function SegmentedControl({
   value,
   onChange,
+  labels,
 }: {
   value: ViewMode
   onChange: (v: ViewMode) => void
+  labels: Record<ViewMode, string>
 }) {
   const segments: { key: ViewMode; label: string }[] = [
-    { key: 'all', label: '全部预订' },
-    { key: 'deposits', label: '待审定金' },
-    { key: 'orders', label: '预点单' },
+    { key: 'all', label: labels.all },
+    { key: 'deposits', label: labels.deposits },
+    { key: 'orders', label: labels.orders },
   ]
 
   return (
@@ -111,7 +113,7 @@ export default function ReservationsDesktop() {
             <h2 className="text-xl font-bold text-brown font-playfair">{t('title')}</h2>
             <p className="text-sm text-[#8C8478] mt-0.5">{t('subtitle')}</p>
           </div>
-          <SegmentedControl value={view} onChange={setView} />
+          <SegmentedControl value={view} onChange={setView} labels={{ all: t('viewSegments.all'), deposits: t('viewSegments.deposits'), orders: t('viewSegments.orders') }} />
         </div>
 
         {/* Search + Date filters */}
