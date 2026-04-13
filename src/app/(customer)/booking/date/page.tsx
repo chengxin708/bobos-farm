@@ -70,62 +70,33 @@ export default function BookingDatePage() {
   const minAdvanceDays = settings?.min_advance_booking_days ? Number(settings.min_advance_booking_days) : 1
   const maxAdvanceDays = settings?.max_advance_booking_days ? Number(settings.max_advance_booking_days) : 90
 
-  // Fetch availability for the month
-  const { data: availability, isLoading: loadingAvail } = useSWR(
-    `/api/availability?startDate=${startDate}&endDate=${endDate}`,
+  // Fetch availability slots for the month (dynamic yurt count + reservation occupancy)
+  const { data: slots, isLoading: loadingAvail } = useSWR<Record<string, { total: number; occupied: number; available: number }>>(
+    `/api/availability/slots?startDate=${startDate}&endDate=${endDate}`,
     fetcher,
     { revalidateOnFocus: false }
   )
 
-  // Fetch yurts to know total count
-  const { data: yurts } = useSWR('/api/yurts', fetcher, {
-    revalidateOnFocus: false,
-  })
-
-  const totalYurts = Array.isArray(yurts) ? yurts.filter((y: { status: string }) => y.status === 'ACTIVE').length : 3
-
-  // Build date->status map
+  // Build date->status map from slots API
   const dateStatusMap = useMemo<Record<string, DateStatus>>(() => {
-    if (!Array.isArray(availability)) return {}
+    if (!slots || typeof slots !== 'object') return {}
     const map: Record<string, DateStatus> = {}
 
-    // Group availability by date
-    const byDate: Record<string, { open: number; closed: number }> = {}
-    for (const rec of availability) {
-      const dateKey = rec.date.slice(0, 10)
-      if (!byDate[dateKey]) byDate[dateKey] = { open: 0, closed: 0 }
-      if (rec.isOpen) {
-        byDate[dateKey].open++
-      } else {
-        byDate[dateKey].closed++
-      }
-    }
-
-    // For each day in the month, compute status
-    const total = daysInMonth(viewYear, viewMonth)
-    for (let d = 1; d <= total; d++) {
-      const dateKey = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      const info = byDate[dateKey]
-
-      if (!info) {
-        map[dateKey] = 'available'
-      } else if (info.closed >= totalYurts) {
-        map[dateKey] = 'closed'
-      } else if (info.open === 1 && info.closed === totalYurts - 1) {
+    for (const [dateKey, info] of Object.entries(slots)) {
+      if (info.available === 0) {
+        map[dateKey] = 'full'
+      } else if (info.available === 1) {
         map[dateKey] = 'limited'
-      } else if (info.closed > 0 && info.open > 1) {
-        map[dateKey] = 'available'
-      } else if (info.open === 0 && info.closed < totalYurts) {
-        const defaultOpen = totalYurts - info.closed
-        if (defaultOpen === 1) map[dateKey] = 'limited'
-        else map[dateKey] = 'available'
       } else {
         map[dateKey] = 'available'
       }
     }
 
     return map
-  }, [availability, viewYear, viewMonth, totalYurts])
+  }, [slots])
+
+  // Get available count for selected date
+  const selectedDateSlot = selectedDate && slots ? slots[selectedDate] : null
 
   const numDays = daysInMonth(viewYear, viewMonth)
   const startDay = firstDayOfMonth(viewYear, viewMonth)
@@ -241,7 +212,7 @@ export default function BookingDatePage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#8C8478]">Step 1 of 4</span>
+        <span className="text-sm text-[#8C8478]">Step 1 of 3</span>
       </div>
 
       {/* Page Title */}
@@ -322,6 +293,10 @@ export default function BookingDatePage() {
                         aria-label={`${MONTH_NAMES[viewMonth - 1]} ${day}`}
                       >
                         {day}
+                        {/* Full label */}
+                        {getStatus(day) === 'full' && (
+                          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-medium text-[#8C8478]/60 leading-none">Full</span>
+                        )}
                         {/* Limited availability dot */}
                         {getStatus(day) === 'limited' && !isSelected(day) && (
                           <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C47D52]" />
@@ -356,10 +331,15 @@ export default function BookingDatePage() {
 
       {/* Bottom Bar */}
       <div className="shrink-0 p-4 pb-6 bg-[#F8F7F4]">
+        {selectedDate && selectedDateSlot && selectedDateSlot.available > 0 && (
+          <p className="text-center text-sm text-[#6B7F5E] mb-2 font-medium">
+            {selectedDateSlot.available} {selectedDateSlot.available === 1 ? 'spot' : 'spots'} available
+          </p>
+        )}
         <button
-          onClick={() => selectedDate && router.push('/booking/yurt')}
+          onClick={() => selectedDate && router.push('/booking/details')}
           disabled={!selectedDate}
-          aria-label={!selectedDate ? 'Select a date to continue' : 'Continue to yurt selection'}
+          aria-label={!selectedDate ? 'Select a date to continue' : 'Continue to details'}
           className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
             selectedDate
               ? 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'

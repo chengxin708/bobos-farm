@@ -10,7 +10,6 @@ interface BookingStepperProps {
 
 const STEP_PATHS = [
   '/booking/date',
-  '/booking/yurt',
   '/booking/details',
   '/booking/confirm',
 ]
@@ -21,7 +20,6 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
 
   const steps = [
     t('chooseDate'),
-    t('selectYurt'),
     t('details'),
     t('confirmPay'),
   ]

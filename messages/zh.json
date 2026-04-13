@@ -244,7 +244,13 @@
       "cancellationPolicyLink": "查看完整取消政策",
       "completedTransfer": "我已完成转账",
       "cancelReservation": "取消预订"
-    }
+    },
+    "slots": {
+      "available": "剩余 {count} 个位置",
+      "full": "已满"
+    },
+    "yurtPending": "蒙古包将由客服分配",
+    "yurtAssigned": "您的蒙古包已分配"
   },
   "reservations": {
     "title": "我的预订",

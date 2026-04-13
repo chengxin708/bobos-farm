@@ -55,16 +55,16 @@ export default function BookingConfirmPage() {
 
   // Redirect back if no booking details (only after hydration to prevent false redirect on refresh)
   useEffect(() => {
-    if (booking.hydrated && (!booking.selectedDate || !booking.selectedYurtId || !booking.contactName)) {
+    if (booking.hydrated && (!booking.selectedDate || !booking.contactName)) {
       router.replace('/booking/date')
     }
-  }, [booking.hydrated, booking.selectedDate, booking.selectedYurtId, booking.contactName, router])
+  }, [booking.hydrated, booking.selectedDate, booking.contactName, router])
 
   // Create reservation when arriving at this page (after hydration)
   useEffect(() => {
     if (!booking.hydrated) return
     if (creationAttempted.current) return
-    if (!booking.selectedDate || !booking.selectedYurtId) return
+    if (!booking.selectedDate) return
     // If reservation already exists (coming back from navigation)
     if (booking.reservationId) {
       setCreated(true)
@@ -74,7 +74,7 @@ export default function BookingConfirmPage() {
     creationAttempted.current = true
     createReservation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [booking.hydrated, booking.selectedDate, booking.selectedYurtId])
+  }, [booking.hydrated, booking.selectedDate])
 
   async function createReservation() {
     setCreating(true)
@@ -84,7 +84,6 @@ export default function BookingConfirmPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          yurtId: booking.selectedYurtId,
           date: booking.selectedDate,
           guestCount: booking.guestCount,
           specialRequests: booking.specialRequests || undefined,
@@ -304,7 +303,7 @@ export default function BookingConfirmPage() {
     )
   }
 
-  if (!booking.selectedDate || !booking.selectedYurtId) return null
+  if (!booking.selectedDate) return null
 
   // ============ Success state ============
   if (submitted) {
@@ -393,10 +392,10 @@ export default function BookingConfirmPage() {
           <Calendar size={16} className="text-[#8C8478] shrink-0" />
           <span className="text-sm text-[#1A1208]">{formattedDate}</span>
         </div>
-        {/* Yurt */}
+        {/* Yurt assignment note */}
         <div className="flex items-center gap-3">
           <Tent size={16} className="text-[#8C8478] shrink-0" />
-          <span className="text-sm text-[#1A1208]">{booking.selectedYurt?.name || ''}</span>
+          <span className="text-sm text-[#8C8478] italic">Yurt will be assigned by our team</span>
         </div>
         {/* Guests */}
         <div className="flex items-center gap-3">
@@ -440,7 +439,7 @@ export default function BookingConfirmPage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#8C8478]">Step 4 of 4</span>
+        <span className="text-sm text-[#8C8478]">Step 3 of 3</span>
       </div>
 
       {/* Page Title */}

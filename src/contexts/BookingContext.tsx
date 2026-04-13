@@ -102,9 +102,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       selectedDate: date,
-      // Clear yurt selection when date changes (availability may differ)
-      selectedYurtId: null,
-      selectedYurt: null,
     }))
   }, [])
 
@@ -113,8 +110,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       ...prev,
       selectedYurtId: yurt?.id ?? null,
       selectedYurt: yurt,
-      // Reset guest count to 1 if switching yurts
-      guestCount: 1,
     }))
   }, [])
 

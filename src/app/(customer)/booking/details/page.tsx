@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 
-const settingsFetcher = (url: string) => fetch(url).then(r => {
+const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
   return r.json()
 })
@@ -20,12 +20,12 @@ export default function BookingDetailsPage() {
   const { data: session } = useSession()
   const booking = useBooking()
 
-  // Redirect back if no yurt selected (only after hydration)
+  // Redirect back if no date selected (only after hydration)
   useEffect(() => {
-    if (booking.hydrated && (!booking.selectedDate || !booking.selectedYurtId)) {
+    if (booking.hydrated && !booking.selectedDate) {
       router.replace('/booking/date')
     }
-  }, [booking.hydrated, booking.selectedDate, booking.selectedYurtId, router])
+  }, [booking.hydrated, booking.selectedDate, router])
 
   // Form state (pre-filled from session and/or booking context)
   const [contactName, setContactName] = useState(
@@ -53,12 +53,22 @@ export default function BookingDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
-  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', settingsFetcher, {
+  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
     revalidateOnFocus: false,
   })
 
-  const maxGuests = booking.selectedYurt?.capacity || 15
-  const MIN_RECOMMENDED_GUESTS = settings?.guest_warning_threshold ? Number(settings.guest_warning_threshold) : 6
+  // Fetch yurts to determine guest capacity range
+  const { data: yurts } = useSWR('/api/yurts', fetcher, {
+    revalidateOnFocus: false,
+  })
+
+  const activeYurts = Array.isArray(yurts) ? yurts.filter((y: { status: string; capacity: number }) => y.status === 'ACTIVE') : []
+  const maxGuests = settings?.max_guest_count
+    ? Number(settings.max_guest_count)
+    : activeYurts.length > 0
+      ? Math.max(...activeYurts.map((y: { capacity: number }) => y.capacity))
+      : 15
+  const minRecommendedGuests = settings?.guest_warning_threshold ? Number(settings.guest_warning_threshold) : 6
 
   // Validation errors
   const errors = useMemo(() => {
@@ -73,7 +83,7 @@ export default function BookingDetailsPage() {
     e.guestCount = guestCount < 1
       ? 'At least 1 guest required'
       : guestCount > maxGuests
-        ? `Maximum ${maxGuests} guests for this yurt`
+        ? `Maximum ${maxGuests} guests`
         : null
     return e
   }, [contactName, contactEmail, contactPhone, guestCount, maxGuests])
@@ -109,20 +119,20 @@ export default function BookingDetailsPage() {
     )
   }
 
-  if (!booking.selectedDate || !booking.selectedYurtId) return null
+  if (!booking.selectedDate) return null
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Top Bar */}
       <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
-          onClick={() => router.push('/booking/yurt')}
+          onClick={() => router.push('/booking/date')}
           className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
           aria-label={tCommon('back')}
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#8C8478]">Step 3 of 4</span>
+        <span className="text-sm text-[#8C8478]">Step 2 of 3</span>
       </div>
 
       {/* Page Title */}
@@ -233,16 +243,16 @@ export default function BookingDetailsPage() {
               </button>
             </div>
             <p className="text-sm text-[#8C8478] text-center mt-2">
-              Yurt capacity: {maxGuests} guests
+              Max {maxGuests} guests per yurt
             </p>
           </div>
 
           {/* Capacity Notice - shown when below recommended minimum and not dismissed */}
-          {guestCount < MIN_RECOMMENDED_GUESTS && !capacityNoticeDismissed && (
+          {guestCount < minRecommendedGuests && !capacityNoticeDismissed && (
             <div className="bg-[#E8ECE4] rounded-xl p-3 flex items-start gap-2.5">
               <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
               <p className="text-sm text-[#3D4A35] leading-relaxed flex-1">
-                {t('capacityNotice', { min: MIN_RECOMMENDED_GUESTS, max: maxGuests })}
+                {t('capacityNotice', { min: minRecommendedGuests, max: maxGuests })}
               </p>
               <button
                 onClick={() => setCapacityNoticeDismissed(true)}
