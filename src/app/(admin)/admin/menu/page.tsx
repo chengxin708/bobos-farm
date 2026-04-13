@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
-  Plus, Pencil, Trash2, X, Upload, Image as ImageIcon,
+  Plus, Pencil, Trash2, X, Upload, Image as ImageIcon, ArrowLeft,
 } from 'lucide-react'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ const emptyForm: ItemFormData = {
 
 // ─── Component ──────────────────────────────────────────────────────
 
-export default function MenuManagement() {
+export function MenuManagementContent({ onClose }: { onClose?: () => void }) {
   const t = useTranslations('admin.menu')
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -426,11 +426,25 @@ export default function MenuManagement() {
   const activeCategory = categories.find(c => c.id === activeCategoryId)
   const itemCount = activeCategory?._count?.items ?? items.length
 
+  const headerBar = onClose ? (
+    <div className="h-14 bg-white border-b border-[#E8ECE4] flex items-center px-4 shrink-0">
+      <button
+        onClick={onClose}
+        className="flex items-center gap-1.5 text-sm text-[#6B7F5E] font-semibold hover:text-[#5A6E4F] transition-colors"
+      >
+        <ArrowLeft size={16} />
+        <span>{t('title')}</span>
+      </button>
+    </div>
+  ) : (
+    <AdminTopBar title={t('title')} />
+  )
+
   // ── Loading state ──
   if (status === 'loading') {
     return (
       <>
-        <AdminTopBar title={t('title')} />
+        {headerBar}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-[#8C8478]">Loading...</div>
         </div>
@@ -440,7 +454,7 @@ export default function MenuManagement() {
 
   return (
     <>
-      <AdminTopBar title={t('title')} />
+      {headerBar}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* ── Category Sidebar (desktop) / Horizontal pills (mobile) ── */}
         <div className="hidden md:flex w-[180px] bg-white border-r border-[#E8ECE4] p-4 flex-col gap-1 shrink-0">
@@ -1003,4 +1017,9 @@ export default function MenuManagement() {
       </div>
     </>
   )
+}
+
+// Page wrapper (default export for Next.js route)
+export default function MenuManagement() {
+  return <MenuManagementContent />
 }

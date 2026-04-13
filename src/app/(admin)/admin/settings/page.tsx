@@ -24,7 +24,7 @@ import {
   Check,
   X,
 } from 'lucide-react'
-import Link from 'next/link'
+import { MenuManagementContent } from '@/app/(admin)/admin/menu/page'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -911,19 +911,21 @@ export default function Settings() {
     )
   }
 
+  const [showMenuOverlay, setShowMenuOverlay] = useState(false)
+
   function renderMenuTab() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
         <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('menuTab.title')}</h2>
         <p className="text-sm text-[#8C8478] mt-1 mb-6">{t('menuTab.description')}</p>
-        <Link
-          href="/admin/menu"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#6B7F5E] text-white text-sm font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors no-underline"
+        <button
+          onClick={() => setShowMenuOverlay(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#6B7F5E] text-white text-sm font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors"
         >
           <UtensilsCrossed size={16} />
           {t('menuTab.manage')}
           <ChevronRight size={14} />
-        </Link>
+        </button>
       </div>
     )
   }
@@ -1266,6 +1268,13 @@ export default function Settings() {
           )}
         </div>
       </div>
+
+      {/* Menu Management fullscreen overlay */}
+      {showMenuOverlay && (
+        <div className="fixed inset-0 z-50 bg-[#F8F7F4] flex flex-col">
+          <MenuManagementContent onClose={() => setShowMenuOverlay(false)} />
+        </div>
+      )}
     </>
   )
 }
