@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted, sendReservationCancelled } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendReservationCancelled, sendYurtAssigned } from "@/lib/email";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -29,6 +29,11 @@ const modifyDetailsSchema = z.object({
   action: z.literal("modify_details"),
   guestCount: z.number().int().positive().optional(),
   specialRequests: z.string().max(2000).optional(),
+});
+
+const assignYurtActionSchema = z.object({
+  action: z.literal("assign_yurt"),
+  yurtId: z.string().min(1, "yurtId is required"),
 });
 
 const adminUpdateSchema = z.object({
@@ -465,6 +470,80 @@ export async function PATCH(
           details: updateData as Record<string, string | number>,
         },
       });
+
+      return NextResponse.json(updated);
+    }
+
+    // ---------- ASSIGN YURT (admin only) ----------
+    if (action === "assign_yurt") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Only admins can assign yurts" }, { status: 403 });
+      }
+
+      const parsedAssign = assignYurtActionSchema.safeParse(body);
+      if (!parsedAssign.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedAssign.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      const { yurtId: newYurtId } = parsedAssign.data;
+
+      // Verify yurt exists and is active
+      const targetYurt = await prisma.yurt.findUnique({ where: { id: newYurtId } });
+      if (!targetYurt || targetYurt.status !== "ACTIVE") {
+        return NextResponse.json({ error: "Yurt not available" }, { status: 400 });
+      }
+
+      // Check for conflicts: another reservation on the same date for this yurt
+      if (newYurtId !== reservation.yurtId) {
+        const conflict = await prisma.reservation.findUnique({
+          where: { yurtId_date: { yurtId: newYurtId, date: reservation.date } },
+        });
+        if (conflict && conflict.id !== id) {
+          return NextResponse.json(
+            { error: "This yurt is already booked for this date" },
+            { status: 409 }
+          );
+        }
+      }
+
+      const updated = await prisma.reservation.update({
+        where: { id },
+        data: { yurtId: newYurtId },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "YURT_ASSIGNED",
+          targetType: "Reservation",
+          targetId: id,
+          details: {
+            oldYurtId: reservation.yurtId,
+            newYurtId,
+            yurtName: targetYurt.name,
+            date: reservation.date,
+          },
+        },
+      });
+
+      // Fire-and-forget: send yurt assigned email to guest
+      if (updated.user.email) {
+        void sendYurtAssigned(updated.user.email, {
+          date: updated.date,
+          yurtName: targetYurt.name,
+          yurtDescription: targetYurt.description || undefined,
+          guestCount: updated.guestCount,
+          reservationId: id,
+        });
+      }
 
       return NextResponse.json(updated);
     }

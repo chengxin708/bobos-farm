@@ -463,7 +463,66 @@ export async function sendAdminDepositSubmitted(
   }
 }
 
-// ── 6. Reservation Cancelled (通知客户) ─────────────────────────────
+// ── 6. Yurt Assigned (通知客户蒙古包已分配) ────────────────────────────
+
+interface YurtAssignedData {
+  date: string | Date;
+  yurtName: string;
+  yurtDescription?: string;
+  guestCount: number;
+  reservationId: string;
+  siteUrl?: string;
+}
+
+export async function sendYurtAssigned(
+  to: string,
+  data: YurtAssignedData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+
+  try {
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">蒙古包已分配</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
+        您的蒙古包已由我们的团队分配，请查看以下详情。
+      </p>
+
+      ${infoTable(
+        infoRow("预订日期", formatDate(data.date)) +
+        infoRow("蒙古包", data.yurtName) +
+        (data.yurtDescription ? infoRow("描述", data.yurtDescription) : "") +
+        infoRow("人数", `${data.guestCount} 人`)
+      )}
+
+      ${primaryButton("查看预订详情", `${siteUrl}/reservations`)}
+
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
+        如有任何问题，请联系我们。期待您的到来！
+      </p>
+    `);
+
+    await client.emails.send({
+      from: emailFrom,
+      to,
+      subject: "Bobo's Farm — 蒙古包已分配",
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendYurtAssigned failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ── 7. Reservation Cancelled (通知客户) ─────────────────────────────
 
 interface ReservationCancelledData {
   date: string | Date;
