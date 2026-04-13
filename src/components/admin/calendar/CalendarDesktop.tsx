@@ -382,69 +382,53 @@ export default function CalendarDesktop() {
           </span>
         </div>
 
-        {/* Slot indicators */}
-        {(() => {
-          const closedSet = closedByDateYurt.get(dateStr)
-          const totalSlots = activeYurts.filter(y => !closedSet?.has(y.id)).length
-          const occupied = dayRes.filter(r => r.status !== 'CANCELLED' && r.status !== 'EXPIRED').length
-          if (totalSlots > 0) {
-            return (
-              <div className="flex items-center gap-1 mb-1">
-                {Array.from({ length: totalSlots }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`w-2 h-2 rounded-full ${
-                      i < occupied ? 'bg-[#6B7F5E]' : 'border border-[#6B7F5E]/30'
-                    }`}
-                  />
-                ))}
-              </div>
-            )
-          }
-          return null
-        })()}
+        {/* Yurt slot rows — one row per active yurt */}
+        <div className="flex flex-col gap-0.5">
+          {activeYurts.map(yurt => {
+            const isClosed = closedByDateYurt.get(dateStr)?.has(yurt.id)
+            const res = dayRes.find(r => r.yurtId === yurt.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
+            const shortName = yurt.name.replace(/蒙古包|Yurt\s*/i, '').trim() || yurt.name.charAt(0)
 
-        {/* Reservation pills */}
-        <div className="flex flex-col gap-1">
-          {visibleRes.map(res => {
-            const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
-            const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
-            const name = getDisplayName(res.user)
+            if (isClosed) {
+              return (
+                <div key={yurt.id} className="flex items-center gap-1 px-1 py-0.5 rounded text-[9px] text-[#8A7E6B]/50 line-through">
+                  <span className="w-3 text-center font-bold">{shortName}</span>
+                  <span className="truncate">{t('status.closed')}</span>
+                </div>
+              )
+            }
 
+            if (res) {
+              const colors = STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED
+              return (
+                <button
+                  key={yurt.id}
+                  onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
+                  className={`flex items-center gap-1 px-1 py-0.5 rounded text-[9px] cursor-pointer border-0 w-full text-left transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
+                >
+                  <span className="font-bold w-3 text-center shrink-0">{shortName}</span>
+                  <span className="truncate">{getDisplayName(res.user)}</span>
+                </button>
+              )
+            }
+
+            // Available — click to create reservation
             return (
               <button
-                key={res.id}
-                onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
-                className={`
-                  flex items-center gap-1 px-1.5 py-0.5 rounded-full border-l-2 cursor-pointer border-0 bg-transparent w-full text-left
-                  ${colors.border} ${colors.bg} ${colors.text}
-                  ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
-                  hover:brightness-95 transition-all
-                `}
+                key={yurt.id}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCreateModalDate(dateStr)
+                  setCreateModalYurtId(yurt.id)
+                  setShowCreateModal(true)
+                }}
+                className="flex items-center gap-1 px-1 py-0.5 rounded text-[9px] cursor-pointer border border-dashed border-[#6B7F5E]/20 bg-transparent w-full text-left text-[#6B7F5E]/40 hover:border-[#6B7F5E]/50 hover:text-[#6B7F5E]/70 hover:bg-[#6B7F5E]/5 transition-all"
               >
-                <div className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 ${colors.initBg}`}>
-                  {initials}
-                </div>
-                <span className="text-[10px] font-medium truncate">{name}</span>
+                <span className="font-bold w-3 text-center shrink-0">{shortName}</span>
+                <span className="truncate">+</span>
               </button>
             )
           })}
-
-          {remaining > 0 && (
-            <span className="text-[10px] text-[#6B7F5E] font-medium pl-1 cursor-pointer hover:underline">
-              {t('moreRemaining', { count: remaining })}
-            </span>
-          )}
-
-          {/* Closed indicator */}
-          {closed && dayRes.length === 0 && (
-            <div
-              className="text-[10px] px-1.5 py-0.5 rounded text-[#8A7E6B] bg-gray-100"
-              style={{ backgroundImage: CLOSED_STRIPE_BG }}
-            >
-              {t('status.closed')}
-            </div>
-          )}
         </div>
       </div>
     )
