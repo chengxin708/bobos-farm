@@ -996,6 +996,7 @@
     },
     "customers": {
       "title": "客户管理",
+      "noEmail": "未提供邮箱",
       "searchPlaceholder": "搜索客户...",
       "filters": {
         "all": "全部",

@@ -344,7 +344,11 @@ export default function Customers() {
                             <span className="text-sm font-medium text-[#1A1208]">{c.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-[#8C8478]">{c.email}</td>
+                        <td className="px-4 py-3 text-sm text-[#8C8478]">
+                          {c.email.endsWith('@placeholder.local') ? (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F4A623]/15 text-[#F4A623]">{t('noEmail')}</span>
+                          ) : c.email}
+                        </td>
                         <td className="px-4 py-3 text-sm text-[#1A1208]">{c.phone}</td>
                         <td className="px-4 py-3 text-sm text-[#1A1208]">{c.totalVisits}</td>
                         <td className="px-4 py-3 text-sm text-[#1A1208]">{c.lastVisit}</td>
@@ -382,7 +386,11 @@ export default function Customers() {
                 {selectedCustomer.initials}
               </div>
               <span className="text-base font-bold text-[#1A1208]">{selectedCustomer.name}</span>
-              <span className="text-xs text-[#8C8478]">{selectedCustomer.email}</span>
+              {selectedCustomer.email.endsWith('@placeholder.local') ? (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F4A623]/15 text-[#F4A623]">{t('noEmail')}</span>
+              ) : (
+                <span className="text-xs text-[#8C8478]">{selectedCustomer.email}</span>
+              )}
               <span className="text-xs text-[#8C8478]">{selectedCustomer.phone}</span>
               <span className="text-xs text-[#8C8478]">{t('detail.memberSince')} {selectedCustomer.memberSince}</span>
             </div>

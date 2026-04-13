@@ -996,6 +996,7 @@
     },
     "customers": {
       "title": "Customers",
+      "noEmail": "No email",
       "searchPlaceholder": "Search customers...",
       "filters": {
         "all": "All",

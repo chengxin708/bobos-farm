@@ -29,7 +29,7 @@ const adminCreateReservationSchema = z.object({
   guestCount: z.number().int().positive("guestCount must be a positive integer"),
   specialRequests: z.string().max(2000).optional(),
   guestName: z.string().min(1, "guestName is required"),
-  guestEmail: z.string().email("Invalid email"),
+  guestEmail: z.union([z.string().email("Invalid email"), z.literal("")]).optional(),
   guestPhone: z.string().min(1, "guestPhone is required"),
   customDeposit: z.number().min(0).optional(),
 });
@@ -107,9 +107,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // ── Admin branch: create reservation on behalf of a customer ──
-    // Only use admin branch when admin-specific fields are provided (guestName, guestEmail)
-    // This allows admins to also book through the customer flow
-    if (isAdmin && body.guestName && body.guestEmail) {
+    // Only use admin branch when admin-specific fields are provided (guestName + guestPhone)
+    // Email is optional — phone-only customers are supported
+    if (isAdmin && body.guestName && body.guestPhone) {
       const parsed = adminCreateReservationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
@@ -117,7 +117,8 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { yurtId, date, guestCount, specialRequests, guestName, guestEmail, guestPhone } = parsed.data;
+      const { yurtId, date, guestCount, specialRequests, guestName, guestPhone } = parsed.data;
+      const guestEmail = parsed.data.guestEmail || '';
 
       // Validate yurt
       const yurt = await prisma.yurt.findUnique({ where: { id: yurtId } });
@@ -144,12 +145,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "This date is closed for this yurt" }, { status: 400 });
       }
 
-      // Look up or create customer by email
-      let customer = await prisma.user.findUnique({ where: { email: guestEmail } });
+      // Look up or create customer by email (if provided) or phone
+      let customer = guestEmail
+        ? await prisma.user.findUnique({ where: { email: guestEmail } })
+        : await prisma.user.findFirst({ where: { phone: guestPhone, role: "CUSTOMER" } });
+
       if (!customer) {
         customer = await prisma.user.create({
           data: {
-            email: guestEmail,
+            email: guestEmail || `phone-${guestPhone.replace(/\D/g, '')}@placeholder.local`,
             name: guestName,
             phone: guestPhone,
             role: "CUSTOMER",
@@ -207,7 +211,7 @@ export async function POST(req: NextRequest) {
       const emailSettingsMap: Record<string, string> = {};
       for (const s of emailSettings) emailSettingsMap[s.key] = s.value;
 
-      if (emailSettingsMap.email_booking_confirmation !== "false") {
+      if (emailSettingsMap.email_booking_confirmation !== "false" && guestEmail && !guestEmail.endsWith('@placeholder.local')) {
         void sendReservationCreated(guestEmail, {
           reservationId: reservation.id,
           date,

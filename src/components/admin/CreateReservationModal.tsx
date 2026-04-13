@@ -198,14 +198,13 @@ export default function CreateReservationModal({
               />
             </div>
 
-            {/* Guest Email */}
+            {/* Guest Email (optional) */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                {t('guestEmail')} <span className="text-red-500">*</span>
+                {t('guestEmail')}
               </label>
               <input
                 type="email"
-                required
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder="guest@example.com"
