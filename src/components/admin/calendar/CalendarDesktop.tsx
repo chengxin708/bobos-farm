@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
+import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
 import { ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -148,8 +149,20 @@ export default function CalendarDesktop() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createModalDate, setCreateModalDate] = useState<string | undefined>(undefined)
   const [createModalYurtId, setCreateModalYurtId] = useState<string | undefined>(undefined)
-  const [selectedRes, setSelectedRes] = useState<Reservation | null>(null)
+  const [selectedResId, setSelectedResId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
+
+  // Fetch full detail + activity logs for selected reservation
+  const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
+    selectedResId ? `/api/reservations/${selectedResId}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  const { data: selectedResLogs } = useSWR(
+    selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=RESERVATION` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
 
   // Redirect non-admin
   useEffect(() => {
@@ -220,13 +233,12 @@ export default function CalendarDesktop() {
         body: JSON.stringify(body),
       })
       if (res.ok) {
-        const updated = await res.json()
-        setSelectedRes(updated)
         mutateReservations()
+        mutateSelectedRes()
       }
     } catch { /* ignore */ }
     finally { setActionUpdating(false) }
-  }, [mutateReservations])
+  }, [mutateReservations, mutateSelectedRes])
 
   const confirmDeposit = useCallback((id: string) => {
     handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
@@ -380,7 +392,7 @@ export default function CalendarDesktop() {
             return (
               <button
                 key={res.id}
-                onClick={(e) => { e.stopPropagation(); setSelectedRes(res) }}
+                onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
                 className={`
                   flex items-center gap-1 px-1.5 py-0.5 rounded-full border-l-2 cursor-pointer border-0 bg-transparent w-full text-left
                   ${colors.border} ${colors.bg} ${colors.text}
@@ -485,7 +497,7 @@ export default function CalendarDesktop() {
                       return (
                         <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
                           <button
-                            onClick={() => setSelectedRes(res)}
+                            onClick={() => setSelectedResId(res.id)}
                             className={`
                               w-full text-left p-3 rounded-lg border-l-[3px] border-0 cursor-pointer
                               ${colors.border} ${colors.bg}
@@ -677,11 +689,12 @@ export default function CalendarDesktop() {
       </div>
 
       {/* Reservation Detail Drawer */}
-      {selectedRes && (
+      {selectedResFull && selectedResId && (
         <div className="w-[400px] border-l border-[#E8ECE4] bg-white flex flex-col overflow-hidden shrink-0">
           <ReservationDetail
-            reservation={selectedRes}
-            onClose={() => setSelectedRes(null)}
+            reservation={selectedResFull}
+            activityLogs={selectedResLogs}
+            onClose={() => setSelectedResId(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={actionUpdating}
             onOrderChanged={() => mutateReservations()}
