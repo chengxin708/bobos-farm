@@ -153,7 +153,7 @@ function LoginForm() {
       {/* Google OAuth */}
       <button
         type="button"
-        onClick={() => signIn('google')}
+        onClick={() => signIn('google', { callbackUrl: callbackUrl || '/' })}
         className="border border-[#E8ECE4] rounded-full py-3 w-full flex items-center justify-center gap-2.5 cursor-pointer bg-white hover:bg-[#F9FAF8] transition-colors"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
