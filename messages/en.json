@@ -36,7 +36,7 @@
       "title": "Sign In",
       "subtitle": "Welcome back! Please enter your details.",
       "heroTitle": "Welcome Back\nto the Farm",
-      "heroSubtitle": "Your table in the Hudson Valley awaits",
+      "heroSubtitle": "Your table in New Paltz awaits",
       "email": "Email",
       "emailPlaceholder": "Enter your email",
       "password": "Password",
@@ -83,7 +83,7 @@
   },
   "landing": {
     "hero": {
-      "location": "Hudson Valley, NY",
+      "location": "New Paltz, NY",
       "bookVisit": "Book a Visit"
     },
     "story": {

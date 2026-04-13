@@ -527,7 +527,7 @@ export default function Settings() {
             value={formValues.business_address ?? ''}
             onChange={e => updateField('business_address', e.target.value)}
             className={inputClass('business_address')}
-            placeholder="123 Farm Road, Hudson Valley, NY"
+            placeholder="891 Albany Post Rd, New Paltz, NY 12561"
           />
           <p className="text-xs text-[#8C8478] mt-1">Physical address of your business.</p>
         </div>

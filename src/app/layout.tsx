@@ -44,7 +44,7 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Bobo's Farm — 波姐农家乐",
   description:
-    "Whole roasted lamb in a yurt — the Hudson Valley's most unique dining experience. By appointment only.",
+    "Whole roasted lamb in a yurt — 891 Albany Post Rd, New Paltz, NY. By appointment only.",
 };
 
 export default async function RootLayout({

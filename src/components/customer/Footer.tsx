@@ -94,7 +94,7 @@ export default function Footer() {
               </span>
               <span className="text-xs text-[#F8F7F4]/40 leading-relaxed mt-1">
                 Mongolian &amp; Northeastern Cuisine<br />
-                Farm to Table · Hudson Valley, NY
+                Farm to Table · New Paltz, NY
               </span>
             </div>
 

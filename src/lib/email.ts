@@ -69,7 +69,7 @@ function emailWrapper(body: string): string {
   <tr>
     <td style="padding:20px 32px;background-color:#F8F7F4;text-align:center;border-top:1px solid #E8ECE4;">
       <p style="margin:0;font-size:11px;color:#8A7E6B;">
-        Bobo's Farm &mdash; Hudson Valley, NY<br/>
+        Bobo's Farm &mdash; 891 Albany Post Rd, New Paltz, NY 12561<br/>
         This is an automated message. Please do not reply directly.
       </p>
     </td>
