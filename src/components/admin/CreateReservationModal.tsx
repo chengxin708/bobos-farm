@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, ArrowLeft } from 'lucide-react'
 
 interface Yurt {
   id: string
@@ -132,33 +132,43 @@ export default function CreateReservationModal({
   if (!isOpen) return null
 
   return (
+    {/* Mobile: fullscreen / Desktop: centered modal */}
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${visible ? 'bg-black/40' : 'bg-black/0'}`}
+      className={`fixed inset-0 z-50 md:flex md:items-center md:justify-center md:p-4 transition-all duration-200 ${visible ? 'md:bg-black/40' : 'md:bg-black/0'}`}
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className={`w-full max-w-lg bg-white rounded-2xl shadow-2xl transition-all duration-200 ${visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}
+        className={`bg-[#F8F7F4] md:bg-white w-full h-full md:h-auto md:max-w-lg md:rounded-2xl md:shadow-2xl flex flex-col transition-all duration-200 ${visible ? 'opacity-100 md:scale-100 md:translate-y-0' : 'opacity-0 md:scale-95 md:translate-y-4'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        {/* Header — mobile: full-width bar / desktop: inline */}
+        <div className="flex items-center justify-between h-14 md:h-auto px-4 md:px-6 md:pt-6 md:pb-2 bg-white md:bg-transparent border-b md:border-b-0 border-[#E8ECE4] shrink-0">
+          {/* Mobile back button */}
+          <button
+            onClick={onClose}
+            className="flex md:hidden items-center gap-1.5 text-sm text-[#6B7F5E] font-semibold"
+          >
+            <ArrowLeft size={16} />
+            {t('title')}
+          </button>
+          {/* Desktop title */}
           <h2
-            className="text-xl font-bold"
+            className="hidden md:block text-xl font-bold"
             style={{ fontFamily: 'var(--font-playfair)', color: '#2C2416' }}
           >
             {t('title')}
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-[#F5F2ED] transition-colors"
+            className="hidden md:block p-1.5 rounded-lg hover:bg-[#F5F2ED] transition-colors"
           >
             <X size={18} style={{ color: '#8A7E6B' }} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 md:px-6 pb-6">
           <div className="flex flex-col gap-4 mt-4">
             {/* Guest Name */}
             <div className="flex flex-col gap-1.5">
@@ -380,7 +390,7 @@ export default function CreateReservationModal({
           )}
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 mt-6 pt-4" style={{ borderTop: '1px solid #E8E2D9' }}>
+          <div className="flex items-center justify-end gap-3 mt-6 pt-4 pb-safe" style={{ borderTop: '1px solid #E8E2D9' }}>
             <button
               type="button"
               onClick={onClose}
