@@ -569,3 +569,60 @@ export async function sendReservationCancelled(
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
+
+// ── Marketing Email Helper ─────────────────────────────────────────
+
+/**
+ * Send a marketing email with proper List-Unsubscribe headers.
+ * Checks marketingOptIn before sending. For promotional/campaign emails only.
+ */
+export async function sendMarketingEmail(
+  to: string,
+  subject: string,
+  body: string
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const siteUrl = process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+
+  const user = await prisma.user.findUnique({
+    where: { email: to },
+    select: { marketingOptIn: true, unsubscribeToken: true },
+  });
+
+  if (!user?.marketingOptIn) {
+    return { success: false, error: "User has unsubscribed from marketing emails" };
+  }
+
+  const html = emailWrapper(body, {
+    lang,
+    type: "marketing",
+    unsubscribeToken: user.unsubscribeToken ?? undefined,
+    siteUrl,
+  });
+
+  const unsubUrl = user.unsubscribeToken
+    ? `${siteUrl}/unsubscribe?token=${user.unsubscribeToken}`
+    : undefined;
+
+  try {
+    await client.emails.send({
+      from: emailFrom,
+      to,
+      subject,
+      html,
+      headers: unsubUrl
+        ? {
+            "List-Unsubscribe": `<${unsubUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          }
+        : undefined,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendMarketingEmail failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
