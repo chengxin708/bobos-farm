@@ -457,6 +457,7 @@ export function useReservationsData() {
     // Mutators (for child components to trigger refresh)
     mutateReservations,
     mutateOrders,
+    mutateDetail,
     // Success message
     successMsg,
     setSuccessMsg,

@@ -76,6 +76,7 @@ export default function ReservationsDesktop() {
     updating,
     mutateReservations,
     mutateOrders,
+    mutateDetail,
     successMsg, setSuccessMsg,
     t,
     tOrders,
@@ -361,7 +362,7 @@ export default function ReservationsDesktop() {
             onClose={() => setSelectedRes(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={updating}
-            onOrderChanged={() => { mutateReservations(); mutateOrders(); }}
+            onOrderChanged={() => { mutateReservations(); mutateOrders(); mutateDetail(); }}
           />
         </div>
       )}

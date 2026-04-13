@@ -81,6 +81,7 @@ export default function ReservationsMobile() {
     updating,
     mutateReservations,
     mutateOrders,
+    mutateDetail,
     successMsg, setSuccessMsg,
     t,
     tOrders,
@@ -111,7 +112,7 @@ export default function ReservationsMobile() {
           onClose={() => setSelectedRes(null)}
           onAction={{ confirmDeposit, cancelReservation, completeReservation }}
           isUpdating={updating}
-          onOrderChanged={() => { mutateReservations(); mutateOrders(); }}
+          onOrderChanged={() => { mutateReservations(); mutateOrders(); mutateDetail(); }}
         />
       </div>
     )

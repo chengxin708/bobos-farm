@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
-import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ChevronRight, ShoppingBag, MessageSquare, History } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -54,6 +53,7 @@ export default function ReservationDetail({
 }: ReservationDetailProps) {
   const t = useTranslations('admin.reservations')
   const tOrders = useTranslations('admin.orders')
+  const locale = useLocale()
   const panelOrder = reservation.order || null
 
   const [showOrderEditor, setShowOrderEditor] = useState(false)
@@ -147,7 +147,7 @@ export default function ReservationDetail({
 
         <hr className="border-[#E8ECE4]" />
 
-        {/* Pre-order Summary */}
+        {/* Pre-order Details — full item list */}
         {orderData && (
           <>
             <div className="space-y-3">
@@ -160,24 +160,46 @@ export default function ReservationDetail({
                   {tOrders(`status.${orderData.status}`)}
                 </span>
               </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-xs text-[#8C8478]">{t('detail.itemCount')}</span>
-                  <span className="text-sm text-brown font-medium">{t('itemsSuffix', { count: orderData.items?.length ?? 0 })}</span>
-                </div>
-                {orderData.estimatedTotal != null && (
-                  <div className="flex justify-between">
-                    <span className="text-xs text-[#8C8478]">{t('detail.estimatedTotal')}</span>
-                    <span className="text-sm text-brown font-medium">${orderData.estimatedTotal.toFixed(2)}</span>
+
+              {/* Full item list */}
+              {orderData.items && orderData.items.length > 0 ? (
+                <div className="bg-[#F8F7F4] rounded-xl p-3 space-y-2">
+                  {orderData.items.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-sm">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[#1A1208]">
+                          {locale === 'zh' && item.menuItem?.nameZh ? item.menuItem.nameZh : item.menuItem?.nameEn}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[#8C8478]">&times;{item.quantity}</span>
+                        <span className="text-[#1A1208] font-medium w-16 text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          ${((item.menuItem?.price ?? 0) * item.quantity).toFixed(0)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Subtotal */}
+                  <div className="border-t border-[#E8ECE4] pt-2 mt-2 flex justify-between text-sm font-semibold">
+                    <span className="text-[#8C8478]">{tOrders('subtotal')}</span>
+                    <span className="text-[#1A1208]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      ${orderData.estimatedTotal?.toFixed(0) ?? '\u2014'}
+                    </span>
                   </div>
-                )}
-              </div>
-              <Link
-                href="/admin/reservations?view=orders"
-                className="flex items-center gap-1 text-xs font-semibold text-[#8B6914] hover:underline"
-              >
-                {t('detail.viewFullOrder')} <ChevronRight size={12} />
-              </Link>
+                </div>
+              ) : (
+                <div className="text-xs text-[#8C8478]">
+                  {t('itemsSuffix', { count: 0 })}
+                </div>
+              )}
+
+              {/* Notes */}
+              {orderData.notes && (
+                <div className="text-xs text-[#8C8478] italic">
+                  {tOrders('notes')}: {orderData.notes}
+                </div>
+              )}
             </div>
             <hr className="border-[#E8ECE4]" />
           </>
