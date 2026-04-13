@@ -68,7 +68,7 @@
     overscroll-behavior: none;
   }
   body {
-    font-family: var(--font-sans);
+    font-family: var(--font-logo-display), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
     background-color: #F8F7F4;
     color: #1A1208;
     -webkit-font-smoothing: antialiased;
