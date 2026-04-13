@@ -184,6 +184,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           emailVerified: new Date(),
           role: "CUSTOMER",
           preferredLanguage: "EN",
+          marketingOptIn: true,
+          unsubscribeToken: crypto.randomUUID(),
         },
       });
 
