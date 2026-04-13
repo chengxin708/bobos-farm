@@ -39,10 +39,8 @@ const ALLOWED_SETTING_KEYS = [
   "paymentMethods",
 ] as const;
 
-const settingsUpdateSchema = z.record(
-  z.enum(ALLOWED_SETTING_KEYS),
-  z.string().max(500)
-);
+// Accept any string keys, but only process allowed ones
+const settingsUpdateSchema = z.record(z.string(), z.string().max(500));
 
 export async function GET() {
   try {
@@ -76,12 +74,20 @@ export async function PATCH(req: NextRequest) {
     const parsed = settingsUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Validation failed. Only recognized setting keys with string values are allowed.", details: parsed.error.flatten() },
+        { error: "Invalid request format. Expected key-value pairs with string values.", details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const operations = Object.entries(parsed.data).map(([key, value]) =>
+    // Filter to only process recognized keys (silently ignore unknown ones)
+    const allowedSet = new Set<string>(ALLOWED_SETTING_KEYS);
+    const allowedEntries = Object.entries(parsed.data).filter(([key]) => allowedSet.has(key));
+
+    if (allowedEntries.length === 0) {
+      return NextResponse.json({ error: "No recognized settings to update" }, { status: 400 });
+    }
+
+    const operations = allowedEntries.map(([key, value]) =>
       prisma.systemSetting.upsert({
         where: { key },
         update: { value: String(value) },
@@ -96,7 +102,7 @@ export async function PATCH(req: NextRequest) {
         userId: session.user?.id,
         action: "SETTINGS_UPDATED",
         targetType: "SystemSetting",
-        details: { updatedKeys: Object.keys(parsed.data) },
+        details: { updatedKeys: allowedEntries.map(([k]) => k) },
       },
     });
 
