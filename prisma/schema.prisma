@@ -62,11 +62,30 @@ model User {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  accounts          Account[]
   reservations      Reservation[]
   activityLogs      ActivityLog[]
   pushSubscriptions PushSubscription[]
 
   @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  provider          String  // e.g. "google"
+  providerAccountId String  // Google's sub / account ID
+  type              String  @default("oauth")
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 // ============ YURTS ============

@@ -5,7 +5,7 @@ import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 
 const passwordUpdateSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
+  currentPassword: z.string().optional(), // Optional for Google-only users setting first password
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
@@ -32,20 +32,27 @@ export async function PATCH(req: NextRequest) {
       select: { id: true, passwordHash: true },
     });
 
-    if (!user || !user.passwordHash) {
-      return NextResponse.json(
-        { error: "User not found or no password set" },
-        { status: 404 }
-      );
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const isValid = await compare(currentPassword, user.passwordHash);
-    if (!isValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      );
+    if (user.passwordHash) {
+      // User has existing password — must verify current password
+      if (!currentPassword) {
+        return NextResponse.json(
+          { error: "Current password is required" },
+          { status: 400 }
+        );
+      }
+      const isValid = await compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Current password is incorrect" },
+          { status: 400 }
+        );
+      }
     }
+    // If no passwordHash, user is Google-only — allow setting first password without current
 
     const newHash = await hash(newPassword, 12);
 

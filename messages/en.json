@@ -378,6 +378,14 @@
         "strong": "Strong"
       }
     },
+    "linkedAccounts": {
+      "title": "Linked Accounts",
+      "description": "Connect external accounts for quick sign-in.",
+      "connected": "Connected",
+      "link": "Connect",
+      "unlink": "Disconnect",
+      "setPasswordFirst": "Please set a password first — you need at least one login method."
+    },
     "notifications": {
       "title": "Email Notifications",
       "reservationConfirmations": "Reservation confirmations",

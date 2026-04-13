@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock, EyeOff, Eye, ChevronDown, ChevronLeft, Trash2 } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { Lock, EyeOff, Eye, ChevronDown, ChevronLeft, Trash2, Loader2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 
@@ -96,6 +97,15 @@ export default function SettingsPage() {
     'promotionalOffers',
   ] as const
   const [toggles, setToggles] = useState([true, true, true, false])
+
+  // Linked accounts
+  const { data: accountsData, mutate: mutateAccounts } = useSWR<{
+    accounts: { id: string; provider: string }[]
+    hasPassword: boolean
+  }>('/api/users/me/accounts', fetcher)
+  const isGoogleLinked = accountsData?.accounts.some(a => a.provider === 'google') ?? false
+  const hasPassword = accountsData?.hasPassword ?? true
+  const [unlinkingGoogle, setUnlinkingGoogle] = useState(false)
 
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -289,7 +299,8 @@ export default function SettingsPage() {
 
             {passwordOpen && (
               <div className="px-6 pb-6 flex flex-col gap-4">
-                {/* Current Password */}
+                {/* Current Password — only show if user has a password */}
+                {hasPassword && (
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-[#1A1208]">{t('password.currentPassword')}</label>
                   <div className="relative">
@@ -305,6 +316,7 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 </div>
+                )}
 
                 {/* New Password */}
                 <div className="flex flex-col gap-1.5">
@@ -366,17 +378,19 @@ export default function SettingsPage() {
 
                 <div className="flex justify-end pt-1">
                   <button
-                    disabled={!currentPassword || !newPassword || newPassword !== confirmPassword || passwordSaving}
+                    disabled={(hasPassword && !currentPassword) || !newPassword || newPassword !== confirmPassword || passwordSaving}
                     onClick={async () => {
                       if (passwordSaving) return
                       setPasswordSaving(true)
                       setPasswordError(null)
                       setPasswordSuccess(false)
                       try {
+                        const payload: Record<string, string> = { newPassword }
+                        if (hasPassword && currentPassword) payload.currentPassword = currentPassword
                         const res = await fetch('/api/users/me/password', {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ currentPassword, newPassword }),
+                          body: JSON.stringify(payload),
                         })
                         if (!res.ok) {
                           const data = await res.json().catch(() => ({}))
@@ -386,6 +400,7 @@ export default function SettingsPage() {
                         setCurrentPassword('')
                         setNewPassword('')
                         setConfirmPassword('')
+                        mutateAccounts() // Refresh hasPassword state
                       } catch (err) {
                         setPasswordError(err instanceof Error ? err.message : 'Failed to update password')
                       } finally {
@@ -399,6 +414,62 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* ── Linked Accounts Card ── */}
+          <div className="bg-white rounded-2xl p-6 border border-[#E8ECE4] flex flex-col gap-4">
+            <h3 className="font-serif text-lg text-[#1A1208]">{t('linkedAccounts.title')}</h3>
+            <p className="text-sm text-[#8C8478] -mt-2">{t('linkedAccounts.description')}</p>
+
+            {/* Google */}
+            <div className="flex items-center justify-between py-3 border border-[#E8ECE4] rounded-xl px-4">
+              <div className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 48 48" className="shrink-0">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                <div>
+                  <span className="text-sm font-medium text-[#1A1208]">Google</span>
+                  {isGoogleLinked && (
+                    <span className="text-xs text-[#6B7F5E] ml-2">{t('linkedAccounts.connected')}</span>
+                  )}
+                </div>
+              </div>
+
+              {isGoogleLinked ? (
+                <button
+                  onClick={async () => {
+                    if (!hasPassword) {
+                      alert(t('linkedAccounts.setPasswordFirst'))
+                      return
+                    }
+                    setUnlinkingGoogle(true)
+                    try {
+                      const res = await fetch('/api/users/me/accounts', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ provider: 'google' }),
+                      })
+                      if (res.ok) mutateAccounts()
+                    } catch { /* ignore */ }
+                    finally { setUnlinkingGoogle(false) }
+                  }}
+                  disabled={unlinkingGoogle}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#DC3545]/30 text-[#DC3545] hover:bg-[#DC3545]/5 disabled:opacity-50 transition-colors"
+                >
+                  {unlinkingGoogle ? <Loader2 size={12} className="animate-spin" /> : t('linkedAccounts.unlink')}
+                </button>
+              ) : (
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/settings' })}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#6B7F5E]/30 text-[#6B7F5E] hover:bg-[#6B7F5E]/5 transition-colors"
+                >
+                  {t('linkedAccounts.link')}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* ── Notifications Card ── */}

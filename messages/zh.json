@@ -378,6 +378,14 @@
         "strong": "强"
       }
     },
+    "linkedAccounts": {
+      "title": "关联账号",
+      "description": "绑定外部账号以快速登录。",
+      "connected": "已绑定",
+      "link": "绑定",
+      "unlink": "解绑",
+      "setPasswordFirst": "请先设置密码 — 至少需要保留一种登录方式。"
+    },
     "notifications": {
       "title": "邮件通知",
       "reservationConfirmations": "预订确认通知",
