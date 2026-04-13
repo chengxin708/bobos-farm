@@ -3,12 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, CalendarCheck, UtensilsCrossed, Calendar, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, CalendarCheck, Calendar, MoreHorizontal } from 'lucide-react'
 
 const tabs = [
   { key: 'home' as const, href: '/admin/dashboard', icon: LayoutDashboard },
   { key: 'bookings' as const, href: '/admin/reservations', icon: CalendarCheck },
-  { key: 'menuMgmt' as const, href: '/admin/menu', icon: UtensilsCrossed },
   { key: 'calendar' as const, href: '/admin/calendar', icon: Calendar },
   { key: 'more' as const, href: '/admin/more', icon: MoreHorizontal },
 ]

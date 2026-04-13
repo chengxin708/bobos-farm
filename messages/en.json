@@ -513,6 +513,8 @@
     },
     "more": {
       "title": "More",
+      "menu": "Menu Management",
+      "menuDesc": "Categories & dishes",
       "venues": "Venue Management",
       "venuesDesc": "Yurts + Availability",
       "customers": "Customer Management",

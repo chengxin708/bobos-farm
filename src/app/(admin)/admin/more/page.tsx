@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { Tent, Users, BarChart3, Settings, ChevronRight } from 'lucide-react'
+import { UtensilsCrossed, Tent, Users, BarChart3, Settings, ChevronRight } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 
 const links = [
+  { href: '/admin/menu', icon: UtensilsCrossed, labelKey: 'menu' as const, descKey: 'menuDesc' as const },
   { href: '/admin/venues', icon: Tent, labelKey: 'venues' as const, descKey: 'venuesDesc' as const },
   { href: '/admin/customers', icon: Users, labelKey: 'customers' as const, descKey: 'customersDesc' as const },
   { href: '/admin/reports', icon: BarChart3, labelKey: 'reports' as const, descKey: 'reportsDesc' as const },

@@ -513,6 +513,8 @@
     },
     "more": {
       "title": "更多",
+      "menu": "菜单管理",
+      "menuDesc": "分类与菜品",
       "venues": "场地管理",
       "venuesDesc": "蒙古包 + 可用性",
       "customers": "客户管理",
