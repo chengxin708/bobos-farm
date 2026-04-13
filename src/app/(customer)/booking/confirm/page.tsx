@@ -87,6 +87,8 @@ export default function BookingConfirmPage() {
           date: booking.selectedDate,
           guestCount: booking.guestCount,
           specialRequests: booking.specialRequests || undefined,
+          contactName: booking.contactName || undefined,
+          contactPhone: booking.contactPhone || undefined,
         }),
       })
 

@@ -16,6 +16,8 @@ const createReservationBodySchema = z.object({
   ),
   guestCount: z.number().int().positive("guestCount must be a positive integer"),
   specialRequests: z.string().max(2000).optional(),
+  contactName: z.string().optional(),
+  contactPhone: z.string().optional(),
 });
 
 const adminCreateReservationSchema = z.object({
@@ -77,6 +79,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
+        order: { select: { id: true, status: true } },
       },
       orderBy: { date: "desc" },
     });
@@ -228,7 +231,18 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { yurtId: requestedYurtId, date, guestCount, specialRequests } = parsed.data;
+    const { yurtId: requestedYurtId, date, guestCount, specialRequests, contactName, contactPhone } = parsed.data;
+
+    // Update user profile with contact info if provided
+    if (contactName || contactPhone) {
+      await prisma.user.update({
+        where: { id: session.user.id! },
+        data: {
+          ...(contactName && { name: contactName }),
+          ...(contactPhone && { phone: contactPhone }),
+        },
+      }).catch(() => {}); // non-critical, don't block reservation
+    }
 
     const reservationDate = new Date(date);
 
