@@ -37,6 +37,46 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function DayCell({ day, status, selected, disabled, today, onClick, monthName, t }: {
+  day: number; status: DateStatus | 'past'; selected: boolean; disabled: boolean; today: boolean;
+  onClick: () => void; monthName: string; t: (key: string) => string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`
+        relative flex flex-col items-center justify-center w-12 h-12 rounded-full
+        border-none transition-all text-[15px] font-semibold
+        ${selected
+          ? 'bg-[#6B7F5E] text-white scale-105 shadow-sm'
+          : status === 'full'
+            ? 'text-[#6B6157]/50 cursor-not-allowed bg-[#F2EDE6]/60 line-through'
+            : status === 'limited'
+              ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
+              : disabled
+                ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
+                : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
+        }
+        ${today && !selected ? 'ring-2 ring-[#6B7F5E]/40' : ''}
+      `}
+      aria-label={`${monthName} ${day}`}
+    >
+      {day}
+      {status === 'available' && !selected && !disabled && (
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#6B7F5E]" />
+      )}
+      {status === 'limited' && !selected && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#C47D52] leading-none">{t('legend.limitedShort')}</span>
+      )}
+      {status === 'full' && (
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#6B6157]/60 leading-none">{t('legend.fullShort')}</span>
+      )}
+    </button>
+  )
+}
+
 export default function BookingDatePage() {
   const t = useTranslations('booking.date')
   const tCommon = useTranslations('common')
@@ -276,48 +316,18 @@ export default function BookingDatePage() {
                 {cells.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-center py-0.5">
                     {day !== null ? (
-                      {(() => {
-                        const status = getStatus(day)
-                        const selected = isSelected(day)
-                        const disabled = isDisabled(day)
-                        const today = isToday(day)
-                        return (
-                          <button
-                            onClick={() => handleDayClick(day)}
-                            disabled={disabled}
-                            className={`
-                              relative flex flex-col items-center justify-center w-12 h-12 rounded-full
-                              border-none transition-all text-[15px] font-semibold
-                              ${selected
-                                ? 'bg-[#6B7F5E] text-white scale-105 shadow-sm'
-                                : status === 'full'
-                                  ? 'text-[#6B6157]/50 cursor-not-allowed bg-[#F2EDE6]/60 line-through'
-                                  : status === 'limited'
-                                    ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
-                                    : disabled
-                                      ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
-                                      : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
-                              }
-                              ${today && !selected ? 'ring-2 ring-[#6B7F5E]/40' : ''}
-                            `}
-                            aria-label={`${MONTH_NAMES[viewMonth - 1]} ${day}`}
-                          >
-                            {day}
-                            {/* Status indicator below number */}
-                            {status === 'available' && !selected && !disabled && (
-                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#6B7F5E]" />
-                            )}
-                            {status === 'limited' && !selected && (
-                              <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#C47D52] leading-none">{t('legend.limitedShort')}</span>
-                            )}
-                            {status === 'full' && (
-                              <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#6B6157]/60 leading-none">{t('legend.fullShort')}</span>
-                            )}
-                          </button>
-                        )
-                      })()}
+                      <DayCell
+                        day={day}
+                        status={getStatus(day)}
+                        selected={isSelected(day)}
+                        disabled={isDisabled(day)}
+                        today={isToday(day)}
+                        onClick={() => handleDayClick(day)}
+                        monthName={MONTH_NAMES[viewMonth - 1]}
+                        t={t}
+                      />
                     ) : (
-                      <div className="w-11 h-11" />
+                      <div className="w-12 h-12" />
                     )}
                   </div>
                 ))}
