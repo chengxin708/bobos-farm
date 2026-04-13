@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendReservationCancelled } from "@/lib/email";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -190,6 +190,18 @@ export async function PATCH(
           },
         },
       });
+
+      // Fire-and-forget: send cancellation email to guest
+      if (updated.user.email) {
+        sendReservationCancelled(updated.user.email, {
+          date: updated.date,
+          yurtName: updated.yurt.name,
+          guestCount: updated.guestCount,
+          cancelReason: parsedCancel.data.reason || undefined,
+          depositAmount: reservation.depositAmount,
+          depositStatus: reservation.depositStatus,
+        }).catch(err => console.error('[email] cancel notification failed:', err));
+      }
 
       return NextResponse.json(updated);
     }

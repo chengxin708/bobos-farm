@@ -46,17 +46,17 @@ function emailWrapper(body: string): string {
   return `<!DOCTYPE html>
 <html lang="zh">
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
-<body style="margin:0;padding:0;background-color:#FFF8F0;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFF8F0;">
+<body style="margin:0;padding:0;background-color:#F8F7F4;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8F7F4;">
 <tr><td align="center" style="padding:32px 16px;">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E8E2D9;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E8ECE4;">
   <!-- Header -->
   <tr>
-    <td style="background-color:#3D2B1F;padding:24px 32px;text-align:center;">
+    <td style="background-color:#1A1208;padding:24px 32px;text-align:center;">
       <h1 style="margin:0;font-size:22px;font-weight:bold;color:#FFF8F0;font-family:Georgia,'Times New Roman',serif;">
         Bobo's Farm
       </h1>
-      <p style="margin:4px 0 0;font-size:13px;color:#D4A017;">波姐农家乐</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#6B7F5E;">波姐农家乐</p>
     </td>
   </tr>
   <!-- Body -->
@@ -67,7 +67,7 @@ function emailWrapper(body: string): string {
   </tr>
   <!-- Footer -->
   <tr>
-    <td style="padding:20px 32px;background-color:#F5F2ED;text-align:center;border-top:1px solid #E8E2D9;">
+    <td style="padding:20px 32px;background-color:#F8F7F4;text-align:center;border-top:1px solid #E8ECE4;">
       <p style="margin:0;font-size:11px;color:#8A7E6B;">
         Bobo's Farm &mdash; Hudson Valley, NY<br/>
         This is an automated message. Please do not reply directly.
@@ -99,14 +99,14 @@ function infoRow(label: string, value: string): string {
 }
 
 function infoTable(rows: string): string {
-  return `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#FFF8F0;border-radius:8px;border:1px solid #E8E2D9;margin:16px 0;">
+  return `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#F8F7F4;border-radius:8px;border:1px solid #E8ECE4;margin:16px 0;">
     ${rows}
   </table>`;
 }
 
 function primaryButton(text: string, href: string): string {
   return `<table cellpadding="0" cellspacing="0" style="margin:24px 0;">
-    <tr><td style="background-color:#8B6914;border-radius:8px;padding:12px 28px;text-align:center;">
+    <tr><td style="background-color:#6B7F5E;border-radius:8px;padding:12px 28px;text-align:center;">
       <a href="${href}" style="color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;">${text}</a>
     </td></tr>
   </table>`;
@@ -236,7 +236,7 @@ export async function sendDepositConfirmed(
         infoRow("状态", '<span style="color:#4A7C59;font-weight:bold;">已确认</span>')
       )}
 
-      ${primaryButton("预点菜品", `${siteUrl}/reservations/${data.reservationId}`)}
+      ${primaryButton("预点菜品", `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
 
       <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
         如有任何问题，请通过网站联系我们。期待您的到来！
@@ -443,7 +443,7 @@ export async function sendAdminDepositSubmitted(
         infoRow("定金金额", `$${data.depositAmount}`)
       )}
 
-      ${primaryButton("前往确认定金", `${siteUrl}/admin/deposits`)}
+      ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations?view=deposits`)}
     `);
 
     await client.emails.send({
@@ -460,5 +460,76 @@ export async function sendAdminDepositSubmitted(
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };
+  }
+}
+
+// ── 6. Reservation Cancelled (通知客户) ─────────────────────────────
+
+interface ReservationCancelledData {
+  date: string | Date;
+  yurtName: string;
+  guestCount: number;
+  cancelReason?: string;
+  depositAmount: number;
+  depositStatus: string; // CONFIRMED → 会退款; UNPAID/PENDING → 不退
+  siteUrl?: string;
+}
+
+export async function sendReservationCancelled(
+  to: string,
+  data: ReservationCancelledData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+
+  try {
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+    const willRefund = data.depositStatus === 'CONFIRMED';
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#DC3545;">预订已取消</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
+        很遗憾，您的预订已被取消。
+      </p>
+
+      ${infoTable(
+        infoRow("预订日期", formatDate(data.date)) +
+        infoRow("营地", data.yurtName) +
+        infoRow("人数", `${data.guestCount} 人`) +
+        infoRow("状态", '<span style="color:#DC3545;font-weight:bold;">已取消</span>')
+      )}
+
+      ${data.cancelReason ? `
+        <div style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin:16px 0;">
+          <p style="margin:0;font-size:13px;color:#991B1B;"><strong>取消原因:</strong> ${data.cancelReason}</p>
+        </div>
+      ` : ''}
+
+      ${willRefund ? `
+        <p style="font-size:14px;color:#5A5A5A;margin:16px 0;">
+          您已支付的定金 <strong>$${data.depositAmount}</strong> 将按照退款政策处理。
+        </p>
+      ` : ''}
+
+      ${primaryButton("重新预订", `${siteUrl}/booking/date`)}
+
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
+        如有任何疑问，请联系我们：<br/>
+        中文: (516) 272-9999 &nbsp;|&nbsp; English: (917) 502-0445
+      </p>
+    `);
+
+    await client.emails.send({
+      from: emailFrom,
+      to,
+      subject: "Bobo's Farm — 预订已取消",
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendReservationCancelled failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }

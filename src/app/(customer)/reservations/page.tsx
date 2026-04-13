@@ -522,18 +522,27 @@ export default function ReservationsPage() {
                     </span>
                   </div>
 
-                  {/* Pre-order info for confirmed */}
+                  {/* Pre-order info + prominent CTA for confirmed */}
                   {isConfirmed && (
-                    <Link
-                      href={`/pre-order?reservationId=${r.id}`}
-                      className="flex items-center gap-2 text-sm text-[#6B7F5E] no-underline hover:underline"
-                    >
-                      <UtensilsCrossed size={15} />
-                      {preOrderCount > 0
-                        ? t('itemsPreOrdered', { count: preOrderCount })
-                        : t('noPreOrder')
-                      }
-                    </Link>
+                    <>
+                      <Link
+                        href={`/pre-order?reservationId=${r.id}`}
+                        className="flex items-center gap-2 text-sm text-[#6B7F5E] no-underline hover:underline"
+                      >
+                        <UtensilsCrossed size={15} />
+                        {preOrderCount > 0
+                          ? t('itemsPreOrdered', { count: preOrderCount })
+                          : t('noPreOrder')
+                        }
+                      </Link>
+                      <Link
+                        href={`/pre-order?reservationId=${r.id}`}
+                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#6B7F5E] text-white rounded-full text-sm font-medium mt-1 no-underline hover:bg-[#5A6E4F] transition-colors"
+                      >
+                        <UtensilsCrossed size={16} />
+                        预点菜品
+                      </Link>
+                    </>
                   )}
 
                   {/* Timer for pending payment */}
@@ -562,14 +571,7 @@ export default function ReservationsPage() {
                         {t('actions.modify')}
                       </button>
                     )}
-                    {canPreOrder && (
-                      <Link
-                        href={`/pre-order?reservationId=${r.id}`}
-                        className="no-underline bg-[#6B7F5E] text-white rounded-full px-4 py-2 text-sm font-medium hover:bg-[#5A6E4F] transition-colors"
-                      >
-                        {t('actions.preOrder')}
-                      </Link>
-                    )}
+                    {/* Pre-order button moved above as full-width CTA */}
                     {isPendingPayment && (
                       <Link
                         href="/booking/confirm"
