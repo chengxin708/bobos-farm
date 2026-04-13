@@ -21,7 +21,7 @@ export default function CustomerError({
       <h2 className="font-serif text-2xl font-bold text-[#1A1208] text-center">
         Something went wrong
       </h2>
-      <p className="text-sm text-[#8C8478] text-center max-w-md">
+      <p className="text-sm text-[#6B6157] text-center max-w-md">
         We encountered an unexpected error. Please try again or return to the
         home page.
       </p>

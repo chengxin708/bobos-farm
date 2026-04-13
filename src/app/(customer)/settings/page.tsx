@@ -181,7 +181,7 @@ export default function SettingsPage() {
               <div className="w-16 h-16 rounded-full bg-[#6B7F5E] flex items-center justify-center">
                 <span className="text-2xl font-bold text-white">{initials}</span>
               </div>
-              <span className="text-sm text-[#8C8478] cursor-default opacity-60" title="Coming soon">{t('profile.changePhoto')}</span>
+              <span className="text-sm text-[#6B6157] cursor-default opacity-60" title="Coming soon">{t('profile.changePhoto')}</span>
             </div>
 
             {/* Form Fields */}
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                   value={name}
                   onChange={e => setName(e.target.value)}
                   style={{ border: '1px solid #E8ECE4', outline: 'none' }}
-                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"
                   placeholder="Enter your name"
                 />
               </div>
@@ -203,13 +203,13 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[#1A1208]">{t('profile.email')}</label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
                   <input
                     type="email"
                     value={user?.email || ''}
                     disabled
                     style={{ border: '1px solid #E8ECE4', outline: 'none' }}
-                    className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-[#F8F7F4] text-[#8C8478]"
+                    className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-[#F8F7F4] text-[#6B6157]"
                   />
                 </div>
               </div>
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                   onChange={e => setPhone(e.target.value)}
                   onBlur={() => setPhoneTouched(true)}
                   style={{ border: phoneTouched && !phone.trim() ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
-                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                  className="w-full h-[52px] rounded-xl px-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"
                   placeholder="+1 (555) 123-4567"
                 />
                 {phoneTouched && !phone.trim() && (
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                     className="flex items-center justify-between h-[52px] px-4 rounded-xl border border-[#E8ECE4] focus-within:border-[#6B7F5E] cursor-pointer w-full bg-transparent transition-colors"
                   >
                     <span className="text-base text-[#1A1208]">{language === 'EN' ? 'English' : '\u4e2d\u6587'}</span>
-                    <ChevronDown size={16} className="text-[#8C8478]" />
+                    <ChevronDown size={16} className="text-[#6B6157]" />
                   </button>
                   {langOpen && (
                     <div className="absolute top-14 left-0 right-0 bg-white rounded-xl border border-[#E8ECE4] shadow-lg z-10 overflow-hidden">
@@ -293,7 +293,7 @@ export default function SettingsPage() {
               <h3 className="font-serif text-lg text-[#1A1208]">{t('password.title')}</h3>
               <ChevronDown
                 size={18}
-                className={`text-[#8C8478] transition-transform duration-200 ${passwordOpen ? 'rotate-180' : ''}`}
+                className={`text-[#6B6157] transition-transform duration-200 ${passwordOpen ? 'rotate-180' : ''}`}
               />
             </button>
 
@@ -312,7 +312,7 @@ export default function SettingsPage() {
                       className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                     <button onClick={() => setShowCurrentPw(!showCurrentPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
-                      {showCurrentPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
+                      {showCurrentPw ? <Eye size={18} className="text-[#6B6157]" /> : <EyeOff size={18} className="text-[#6B6157]" />}
                     </button>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ export default function SettingsPage() {
                       className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                     <button onClick={() => setShowNewPw(!showNewPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
-                      {showNewPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
+                      {showNewPw ? <Eye size={18} className="text-[#6B6157]" /> : <EyeOff size={18} className="text-[#6B6157]" />}
                     </button>
                   </div>
                   {newPassword && (
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                       className="w-full h-[52px] rounded-xl px-4 pr-12 text-base bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                     <button onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-1">
-                      {showConfirmPw ? <Eye size={18} className="text-[#8C8478]" /> : <EyeOff size={18} className="text-[#8C8478]" />}
+                      {showConfirmPw ? <Eye size={18} className="text-[#6B6157]" /> : <EyeOff size={18} className="text-[#6B6157]" />}
                     </button>
                   </div>
                   {confirmPassword && newPassword !== confirmPassword && (
@@ -419,7 +419,7 @@ export default function SettingsPage() {
           {/* ── Linked Accounts Card ── */}
           <div className="bg-white rounded-2xl p-6 border border-[#E8ECE4] flex flex-col gap-4">
             <h3 className="font-serif text-lg text-[#1A1208]">{t('linkedAccounts.title')}</h3>
-            <p className="text-sm text-[#8C8478] -mt-2">{t('linkedAccounts.description')}</p>
+            <p className="text-sm text-[#6B6157] -mt-2">{t('linkedAccounts.description')}</p>
 
             {/* Google */}
             <div className="flex items-center justify-between py-3 border border-[#E8ECE4] rounded-xl px-4">
@@ -512,13 +512,13 @@ export default function SettingsPage() {
               <Trash2 size={15} className="text-[#C4453A]" />
               <span className="text-sm text-[#C4453A]">{t('danger.deleteAccount')}</span>
             </button>
-            <p className="text-[13px] text-[#8C8478] leading-relaxed mt-1 ml-[23px]">
+            <p className="text-[13px] text-[#6B6157] leading-relaxed mt-1 ml-[23px]">
               {t('danger.deleteWarning')}
             </p>
             {showDeleteConfirm && (
               <div className="flex items-center gap-3 mt-3 ml-[23px]">
                 <button
-                  className="px-4 py-2 text-sm text-[#8C8478] border border-[#E8ECE4] rounded-full font-medium bg-transparent cursor-pointer hover:bg-[#F8F7F4] transition-colors"
+                  className="px-4 py-2 text-sm text-[#6B6157] border border-[#E8ECE4] rounded-full font-medium bg-transparent cursor-pointer hover:bg-[#F8F7F4] transition-colors"
                   onClick={() => setShowDeleteConfirm(false)}
                 >
                   {tCommon('cancel')}

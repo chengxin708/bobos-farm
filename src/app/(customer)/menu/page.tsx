@@ -149,12 +149,12 @@ function MenuItemRow({
             {displayName}
           </span>
           {secondaryName && (
-            <span className="text-[13px] text-[#8C8478] leading-snug truncate">
+            <span className="text-[13px] text-[#6B6157] leading-snug truncate">
               {secondaryName}
             </span>
           )}
           {description && (
-            <span className="text-[14px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
+            <span className="text-[14px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
               {description}
             </span>
           )}
@@ -220,7 +220,7 @@ function MenuItemRow({
                   onClick={onToggle}
                   className="w-7 h-7 rounded-full bg-[#1A1208]/5 flex items-center justify-center border-none cursor-pointer"
                 >
-                  <X size={14} color="#8C8478" />
+                  <X size={14} color="#6B6157" />
                 </button>
               </div>
 
@@ -239,7 +239,7 @@ function MenuItemRow({
 
               {/* Full description */}
               {description && (
-                <p className="font-sans text-[14px] text-[#8C8478] leading-relaxed">
+                <p className="font-sans text-[14px] text-[#6B6157] leading-relaxed">
                   {description}
                 </p>
               )}
@@ -447,9 +447,9 @@ export default function MenuPage() {
       ) : !categories || categories.length === 0 ? (
         <div className="flex items-center justify-center py-20 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
-            <UtensilsCrossed size={32} color="#8C8478" strokeWidth={1.5} />
+            <UtensilsCrossed size={32} color="#6B6157" strokeWidth={1.5} />
             <h3 className="font-serif text-lg text-[#1A1208]">{t('comingSoon')}</h3>
-            <p className="text-sm text-[#8C8478] max-w-[280px]">
+            <p className="text-sm text-[#6B6157] max-w-[280px]">
               {t('comingSoonDesc')}
             </p>
           </div>
@@ -486,8 +486,8 @@ export default function MenuPage() {
           <ListSkeleton />
         ) : groupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
-            <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
+            <UtensilsCrossed size={28} color="#6B6157" strokeWidth={1.5} />
+            <p className="text-[#6B6157] text-sm">{t('noItems')}</p>
           </div>
         ) : (
           groupedItems.map(({ category: cat, items }) => {

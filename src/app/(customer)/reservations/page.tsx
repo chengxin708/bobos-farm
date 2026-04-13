@@ -176,7 +176,7 @@ export default function ReservationsPage() {
           <h2 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208] mb-2">
             {t('title')}
           </h2>
-          <p className="text-sm text-[#8C8478] mb-6 max-w-[280px]">
+          <p className="text-sm text-[#6B6157] mb-6 max-w-[280px]">
             Sign in to view and manage your reservations
           </p>
           <button
@@ -206,7 +206,7 @@ export default function ReservationsPage() {
                 <h1 className="font-[family-name:var(--font-logo)] text-3xl font-semibold text-[#1A1208] text-center mb-1">
                   Bobo&apos;s Farm
                 </h1>
-                <p className="text-sm text-[#8C8478] text-center mb-10">
+                <p className="text-sm text-[#6B6157] text-center mb-10">
                   波姐农家乐
                 </p>
 
@@ -222,7 +222,7 @@ export default function ReservationsPage() {
 
                 <form onSubmit={handleLogin} className="flex flex-col gap-4">
                   <div className="relative">
-                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
                     <input
                       type="email"
                       placeholder="Email"
@@ -230,12 +230,12 @@ export default function ReservationsPage() {
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
                       style={{ border: '1px solid #E8ECE4', outline: 'none' }}
-                      className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white placeholder:text-[#8C8478] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+                      className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white placeholder:text-[#6B6157] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                   </div>
 
                   <div className="relative">
-                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
                     <input
                       type={loginShowPw ? 'text' : 'password'}
                       placeholder="Password"
@@ -243,7 +243,7 @@ export default function ReservationsPage() {
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                       style={{ border: '1px solid #E8ECE4', outline: 'none' }}
-                      className="w-full h-[52px] rounded-xl pl-11 pr-12 text-base bg-white placeholder:text-[#8C8478] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+                      className="w-full h-[52px] rounded-xl pl-11 pr-12 text-base bg-white placeholder:text-[#6B6157] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                     />
                     <button
                       type="button"
@@ -251,8 +251,8 @@ export default function ReservationsPage() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none p-0 cursor-pointer"
                     >
                       {loginShowPw
-                        ? <Eye size={18} className="text-[#8C8478]" />
-                        : <EyeOff size={18} className="text-[#8C8478]" />}
+                        ? <Eye size={18} className="text-[#6B6157]" />
+                        : <EyeOff size={18} className="text-[#6B6157]" />}
                     </button>
                   </div>
 
@@ -265,7 +265,7 @@ export default function ReservationsPage() {
                   </button>
                 </form>
 
-                <p className="text-sm text-[#8C8478] text-center mt-6">
+                <p className="text-sm text-[#6B6157] text-center mt-6">
                   Don&apos;t have an account?{' '}
                   <Link href="/register" className="text-[#6B7F5E] font-medium no-underline">
                     Sign Up

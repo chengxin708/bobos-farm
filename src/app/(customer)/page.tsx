@@ -56,7 +56,7 @@ export default function Landing() {
             <p className="mt-1 font-serif text-lg md:text-xl text-[#1A1208]/60 tracking-[0.05em]">
               波姐农家乐
             </p>
-            <p className="mt-2 text-sm font-sans text-[#8C8478] tracking-[0.15em] uppercase">
+            <p className="mt-2 text-sm font-sans text-[#6B6157] tracking-[0.15em] uppercase">
               {t('hero.location')}
             </p>
             <Link
@@ -79,7 +79,7 @@ export default function Landing() {
             <h2 className="font-serif text-2xl md:text-4xl text-[#1A1208] leading-[1.15]">
               {t('story.title')}
             </h2>
-            <p className="text-base text-[#8C8478] leading-[1.8] max-w-[560px]">
+            <p className="text-base text-[#6B6157] leading-[1.8] max-w-[560px]">
               {t('story.description')}
             </p>
           </div>
@@ -120,7 +120,7 @@ export default function Landing() {
                 <h3 className="font-serif text-base text-[#1A1208]">
                   {t(`facilities.${item.key}.title`)}
                 </h3>
-                <p className="text-xs text-[#8C8478] leading-relaxed">
+                <p className="text-xs text-[#6B6157] leading-relaxed">
                   {t(`facilities.${item.key}.desc`)}
                 </p>
               </motion.div>
@@ -144,7 +144,7 @@ export default function Landing() {
               </div>
               <div>
                 <h3 className="font-serif text-base text-[#1A1208] mb-1">{t('booking.advance.title')}</h3>
-                <p className="text-sm text-[#8C8478] leading-relaxed">{t('booking.advance.desc')}</p>
+                <p className="text-sm text-[#6B6157] leading-relaxed">{t('booking.advance.desc')}</p>
               </div>
             </div>
 
@@ -155,7 +155,7 @@ export default function Landing() {
               </div>
               <div>
                 <h3 className="font-serif text-base text-[#1A1208] mb-1">{t('booking.group.title')}</h3>
-                <p className="text-sm text-[#8C8478] leading-relaxed">{t('booking.group.desc')}</p>
+                <p className="text-sm text-[#6B6157] leading-relaxed">{t('booking.group.desc')}</p>
               </div>
             </div>
 

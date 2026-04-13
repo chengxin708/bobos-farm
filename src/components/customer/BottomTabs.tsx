@@ -37,7 +37,7 @@ export default function BottomTabs() {
               key={key}
               href={href}
               className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full no-underline transition-colors ${
-                active ? 'text-[#6B7F5E]' : 'text-[#8C8478]'
+                active ? 'text-[#6B7F5E]' : 'text-[#6B6157]'
               }`}
             >
               <Icon size={22} strokeWidth={active ? 2 : 1.5} />

@@ -148,7 +148,7 @@ export default function PreOrderPageWrapper() {
   return (
     <Suspense fallback={
       <div className="flex-1 flex items-center justify-center bg-[#F8F7F4]">
-        <p className="text-[#8C8478]">Loading...</p>
+        <p className="text-[#6B6157]">Loading...</p>
       </div>
     }>
       <PreOrderPage />
@@ -417,7 +417,7 @@ function PreOrderPage() {
 
         {/* Reservation info bar */}
         {reservation && (
-          <div className="flex items-center gap-4 px-4 pb-3 text-[13px] text-[#8C8478]">
+          <div className="flex items-center gap-4 px-4 pb-3 text-[13px] text-[#6B6157]">
             <span className="flex items-center gap-1">
               <Calendar size={14} className="text-[#6B7F5E]" />
               {resDate}
@@ -466,7 +466,7 @@ function PreOrderPage() {
       {/* ── Search Bar ────────────────────────────────────────── */}
       <div className="px-4 pt-3 pb-1">
         <div className="relative">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
@@ -476,7 +476,7 @@ function PreOrderPage() {
             className="w-full h-11 rounded-full pl-10 pr-10 bg-white text-sm text-[#1A1208] placeholder:text-[#BFBFBF] focus:!border-[#6B7F5E] transition-colors"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8C8478] bg-transparent border-none cursor-pointer p-0">
+            <button onClick={() => setSearchTerm('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B6157] bg-transparent border-none cursor-pointer p-0">
               <X size={16} />
             </button>
           )}
@@ -489,8 +489,8 @@ function PreOrderPage() {
           <ListSkeleton />
         ) : filteredGroupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
-            <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
+            <UtensilsCrossed size={28} color="#6B6157" strokeWidth={1.5} />
+            <p className="text-[#6B6157] text-sm">{t('noItems')}</p>
           </div>
         ) : (
           filteredGroupedItems.map(({ category: cat, items }) => {
@@ -532,7 +532,7 @@ function PreOrderPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <UtensilsCrossed size={22} color="#8C8478" strokeWidth={1.5} />
+                          <UtensilsCrossed size={22} color="#6B6157" strokeWidth={1.5} />
                         )}
                       </div>
 
@@ -542,12 +542,12 @@ function PreOrderPage() {
                           {name}
                         </span>
                         {secondary && (
-                          <span className="text-[13px] text-[#8C8478] leading-snug truncate">
+                          <span className="text-[13px] text-[#6B6157] leading-snug truncate">
                             {secondary}
                           </span>
                         )}
                         {desc && (
-                          <span className="text-[13px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
+                          <span className="text-[13px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
                             {desc}
                           </span>
                         )}
@@ -648,7 +648,7 @@ function PreOrderPage() {
                 <div className="flex items-center justify-between py-4 border-b border-[#F2EDE6]">
                   <h3 className="font-serif text-lg text-[#1A1208]">{t('yourOrder')}</h3>
                   {isEditMode && lastUpdatedText && (
-                    <span className="text-[12px] text-[#8C8478]">
+                    <span className="text-[12px] text-[#6B6157]">
                       {t('lastUpdated', { date: lastUpdatedText })}
                     </span>
                   )}
@@ -670,7 +670,7 @@ function PreOrderPage() {
                           onClick={() => removeItem(item.id)}
                           className="w-6 h-6 rounded-full bg-[#F2EDE6] flex items-center justify-center border-none cursor-pointer"
                         >
-                          <X size={12} className="text-[#8C8478]" />
+                          <X size={12} className="text-[#6B6157]" />
                         </button>
                       </div>
                     </div>

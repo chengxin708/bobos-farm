@@ -209,14 +209,14 @@ export default function Navbar() {
                 <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[180px] z-50">
                   <div className="px-4 py-2.5 border-b border-[#E8ECE4]">
                     <p className="text-sm font-medium text-[#1A1208] truncate">{user.name || user.email}</p>
-                    <p className="text-xs text-[#8C8478] truncate">{user.email}</p>
+                    <p className="text-xs text-[#6B6157] truncate">{user.email}</p>
                   </div>
                   <Link
                     href="/reservations"
                     onClick={() => setAvatarOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#1A1208] no-underline hover:bg-[#E8ECE4] transition-colors"
                   >
-                    <User size={16} className="text-[#8C8478]" />
+                    <User size={16} className="text-[#6B6157]" />
                     {t('my')}
                   </Link>
                   <Link
@@ -224,7 +224,7 @@ export default function Navbar() {
                     onClick={() => setAvatarOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#1A1208] no-underline hover:bg-[#E8ECE4] transition-colors"
                   >
-                    <Settings size={16} className="text-[#8C8478]" />
+                    <Settings size={16} className="text-[#6B6157]" />
                     Settings
                   </Link>
                   <div className="border-t border-[#E8ECE4] mt-1 pt-1">

@@ -132,7 +132,7 @@ export default function BookingDetailsPage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#8C8478]">Step 2 of 3</span>
+        <span className="text-sm text-[#6B6157]">Step 2 of 3</span>
       </div>
 
       {/* Page Title */}
@@ -147,7 +147,7 @@ export default function BookingDetailsPage() {
           {/* Contact Name */}
           <div className="flex flex-col gap-1">
             <div className="relative">
-              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
               <input
                 type="text"
                 value={contactName}
@@ -157,7 +157,7 @@ export default function BookingDetailsPage() {
                 aria-label={t('contactName')}
                 aria-invalid={touched.contactName && !!errors.contactName}
                 style={{ border: touched.contactName && errors.contactName ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
-                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
             {touched.contactName && errors.contactName && (
@@ -171,7 +171,7 @@ export default function BookingDetailsPage() {
           {/* Email */}
           <div className="flex flex-col gap-1">
             <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
               <input
                 type="email"
                 value={contactEmail}
@@ -181,7 +181,7 @@ export default function BookingDetailsPage() {
                 aria-label={t('email')}
                 aria-invalid={touched.contactEmail && !!errors.contactEmail}
                 style={{ border: touched.contactEmail && errors.contactEmail ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
-                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
             {touched.contactEmail && errors.contactEmail && (
@@ -195,7 +195,7 @@ export default function BookingDetailsPage() {
           {/* Phone */}
           <div className="flex flex-col gap-1">
             <div className="relative">
-              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8478] pointer-events-none" />
+              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
               <input
                 type="tel"
                 value={contactPhone}
@@ -205,7 +205,7 @@ export default function BookingDetailsPage() {
                 aria-label={t('phoneNumber')}
                 aria-invalid={touched.contactPhone && !!errors.contactPhone}
                 style={{ border: touched.contactPhone && errors.contactPhone ? '1px solid #C4453A' : '1px solid #E8ECE4', outline: 'none' }}
-                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#8C8478] focus:!border-[#6B7F5E] transition-colors"
+                className="w-full h-[52px] rounded-xl pl-11 pr-4 text-base bg-white text-[#1A1208] placeholder:text-[#6B6157] focus:!border-[#6B7F5E] transition-colors"
               />
             </div>
             {touched.contactPhone && errors.contactPhone && (
@@ -218,14 +218,14 @@ export default function BookingDetailsPage() {
 
           {/* Guest Counter */}
           <div className="rounded-xl border border-[#E8ECE4] p-4">
-            <label className="text-sm font-medium text-[#8C8478]">{t('numberOfGuests')}</label>
+            <label className="text-sm font-medium text-[#6B6157]">{t('numberOfGuests')}</label>
             <div className="flex items-center justify-center gap-6 mt-3">
               <button
                 onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
                 disabled={guestCount <= 1}
                 aria-label="Decrease guest count"
                 className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount <= 1 ? 'cursor-not-allowed text-[#8C8478]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
                 }`}
               >
                 <Minus size={18} />
@@ -236,13 +236,13 @@ export default function BookingDetailsPage() {
                 disabled={guestCount >= maxGuests}
                 aria-label="Increase guest count"
                 className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#8C8478]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
                 }`}
               >
                 <Plus size={18} />
               </button>
             </div>
-            <p className="text-sm text-[#8C8478] text-center mt-2">
+            <p className="text-sm text-[#6B6157] text-center mt-2">
               Max {maxGuests} guests per yurt
             </p>
           </div>
@@ -272,7 +272,7 @@ export default function BookingDetailsPage() {
               placeholder={t('specialRequestsPlaceholder')}
               aria-label={t('specialRequests')}
               style={{ border: '1px solid #E8ECE4', outline: 'none' }}
-              className="min-h-[100px] px-4 py-3 rounded-xl text-base text-[#1A1208] resize-none placeholder:text-[#8C8478] bg-white focus:!border-[#6B7F5E] transition-colors"
+              className="min-h-[100px] px-4 py-3 rounded-xl text-base text-[#1A1208] resize-none placeholder:text-[#6B6157] bg-white focus:!border-[#6B7F5E] transition-colors"
             />
           </div>
         </div>
