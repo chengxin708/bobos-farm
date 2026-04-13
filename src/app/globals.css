@@ -69,11 +69,50 @@
   }
   body {
     font-family: var(--font-logo), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
+    font-weight: 500;
+    font-size: 16px;
     background-color: #F8F7F4;
     color: #1A1208;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    line-height: 1.6;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  /* Cormorant Garamond readability — heavier weights for small text */
+  p, span, label, a, li, td, th, div {
+    font-weight: inherit;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  /* Small text needs extra weight for Cormorant */
+  .text-xs, .text-\[10px\], .text-\[11px\], .text-\[12px\], .text-\[13px\] {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .text-sm, .text-\[14px\] {
+    font-weight: 500;
+    letter-spacing: 0.015em;
+  }
+  /* Inputs need legible weight */
+  input, textarea, select {
+    font-weight: 500;
+  }
+  /* Buttons should be slightly bolder */
+  button {
+    font-weight: 500;
+  }
+  .font-semibold {
+    font-weight: 700 !important;
+  }
+  .font-bold {
+    font-weight: 700 !important;
+  }
+  .font-medium {
+    font-weight: 600 !important;
   }
   ::selection {
     background-color: rgba(107, 127, 94, 0.2);
