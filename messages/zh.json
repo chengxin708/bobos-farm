@@ -728,7 +728,22 @@
         "reject": "拒绝",
         "cancel": "取消",
         "complete": "完成",
-        "close": "关闭"
+        "close": "关闭",
+        "editReservation": "编辑预订"
+      },
+      "editEditor": {
+        "title": "编辑预订",
+        "date": "预订日期",
+        "selectYurt": "选择蒙古包",
+        "current": "当前",
+        "occupied": "已占",
+        "available": "可用",
+        "slotsAvailable": "剩余 {count} 个位置",
+        "noSlots": "已满",
+        "guestCount": "人数",
+        "specialRequests": "特殊要求",
+        "save": "保存修改",
+        "saving": "保存中..."
       },
       "dialog": {
         "confirmDeposit": "确认定金",

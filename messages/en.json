@@ -728,7 +728,22 @@
         "reject": "Reject",
         "cancel": "Cancel",
         "complete": "Complete",
-        "close": "Close"
+        "close": "Close",
+        "editReservation": "Edit Reservation"
+      },
+      "editEditor": {
+        "title": "Edit Reservation",
+        "date": "Reservation Date",
+        "selectYurt": "Select Yurt",
+        "current": "Current",
+        "occupied": "Occupied",
+        "available": "Available",
+        "slotsAvailable": "{count} spots available",
+        "noSlots": "No spots available",
+        "guestCount": "Number of Guests",
+        "specialRequests": "Special Requests",
+        "save": "Save Changes",
+        "saving": "Saving..."
       },
       "dialog": {
         "confirmDeposit": "Confirm Deposit",

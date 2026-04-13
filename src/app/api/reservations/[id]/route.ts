@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted, sendReservationCancelled, sendYurtAssigned } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 
 // Zod schemas for each action to prevent unvalidated input
@@ -35,6 +35,14 @@ const modifyDetailsSchema = z.object({
 const assignYurtActionSchema = z.object({
   action: z.literal("assign_yurt"),
   yurtId: z.string().min(1, "yurtId is required"),
+});
+
+const editActionSchema = z.object({
+  action: z.literal("edit"),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date format" }).optional(),
+  yurtId: z.string().optional(),
+  guestCount: z.number().int().positive().optional(),
+  specialRequests: z.string().max(2000).nullish(),
 });
 
 const adminUpdateSchema = z.object({
@@ -552,6 +560,142 @@ export async function PATCH(
           guestCount: updated.guestCount,
           reservationId: id,
         });
+      }
+
+      return NextResponse.json(updated);
+    }
+
+    // ---------- EDIT (admin full edit: date, yurt, guestCount, specialRequests) ----------
+    if (action === "edit") {
+      if (!isAdmin && reservation.userId !== session.user.id) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      const parsedEdit = editActionSchema.safeParse(body);
+      if (!parsedEdit.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedEdit.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      // Only allow modification of active reservations
+      if (["CANCELLED", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
+        return NextResponse.json(
+          { error: "Cannot edit a cancelled, expired, or completed reservation" },
+          { status: 400 }
+        );
+      }
+
+      const { date, yurtId, guestCount, specialRequests } = parsedEdit.data;
+
+      // Determine target yurt and date
+      const targetYurtId = yurtId || reservation.yurtId;
+      const targetDate = date ? new Date(date) : reservation.date;
+      const dateChanged = date && date !== reservation.date.toISOString().slice(0, 10);
+      const yurtChanged = yurtId && yurtId !== reservation.yurtId;
+
+      // Validate new yurt exists and is active
+      let targetYurt = reservation.yurt;
+      if (yurtChanged) {
+        const newYurt = await prisma.yurt.findUnique({ where: { id: yurtId } });
+        if (!newYurt || newYurt.status !== "ACTIVE") {
+          return NextResponse.json({ error: "Target yurt is not available" }, { status: 400 });
+        }
+        targetYurt = newYurt;
+      }
+
+      // Validate guest count against yurt capacity
+      const effectiveGuestCount = guestCount ?? reservation.guestCount;
+      if (effectiveGuestCount > targetYurt.capacity) {
+        return NextResponse.json(
+          { error: `Guest count cannot exceed yurt capacity of ${targetYurt.capacity}` },
+          { status: 400 }
+        );
+      }
+
+      // Check conflict if date or yurt changed
+      if (dateChanged || yurtChanged) {
+        const conflict = await prisma.reservation.findUnique({
+          where: { yurtId_date: { yurtId: targetYurtId, date: targetDate } },
+        });
+        if (conflict && conflict.id !== id) {
+          return NextResponse.json(
+            { error: "This yurt is already booked for this date" },
+            { status: 409 }
+          );
+        }
+
+        // Check availability is open
+        const avail = await prisma.yurtAvailability.findUnique({
+          where: { yurtId_date: { yurtId: targetYurtId, date: targetDate } },
+        });
+        if (avail && !avail.isOpen) {
+          return NextResponse.json(
+            { error: "The target date is closed for this yurt" },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Build update data
+      const updateData: Record<string, unknown> = {};
+      if (dateChanged) updateData.date = targetDate;
+      if (yurtChanged) updateData.yurtId = yurtId;
+      if (guestCount !== undefined) updateData.guestCount = guestCount;
+      if (specialRequests !== undefined) updateData.specialRequests = specialRequests;
+
+      if (Object.keys(updateData).length === 0) {
+        return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+      }
+
+      const updated = await prisma.reservation.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      // Build changes record for activity log and email
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const changes: Record<string, any> = {};
+      if (dateChanged) {
+        changes.date = { from: reservation.date.toISOString().slice(0, 10), to: date };
+      }
+      if (yurtChanged) {
+        changes.yurt = { from: reservation.yurt.name, to: updated.yurt.name };
+      }
+      if (guestCount !== undefined && guestCount !== reservation.guestCount) {
+        changes.guestCount = { from: reservation.guestCount, to: guestCount };
+      }
+
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: dateChanged ? "RESERVATION_RESCHEDULED" : "RESERVATION_MODIFIED",
+          targetType: "Reservation",
+          targetId: id,
+          details: changes,
+        },
+      });
+
+      // Fire-and-forget: send email notification to guest
+      if (updated.user.email && Object.keys(changes).length > 0) {
+        sendReservationModified(updated.user.email, {
+          date: updated.date,
+          yurtName: updated.yurt.name,
+          guestCount: updated.guestCount,
+          changes: changes as {
+            date?: { from: string; to: string };
+            yurt?: { from: string; to: string };
+            guestCount?: { from: number; to: number };
+          },
+          reservationId: id,
+        }).catch((err) =>
+          console.error("[email] reservation modified notification failed:", err)
+        );
       }
 
       return NextResponse.json(updated);

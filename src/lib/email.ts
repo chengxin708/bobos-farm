@@ -522,7 +522,112 @@ export async function sendYurtAssigned(
   }
 }
 
-// ── 7. Reservation Cancelled (通知客户) ─────────────────────────────
+// ── 7. Reservation Modified (通知客户预订已更新) ──────────────────────
+
+interface ReservationModifiedData {
+  date: string | Date;
+  yurtName: string;
+  guestCount: number;
+  changes: {
+    date?: { from: string; to: string };
+    yurt?: { from: string; to: string };
+    guestCount?: { from: number; to: number };
+  };
+  reservationId: string;
+  siteUrl?: string;
+}
+
+export async function sendReservationModified(
+  to: string,
+  data: ReservationModifiedData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+
+  try {
+    const siteUrl =
+      data.siteUrl || process.env.NEXTAUTH_URL || "https://bobosfarm.com";
+
+    // Build change rows
+    let changeRows = "";
+    if (data.changes.date) {
+      changeRows += `<tr>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">日期</td>
+        <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
+          <span style="text-decoration:line-through;color:#8A7E6B;">${formatDate(data.changes.date.from)}</span>
+          &nbsp;&rarr;&nbsp;
+          <strong>${formatDate(data.changes.date.to)}</strong>
+        </td>
+      </tr>`;
+    }
+    if (data.changes.yurt) {
+      changeRows += `<tr>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">蒙古包</td>
+        <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
+          <span style="text-decoration:line-through;color:#8A7E6B;">${data.changes.yurt.from}</span>
+          &nbsp;&rarr;&nbsp;
+          <strong>${data.changes.yurt.to}</strong>
+        </td>
+      </tr>`;
+    }
+    if (data.changes.guestCount) {
+      changeRows += `<tr>
+        <td style="padding:6px 12px;font-size:13px;color:#8A7E6B;">人数</td>
+        <td style="padding:6px 12px;font-size:14px;color:#3D2B1F;">
+          <span style="text-decoration:line-through;color:#8A7E6B;">${data.changes.guestCount.from} 人</span>
+          &nbsp;&rarr;&nbsp;
+          <strong>${data.changes.guestCount.to} 人</strong>
+        </td>
+      </tr>`;
+    }
+
+    const changesTable = changeRows
+      ? `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#FFF8E1;border-radius:8px;border:1px solid #E8D5A3;margin:16px 0;">
+          ${changeRows}
+        </table>`
+      : "";
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">预订已更新</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
+        您的预订信息已更新，请查看以下变更：
+      </p>
+
+      ${changesTable}
+
+      <p style="margin:16px 0 8px;font-size:14px;color:#3D2B1F;font-weight:bold;">更新后的预订信息：</p>
+      ${infoTable(
+        infoRow("预订日期", formatDate(data.date)) +
+        infoRow("营地", data.yurtName) +
+        infoRow("人数", `${data.guestCount} 人`)
+      )}
+
+      ${primaryButton("查看我的预订", `${siteUrl}/reservations`)}
+
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
+        如有任何问题，请联系我们。期待您的到来！
+      </p>
+    `);
+
+    await client.emails.send({
+      from: emailFrom,
+      to,
+      subject: "Bobo's Farm — 预订已更新",
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendReservationModified failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ── 8. Reservation Cancelled (通知客户) ─────────────────────────────
 
 interface ReservationCancelledData {
   date: string | Date;

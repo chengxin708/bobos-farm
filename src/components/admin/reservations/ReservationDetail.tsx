@@ -18,6 +18,7 @@ import {
 } from './useReservationsData'
 import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
 import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
+import EditReservationEditor from '@/components/admin/reservations/EditReservationEditor'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export default function ReservationDetail({
 
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [showEditEditor, setShowEditEditor] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'deposit' | 'complete' | 'cancel' | null>(null)
 
   const handleConfirmAction = useCallback(() => {
@@ -332,6 +334,16 @@ export default function ReservationDetail({
           </button>
         )}
 
+        {/* Edit Reservation - show for non-terminal states */}
+        {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
+          <button
+            onClick={() => setShowEditEditor(true)}
+            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5"
+          >
+            {t('actions.editReservation')}
+          </button>
+        )}
+
         {/* Lock/Unlock order */}
         {orderData && orderData.status === 'SUBMITTED' && (
           <button
@@ -447,6 +459,21 @@ export default function ReservationDetail({
         }
         isOpen={showOrderEditor}
         onClose={() => setShowOrderEditor(false)}
+        onSaved={handleOrderSaved}
+      />
+
+      {/* EditReservationEditor overlay */}
+      <EditReservationEditor
+        reservation={{
+          id: reservation.id,
+          date: reservation.date,
+          yurtId: reservation.yurtId,
+          guestCount: reservation.guestCount,
+          specialRequests: reservation.specialRequests,
+          yurt: reservation.yurt,
+        }}
+        isOpen={showEditEditor}
+        onClose={() => setShowEditEditor(false)}
         onSaved={handleOrderSaved}
       />
 
