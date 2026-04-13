@@ -145,28 +145,28 @@ function MenuItemRow({
       >
         {/* Text — left side */}
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-          <span className="font-serif text-[16px] text-[#1A1208] leading-snug truncate">
+          <span className="font-serif text-[18px] text-[#1A1208] leading-snug truncate">
             {displayName}
           </span>
           {secondaryName && (
-            <span className="text-[13px] text-[#6B6157] leading-snug truncate">
+            <span className="text-[15px] text-[#6B6157] leading-snug truncate">
               {secondaryName}
             </span>
           )}
           {description && (
-            <span className="text-[14px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
+            <span className="text-[15px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
               {description}
             </span>
           )}
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {isAuthenticated ? (
-              <span className="text-[#C47D52] font-medium text-[14px]">
+              <span className="text-[#C47D52] font-semibold text-[16px]">
                 ${Math.round(item.price)}
               </span>
             ) : (
               <Link
                 href="/login?callbackUrl=/menu"
-                className="text-[#6B7F5E] text-[13px] no-underline hover:underline"
+                className="text-[#6B7F5E] text-[14px] no-underline hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 {t('signInForPrice')}
@@ -179,7 +179,7 @@ function MenuItemRow({
               return (
                 <span
                   key={tagKey}
-                  className={`rounded-full px-2 py-0.5 text-[11px] ${tag.color || DEFAULT_TAG_COLOR}`}
+                  className={`rounded-full px-2 py-0.5 text-[12px] ${tag.color || DEFAULT_TAG_COLOR}`}
                 >
                   {label}
                 </span>
@@ -239,7 +239,7 @@ function MenuItemRow({
 
               {/* Full description */}
               {description && (
-                <p className="font-sans text-[14px] text-[#6B6157] leading-relaxed">
+                <p className="text-[15px] text-[#6B6157] leading-relaxed">
                   {description}
                 </p>
               )}
@@ -254,7 +254,7 @@ function MenuItemRow({
                     return (
                       <span
                         key={tagKey}
-                        className={`rounded-full px-2.5 py-1 text-[12px] ${tag.color || DEFAULT_TAG_COLOR}`}
+                        className={`rounded-full px-2.5 py-1 text-[13px] ${tag.color || DEFAULT_TAG_COLOR}`}
                       >
                         {label}
                       </span>
@@ -267,7 +267,7 @@ function MenuItemRow({
               {item.advanceDaysRequired > 0 && (
                 <div className="flex items-center gap-2 bg-[#E8ECE4] rounded-full px-3 py-1.5 w-fit">
                   <Clock size={14} color="#6B7F5E" />
-                  <span className="text-[12px] text-[#6B7F5E] font-medium">
+                  <span className="text-[13px] text-[#6B7F5E] font-medium">
                     {item.advanceDaysRequired >= 3
                       ? t('advanceNotice3')
                       : t('advanceNotice2')}
@@ -465,7 +465,7 @@ export default function MenuPage() {
                   key={cat.id}
                   ref={(el) => { pillRefs.current[cat.id] = el }}
                   onClick={() => scrollToCategory(cat.id)}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[15px] whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
                     isActive
                       ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
                       : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
