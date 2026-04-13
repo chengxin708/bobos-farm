@@ -135,6 +135,7 @@ export default function ReservationsDesktop() {
     heldByAdminCount,
     actionNeededCount,
     confirmedCount,
+    completedCount,
     groupedReservations,
     isLoading,
     selectedRes, setSelectedRes,
@@ -316,6 +317,12 @@ export default function ReservationsDesktop() {
               count={confirmedCount}
               active={filter === 'confirmed'}
               onClick={() => setFilter('confirmed')}
+            />
+            <FilterChip
+              label={t('filters.completed')}
+              count={completedCount}
+              active={filter === 'completed'}
+              onClick={() => setFilter('completed')}
             />
             <FilterChip
               label={t('filters.all')}

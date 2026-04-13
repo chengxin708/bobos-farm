@@ -124,6 +124,7 @@ export default function ReservationsMobile() {
     heldByAdminCount,
     actionNeededCount,
     confirmedCount,
+    completedCount,
     groupedReservations,
     isLoading,
     selectedRes, setSelectedRes,
@@ -309,6 +310,12 @@ export default function ReservationsMobile() {
               count={confirmedCount}
               active={filter === 'confirmed'}
               onClick={() => setFilter('confirmed')}
+            />
+            <FilterChip
+              label={t('filters.completed')}
+              count={completedCount}
+              active={filter === 'completed'}
+              onClick={() => setFilter('completed')}
             />
             <FilterChip
               label={t('filters.all')}

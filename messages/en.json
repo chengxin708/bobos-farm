@@ -810,6 +810,7 @@
       "filters": {
         "actionNeeded": "Action Needed",
         "confirmed": "Confirmed",
+        "completed": "Completed",
         "all": "All"
       },
       "history": "History",

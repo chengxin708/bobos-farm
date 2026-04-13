@@ -85,7 +85,7 @@ export interface Reservation {
   order?: Order | OrderSummary | null
 }
 
-export type FilterMode = 'action-needed' | 'confirmed' | 'all'
+export type FilterMode = 'action-needed' | 'confirmed' | 'completed' | 'all'
 
 export interface DateGroup {
   dateLabel: string
@@ -276,23 +276,30 @@ export function useReservationsData() {
     () => allReservations.filter(r => r.status === 'CONFIRMED').length,
     [allReservations]
   )
+  const completedCount = useMemo(
+    () => allReservations.filter(r => r.status === 'COMPLETED').length,
+    [allReservations]
+  )
 
   // Filter + sort
   const filteredReservations = useMemo(() => {
     let list = allReservations
 
-    // When not showing history: only upcoming (today+) and exclude terminal states
+    // When not showing history: only upcoming (today+) and exclude cancelled/expired (but keep COMPLETED)
     const todayStr = new Date().toISOString().slice(0, 10)
+    const HIDDEN_STATUSES = ['CANCELLED', 'EXPIRED']
     if (!showHistory) {
       list = list.filter(r => {
         const dateStr = new Date(r.date).toISOString().slice(0, 10)
-        return dateStr >= todayStr && !TERMINAL_STATUSES.includes(r.status)
+        // Show: future dates (any non-cancelled/expired status) OR recent COMPLETED
+        return (dateStr >= todayStr && !HIDDEN_STATUSES.includes(r.status)) ||
+               (r.status === 'COMPLETED' && dateStr >= todayStr)
       })
     } else {
-      // History mode: show only past OR terminal-status reservations
+      // History mode: show past dates OR cancelled/expired
       list = list.filter(r => {
         const dateStr = new Date(r.date).toISOString().slice(0, 10)
-        return dateStr < todayStr || TERMINAL_STATUSES.includes(r.status)
+        return dateStr < todayStr || HIDDEN_STATUSES.includes(r.status)
       })
       // Apply date range filter if set
       if (historyDateFrom) {
@@ -318,6 +325,8 @@ export function useReservationsData() {
       list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED')
     } else if (filter === 'confirmed') {
       list = list.filter(r => r.status === 'CONFIRMED')
+    } else if (filter === 'completed') {
+      list = list.filter(r => r.status === 'COMPLETED')
     }
     // 'all' — no additional filter
 
@@ -479,6 +488,7 @@ export function useReservationsData() {
     heldByAdminCount,
     actionNeededCount,
     confirmedCount,
+    completedCount,
     // Data
     reservations: filteredReservations,
     groupedReservations,

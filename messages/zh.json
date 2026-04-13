@@ -810,6 +810,7 @@
       "filters": {
         "actionNeeded": "需要处理",
         "confirmed": "已确认",
+        "completed": "已完成",
         "all": "全部"
       },
       "history": "历史",
