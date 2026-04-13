@@ -102,7 +102,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // ── Admin branch: create reservation on behalf of a customer ──
-    if (isAdmin) {
+    // Only use admin branch when admin-specific fields are provided (guestName, guestEmail)
+    // This allows admins to also book through the customer flow
+    if (isAdmin && body.guestName && body.guestEmail) {
       const parsed = adminCreateReservationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
@@ -303,12 +305,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "No yurts available" }, { status: 400 });
       }
 
-      // Get yurts occupied on this date (PAYMENT_SUBMITTED + CONFIRMED only)
+      // Get yurts with ANY active reservation on this date
+      // (includes PENDING_PAYMENT to respect DB unique constraint on yurtId+date)
       const occupiedYurtIds = (
         await prisma.reservation.findMany({
           where: {
             date: reservationDate,
-            status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] },
+            status: { notIn: ["CANCELLED", "EXPIRED"] },
           },
           select: { yurtId: true },
         })
