@@ -212,14 +212,14 @@ export default function BookingDatePage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#6B6157]">Step 1 of 3</span>
+        <span className="text-[15px] text-[#6B6157]">Step 1 of 3</span>
       </div>
 
       {/* Page Title */}
       <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">Select a Date</h1>
         {locale === 'zh' && (
-          <p className="text-sm text-[#6B6157] mt-1 font-sans">Choose your preferred date</p>
+          <p className="text-[15px] text-[#6B6157] mt-1 font-sans">Choose your preferred date</p>
         )}
       </div>
 
@@ -233,7 +233,7 @@ export default function BookingDatePage() {
               className={`flex items-center justify-center w-9 h-9 rounded-full border-none transition-colors ${
                 canGoBack
                   ? 'bg-transparent hover:bg-[#E8ECE4] cursor-pointer text-[#1A1208]'
-                  : 'bg-transparent cursor-not-allowed text-[#6B6157]/30'
+                  : 'bg-transparent cursor-not-allowed text-[#6B6157]/70'
               }`}
               disabled={!canGoBack}
               aria-label="Previous month"
@@ -285,7 +285,7 @@ export default function BookingDatePage() {
                           ${isSelected(day)
                             ? 'bg-[#6B7F5E] text-white scale-105'
                             : isDisabled(day)
-                              ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
+                              ? 'text-[#6B6157]/70 cursor-not-allowed bg-transparent'
                               : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
                           }
                           ${isToday(day) && !isSelected(day) ? 'ring-1 ring-[#6B7F5E]/30' : ''}
@@ -295,7 +295,7 @@ export default function BookingDatePage() {
                         {day}
                         {/* Full label */}
                         {getStatus(day) === 'full' && (
-                          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-medium text-[#6B6157]/60 leading-none">Full</span>
+                          <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-[#6B6157]/60 leading-none">Full</span>
                         )}
                         {/* Limited availability dot */}
                         {getStatus(day) === 'limited' && !isSelected(day) && (
@@ -315,15 +315,15 @@ export default function BookingDatePage() {
           <div className="flex items-center justify-center gap-5 pt-4 mt-2 border-t border-[#F2EDE6]">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[#6B7F5E]" />
-              <span className="text-xs text-[#6B6157]">{t('legend.available')}</span>
+              <span className="text-[15px] text-[#6B6157]">{t('legend.available')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[#C47D52]" />
-              <span className="text-xs text-[#6B6157]">{t('legend.limited')}</span>
+              <span className="text-[15px] text-[#6B6157]">{t('legend.limited')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[#6B6157]/40" />
-              <span className="text-xs text-[#6B6157]">{t('legend.full')}</span>
+              <span className="text-[15px] text-[#6B6157]">{t('legend.full')}</span>
             </div>
           </div>
         </div>

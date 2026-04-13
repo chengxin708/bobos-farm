@@ -317,7 +317,7 @@ export default function BookingConfirmPage() {
         <h2 className="font-serif text-2xl text-[#1A1208] text-center">
           Reservation Confirmed!
         </h2>
-        <p className="text-sm text-[#6B6157] text-center">
+        <p className="text-[15px] text-[#6B6157] text-center">
           Redirecting to your reservations...
         </p>
       </div>
@@ -329,7 +329,7 @@ export default function BookingConfirmPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-16 px-4 gap-4">
         <Loader2 size={36} className="text-[#C47D52] animate-spin" />
-        <p className="text-sm text-[#6B6157]">Creating your reservation...</p>
+        <p className="text-[15px] text-[#6B6157]">Creating your reservation...</p>
       </div>
     )
   }
@@ -342,7 +342,7 @@ export default function BookingConfirmPage() {
           <AlertCircle size={28} className="text-[#C4453A]" />
         </div>
         <h3 className="font-serif text-xl text-[#1A1208]">Booking Failed</h3>
-        <p className="text-sm text-[#6B6157] text-center max-w-sm">{error}</p>
+        <p className="text-[15px] text-[#6B6157] text-center max-w-sm">{error}</p>
         <div className="flex gap-3 mt-2">
           <button
             onClick={() => router.push('/booking/date')}
@@ -369,7 +369,7 @@ export default function BookingConfirmPage() {
           <Clock size={28} className="text-[#C4453A]" />
         </div>
         <h3 className="font-serif text-xl text-[#1A1208]">Payment Deadline Expired</h3>
-        <p className="text-sm text-[#6B6157] text-center max-w-sm">
+        <p className="text-[15px] text-[#6B6157] text-center max-w-sm">
           Please start a new booking
         </p>
         <Link
@@ -392,22 +392,22 @@ export default function BookingConfirmPage() {
         {/* Date */}
         <div className="flex items-center gap-3">
           <Calendar size={16} className="text-[#6B6157] shrink-0" />
-          <span className="text-sm text-[#1A1208]">{formattedDate}</span>
+          <span className="text-[15px] text-[#1A1208]">{formattedDate}</span>
         </div>
         {/* Yurt assignment note */}
         <div className="flex items-center gap-3">
           <Tent size={16} className="text-[#6B6157] shrink-0" />
-          <span className="text-sm text-[#6B6157] italic">Yurt will be assigned by our team</span>
+          <span className="text-[15px] text-[#6B6157] italic">Yurt will be assigned by our team</span>
         </div>
         {/* Guests */}
         <div className="flex items-center gap-3">
           <Users size={16} className="text-[#6B6157] shrink-0" />
-          <span className="text-sm text-[#1A1208]">{booking.guestCount} guests</span>
+          <span className="text-[15px] text-[#1A1208]">{booking.guestCount} guests</span>
         </div>
         {/* Email */}
         <div className="flex items-center gap-3">
           <Mail size={16} className="text-[#6B6157] shrink-0" />
-          <span className="text-sm text-[#1A1208]">{booking.contactEmail}</span>
+          <span className="text-[15px] text-[#1A1208]">{booking.contactEmail}</span>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ export default function BookingConfirmPage() {
 
       {/* Deposit */}
       <div className="text-center">
-        <div className="text-xs text-[#6B6157] mb-1">{t('depositRequired')}</div>
+        <div className="text-[15px] text-[#6B6157] mb-1">{t('depositRequired')}</div>
         <div className="text-[#C47D52] text-xl font-serif font-medium">${DEPOSIT_AMOUNT}</div>
       </div>
 
@@ -441,7 +441,7 @@ export default function BookingConfirmPage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#6B6157]">Step 3 of 3</span>
+        <span className="text-[15px] text-[#6B6157]">Step 3 of 3</span>
       </div>
 
       {/* Page Title */}
@@ -576,8 +576,8 @@ export default function BookingConfirmPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1A1208] truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-[#6B6157] mt-0.5">
+                        <p className="text-base font-medium text-[#1A1208] truncate">{uploadedFile.name}</p>
+                        <p className="text-[15px] text-[#6B6157] mt-0.5">
                           {(uploadedFile.size / 1024).toFixed(0)} KB
                         </p>
                       </div>
@@ -600,9 +600,9 @@ export default function BookingConfirmPage() {
                       <Upload size={24} className="text-[#6B7F5E]" />
                       <div className="text-center">
                         <p className="text-sm text-[#3D3229]">Upload payment proof</p>
-                        <p className="text-xs text-[#6B6157] mt-1">Tap or drag file here</p>
+                        <p className="text-[15px] text-[#6B6157] mt-1">Tap or drag file here</p>
                       </div>
-                      <p className="text-[11px] text-[#6B6157]">JPG, PNG, PDF (max 5MB)</p>
+                      <p className="text-[15px] text-[#6B6157]">JPG, PNG, PDF (max 5MB)</p>
                     </div>
                   )}
                 </div>
@@ -627,7 +627,7 @@ export default function BookingConfirmPage() {
                 >
                   {acceptedTerms && <Check size={12} className="text-white" />}
                 </button>
-                <span className="text-xs text-[#6B6157] leading-relaxed">
+                <span className="text-[15px] text-[#6B6157] leading-relaxed">
                   {t('cancellationPolicyText')}{' '}
                   <Link href="/cancellation" className="text-[#C47D52] font-medium no-underline hover:underline">
                     {t('cancellationPolicyLink')}
@@ -653,7 +653,7 @@ export default function BookingConfirmPage() {
               <div className="text-center md:text-left">
                 <button
                   onClick={handleCancel}
-                  className="text-xs text-[#6B6157] border-none bg-transparent cursor-pointer hover:text-[#C4453A] transition-colors"
+                  className="text-[15px] text-[#6B6157] border-none bg-transparent cursor-pointer hover:text-[#C4453A] transition-colors"
                 >
                   {t('cancelReservation')}
                 </button>

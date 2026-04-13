@@ -417,7 +417,7 @@ function PreOrderPage() {
 
         {/* Reservation info bar */}
         {reservation && (
-          <div className="flex items-center gap-4 px-4 pb-3 text-[13px] text-[#6B6157]">
+          <div className="flex items-center gap-4 px-4 pb-3 text-[15px] text-[#6B6157]">
             <span className="flex items-center gap-1">
               <Calendar size={14} className="text-[#6B7F5E]" />
               {resDate}
@@ -473,7 +473,7 @@ function PreOrderPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchPlaceholder')}
             style={{ border: '1px solid #E8E2D9', outline: 'none' }}
-            className="w-full h-11 rounded-full pl-10 pr-10 bg-white text-sm text-[#1A1208] placeholder:text-[#BFBFBF] focus:!border-[#6B7F5E] transition-colors"
+            className="w-full h-11 rounded-full pl-10 pr-10 bg-white text-[15px] text-[#1A1208] placeholder:text-[#BFBFBF] focus:!border-[#6B7F5E] transition-colors"
           />
           {searchTerm && (
             <button onClick={() => setSearchTerm('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B6157] bg-transparent border-none cursor-pointer p-0">
@@ -542,17 +542,17 @@ function PreOrderPage() {
                           {name}
                         </span>
                         {secondary && (
-                          <span className="text-[13px] text-[#6B6157] leading-snug truncate">
+                          <span className="text-[15px] text-[#6B6157] leading-snug truncate">
                             {secondary}
                           </span>
                         )}
                         {desc && (
-                          <span className="text-[13px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
+                          <span className="text-[15px] text-[#6B6157] leading-snug line-clamp-2 mt-0.5">
                             {desc}
                           </span>
                         )}
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className="text-[#C47D52] font-medium text-[14px]">
+                          <span className="text-[#C47D52] font-medium text-[15px]">
                             ${Math.round(item.price)}
                           </span>
                           {item.tags.map((tag) => {
@@ -561,7 +561,7 @@ function PreOrderPage() {
                             return (
                               <span
                                 key={tag}
-                                className="rounded-full px-2 py-0.5 text-[11px] bg-[#E8ECE4] text-[#6B7F5E]"
+                                className="rounded-full px-2 py-0.5 text-[15px] bg-[#E8ECE4] text-[#6B7F5E]"
                               >
                                 {label}
                               </span>
@@ -659,13 +659,13 @@ function PreOrderPage() {
                   {orderItems.map((item) => (
                     <div key={item.id} className="flex items-center justify-between py-3 border-b border-[#F2EDE6]">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="text-sm text-[#1A1208] truncate">
+                        <span className="text-[15px] text-[#1A1208] truncate">
                           {locale === 'zh' && item.nameZh ? item.nameZh : item.nameEn}
                         </span>
                         <span className="text-sm text-[#6B7F5E] font-medium shrink-0">x{item.qty}</span>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-medium text-[#1A1208]">${Math.round(item.total)}</span>
+                        <span className="text-base font-medium text-[#1A1208]">${Math.round(item.total)}</span>
                         <button
                           onClick={() => removeItem(item.id)}
                           className="w-6 h-6 rounded-full bg-[#F2EDE6] flex items-center justify-center border-none cursor-pointer"
@@ -679,13 +679,13 @@ function PreOrderPage() {
 
                 {/* Kitchen Notes */}
                 <div className="flex flex-col gap-2 pt-4">
-                  <span className="text-[13px] font-medium text-[#1A1208]">{t('kitchenNotes')}</span>
+                  <span className="text-[15px] font-medium text-[#1A1208]">{t('kitchenNotes')}</span>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t('kitchenNotesPlaceholder')}
                     style={{ border: '1px solid #E8E2D9', outline: 'none' }}
-                    className="h-20 px-3.5 py-3 bg-[#F8F7F4] rounded-xl text-[13px] resize-none placeholder:text-[#BFBFBF] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
+                    className="h-20 px-3.5 py-3 bg-[#F8F7F4] rounded-xl text-[15px] resize-none placeholder:text-[#BFBFBF] text-[#1A1208] focus:!border-[#6B7F5E] transition-colors"
                   />
                 </div>
 

@@ -132,7 +132,7 @@ export default function BookingDetailsPage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-sm text-[#6B6157]">Step 2 of 3</span>
+        <span className="text-[15px] text-[#6B6157]">Step 2 of 3</span>
       </div>
 
       {/* Page Title */}
@@ -225,7 +225,7 @@ export default function BookingDetailsPage() {
                 disabled={guestCount <= 1}
                 aria-label="Decrease guest count"
                 className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
                 }`}
               >
                 <Minus size={18} />
@@ -236,13 +236,13 @@ export default function BookingDetailsPage() {
                 disabled={guestCount >= maxGuests}
                 aria-label="Increase guest count"
                 className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/30' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
                 }`}
               >
                 <Plus size={18} />
               </button>
             </div>
-            <p className="text-sm text-[#6B6157] text-center mt-2">
+            <p className="text-[15px] text-[#6B6157] text-center mt-2">
               Max {maxGuests} guests per yurt
             </p>
           </div>

@@ -176,7 +176,7 @@ export default function ReservationsPage() {
           <h2 className="font-[family-name:var(--font-logo)] text-2xl font-semibold text-[#1A1208] mb-2">
             {t('title')}
           </h2>
-          <p className="text-sm text-[#6B6157] mb-6 max-w-[280px]">
+          <p className="text-[15px] text-[#6B6157] mb-6 max-w-[280px]">
             Sign in to view and manage your reservations
           </p>
           <button
@@ -206,7 +206,7 @@ export default function ReservationsPage() {
                 <h1 className="font-[family-name:var(--font-logo)] text-3xl font-semibold text-[#1A1208] text-center mb-1">
                   Bobo&apos;s Farm
                 </h1>
-                <p className="text-sm text-[#6B6157] text-center mb-10">
+                <p className="text-[15px] text-[#6B6157] text-center mb-10">
                   波姐农家乐
                 </p>
 
@@ -265,7 +265,7 @@ export default function ReservationsPage() {
                   </button>
                 </form>
 
-                <p className="text-sm text-[#6B6157] text-center mt-6">
+                <p className="text-[15px] text-[#6B6157] text-center mt-6">
                   Don&apos;t have an account?{' '}
                   <Link href="/register" className="text-[#6B7F5E] font-medium no-underline">
                     Sign Up
@@ -594,7 +594,7 @@ export default function ReservationsPage() {
 
                   {/* Cancel reason if cancelled */}
                   {r.status === 'CANCELLED' && r.cancelReason && (
-                    <div className="text-xs text-[#C4453A] bg-[#C4453A]/5 px-3 py-2 rounded-lg">
+                    <div className="text-sm text-[#C4453A] bg-[#C4453A]/5 px-3 py-2 rounded-lg">
                       Reason: {r.cancelReason}
                     </div>
                   )}
@@ -643,7 +643,7 @@ export default function ReservationsPage() {
 
                   {/* Cancel reason */}
                   {r.status === 'CANCELLED' && r.cancelReason && (
-                    <div className="text-xs text-[#C4453A]/80 mt-1">
+                    <div className="text-sm text-[#C4453A]/80 mt-1">
                       Reason: {r.cancelReason}
                     </div>
                   )}
@@ -696,12 +696,12 @@ export default function ReservationsPage() {
             <div className="px-5 py-4 flex flex-col gap-5">
               {/* Change Date */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
+                <label className="flex items-center gap-2 text-base font-medium text-[#1A1208]">
                   <CalendarDays size={16} className="text-[#6B7F5E]" />
                   {t('modify.changeDate')}
                 </label>
                 <div className="flex items-center justify-between bg-[#F8F7F4] rounded-xl px-4 py-3">
-                  <span className="text-sm text-[#1A1208]">
+                  <span className="text-[15px] text-[#1A1208]">
                     {formatLongDate(modifyingReservation.date)}
                   </span>
                   <ChevronRight size={16} className="text-[#8E8E93]" />
@@ -713,7 +713,7 @@ export default function ReservationsPage() {
 
               {/* Guest Count */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
+                <label className="flex items-center gap-2 text-base font-medium text-[#1A1208]">
                   <Users size={16} className="text-[#6B7F5E]" />
                   {t('modify.guestCount')}
                 </label>
@@ -743,7 +743,7 @@ export default function ReservationsPage() {
 
               {/* Special Requests */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-[#1A1208]">
+                <label className="flex items-center gap-2 text-base font-medium text-[#1A1208]">
                   {t('modify.specialRequests')}
                 </label>
                 <textarea
@@ -751,7 +751,7 @@ export default function ReservationsPage() {
                   onChange={(e) => setModifySpecialRequests(e.target.value)}
                   placeholder={t('modify.specialRequestsPlaceholder')}
                   rows={3}
-                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
+                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-[15px] text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
                 />
               </div>
 
@@ -798,7 +798,7 @@ export default function ReservationsPage() {
               <h3 className="font-serif text-xl font-bold text-[#1A1208]">
                 {t('cancelDialog.title')}
               </h3>
-              <p className="text-sm text-[#1A1208]/60">
+              <p className="text-[15px] text-[#1A1208]/60">
                 {t('cancelDialog.message')}
               </p>
 
@@ -816,7 +816,7 @@ export default function ReservationsPage() {
 
               {/* Optional reason */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-[#1A1208]">
+                <label className="text-base font-medium text-[#1A1208]">
                   {t('cancelDialog.reasonLabel')}
                 </label>
                 <textarea
@@ -824,7 +824,7 @@ export default function ReservationsPage() {
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder={t('cancelDialog.reasonPlaceholder')}
                   rows={2}
-                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-sm text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
+                  className="w-full bg-[#F8F7F4] rounded-xl px-4 py-3 text-[15px] text-[#1A1208] border-none outline-none resize-none focus:ring-2 focus:ring-[#6B7F5E]/30 placeholder:text-[#C0BFB9]"
                 />
               </div>
 
