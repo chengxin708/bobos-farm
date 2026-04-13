@@ -383,17 +383,18 @@ export default function CalendarDesktop() {
         </div>
 
         {/* Yurt slot rows — one row per active yurt */}
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-px mt-1">
           {activeYurts.map(yurt => {
             const isClosed = closedByDateYurt.get(dateStr)?.has(yurt.id)
             const res = dayRes.find(r => r.yurtId === yurt.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
-            const shortName = yurt.name.replace(/蒙古包|Yurt\s*/i, '').trim() || yurt.name.charAt(0)
+            // Short label: first letter of each word, e.g. "Golden Meadow" → "GM"
+            const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
             if (isClosed) {
               return (
-                <div key={yurt.id} className="flex items-center gap-1 px-1 py-0.5 rounded text-[9px] text-[#8A7E6B]/50 line-through">
-                  <span className="w-3 text-center font-bold">{shortName}</span>
-                  <span className="truncate">{t('status.closed')}</span>
+                <div key={yurt.id} className="flex items-center h-5 px-1 rounded text-[9px] text-[#8A7E6B]/40 whitespace-nowrap overflow-hidden">
+                  <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
+                  <span className="line-through">{t('status.closed')}</span>
                 </div>
               )
             }
@@ -404,9 +405,9 @@ export default function CalendarDesktop() {
                 <button
                   key={yurt.id}
                   onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
-                  className={`flex items-center gap-1 px-1 py-0.5 rounded text-[9px] cursor-pointer border-0 w-full text-left transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
+                  className={`flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
                 >
-                  <span className="font-bold w-3 text-center shrink-0">{shortName}</span>
+                  <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
                   <span className="truncate">{getDisplayName(res.user)}</span>
                 </button>
               )
@@ -422,10 +423,10 @@ export default function CalendarDesktop() {
                   setCreateModalYurtId(yurt.id)
                   setShowCreateModal(true)
                 }}
-                className="flex items-center gap-1 px-1 py-0.5 rounded text-[9px] cursor-pointer border border-dashed border-[#6B7F5E]/20 bg-transparent w-full text-left text-[#6B7F5E]/40 hover:border-[#6B7F5E]/50 hover:text-[#6B7F5E]/70 hover:bg-[#6B7F5E]/5 transition-all"
+                className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/30 hover:text-[#6B7F5E]/60 hover:bg-[#6B7F5E]/5 transition-all"
               >
-                <span className="font-bold w-3 text-center shrink-0">{shortName}</span>
-                <span className="truncate">+</span>
+                <span className="w-5 shrink-0 font-bold text-center text-[#6B7F5E]/40">{initials}</span>
+                <span className="text-[#6B7F5E]/30">—</span>
               </button>
             )
           })}
