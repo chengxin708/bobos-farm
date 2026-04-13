@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
     const items = await prisma.menuItem.findMany({
       where,
       include: { category: true },
-      orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
+      orderBy: [
+        { category: { sortOrder: "asc" } },
+        { sortOrder: "asc" },
+        { nameEn: "asc" },
+      ],
     });
     return NextResponse.json(items);
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
@@ -91,6 +91,15 @@ const fetcher = (url: string) => fetch(url).then(r => {
   return r.json()
 })
 
+const CATEGORY_EMOJIS: Record<string, string> = {
+  'Whole Lamb': '\u{1F411}',
+  'Signature Dishes': '\u{1F372}',
+  'Iron Pot Stews': '\u{1F958}',
+  'Cold Dishes': '\u{1F957}',
+  'Staples': '\u{1F35A}',
+  'Beverages': '\u{1F964}',
+}
+
 const TAG_LABELS: Record<string, string> = {
   'signature':     'Signature',
   'advance-order': 'Pre-order',
@@ -154,7 +163,7 @@ function PreOrderPage() {
   const searchParams = useSearchParams()
   const reservationId = searchParams.get('reservationId')
 
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [notes, setNotes] = useState('')
@@ -163,6 +172,12 @@ function PreOrderPage() {
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [sheetExpanded, setSheetExpanded] = useState(false)
   const [initialized, setInitialized] = useState(false)
+
+  // Section refs for scroll + IntersectionObserver
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const navRef = useRef<HTMLDivElement>(null)
+  const pillRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const isScrollingRef = useRef(false)
 
   // Fetch categories and menu items
   const { data: categories } = useSWR<MenuCategory[]>('/api/menu/categories', fetcher, {
@@ -196,26 +211,83 @@ function PreOrderPage() {
     }
   }, [existingOrder, initialized])
 
-  // Derive active category
-  const effectiveCategoryId = activeCategoryId || (categories && categories.length > 0 ? categories[0].id : null)
+  // Group items by category
+  const groupedItems = useMemo(() => {
+    if (!menuItems || !categories) return []
+    const map = new Map<string, MenuItem[]>()
+    for (const item of menuItems) {
+      const list = map.get(item.categoryId) || []
+      list.push(item)
+      map.set(item.categoryId, list)
+    }
+    return categories
+      .filter(cat => map.has(cat.id))
+      .map(cat => ({ category: cat, items: map.get(cat.id)! }))
+  }, [menuItems, categories])
 
-  // Filter items by category and search
-  const filteredItems = useMemo(() => {
-    if (!menuItems) return []
-    let items = menuItems
-    if (effectiveCategoryId && !searchTerm.trim()) {
-      items = items.filter(item => item.categoryId === effectiveCategoryId)
+  // Search-filtered grouped items
+  const filteredGroupedItems = useMemo(() => {
+    if (!searchTerm.trim()) return groupedItems
+    const lower = searchTerm.toLowerCase()
+    return groupedItems
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item =>
+          item.nameEn.toLowerCase().includes(lower) ||
+          (item.nameZh && item.nameZh.includes(searchTerm)) ||
+          (item.descriptionEn && item.descriptionEn.toLowerCase().includes(lower))
+        ),
+      }))
+      .filter(group => group.items.length > 0)
+  }, [groupedItems, searchTerm])
+
+  // Resolve activeTabId
+  const resolvedTabId = activeTabId ?? (groupedItems[0]?.category.id ?? null)
+
+  // IntersectionObserver
+  useEffect(() => {
+    if (groupedItems.length === 0 || searchTerm.trim()) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const catId = entry.target.getAttribute('data-category-id')
+            if (catId) setActiveTabId(catId)
+          }
+        }
+      },
+      { rootMargin: '-160px 0px -60% 0px', threshold: 0 }
+    )
+
+    const refs = sectionRefs.current
+    for (const el of Object.values(refs)) {
+      if (el) observer.observe(el)
     }
-    if (searchTerm.trim()) {
-      const lower = searchTerm.toLowerCase()
-      items = items.filter(item =>
-        item.nameEn.toLowerCase().includes(lower) ||
-        (item.nameZh && item.nameZh.includes(searchTerm)) ||
-        (item.descriptionEn && item.descriptionEn.toLowerCase().includes(lower))
-      )
-    }
-    return items
-  }, [menuItems, effectiveCategoryId, searchTerm])
+
+    return () => observer.disconnect()
+  }, [groupedItems, searchTerm])
+
+  // Scroll active pill into view
+  useEffect(() => {
+    if (!resolvedTabId || !pillRefs.current[resolvedTabId] || !navRef.current) return
+    const pill = pillRefs.current[resolvedTabId]!
+    const nav = navRef.current
+    const scrollTarget = pill.offsetLeft - nav.offsetWidth / 2 + pill.offsetWidth / 2
+    nav.scrollTo({ left: scrollTarget, behavior: 'smooth' })
+  }, [resolvedTabId])
+
+  // Scroll to a category section
+  const scrollToCategory = useCallback((categoryId: string) => {
+    setActiveTabId(categoryId)
+    setSearchTerm('')
+    const el = sectionRefs.current[categoryId]
+    if (!el) return
+    isScrollingRef.current = true
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => { isScrollingRef.current = false }, 800)
+  }, [])
 
   // Order computation
   const orderItems = useMemo(() => {
@@ -261,6 +333,9 @@ function PreOrderPage() {
   const itemDescription = (item: MenuItem) =>
     locale === 'zh' && item.descriptionZh ? item.descriptionZh : (item.descriptionEn ?? '')
 
+  const categoryLabel = (cat: MenuCategory) =>
+    locale === 'zh' && cat.nameZh ? cat.nameZh : cat.nameEn
+
   // Format reservation info
   const resDate = reservation
     ? new Date(reservation.date).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
@@ -278,7 +353,6 @@ function PreOrderPage() {
 
     try {
       if (isEditMode && existingOrder) {
-        // PATCH existing order
         const res = await fetch(`/api/orders/${existingOrder.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -292,7 +366,6 @@ function PreOrderPage() {
           throw new Error(data.error || 'Failed to update order')
         }
       } else {
-        // POST new order
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -309,9 +382,7 @@ function PreOrderPage() {
       }
 
       setOrderSuccess(true)
-      // Re-fetch reservation to get updated order
       await mutateReservation()
-      // Collapse sheet after success
       setTimeout(() => setSheetExpanded(false), 1500)
     } catch (err) {
       setOrderError(err instanceof Error ? err.message : 'Failed to submit order')
@@ -363,29 +434,28 @@ function PreOrderPage() {
         )}
       </div>
 
-      {/* ── Category Tabs ─────────────────────────────────────── */}
-      <div className="sticky top-[104px] z-20 bg-[#F8F7F4] px-4 py-3 border-b border-[#F2EDE6]">
+      {/* ── Category Nav — sticky ─────────────────────────────── */}
+      <div className="sticky top-[104px] z-20 bg-[#F8F7F4]/95 backdrop-blur-sm px-4 py-2 border-b border-[#F2EDE6]">
         {!categories ? (
           <TabsSkeleton />
         ) : (
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-            {categories.map((cat) => {
-              const isActive = cat.id === effectiveCategoryId
-              const catName = locale === 'zh' && cat.nameZh ? cat.nameZh : cat.nameEn
+          <div ref={navRef} className="flex gap-2 overflow-x-auto hide-scrollbar">
+            {groupedItems.map(({ category: cat }) => {
+              const isActive = cat.id === resolvedTabId
+              const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
               return (
                 <button
                   key={cat.id}
-                  onClick={() => {
-                    setActiveCategoryId(cat.id)
-                    setSearchTerm('')
-                  }}
-                  className={`flex items-center rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
+                  ref={(el) => { pillRefs.current[cat.id] = el }}
+                  onClick={() => scrollToCategory(cat.id)}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
                     isActive
                       ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
                       : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
                   }`}
                 >
-                  {catName}
+                  {emoji && <span>{emoji}</span>}
+                  <span>{categoryLabel(cat)}</span>
                 </button>
               )
             })}
@@ -413,105 +483,125 @@ function PreOrderPage() {
         </div>
       </div>
 
-      {/* ── Item List ─────────────────────────────────────────── */}
+      {/* ── Waterfall Item List ───────────────────────────────── */}
       <div className="flex flex-col">
         {!menuItems ? (
           <ListSkeleton />
-        ) : filteredItems.length === 0 ? (
+        ) : filteredGroupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
             <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
           </div>
         ) : (
-          filteredItems.map((item) => {
-            const qty = quantities[item.id] || 0
-            const name = displayName(item)
-            const secondary = secondaryName(item)
-            const desc = itemDescription(item)
-
+          filteredGroupedItems.map(({ category: cat, items }) => {
+            const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
             return (
               <div
-                key={item.id}
-                className="flex gap-3 py-3.5 px-4 border-b border-[#F2EDE6]"
+                key={cat.id}
+                ref={(el) => { sectionRefs.current[cat.id] = el }}
+                data-category-id={cat.id}
+                className="scroll-mt-[200px]"
               >
-                {/* Image */}
-                <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
-                  {item.imageUrl ? (
-                    <Image
-                      src={item.imageUrl}
-                      alt={name}
-                      width={60}
-                      height={60}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <UtensilsCrossed size={22} color="#8C8478" strokeWidth={1.5} />
-                  )}
+                {/* Section header */}
+                <div className="flex items-center gap-2 px-4 pt-6 pb-2">
+                  <span className="text-lg">{emoji}</span>
+                  <h2 className="font-serif text-lg text-[#1A1208]">{categoryLabel(cat)}</h2>
+                  <div className="flex-1 h-px bg-[#E8E2D9] ml-2" />
                 </div>
 
-                {/* Info */}
-                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <span className="font-serif text-[15px] text-[#1A1208] leading-snug truncate">
-                    {name}
-                  </span>
-                  {secondary && (
-                    <span className="text-[13px] text-[#8C8478] leading-snug truncate">
-                      {secondary}
-                    </span>
-                  )}
-                  {desc && (
-                    <span className="text-[13px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
-                      {desc}
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[#C47D52] font-medium text-[14px]">
-                      ${Math.round(item.price)}
-                    </span>
-                    {item.tags.map((tag) => {
-                      const label = TAG_LABELS[tag] || TAG_LABELS[tag.toLowerCase()]
-                      if (!label) return null
-                      return (
-                        <span
-                          key={tag}
-                          className="rounded-full px-2 py-0.5 text-[11px] bg-[#E8ECE4] text-[#6B7F5E]"
-                        >
-                          {label}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
+                {/* Items */}
+                {items.map((item) => {
+                  const qty = quantities[item.id] || 0
+                  const name = displayName(item)
+                  const secondary = secondaryName(item)
+                  const desc = itemDescription(item)
 
-                {/* Quantity Controls */}
-                <div className="flex items-center shrink-0 self-center">
-                  {qty > 0 ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => updateQty(item.id, -1)}
-                        className="w-8 h-8 rounded-full bg-[#E8ECE4] flex items-center justify-center cursor-pointer border-none"
-                      >
-                        <Minus size={14} className="text-[#6B7F5E]" />
-                      </button>
-                      <span className="w-8 text-center text-[15px] font-semibold text-[#1A1208]">
-                        {qty}
-                      </span>
-                      <button
-                        onClick={() => updateQty(item.id, 1)}
-                        className="w-8 h-8 rounded-full bg-[#6B7F5E] flex items-center justify-center cursor-pointer border-none"
-                      >
-                        <Plus size={14} className="text-white" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => updateQty(item.id, 1)}
-                      className="w-8 h-8 rounded-full bg-[#6B7F5E] flex items-center justify-center cursor-pointer border-none"
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex gap-3 py-3.5 px-4 border-b border-[#F2EDE6]"
                     >
-                      <Plus size={14} className="text-white" />
-                    </button>
-                  )}
-                </div>
+                      {/* Image */}
+                      <div className="w-[60px] h-[60px] rounded-xl overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
+                        {item.imageUrl ? (
+                          <Image
+                            src={item.imageUrl}
+                            alt={name}
+                            width={60}
+                            height={60}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <UtensilsCrossed size={22} color="#8C8478" strokeWidth={1.5} />
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                        <span className="font-serif text-[15px] text-[#1A1208] leading-snug truncate">
+                          {name}
+                        </span>
+                        {secondary && (
+                          <span className="text-[13px] text-[#8C8478] leading-snug truncate">
+                            {secondary}
+                          </span>
+                        )}
+                        {desc && (
+                          <span className="text-[13px] text-[#8C8478] leading-snug line-clamp-2 mt-0.5">
+                            {desc}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-[#C47D52] font-medium text-[14px]">
+                            ${Math.round(item.price)}
+                          </span>
+                          {item.tags.map((tag) => {
+                            const label = TAG_LABELS[tag] || TAG_LABELS[tag.toLowerCase()]
+                            if (!label) return null
+                            return (
+                              <span
+                                key={tag}
+                                className="rounded-full px-2 py-0.5 text-[11px] bg-[#E8ECE4] text-[#6B7F5E]"
+                              >
+                                {label}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center shrink-0 self-center">
+                        {qty > 0 ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateQty(item.id, -1)}
+                              className="w-8 h-8 rounded-full bg-[#E8ECE4] flex items-center justify-center cursor-pointer border-none"
+                            >
+                              <Minus size={14} className="text-[#6B7F5E]" />
+                            </button>
+                            <span className="w-8 text-center text-[15px] font-semibold text-[#1A1208]">
+                              {qty}
+                            </span>
+                            <button
+                              onClick={() => updateQty(item.id, 1)}
+                              className="w-8 h-8 rounded-full bg-[#6B7F5E] flex items-center justify-center cursor-pointer border-none"
+                            >
+                              <Plus size={14} className="text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => updateQty(item.id, 1)}
+                            className="w-8 h-8 rounded-full bg-[#6B7F5E] flex items-center justify-center cursor-pointer border-none"
+                          >
+                            <Plus size={14} className="text-white" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )
           })

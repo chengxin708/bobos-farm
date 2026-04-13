@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import Image from 'next/image'
@@ -71,6 +71,15 @@ const fetcher = (url: string) =>
     return r.json()
   })
 
+const CATEGORY_EMOJIS: Record<string, string> = {
+  'Whole Lamb': '\u{1F411}',
+  'Signature Dishes': '\u{1F372}',
+  'Iron Pot Stews': '\u{1F958}',
+  'Cold Dishes': '\u{1F957}',
+  'Staples': '\u{1F35A}',
+  'Beverages': '\u{1F964}',
+}
+
 // ── Skeleton loaders ───────────────────────────────────────────────
 
 function TabsSkeleton() {
@@ -116,12 +125,19 @@ export default function AdminOrderEditor({
   onSaved,
 }: AdminOrderEditorProps) {
   const t = useTranslations('admin.orders')
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
+
+  // Section refs for scroll + IntersectionObserver
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const navRef = useRef<HTMLDivElement>(null)
+  const pillRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const isScrollingRef = useRef(false)
 
   // ── Data fetching ───────────────────────────────────────────────
 
@@ -137,11 +153,23 @@ export default function AdminOrderEditor({
     { revalidateOnFocus: false, dedupingInterval: 60000 }
   )
 
-  // ── Active category ─────────────────────────────────────────────
+  // ── Group items by category ─────────────────────────────────────
 
-  const effectiveCategoryId =
-    activeCategoryId ||
-    (categories && categories.length > 0 ? categories[0].id : null)
+  const groupedItems = useMemo(() => {
+    if (!menuItems || !categories) return []
+    const map = new Map<string, MenuItem[]>()
+    for (const item of menuItems) {
+      const list = map.get(item.categoryId) || []
+      list.push(item)
+      map.set(item.categoryId, list)
+    }
+    return categories
+      .filter(cat => map.has(cat.id))
+      .map(cat => ({ category: cat, items: map.get(cat.id)! }))
+  }, [menuItems, categories])
+
+  // Resolve activeTabId
+  const resolvedTabId = activeTabId ?? (groupedItems[0]?.category.id ?? null)
 
   // ── Pre-fill from existing order ────────────────────────────────
 
@@ -161,7 +189,7 @@ export default function AdminOrderEditor({
   useEffect(() => {
     if (!isOpen) {
       setInitialized(false)
-      setActiveCategoryId(null)
+      setActiveTabId(null)
       setQuantities({})
       setNotes('')
       setError(null)
@@ -180,14 +208,54 @@ export default function AdminOrderEditor({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  // ── Filter items by category ────────────────────────────────────
+  // ── IntersectionObserver ────────────────────────────────────────
 
-  const filteredItems = useMemo(() => {
-    if (!menuItems || !effectiveCategoryId) return []
-    return menuItems.filter(
-      (item) => item.categoryId === effectiveCategoryId
+  useEffect(() => {
+    if (groupedItems.length === 0 || !scrollContainerRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const catId = entry.target.getAttribute('data-category-id')
+            if (catId) setActiveTabId(catId)
+          }
+        }
+      },
+      {
+        root: scrollContainerRef.current,
+        rootMargin: '-80px 0px -60% 0px',
+        threshold: 0,
+      }
     )
-  }, [menuItems, effectiveCategoryId])
+
+    const refs = sectionRefs.current
+    for (const el of Object.values(refs)) {
+      if (el) observer.observe(el)
+    }
+
+    return () => observer.disconnect()
+  }, [groupedItems])
+
+  // Scroll active pill into view
+  useEffect(() => {
+    if (!resolvedTabId || !pillRefs.current[resolvedTabId] || !navRef.current) return
+    const pill = pillRefs.current[resolvedTabId]!
+    const nav = navRef.current
+    const scrollTarget = pill.offsetLeft - nav.offsetWidth / 2 + pill.offsetWidth / 2
+    nav.scrollTo({ left: scrollTarget, behavior: 'smooth' })
+  }, [resolvedTabId])
+
+  // Scroll to a category section
+  const scrollToCategory = useCallback((categoryId: string) => {
+    setActiveTabId(categoryId)
+    const el = sectionRefs.current[categoryId]
+    if (!el) return
+    isScrollingRef.current = true
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => { isScrollingRef.current = false }, 800)
+  }, [])
 
   // ── Quantity helpers ────────────────────────────────────────────
 
@@ -229,7 +297,6 @@ export default function AdminOrderEditor({
 
     try {
       if (existingOrder) {
-        // Update existing order
         const res = await fetch(`/api/orders/${existingOrder.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -244,7 +311,6 @@ export default function AdminOrderEditor({
           throw new Error(data.error || 'Failed to update order')
         }
       } else {
-        // Create new order
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -303,25 +369,28 @@ export default function AdminOrderEditor({
         </h1>
       </div>
 
-      {/* ── Category Tabs ──────────────────────────────────────── */}
-      <div className="bg-[#F8F7F4] border-b border-[#E8ECE4] py-3 shrink-0">
+      {/* ── Category Nav — sticky ──────────────────────────────── */}
+      <div className="bg-[#F8F7F4]/95 backdrop-blur-sm border-b border-[#E8ECE4] py-3 shrink-0">
         {!categories ? (
           <TabsSkeleton />
         ) : (
-          <div className="flex gap-2 overflow-x-auto px-4 hide-scrollbar">
-            {categories.map((cat) => {
-              const isActive = cat.id === effectiveCategoryId
+          <div ref={navRef} className="flex gap-2 overflow-x-auto px-4 hide-scrollbar">
+            {groupedItems.map(({ category: cat }) => {
+              const isActive = cat.id === resolvedTabId
+              const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveCategoryId(cat.id)}
-                  className={`flex items-center rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 transition-colors duration-200 border ${
+                  ref={(el) => { pillRefs.current[cat.id] = el }}
+                  onClick={() => scrollToCategory(cat.id)}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 transition-colors duration-200 border ${
                     isActive
                       ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
                       : 'bg-transparent border-[#6B7F5E]/20 text-[#3D2B1F] hover:bg-[#6B7F5E]/10'
                   }`}
                 >
-                  {categoryName(cat)}
+                  {emoji && <span>{emoji}</span>}
+                  <span>{categoryName(cat)}</span>
                 </button>
               )
             })}
@@ -329,11 +398,11 @@ export default function AdminOrderEditor({
         )}
       </div>
 
-      {/* ── Menu Items ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
+      {/* ── Waterfall Menu Items ───────────────────────────────── */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {!menuItems ? (
           <ListSkeleton />
-        ) : filteredItems.length === 0 ? (
+        ) : groupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed
               size={28}
@@ -343,105 +412,125 @@ export default function AdminOrderEditor({
             <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 p-4">
-            {filteredItems.map((item) => {
-              const qty = quantities[item.id] || 0
-              const name = displayName(item)
-
-              return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl p-4 border border-[#E8ECE4] flex gap-3"
-                >
-                  {/* Image */}
-                  <div className="w-[56px] h-[56px] rounded-lg overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
-                    {item.imageUrl ? (
-                      <Image
-                        src={item.imageUrl}
-                        alt={name}
-                        width={56}
-                        height={56}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <UtensilsCrossed
-                        size={20}
-                        className="text-[#8C8478]"
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </div>
-
-                  {/* Info + Controls */}
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-serif text-[15px] text-[#3D2B1F] leading-snug truncate">
-                          {name}
-                        </p>
-                        {item.nameZh && item.nameEn && (
-                          <p className="text-[13px] text-[#8C8478] leading-snug truncate">
-                            {item.nameEn}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    {(item.descriptionZh || item.descriptionEn) && (
-                      <p className="text-[12px] text-[#8C8478] leading-snug line-clamp-1">
-                        {item.descriptionZh || item.descriptionEn}
-                      </p>
-                    )}
-
-                    {/* Price + Advance notice + Qty Controls */}
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#C47D52] font-semibold text-[15px]">
-                          ${Math.round(item.price)}
-                        </span>
-                        {item.advanceDaysRequired > 0 && (
-                          <span className="text-[11px] text-[#8B6914] bg-[#8B6914]/10 px-1.5 py-0.5 rounded">
-                            {t('advanceNotice', { days: item.advanceDaysRequired })}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Quantity controls */}
-                      <div className="flex items-center gap-1">
-                        {qty > 0 ? (
-                          <>
-                            <button
-                              onClick={() => updateQty(item.id, -1)}
-                              className="w-8 h-8 rounded-full border border-[#E8ECE4] flex items-center justify-center hover:bg-[#E8ECE4]/40 transition-colors"
-                            >
-                              <Minus size={14} className="text-[#6B7F5E]" />
-                            </button>
-                            <span className="w-8 text-center text-[15px] font-semibold text-[#3D2B1F]">
-                              {qty}
-                            </span>
-                            <button
-                              onClick={() => updateQty(item.id, 1)}
-                              className="w-8 h-8 rounded-full border border-[#E8ECE4] bg-[#6B7F5E] flex items-center justify-center hover:bg-[#5A6D4F] transition-colors"
-                            >
-                              <Plus size={14} className="text-white" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => updateQty(item.id, 1)}
-                            className="w-8 h-8 rounded-full border border-[#E8ECE4] bg-[#6B7F5E] flex items-center justify-center hover:bg-[#5A6D4F] transition-colors"
-                          >
-                            <Plus size={14} className="text-white" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+          groupedItems.map(({ category: cat, items }) => {
+            const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
+            return (
+              <div
+                key={cat.id}
+                ref={(el) => { sectionRefs.current[cat.id] = el }}
+                data-category-id={cat.id}
+                className="scroll-mt-2"
+              >
+                {/* Section header */}
+                <div className="flex items-center gap-2 px-4 pt-5 pb-2">
+                  <span className="text-lg">{emoji}</span>
+                  <h2 className="font-serif text-lg text-[#1A1208]">{categoryName(cat)}</h2>
+                  <div className="flex-1 h-px bg-[#E8E2D9] ml-2" />
                 </div>
-              )
-            })}
-          </div>
+
+                {/* Items */}
+                <div className="flex flex-col gap-3 px-4 pb-2">
+                  {items.map((item) => {
+                    const qty = quantities[item.id] || 0
+                    const name = displayName(item)
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-xl p-4 border border-[#E8ECE4] flex gap-3"
+                      >
+                        {/* Image */}
+                        <div className="w-[56px] h-[56px] rounded-lg overflow-hidden shrink-0 bg-[#F2EDE6] flex items-center justify-center">
+                          {item.imageUrl ? (
+                            <Image
+                              src={item.imageUrl}
+                              alt={name}
+                              width={56}
+                              height={56}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <UtensilsCrossed
+                              size={20}
+                              className="text-[#8C8478]"
+                              strokeWidth={1.5}
+                            />
+                          )}
+                        </div>
+
+                        {/* Info + Controls */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-serif text-[15px] text-[#3D2B1F] leading-snug truncate">
+                                {name}
+                              </p>
+                              {item.nameZh && item.nameEn && (
+                                <p className="text-[13px] text-[#8C8478] leading-snug truncate">
+                                  {item.nameEn}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          {(item.descriptionZh || item.descriptionEn) && (
+                            <p className="text-[12px] text-[#8C8478] leading-snug line-clamp-1">
+                              {item.descriptionZh || item.descriptionEn}
+                            </p>
+                          )}
+
+                          {/* Price + Advance notice + Qty Controls */}
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#C47D52] font-semibold text-[15px]">
+                                ${Math.round(item.price)}
+                              </span>
+                              {item.advanceDaysRequired > 0 && (
+                                <span className="text-[11px] text-[#8B6914] bg-[#8B6914]/10 px-1.5 py-0.5 rounded">
+                                  {t('advanceNotice', { days: item.advanceDaysRequired })}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Quantity controls */}
+                            <div className="flex items-center gap-1">
+                              {qty > 0 ? (
+                                <>
+                                  <button
+                                    onClick={() => updateQty(item.id, -1)}
+                                    className="w-8 h-8 rounded-full border border-[#E8ECE4] flex items-center justify-center hover:bg-[#E8ECE4]/40 transition-colors"
+                                  >
+                                    <Minus size={14} className="text-[#6B7F5E]" />
+                                  </button>
+                                  <span className="w-8 text-center text-[15px] font-semibold text-[#3D2B1F]">
+                                    {qty}
+                                  </span>
+                                  <button
+                                    onClick={() => updateQty(item.id, 1)}
+                                    className="w-8 h-8 rounded-full border border-[#E8ECE4] bg-[#6B7F5E] flex items-center justify-center hover:bg-[#5A6D4F] transition-colors"
+                                  >
+                                    <Plus size={14} className="text-white" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => updateQty(item.id, 1)}
+                                  className="w-8 h-8 rounded-full border border-[#E8ECE4] bg-[#6B7F5E] flex items-center justify-center hover:bg-[#5A6D4F] transition-colors"
+                                >
+                                  <Plus size={14} className="text-white" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 

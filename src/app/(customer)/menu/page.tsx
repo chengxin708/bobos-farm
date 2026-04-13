@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
@@ -282,7 +282,7 @@ function MenuItemRow({
 export default function MenuPage() {
   const t = useTranslations('menu')
   const locale = useLocale()
-  const { data: session, status: authStatus } = useSession()
+  const { data: session } = useSession()
   const isAuthenticated = !!session?.user
 
   // Fetch categories
@@ -292,29 +292,91 @@ export default function MenuPage() {
     { revalidateOnFocus: false, dedupingInterval: 60000 }
   )
 
-  // Active tab state — keyed to category id
+  // Fetch ALL active items at once (no categoryId filter)
+  const { data: allItems, isLoading: itemsLoading } = useSWR<MenuItem[]>(
+    '/api/menu/items?activeOnly=true',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  )
+
+  // Active pill state (for highlighting)
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
 
   // Expanded item state
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
 
-  // Resolve the active category id: default to first category once loaded
-  const resolvedTabId = activeTabId ?? (categories?.[0]?.id ?? null)
+  // Section refs for scroll + IntersectionObserver
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const navRef = useRef<HTMLDivElement>(null)
+  const pillRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  // Prevent observer from fighting with programmatic scroll
+  const isScrollingRef = useRef(false)
 
-  // Fetch items for the active category
-  const { data: items, isLoading: itemsLoading } = useSWR<MenuItem[]>(
-    resolvedTabId
-      ? `/api/menu/items?categoryId=${resolvedTabId}&activeOnly=true`
-      : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 30000 }
-  )
+  // Group items by category, maintaining category sort order
+  const groupedItems = useMemo(() => {
+    if (!allItems || !categories) return []
+    const map = new Map<string, MenuItem[]>()
+    for (const item of allItems) {
+      const list = map.get(item.categoryId) || []
+      list.push(item)
+      map.set(item.categoryId, list)
+    }
+    // Return categories that have items, in sortOrder
+    return categories
+      .filter(cat => map.has(cat.id))
+      .map(cat => ({ category: cat, items: map.get(cat.id)! }))
+  }, [allItems, categories])
 
-  // Figure out the active category nameEn for special logic (e.g. Whole Lamb banner)
-  const activeCategoryName = useMemo(() => {
-    if (!categories || !resolvedTabId) return ''
-    return categories.find(c => c.id === resolvedTabId)?.nameEn ?? ''
-  }, [categories, resolvedTabId])
+  // Resolve activeTabId — default to first category
+  const resolvedTabId = activeTabId ?? (groupedItems[0]?.category.id ?? null)
+
+  // IntersectionObserver: detect which section is visible
+  useEffect(() => {
+    if (groupedItems.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const catId = entry.target.getAttribute('data-category-id')
+            if (catId) setActiveTabId(catId)
+          }
+        }
+      },
+      { rootMargin: '-100px 0px -60% 0px', threshold: 0 }
+    )
+
+    const refs = sectionRefs.current
+    for (const el of Object.values(refs)) {
+      if (el) observer.observe(el)
+    }
+
+    return () => observer.disconnect()
+  }, [groupedItems])
+
+  // Scroll active pill into view in the nav bar
+  useEffect(() => {
+    if (!resolvedTabId || !pillRefs.current[resolvedTabId] || !navRef.current) return
+    const pill = pillRefs.current[resolvedTabId]!
+    const nav = navRef.current
+    const pillLeft = pill.offsetLeft
+    const pillWidth = pill.offsetWidth
+    const navWidth = nav.offsetWidth
+    const scrollTarget = pillLeft - navWidth / 2 + pillWidth / 2
+    nav.scrollTo({ left: scrollTarget, behavior: 'smooth' })
+  }, [resolvedTabId])
+
+  // Scroll to a category section
+  const scrollToCategory = useCallback((categoryId: string) => {
+    setActiveTabId(categoryId)
+    const el = sectionRefs.current[categoryId]
+    if (!el) return
+    isScrollingRef.current = true
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // Re-enable observer after scroll settles
+    setTimeout(() => { isScrollingRef.current = false }, 800)
+  }, [])
 
   // Build display name for locale
   const categoryDisplayName = (cat: MenuCategory) =>
@@ -349,14 +411,14 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col max-w-[1200px] mx-auto w-full px-6 md:px-12 lg:px-20">
+    <div className="flex flex-col max-w-[1200px] mx-auto w-full">
       {/* Page Header */}
-      <div className="flex flex-col items-center pt-6 pb-4">
+      <div className="flex flex-col items-center pt-6 pb-4 px-6 md:px-12 lg:px-20">
         <h1 className="font-serif text-2xl text-[#1A1208] text-center">{t('title')}</h1>
         <div className="w-10 h-[2px] bg-[#6B7F5E] mt-2" />
       </div>
 
-      {/* Category Tabs */}
+      {/* Category Nav — sticky */}
       {catLoading ? (
         <TabsSkeleton />
       ) : !categories || categories.length === 0 ? (
@@ -370,67 +432,86 @@ export default function MenuPage() {
           </div>
         </div>
       ) : (
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto hide-scrollbar">
-          {(categories ?? []).map((cat) => {
-            const isActive = cat.id === resolvedTabId
-            const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveTabId(cat.id)
-                  setExpandedItemId(null)
-                }}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
-                  isActive
-                    ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
-                    : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
-                }`}
-              >
-                <span>{emoji}</span>
-                <span>{categoryLabel(cat)}</span>
-              </button>
-            )
-          })}
+        <div className="sticky top-0 z-10 bg-[#F8F7F4]/95 backdrop-blur-sm py-2 px-4 border-b border-[#F2EDE6]">
+          <div ref={navRef} className="flex gap-2 overflow-x-auto hide-scrollbar">
+            {groupedItems.map(({ category: cat }) => {
+              const isActive = cat.id === resolvedTabId
+              const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
+              return (
+                <button
+                  key={cat.id}
+                  ref={(el) => { pillRefs.current[cat.id] = el }}
+                  onClick={() => scrollToCategory(cat.id)}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm whitespace-nowrap shrink-0 cursor-pointer border transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-[#6B7F5E] text-white border-[#6B7F5E]'
+                      : 'bg-transparent border-[#6B7F5E]/20 text-[#1A1208]'
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  <span>{categoryLabel(cat)}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
-      {/* Content */}
+      {/* Waterfall Content */}
       <div className="flex flex-col pb-4">
-        {/* Info Banner for Whole Lamb */}
-        {activeCategoryName === 'Whole Lamb' && (
-          <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
-            <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
-            <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
-              {t('lambNotice')}
-            </p>
-          </div>
-        )}
-
-        {/* Item List */}
         {itemsLoading || catLoading ? (
           <ListSkeleton />
-        ) : !items || items.length === 0 ? (
+        ) : groupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
-            <p className="text-[#8C8478] text-sm">No items in this category</p>
+            <p className="text-[#8C8478] text-sm">No items available</p>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {items.map((item) => (
-              <MenuItemRow
-                key={item.id}
-                item={item}
-                isExpanded={expandedItemId === item.id}
-                onToggle={() => toggleExpanded(item.id)}
-                displayName={itemDisplayName(item)}
-                secondaryName={itemSecondaryName(item)}
-                description={itemDescription(item)}
-                t={t}
-                isAuthenticated={isAuthenticated}
-              />
-            ))}
-          </div>
+          groupedItems.map(({ category: cat, items }) => {
+            const emoji = CATEGORY_EMOJIS[cat.nameEn] ?? ''
+            return (
+              <div
+                key={cat.id}
+                ref={(el) => { sectionRefs.current[cat.id] = el }}
+                data-category-id={cat.id}
+                className="scroll-mt-14"
+              >
+                {/* Section header */}
+                <div className="flex items-center gap-2 px-4 pt-6 pb-2">
+                  <span className="text-lg">{emoji}</span>
+                  <h2 className="font-serif text-lg text-[#1A1208]">{categoryLabel(cat)}</h2>
+                  <div className="flex-1 h-px bg-[#E8E2D9] ml-2" />
+                </div>
+
+                {/* Whole Lamb banner */}
+                {cat.nameEn === 'Whole Lamb' && (
+                  <div className="flex items-center gap-2.5 bg-[#E8ECE4] rounded-xl mx-4 mb-2 px-4 py-3">
+                    <Info size={18} color="#6B7F5E" strokeWidth={1.8} className="shrink-0" />
+                    <p className="text-[13px] text-[#6B7F5E] leading-relaxed">
+                      {t('lambNotice')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Items */}
+                <div className="flex flex-col">
+                  {items.map((item) => (
+                    <MenuItemRow
+                      key={item.id}
+                      item={item}
+                      isExpanded={expandedItemId === item.id}
+                      onToggle={() => toggleExpanded(item.id)}
+                      displayName={itemDisplayName(item)}
+                      secondaryName={itemSecondaryName(item)}
+                      description={itemDescription(item)}
+                      t={t}
+                      isAuthenticated={isAuthenticated}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
     </div>
