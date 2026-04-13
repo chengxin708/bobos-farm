@@ -349,13 +349,13 @@ export async function POST(req: NextRequest) {
       ? parseFloat(settingsMap.deposit_amount)
       : 300;
 
-    // Get timeout from settings
-    const timeoutHours = settingsMap.payment_timeout_hours
+    // Get timeout from settings (stored as minutes)
+    const timeoutMinutes = settingsMap.payment_timeout_hours
       ? parseFloat(settingsMap.payment_timeout_hours)
-      : 12;
+      : 720; // default 12 hours = 720 minutes
 
     const paymentDeadline = new Date();
-    paymentDeadline.setHours(paymentDeadline.getHours() + timeoutHours);
+    paymentDeadline.setMinutes(paymentDeadline.getMinutes() + timeoutMinutes);
 
     const reservation = await prisma.reservation.create({
       data: {

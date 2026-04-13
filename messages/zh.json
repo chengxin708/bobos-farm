@@ -980,7 +980,7 @@
         "depositAmount": "定金金额",
         "depositAmountHelp": "担保预订所需的定金金额。必须在预订后72小时内完成支付以保留日期。",
         "paymentTimeout": "支付期限",
-        "paymentTimeoutUnit": "小时",
+        "paymentTimeoutUnit": "分钟",
         "paymentTimeoutHelp": "客户完成支付的允许时间。如果在此期限内未收到付款，预订将自动取消。",
         "maxAdvanceBooking": "最远预订时长",
         "maxAdvanceBookingUnit": "个月",

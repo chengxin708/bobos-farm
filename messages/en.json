@@ -980,7 +980,7 @@
         "depositAmount": "Deposit Amount",
         "depositAmountHelp": "Amount required to hold a reservation. Must be paid within 72 hours of booking to secure the date.",
         "paymentTimeout": "Payment Timeout",
-        "paymentTimeoutUnit": "hours",
+        "paymentTimeoutUnit": "minutes",
         "paymentTimeoutHelp": "Time allowed for guests to complete payment. If not received within this window, the reservation will automatically be cancelled.",
         "maxAdvanceBooking": "Max Advance Booking",
         "maxAdvanceBookingUnit": "months",
