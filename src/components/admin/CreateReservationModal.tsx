@@ -132,7 +132,6 @@ export default function CreateReservationModal({
   if (!isOpen) return null
 
   return (
-    {/* Mobile: fullscreen / Desktop: centered modal */}
     <div
       className={`fixed inset-0 z-50 md:flex md:items-center md:justify-center md:p-4 transition-all duration-200 ${visible ? 'md:bg-black/40' : 'md:bg-black/0'}`}
       onClick={handleBackdropClick}
