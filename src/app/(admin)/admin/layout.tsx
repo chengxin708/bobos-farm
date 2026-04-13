@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminNavbar />
           <OfflineBanner />
           <PwaInstallPrompt />
-          <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {children}
           </main>
           <AdminBottomTabs />
