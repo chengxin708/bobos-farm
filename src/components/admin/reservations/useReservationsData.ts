@@ -275,13 +275,13 @@ export function useReservationsData() {
 
   // ── Fetch detail + activity logs for selected reservation ───
 
-  const { data: detailRes } = useSWR<Reservation>(
+  const { data: detailRes, mutate: mutateDetail } = useSWR<Reservation>(
     selectedRes ? `/api/reservations/${selectedRes.id}` : null,
     fetcher,
     { revalidateOnFocus: false }
   )
 
-  const { data: activityLogs } = useSWR<ActivityLog[]>(
+  const { data: activityLogs, mutate: mutateActivityLogs } = useSWR<ActivityLog[]>(
     selectedRes ? `/api/activity-logs?targetId=${selectedRes.id}&targetType=RESERVATION` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -331,6 +331,8 @@ export function useReservationsData() {
       const updated = await res.json()
       if (selectedRes?.id === id) setSelectedRes(updated)
       mutateReservations()
+      mutateDetail()
+      mutateActivityLogs()
       return true
     } catch {
       alert(t('updateFailed'))
