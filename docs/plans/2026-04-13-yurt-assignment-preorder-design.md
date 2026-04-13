@@ -52,7 +52,7 @@ Every time a reservation is created or cancelled, simulate the assignment for th
 - If a previously anomalous date is now resolved (e.g. after cancellation) → clear anomaly
 
 **Anomaly types:**
-1. Guest count exceeds largest yurt capacity (>35)
+1. Guest count exceeds largest ACTIVE yurt capacity (dynamic, not hardcoded)
 2. More reservations than available yurts
 3. Capacity conflict (remaining yurts can't fit a group)
 
