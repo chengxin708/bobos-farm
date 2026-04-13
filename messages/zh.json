@@ -728,6 +728,14 @@
         "complete": "完成",
         "close": "关闭"
       },
+      "dialog": {
+        "confirmDeposit": "确认定金",
+        "confirmDepositMsg": "确认此定金？预订将正式生效，客户会收到邮件通知。",
+        "completeReservation": "完成预订",
+        "completeReservationMsg": "将此预订标记为已完成？表示客人已到访结束。",
+        "cancelReservation": "取消预订",
+        "cancelReservationMsg": "确定要取消此预订吗？客户会收到取消通知邮件，此操作不可撤销。"
+      },
       "detail": {
         "title": "预订详情",
         "reservationInfo": "预订信息",

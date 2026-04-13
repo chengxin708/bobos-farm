@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { X, ChevronRight, ShoppingBag, MessageSquare, History } from 'lucide-react'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
   type Order,
@@ -57,6 +58,21 @@ export default function ReservationDetail({
 
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'deposit' | 'complete' | 'cancel' | null>(null)
+
+  const handleConfirmAction = useCallback(() => {
+    if (!confirmAction) return
+    if (confirmAction === 'deposit') onAction.confirmDeposit(reservation.id)
+    if (confirmAction === 'complete') onAction.completeReservation(reservation.id)
+    if (confirmAction === 'cancel') onAction.cancelReservation(reservation.id)
+    setConfirmAction(null)
+  }, [confirmAction, onAction, reservation.id])
+
+  const confirmDialogConfig = {
+    deposit: { title: t('dialog.confirmDeposit'), message: t('dialog.confirmDepositMsg'), variant: 'success' as const, confirmLabel: t('actions.confirm') },
+    complete: { title: t('dialog.completeReservation'), message: t('dialog.completeReservationMsg'), variant: 'confirm' as const, confirmLabel: t('actions.complete') },
+    cancel: { title: t('dialog.cancelReservation'), message: t('dialog.cancelReservationMsg'), variant: 'danger' as const, confirmLabel: t('actions.cancel') },
+  }
 
   // Fetch full order details (with items) when order exists
   const { data: fullOrder, mutate: mutateOrder } = useSWR<Order>(
@@ -317,7 +333,7 @@ export default function ReservationDetail({
         {/* Confirm Deposit - show for PAYMENT_SUBMITTED */}
         {reservation.status === 'PAYMENT_SUBMITTED' && (
           <button
-            onClick={() => onAction.confirmDeposit(reservation.id)}
+            onClick={() => setConfirmAction('deposit')}
             disabled={isUpdating}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
           >
@@ -328,7 +344,7 @@ export default function ReservationDetail({
         {/* Complete - show for CONFIRMED */}
         {reservation.status === 'CONFIRMED' && (
           <button
-            onClick={() => onAction.completeReservation(reservation.id)}
+            onClick={() => setConfirmAction('complete')}
             disabled={isUpdating}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#2980B9] text-white hover:bg-[#2980B9]/90 disabled:opacity-50"
           >
@@ -339,7 +355,7 @@ export default function ReservationDetail({
         {/* Cancel - show for non-terminal states */}
         {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
           <button
-            onClick={() => onAction.cancelReservation(reservation.id)}
+            onClick={() => setConfirmAction('cancel')}
             disabled={isUpdating}
             className="w-full py-2 text-sm font-semibold rounded-lg border border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545]/5 disabled:opacity-50"
           >
@@ -408,6 +424,20 @@ export default function ReservationDetail({
           isOpen={showCheckout}
           onClose={() => setShowCheckout(false)}
           onCompleted={handleCheckoutCompleted}
+        />
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmAction && (
+        <ConfirmDialog
+          isOpen={true}
+          title={confirmDialogConfig[confirmAction].title}
+          message={confirmDialogConfig[confirmAction].message}
+          variant={confirmDialogConfig[confirmAction].variant}
+          confirmLabel={confirmDialogConfig[confirmAction].confirmLabel}
+          loading={isUpdating}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setConfirmAction(null)}
         />
       )}
     </div>

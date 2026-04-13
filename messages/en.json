@@ -728,6 +728,14 @@
         "complete": "Complete",
         "close": "Close"
       },
+      "dialog": {
+        "confirmDeposit": "Confirm Deposit",
+        "confirmDepositMsg": "Are you sure you want to confirm this deposit? The reservation will become active and the customer will be notified.",
+        "completeReservation": "Complete Reservation",
+        "completeReservationMsg": "Mark this reservation as completed? This indicates the guest visit has concluded.",
+        "cancelReservation": "Cancel Reservation",
+        "cancelReservationMsg": "Are you sure you want to cancel this reservation? The customer will be notified by email. This cannot be undone."
+      },
       "detail": {
         "title": "Reservation Details",
         "reservationInfo": "Reservation Info",

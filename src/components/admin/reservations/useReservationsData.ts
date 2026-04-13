@@ -333,7 +333,6 @@ export function useReservationsData() {
   }, [selectedRes, mutateReservations])
 
   const confirmDeposit = useCallback(async (id: string) => {
-    if (!confirm(t('confirmDepositPrompt'))) return
     const ok = await handleAction(id, 'admin', {
       status: 'CONFIRMED',
       depositStatus: 'CONFIRMED',
@@ -343,13 +342,11 @@ export function useReservationsData() {
   }, [handleAction, showSuccess, t])
 
   const cancelReservation = useCallback(async (id: string) => {
-    if (!confirm(t('confirmCancelPrompt'))) return
     const ok = await handleAction(id, 'cancel')
     if (ok) showSuccess(t('cancelledSuccess'))
   }, [handleAction, showSuccess, t])
 
   const completeReservation = useCallback(async (id: string) => {
-    if (!confirm(t('confirmCompletePrompt'))) return
     const ok = await handleAction(id, 'admin', { status: 'COMPLETED' })
     if (ok) showSuccess(t('completedSuccess'))
   }, [handleAction, showSuccess, t])
