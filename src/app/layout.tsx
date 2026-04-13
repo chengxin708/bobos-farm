@@ -56,7 +56,10 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} translate="no">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body
         className={`${dmSerif.variable} ${dmSans.variable} ${notoSerifSC.variable} ${notoSansSC.variable} ${cormorant.variable} antialiased`}
       >
