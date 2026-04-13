@@ -73,6 +73,8 @@
       "continueWithGoogle": "使用Google登录",
       "hasAccount": "已有账号？",
       "signIn": "登录",
+      "preferredLanguage": "邮件语言",
+      "marketingOptIn": "接收 Bobo's Farm 的活动、时令菜单和优惠信息",
       "strength": {
         "weak": "较弱",
         "medium": "中等",

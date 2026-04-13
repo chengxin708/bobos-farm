@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, phone, password } = result.data;
+    const { name, email, phone, password, preferredLanguage, marketingOptIn } = result.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
         phone,
         passwordHash,
         role: "CUSTOMER",
+        preferredLanguage,
+        marketingOptIn,
+        unsubscribeToken: crypto.randomUUID(),
       },
     });
 

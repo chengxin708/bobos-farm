@@ -73,6 +73,8 @@
       "continueWithGoogle": "Continue with Google",
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
+      "preferredLanguage": "Email Language",
+      "marketingOptIn": "Receive updates about events, seasonal menus, and special offers from Bobo's Farm",
       "strength": {
         "weak": "Weak",
         "medium": "Medium",

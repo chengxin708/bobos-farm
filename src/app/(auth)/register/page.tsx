@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react'
+import { User, Mail, Lock, Eye, EyeOff, Phone, Globe } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { formatPhoneUS } from '@/lib/phone-mask'
 
@@ -35,6 +35,8 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [preferredLanguage, setPreferredLanguage] = useState('EN')
+  const [marketingOptIn, setMarketingOptIn] = useState(true)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -72,7 +74,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, confirmPassword }),
+        body: JSON.stringify({ name, email, phone, password, confirmPassword, preferredLanguage, marketingOptIn }),
       })
 
       const data = await res.json()
@@ -176,6 +178,20 @@ export default function RegisterPage() {
           />
         </div>
 
+        {/* Preferred Language */}
+        <div className="relative">
+          <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1A1208]/30 pointer-events-none" />
+          <select
+            value={preferredLanguage}
+            onChange={(e) => setPreferredLanguage(e.target.value)}
+            style={{ border: '1px solid #E8ECE4', outline: 'none' }}
+            className="w-full h-[52px] rounded-xl pl-11 pr-4 text-sm bg-white text-[#1A1208] focus:!border-[#6B7F5E] transition-colors appearance-none cursor-pointer"
+          >
+            <option value="EN">English</option>
+            <option value="ZH">中文</option>
+          </select>
+        </div>
+
         {/* Password */}
         <div>
           <div className="relative">
@@ -240,6 +256,19 @@ export default function RegisterPage() {
               : <EyeOff size={18} className="text-[#1A1208]/30" />}
           </button>
         </div>
+
+        {/* Marketing opt-in */}
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={marketingOptIn}
+            onChange={(e) => setMarketingOptIn(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-[#5B8C3E] cursor-pointer"
+          />
+          <span className="text-xs text-[#1A1208]/60 leading-relaxed">
+            {t('marketingOptIn')}
+          </span>
+        </label>
 
         {/* Submit */}
         <button
