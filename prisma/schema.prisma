@@ -259,3 +259,17 @@ model RescheduleHistory {
 
   @@map("reschedule_history")
 }
+
+model Tag {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  nameEn    String
+  nameZh    String?
+  color     String?  // Tailwind color class e.g. "bg-[#E8ECE4] text-[#6B7F5E]"
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tags")
+}

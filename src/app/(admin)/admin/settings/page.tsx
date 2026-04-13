@@ -15,10 +15,14 @@ import {
   ShieldAlert,
   Wallet,
   UtensilsCrossed,
+  Tag as TagIcon,
   Plus,
   Trash2,
   Loader2,
   ChevronRight,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -31,7 +35,17 @@ interface SystemSetting {
   description: string | null
 }
 
-type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+
+interface TagItem {
+  id: string
+  key: string
+  nameEn: string
+  nameZh: string | null
+  color: string | null
+  sortOrder: number
+  isActive: boolean
+}
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -447,6 +461,7 @@ export default function Settings() {
     { icon: Wallet, label: t('tabs.payment') },
     { icon: Bell, label: t('tabs.notifications') },
     { icon: UtensilsCrossed, label: t('tabs.menu') },
+    { icon: TagIcon, label: t('tabs.tags') },
   ]
 
   // ── Shared input style helper ──────────────────────────────────
@@ -913,6 +928,208 @@ export default function Settings() {
     )
   }
 
+  // ── Tags management tab ────────────────────────────────────────
+
+  const { data: tagsData, mutate: mutateTags } = useSWR<TagItem[]>('/api/tags', fetcher, { revalidateOnFocus: false })
+  const tagsList = tagsData || []
+  const [editingTagId, setEditingTagId] = useState<string | null>(null)
+  const [tagForm, setTagForm] = useState({ nameEn: '', nameZh: '', color: '', key: '' })
+  const [addingTag, setAddingTag] = useState(false)
+  const [savingTag, setSavingTag] = useState(false)
+
+  const startEditTag = (tag: TagItem) => {
+    setEditingTagId(tag.id)
+    setTagForm({ nameEn: tag.nameEn, nameZh: tag.nameZh || '', color: tag.color || '', key: tag.key })
+    setAddingTag(false)
+  }
+
+  const startAddTag = () => {
+    setAddingTag(true)
+    setEditingTagId(null)
+    setTagForm({ nameEn: '', nameZh: '', color: 'bg-[#E8ECE4] text-[#6B7F5E]', key: '' })
+  }
+
+  const cancelEditTag = () => {
+    setEditingTagId(null)
+    setAddingTag(false)
+  }
+
+  const saveTag = async () => {
+    if (!tagForm.nameEn.trim()) return
+    setSavingTag(true)
+    try {
+      if (addingTag) {
+        const key = tagForm.nameEn.trim().toLowerCase().replace(/\s+/g, '-')
+        await fetch('/api/tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, nameEn: tagForm.nameEn.trim(), nameZh: tagForm.nameZh.trim() || null, color: tagForm.color || null }),
+        })
+      } else if (editingTagId) {
+        await fetch(`/api/tags/${editingTagId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nameEn: tagForm.nameEn.trim(), nameZh: tagForm.nameZh.trim() || null, color: tagForm.color || null }),
+        })
+      }
+      await mutateTags()
+      cancelEditTag()
+    } catch { /* ignore */ }
+    finally { setSavingTag(false) }
+  }
+
+  const deleteTag = async (id: string) => {
+    if (!confirm(t('tagsTab.confirmDelete'))) return
+    await fetch(`/api/tags/${id}`, { method: 'DELETE' })
+    mutateTags()
+  }
+
+  const toggleTagActive = async (tag: TagItem) => {
+    await fetch(`/api/tags/${tag.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !tag.isActive }),
+    })
+    mutateTags()
+  }
+
+  const TAG_COLORS = [
+    { label: 'Green', value: 'bg-[#E8ECE4] text-[#6B7F5E]' },
+    { label: 'Gold', value: 'bg-[#FEF3CD] text-[#8B6914]' },
+    { label: 'Purple', value: 'bg-[#F3E8FF] text-[#7C3AED]' },
+    { label: 'Orange', value: 'bg-[#FFF3E0] text-[#E65100]' },
+    { label: 'Pink', value: 'bg-[#FCE7F3] text-[#DB2777]' },
+    { label: 'Blue', value: 'bg-[#DBEAFE] text-[#1D4ED8]' },
+    { label: 'Gray', value: 'bg-gray-100 text-gray-500' },
+  ]
+
+  function renderTagsTab() {
+    return (
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('tagsTab.title')}</h2>
+            <p className="text-sm text-[#8C8478] mt-1">{t('tagsTab.description')}</p>
+          </div>
+          <button
+            onClick={startAddTag}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#6B7F5E] text-white text-sm font-semibold rounded-lg hover:bg-[#5A6E4F] transition-colors"
+          >
+            <Plus size={14} />
+            {t('tagsTab.add')}
+          </button>
+        </div>
+
+        {/* Add form */}
+        {addingTag && (
+          <div className="bg-[#F8F7F4] rounded-lg p-4 mb-4 flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-[#2C2416] mb-1 block">EN</label>
+                <input
+                  value={tagForm.nameEn}
+                  onChange={(e) => setTagForm(f => ({ ...f, nameEn: e.target.value }))}
+                  className="w-full border border-[#E8ECE4] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#6B7F5E]"
+                  placeholder="Signature"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#2C2416] mb-1 block">ZH</label>
+                <input
+                  value={tagForm.nameZh}
+                  onChange={(e) => setTagForm(f => ({ ...f, nameZh: e.target.value }))}
+                  className="w-full border border-[#E8ECE4] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#6B7F5E]"
+                  placeholder="招牌"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-[#2C2416] mb-1 block">{t('tagsTab.color')}</label>
+              <div className="flex gap-2 flex-wrap">
+                {TAG_COLORS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setTagForm(f => ({ ...f, color: c.value }))}
+                    className={`text-[11px] font-medium px-3 py-1 rounded-full ${c.value} ${tagForm.color === c.value ? 'ring-2 ring-[#6B7F5E] ring-offset-1' : ''}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 justify-end">
+              <button onClick={cancelEditTag} className="text-sm text-[#8C8478] px-3 py-1.5 rounded-lg hover:bg-[#E8ECE4]/50">
+                {t('tagsTab.cancel')}
+              </button>
+              <button onClick={saveTag} disabled={savingTag || !tagForm.nameEn.trim()} className="text-sm font-semibold text-white bg-[#6B7F5E] px-4 py-1.5 rounded-lg hover:bg-[#5A6E4F] disabled:opacity-50">
+                {savingTag ? '...' : t('tagsTab.save')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tags list */}
+        <div className="flex flex-col gap-1">
+          {tagsList.map(tag => (
+            <div key={tag.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${!tag.isActive ? 'opacity-50' : ''} hover:bg-[#F8F7F4] transition-colors`}>
+              {editingTagId === tag.id ? (
+                /* Inline edit */
+                <>
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <input
+                      value={tagForm.nameEn}
+                      onChange={(e) => setTagForm(f => ({ ...f, nameEn: e.target.value }))}
+                      className="border border-[#E8ECE4] rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[#6B7F5E]"
+                      autoFocus
+                    />
+                    <input
+                      value={tagForm.nameZh}
+                      onChange={(e) => setTagForm(f => ({ ...f, nameZh: e.target.value }))}
+                      className="border border-[#E8ECE4] rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[#6B7F5E]"
+                      placeholder="中文"
+                    />
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap max-w-[180px]">
+                    {TAG_COLORS.map(c => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setTagForm(f => ({ ...f, color: c.value }))}
+                        className={`w-5 h-5 rounded-full ${c.value.split(' ')[0]} ${tagForm.color === c.value ? 'ring-2 ring-[#6B7F5E] ring-offset-1' : 'ring-1 ring-[#E8ECE4]'}`}
+                      />
+                    ))}
+                  </div>
+                  <button onClick={saveTag} disabled={savingTag} className="p-1 rounded hover:bg-[#5B8C3E]/10 text-[#5B8C3E]"><Check size={14} /></button>
+                  <button onClick={cancelEditTag} className="p-1 rounded hover:bg-[#DC3545]/10 text-[#DC3545]"><X size={14} /></button>
+                </>
+              ) : (
+                /* Display mode */
+                <>
+                  <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${tag.color || 'bg-[#E8ECE4] text-[#6B7F5E]'}`}>
+                    {tag.nameEn}
+                  </span>
+                  {tag.nameZh && <span className="text-sm text-[#8C8478]">{tag.nameZh}</span>}
+                  <span className="text-[10px] text-[#D0CCC4] ml-auto font-mono">{tag.key}</span>
+                  <button onClick={() => toggleTagActive(tag)} className={`text-[10px] px-2 py-0.5 rounded-full border ${tag.isActive ? 'border-[#5B8C3E]/30 text-[#5B8C3E]' : 'border-[#DC3545]/30 text-[#DC3545]'}`}>
+                    {tag.isActive ? t('tagsTab.active') : t('tagsTab.inactive')}
+                  </button>
+                  <button onClick={() => startEditTag(tag)} className="p-1 rounded hover:bg-[#E8ECE4]/50 text-[#8C8478]"><Pencil size={12} /></button>
+                  <button onClick={() => deleteTag(tag.id)} className="p-1 rounded hover:bg-[#DC3545]/10 text-[#DC3545]"><Trash2 size={12} /></button>
+                </>
+              )}
+            </div>
+          ))}
+
+          {tagsList.length === 0 && (
+            <div className="text-center py-8 text-sm text-[#8C8478]">{t('tagsTab.empty')}</div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const TAB_RENDERERS = [
     renderGeneralTab,
     renderBookingTab,
@@ -922,6 +1139,7 @@ export default function Settings() {
     renderPaymentTab,
     renderNotificationsTab,
     renderMenuTab,
+    renderTagsTab,
   ]
 
   return (

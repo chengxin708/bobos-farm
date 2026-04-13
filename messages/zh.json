@@ -175,7 +175,11 @@
     },
     "lambNotice": "我们的烤全羊（约35磅）适合8人以上聚餐，请至少提前3天预订。",
     "advanceNotice3": "需提前3天预订",
-    "advanceNotice2": "需提前2天预订"
+    "advanceNotice2": "需提前2天预订",
+    "signInForPrice": "登录查看价格",
+    "comingSoon": "菜单即将上线",
+    "comingSoonDesc": "我们的菜单正在准备中，请稍后查看我们的农场直供美食。",
+    "noItems": "暂无菜品"
   },
   "booking": {
     "stepper": {
@@ -955,7 +959,8 @@
         "uploading": "上传中...",
         "tags": "标签",
         "tagPlaceholder": "输入后按回车添加",
-        "addTag": "+ 添加标签",
+        "newTagPlaceholder": "新标签名...",
+        "addTag": "添加",
         "advanceOrder": "需提前预订天数",
         "sortOrder": "排序",
         "active": "已上架",
@@ -1028,7 +1033,20 @@
         "guestPolicies": "客户政策",
         "payment": "支付设置",
         "notifications": "通知设置",
-        "menu": "菜单"
+        "menu": "菜单",
+        "tags": "标签"
+      },
+      "tagsTab": {
+        "title": "标签管理",
+        "description": "创建和管理菜品标签。标签帮助客户筛选和了解菜品特点。",
+        "add": "新建标签",
+        "color": "颜色",
+        "save": "保存",
+        "cancel": "取消",
+        "active": "启用",
+        "inactive": "隐藏",
+        "confirmDelete": "删除此标签？将从所有关联菜品中移除。",
+        "empty": "暂无标签，创建第一个标签吧。"
       },
       "menuTab": {
         "title": "菜单管理",

@@ -129,6 +129,13 @@ export default function MenuManagement() {
     fetcher
   )
 
+  // ── Fetch all tags ──
+  const { data: allTags = [], mutate: mutateTags } = useSWR<{ id: string; key: string; nameEn: string; nameZh: string | null; color: string | null; sortOrder: number; isActive: boolean }[]>(
+    '/api/tags',
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
   // ── Success feedback ──
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -580,14 +587,17 @@ export default function MenuManagement() {
                   </div>
                   {item.tags.length > 0 && (
                     <div className="flex gap-1.5 flex-wrap">
-                      {item.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getTagClasses(tag)}`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {item.tags.map((tagKey) => {
+                        const tagData = allTags.find(t => t.key === tagKey)
+                        return (
+                          <span
+                            key={tagKey}
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${tagData?.color || 'bg-gray-100 text-gray-500'}`}
+                          >
+                            {tagData ? tagData.nameEn : tagKey}
+                          </span>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -767,39 +777,80 @@ export default function MenuManagement() {
                     {t('editDish.tags')}
                   </label>
                   <div className="flex gap-1.5 flex-wrap mb-2">
-                    {form.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className={`text-[10px] font-medium pl-2 pr-1 py-0.5 rounded-full flex items-center gap-1 ${getTagClasses(tag)}`}
-                      >
-                        {tag}
+                    {allTags.filter(t => t.isActive !== false).map((tag) => {
+                      const isSelected = form.tags.includes(tag.key)
+                      return (
                         <button
-                          onClick={() => removeTag(tag)}
-                          className="w-3 h-3 flex items-center justify-center rounded-full hover:bg-black/10"
+                          key={tag.key}
+                          type="button"
+                          onClick={() => isSelected ? removeTag(tag.key) : updateForm('tags', [...form.tags, tag.key])}
+                          className={`text-[11px] font-medium px-2.5 py-1 rounded-full border transition-all ${
+                            isSelected
+                              ? (tag.color || 'bg-[#E8ECE4] text-[#6B7F5E]') + ' border-transparent ring-1 ring-[#6B7F5E]'
+                              : 'bg-white text-[#8C8478] border-[#E8ECE4] hover:border-[#6B7F5E]/40'
+                          }`}
                         >
-                          <X size={8} />
+                          {tag.nameEn}{tag.nameZh ? ` ${tag.nameZh}` : ''}
                         </button>
-                      </span>
-                    ))}
+                      )
+                    })}
                   </div>
+                  {/* Quick add new tag */}
                   <div className="flex gap-2">
                     <input
                       className="flex-1 border border-[#E8ECE4] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E] transition-colors"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
+                      onKeyDown={async (e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
-                          addTag()
+                          const name = tagInput.trim()
+                          if (!name) return
+                          const key = name.toLowerCase().replace(/\s+/g, '-')
+                          if (allTags.some(t => t.key === key)) {
+                            if (!form.tags.includes(key)) updateForm('tags', [...form.tags, key])
+                            setTagInput('')
+                            return
+                          }
+                          const res = await fetch('/api/tags', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key, nameEn: name }),
+                          })
+                          if (res.ok) {
+                            await mutateTags()
+                            updateForm('tags', [...form.tags, key])
+                          }
+                          setTagInput('')
                         }
                       }}
-                      placeholder={t('editDish.tagPlaceholder')}
+                      placeholder={t('editDish.newTagPlaceholder')}
                     />
                     <button
-                      onClick={addTag}
+                      type="button"
+                      onClick={async () => {
+                        const name = tagInput.trim()
+                        if (!name) return
+                        const key = name.toLowerCase().replace(/\s+/g, '-')
+                        if (allTags.some(t => t.key === key)) {
+                          if (!form.tags.includes(key)) updateForm('tags', [...form.tags, key])
+                          setTagInput('')
+                          return
+                        }
+                        const res = await fetch('/api/tags', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ key, nameEn: name }),
+                        })
+                        if (res.ok) {
+                          await mutateTags()
+                          updateForm('tags', [...form.tags, key])
+                        }
+                        setTagInput('')
+                      }}
                       className="text-xs text-[#6B7F5E] font-medium px-2 py-1 border border-[#6B7F5E]/30 rounded-lg hover:bg-[#EAF2E3] transition-colors"
                     >
-                      {t('editDish.addTag')}
+                      + {t('editDish.addTag')}
                     </button>
                   </div>
                 </div>

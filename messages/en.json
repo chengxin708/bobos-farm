@@ -175,7 +175,11 @@
     },
     "lambNotice": "Our whole roasted lamb (~35 lbs) is perfect for groups of 8+. Pre-order at least 3 days in advance.",
     "advanceNotice3": "Requires 3 days advance notice",
-    "advanceNotice2": "Requires 2 days advance notice"
+    "advanceNotice2": "Requires 2 days advance notice",
+    "signInForPrice": "Sign in to see price",
+    "comingSoon": "Menu Coming Soon",
+    "comingSoonDesc": "Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.",
+    "noItems": "No items available"
   },
   "booking": {
     "stepper": {
@@ -955,7 +959,8 @@
         "uploading": "Uploading...",
         "tags": "Tags",
         "tagPlaceholder": "Type and press Enter",
-        "addTag": "+ Add tag",
+        "newTagPlaceholder": "New tag name...",
+        "addTag": "Add",
         "advanceOrder": "Advance Days Required",
         "sortOrder": "Sort Order",
         "active": "Active",
@@ -1028,7 +1033,20 @@
         "guestPolicies": "Guest Policies",
         "payment": "Payment",
         "notifications": "Notifications",
-        "menu": "Menu"
+        "menu": "Menu",
+        "tags": "Tags"
+      },
+      "tagsTab": {
+        "title": "Tag Management",
+        "description": "Create and manage tags for menu items. Tags help customers filter and understand menu items.",
+        "add": "New Tag",
+        "color": "Color",
+        "save": "Save",
+        "cancel": "Cancel",
+        "active": "Active",
+        "inactive": "Hidden",
+        "confirmDelete": "Delete this tag? It will be removed from all menu items.",
+        "empty": "No tags yet. Create your first tag."
       },
       "menuTab": {
         "title": "Menu Management",

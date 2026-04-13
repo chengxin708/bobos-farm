@@ -37,6 +37,15 @@ interface MenuItem {
   category: MenuCategory
 }
 
+interface Tag {
+  id: string
+  key: string
+  nameEn: string
+  nameZh: string | null
+  color: string | null
+  sortOrder: number
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -64,14 +73,8 @@ const CATEGORY_I18N_KEY: Record<string, string> = {
   'Beverages': 'categories.beverages',
 }
 
-const TAG_LABELS: Record<string, string> = {
-  'signature':     'Signature',
-  'advance-order': 'Pre-order',
-  'popular':       'Popular',
-  'vegetarian':    'Vegetarian',
-  'gluten-free':   'GF',
-  'non-alcoholic': 'N/A',
-}
+// Default fallback colors for tags without a color field
+const DEFAULT_TAG_COLOR = 'bg-[#E8ECE4] text-[#6B7F5E]'
 
 // ---------------------------------------------------------------------------
 // Skeleton loaders
@@ -118,6 +121,8 @@ function MenuItemRow({
   description,
   t,
   isAuthenticated,
+  tagMap,
+  locale,
 }: {
   item: MenuItem
   isExpanded: boolean
@@ -127,6 +132,8 @@ function MenuItemRow({
   description: string
   t: ReturnType<typeof useTranslations<'menu'>>
   isAuthenticated: boolean
+  tagMap: Map<string, Tag>
+  locale: string
 }) {
   return (
     <div className="border-b border-[#F2EDE6]">
@@ -177,16 +184,17 @@ function MenuItemRow({
                 className="text-[#6B7F5E] text-[13px] no-underline hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
-                Sign in to reveal price
+                {t('signInForPrice')}
               </Link>
             )}
-            {item.tags && item.tags.length > 0 && item.tags.map((tag) => {
-              const label = TAG_LABELS[tag]
-              if (!label) return null
+            {item.tags && item.tags.length > 0 && item.tags.map((tagKey) => {
+              const tag = tagMap.get(tagKey)
+              if (!tag) return null
+              const label = locale === 'zh' && tag.nameZh ? tag.nameZh : tag.nameEn
               return (
                 <span
-                  key={tag}
-                  className="rounded-full px-2 py-0.5 text-[11px] bg-[#E8ECE4] text-[#6B7F5E]"
+                  key={tagKey}
+                  className={`rounded-full px-2 py-0.5 text-[11px] ${tag.color || DEFAULT_TAG_COLOR}`}
                 >
                   {label}
                 </span>
@@ -241,13 +249,14 @@ function MenuItemRow({
               {/* All tags */}
               {item.tags && item.tags.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
-                  {item.tags.map((tag) => {
-                    const label = TAG_LABELS[tag]
-                    if (!label) return null
+                  {item.tags.map((tagKey) => {
+                    const tag = tagMap.get(tagKey)
+                    if (!tag) return null
+                    const label = locale === 'zh' && tag.nameZh ? tag.nameZh : tag.nameEn
                     return (
                       <span
-                        key={tag}
-                        className="rounded-full px-2.5 py-1 text-[12px] bg-[#E8ECE4] text-[#6B7F5E]"
+                        key={tagKey}
+                        className={`rounded-full px-2.5 py-1 text-[12px] ${tag.color || DEFAULT_TAG_COLOR}`}
                       >
                         {label}
                       </span>
@@ -298,6 +307,22 @@ export default function MenuPage() {
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 30000 }
   )
+
+  // Fetch tags for label display
+  const { data: tags } = useSWR<Tag[]>(
+    '/api/tags?activeOnly=true',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  )
+
+  // Build tag lookup map
+  const tagMap = useMemo(() => {
+    const map = new Map<string, Tag>()
+    if (tags) {
+      for (const tag of tags) map.set(tag.key, tag)
+    }
+    return map
+  }, [tags])
 
   // Active pill state (for highlighting)
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -425,9 +450,9 @@ export default function MenuPage() {
         <div className="flex items-center justify-center py-20 px-4">
           <div className="flex flex-col items-center gap-3 text-center">
             <UtensilsCrossed size={32} color="#8C8478" strokeWidth={1.5} />
-            <h3 className="font-serif text-lg text-[#1A1208]">Menu Coming Soon</h3>
+            <h3 className="font-serif text-lg text-[#1A1208]">{t('comingSoon')}</h3>
             <p className="text-sm text-[#8C8478] max-w-[280px]">
-              Our menu is being prepared. Please check back soon to explore our farm-to-table dishes.
+              {t('comingSoonDesc')}
             </p>
           </div>
         </div>
@@ -464,7 +489,7 @@ export default function MenuPage() {
         ) : groupedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <UtensilsCrossed size={28} color="#8C8478" strokeWidth={1.5} />
-            <p className="text-[#8C8478] text-sm">No items available</p>
+            <p className="text-[#8C8478] text-sm">{t('noItems')}</p>
           </div>
         ) : (
           groupedItems.map(({ category: cat, items }) => {
@@ -506,6 +531,8 @@ export default function MenuPage() {
                       description={itemDescription(item)}
                       t={t}
                       isAuthenticated={isAuthenticated}
+                      tagMap={tagMap}
+                      locale={locale}
                     />
                   ))}
                 </div>
