@@ -382,6 +382,28 @@ export default function CalendarDesktop() {
           </span>
         </div>
 
+        {/* Slot indicators */}
+        {(() => {
+          const closedSet = closedByDateYurt.get(dateStr)
+          const totalSlots = activeYurts.filter(y => !closedSet?.has(y.id)).length
+          const occupied = dayRes.filter(r => r.status !== 'CANCELLED' && r.status !== 'EXPIRED').length
+          if (totalSlots > 0) {
+            return (
+              <div className="flex items-center gap-1 mb-1">
+                {Array.from({ length: totalSlots }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`w-2 h-2 rounded-full ${
+                      i < occupied ? 'bg-[#6B7F5E]' : 'border border-[#6B7F5E]/30'
+                    }`}
+                  />
+                ))}
+              </div>
+            )
+          }
+          return null
+        })()}
+
         {/* Reservation pills */}
         <div className="flex flex-col gap-1">
           {visibleRes.map(res => {
