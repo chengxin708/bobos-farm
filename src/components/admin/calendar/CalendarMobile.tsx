@@ -45,6 +45,7 @@ interface Reservation {
   status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
   depositAmount: number
   depositStatus: string
+  holdByAdmin?: boolean
   user: ReservationUser
   yurt: ReservationYurt
 }
@@ -413,6 +414,7 @@ export default function CalendarMobile() {
             const isClosed = closedByDateYurt.get(selectedDateStr)?.has(yurt.id)
 
             if (res) {
+              const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
               // Booked card — tap to view reservation detail
               return (
                 <button
@@ -425,7 +427,7 @@ export default function CalendarMobile() {
                     <StatusBadge
                       type="reservation"
                       status={res.status}
-                      label={statusLabel(res.status, t)}
+                      label={isHeld ? t('status.held') : statusLabel(res.status, t)}
                     />
                   </div>
                   <div className={`${res.status === 'CANCELLED' ? 'opacity-60' : ''}`}>

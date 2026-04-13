@@ -866,7 +866,8 @@
         "confirmed": "Confirmed",
         "completed": "Completed",
         "cancelled": "Cancelled",
-        "expired": "Expired"
+        "expired": "Expired",
+        "held": "Held"
       },
       "guests": "{count} Guests",
       "noData": "No reservations found",

@@ -866,7 +866,8 @@
         "confirmed": "已确认",
         "completed": "已完成",
         "cancelled": "已取消",
-        "expired": "已过期"
+        "expired": "已过期",
+        "held": "已锁位"
       },
       "guests": "{count} 位客人",
       "noData": "未找到预订记录",
