@@ -377,7 +377,7 @@ export default function CalendarMobile() {
               return (
                 <Link
                   key={yurt.id}
-                  href={`/admin/reservations/${res.id}`}
+                  href="/admin/reservations"
                   className="block bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 no-underline"
                 >
                   <div className="flex items-center justify-between mb-2">
