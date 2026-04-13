@@ -12,7 +12,7 @@ function ensureVapid(): boolean {
     console.warn("[Push] VAPID keys not configured — push notifications disabled");
     return false;
   }
-  webpush.setVapidDetails("mailto:admin@bobos.farm", publicKey, privateKey);
+  webpush.setVapidDetails("mailto:chengxin708@gmail.com", publicKey, privateKey);
   vapidConfigured = true;
   return true;
 }
