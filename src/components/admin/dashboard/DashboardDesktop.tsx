@@ -315,7 +315,7 @@ export default function DashboardDesktop() {
                         {new Date(row.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                       </span>
                       <span className="w-[130px] text-[13px]" style={{ color: '#2C2416' }}>
-                        {row.yurt.name}
+                        {row.yurt?.name ?? 'Pending'}
                       </span>
                       <div className="w-[110px]">
                         <span

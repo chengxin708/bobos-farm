@@ -25,7 +25,7 @@ interface ReservationYurt {
 interface Reservation {
   id: string
   userId: string
-  yurtId: string
+  yurtId: string | null
   date: string
   guestCount: number
   status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
@@ -33,7 +33,7 @@ interface Reservation {
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   createdAt: string
   user: ReservationUser
-  yurt: ReservationYurt
+  yurt: ReservationYurt | null
 }
 
 interface CustomerData {
@@ -210,7 +210,7 @@ export default function Customers() {
             : r.status === 'PENDING_PAYMENT' ? 'Pending'
             : r.status === 'PAYMENT_SUBMITTED' ? 'Submitted'
             : r.status,
-          yurtName: r.yurt.name,
+          yurtName: r.yurt?.name ?? 'Pending',
         })),
       }
     }).sort((a, b) => b.totalVisits - a.totalVisits)

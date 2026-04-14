@@ -16,7 +16,7 @@ import {
 interface Reservation {
   id: string
   userId: string
-  yurtId: string
+  yurtId: string | null
   date: string
   guestCount: number
   status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
@@ -24,7 +24,7 @@ interface Reservation {
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   createdAt: string
   user: { id: string; name: string | null; email: string }
-  yurt: { id: string; name: string; capacity: number }
+  yurt: { id: string; name: string; capacity: number } | null
 }
 
 interface OrderReportData {
@@ -197,11 +197,12 @@ export default function Reports() {
 
     const yurtMap = new Map<string, { name: string; count: number }>()
     reservations.forEach(r => {
+      if (!r.yurtId) return
       const existing = yurtMap.get(r.yurtId)
       if (existing) {
         existing.count++
       } else {
-        yurtMap.set(r.yurtId, { name: r.yurt.name, count: 1 })
+        yurtMap.set(r.yurtId, { name: r.yurt?.name ?? 'Pending', count: 1 })
       }
     })
 
@@ -268,7 +269,7 @@ export default function Reports() {
     const rows = reservations.map(r => [
       r.date,
       r.user.name || r.user.email,
-      r.yurt.name,
+      r.yurt?.name ?? 'Pending',
       r.guestCount,
       r.status,
       r.depositAmount,

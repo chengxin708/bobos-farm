@@ -17,7 +17,7 @@ interface Yurt {
 
 interface ReservationSlot {
   id: string
-  yurtId: string
+  yurtId: string | null
   date: string
   status: string
 }
@@ -26,10 +26,10 @@ interface EditReservationEditorProps {
   reservation: {
     id: string
     date: string
-    yurtId: string
+    yurtId: string | null
     guestCount: number
     specialRequests: string | null
-    yurt: { id: string; name: string; capacity: number }
+    yurt: { id: string; name: string; capacity: number } | null
   }
   isOpen: boolean
   onClose: () => void
@@ -77,7 +77,7 @@ export default function EditReservationEditor({
   const originalDate = reservation.date.split('T')[0]
 
   const [date, setDate] = useState(originalDate)
-  const [yurtId, setYurtId] = useState(reservation.yurtId)
+  const [yurtId, setYurtId] = useState<string | null>(reservation.yurtId)
   const [guestCount, setGuestCount] = useState(reservation.guestCount)
   const [specialRequests, setSpecialRequests] = useState(
     reservation.specialRequests || ''
@@ -144,10 +144,11 @@ export default function EditReservationEditor({
     return new Set(
       dateReservations
         .filter(
-          (r) =>
+          (r): r is typeof r & { yurtId: string } =>
             r.id !== reservation.id &&
             r.status !== 'CANCELLED' &&
-            r.status !== 'EXPIRED'
+            r.status !== 'EXPIRED' &&
+            r.yurtId != null
         )
         .map((r) => r.yurtId)
     )
@@ -158,7 +159,7 @@ export default function EditReservationEditor({
 
   // Selected yurt capacity
   const selectedYurt = activeYurts.find((y) => y.id === yurtId)
-  const maxGuests = selectedYurt?.capacity ?? reservation.yurt.capacity
+  const maxGuests = selectedYurt?.capacity ?? reservation.yurt?.capacity ?? 10
 
   // Clamp guest count when yurt changes
   useEffect(() => {

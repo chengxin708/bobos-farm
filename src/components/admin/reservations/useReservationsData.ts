@@ -64,7 +64,7 @@ export interface ActivityLog {
 export interface Reservation {
   id: string
   userId: string
-  yurtId: string
+  yurtId: string | null
   date: string
   guestCount: number
   specialRequests: string | null
@@ -81,7 +81,7 @@ export interface Reservation {
   createdAt: string
   updatedAt: string
   user: ReservationUser
-  yurt: ReservationYurt
+  yurt: ReservationYurt | null
   order?: Order | OrderSummary | null
 }
 

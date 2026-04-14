@@ -12,7 +12,7 @@ interface CheckoutPanelProps {
     depositAmount: number
     depositStatus: string
     user: { name: string | null; email: string }
-    yurt: { name: string }
+    yurt: { name: string } | null
     date: string
     guestCount: number
   }
@@ -235,7 +235,7 @@ export default function CheckoutPanel({
                   {reservation.user.name || reservation.user.email}
                 </span>
                 {' · '}
-                {reservation.yurt.name}
+                {reservation.yurt?.name ?? 'Pending'}
                 {' · '}
                 {formatDate(reservation.date)}
                 {' · '}

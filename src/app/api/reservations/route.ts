@@ -132,8 +132,12 @@ export async function POST(req: NextRequest) {
 
       // Check availability
       const reservationDate = new Date(date);
-      const existing = await prisma.reservation.findUnique({
-        where: { yurtId_date: { yurtId, date: reservationDate } },
+      const existing = await prisma.reservation.findFirst({
+        where: {
+          yurtId,
+          date: reservationDate,
+          status: { notIn: ["CANCELLED", "EXPIRED"] },
+        },
       });
       if (existing) {
         return NextResponse.json({ error: "This yurt is already booked for this date" }, { status: 409 });

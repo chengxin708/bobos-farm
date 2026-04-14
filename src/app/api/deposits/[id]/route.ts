@@ -78,7 +78,7 @@ export async function PATCH(
       if (updated.user.email) {
         void sendDepositConfirmed(updated.user.email, {
           date: updated.date,
-          yurtName: updated.yurt.name,
+          yurtName: updated.yurt?.name ?? "Pending",
           guestCount: updated.guestCount,
           reservationId: updated.id,
         });

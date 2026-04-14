@@ -43,7 +43,7 @@ interface ReservationYurt {
 interface Reservation {
   id: string
   userId: string
-  yurtId: string
+  yurtId: string | null
   date: string
   guestCount: number
   specialRequests: string | null
@@ -59,7 +59,7 @@ interface Reservation {
   createdAt: string
   updatedAt: string
   user: ReservationUser
-  yurt: ReservationYurt
+  yurt: ReservationYurt | null
   order?: { id: string; status: string; items: { id: string }[] } | null
 }
 
@@ -729,15 +729,15 @@ export default function ReservationsPage() {
                     {modifyGuestCount}
                   </span>
                   <button
-                    onClick={() => setModifyGuestCount(prev => Math.min(modifyingReservation.yurt.capacity, prev + 1))}
-                    disabled={modifyGuestCount >= modifyingReservation.yurt.capacity}
+                    onClick={() => setModifyGuestCount(prev => Math.min(modifyingReservation.yurt?.capacity ?? 10, prev + 1))}
+                    disabled={modifyGuestCount >= (modifyingReservation.yurt?.capacity ?? 10)}
                     className="w-10 h-10 rounded-full border border-[#E0DFDC] flex items-center justify-center cursor-pointer bg-white hover:bg-[#F8F7F4] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <Plus size={16} className="text-[#1A1208]" />
                   </button>
                 </div>
                 <p className="text-xs text-[#8E8E93]">
-                  {t('modify.maxCapacity', { capacity: modifyingReservation.yurt.capacity })}
+                  {t('modify.maxCapacity', { capacity: modifyingReservation.yurt?.capacity ?? 10 })}
                 </p>
               </div>
 

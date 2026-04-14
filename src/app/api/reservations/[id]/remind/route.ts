@@ -64,7 +64,7 @@ export async function POST(
 
     const result = await sendPaymentReminder(reservation.user.email, {
       date: reservation.date,
-      yurtName: reservation.yurt.name,
+      yurtName: reservation.yurt?.name ?? "Pending",
       depositAmount: reservation.depositAmount,
       paymentDeadline: reservation.paymentDeadline,
       zelleRecipient: zelleMap.zelle_recipient,

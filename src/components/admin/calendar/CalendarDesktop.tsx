@@ -38,7 +38,7 @@ interface ReservationYurt {
 interface Reservation {
   id: string
   userId: string
-  yurtId: string
+  yurtId: string | null
   date: string
   guestCount: number
   specialRequests: string | null
@@ -47,7 +47,7 @@ interface Reservation {
   depositStatus: string
   holdByAdmin?: boolean
   user: ReservationUser
-  yurt: ReservationYurt
+  yurt: ReservationYurt | null
 }
 
 interface AvailabilityEntry {
@@ -202,6 +202,7 @@ export default function CalendarDesktop() {
     const map = new Map<string, Map<string, Reservation>>()
     if (!reservations) return map
     for (const r of reservations) {
+      if (!r.yurtId) continue // skip unassigned reservations
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, new Map())
       map.get(dateKey)!.set(r.yurtId, r)

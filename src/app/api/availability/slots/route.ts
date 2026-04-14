@@ -74,9 +74,10 @@ export async function GET(req: NextRequest) {
       select: { yurtId: true, date: true },
     });
 
-    // Group reservations by date
+    // Group reservations by date (only count those with assigned yurts)
     const reservationsByDate: Record<string, Set<string>> = {};
     for (const r of reservations) {
+      if (!r.yurtId) continue; // unassigned reservations don't occupy a specific yurt
       const dateKey = r.date.toISOString().slice(0, 10);
       if (!reservationsByDate[dateKey]) reservationsByDate[dateKey] = new Set();
       reservationsByDate[dateKey].add(r.yurtId);

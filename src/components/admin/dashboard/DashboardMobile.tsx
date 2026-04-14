@@ -155,7 +155,7 @@ export default function DashboardMobile() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-[12px]" style={{ color: '#8A7E6B' }}>
-                      <span>{row.yurt.name}</span>
+                      <span>{row.yurt?.name ?? 'Pending'}</span>
                       <span>{new Date(row.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}</span>
                     </div>
                     <button
@@ -207,7 +207,7 @@ export default function DashboardMobile() {
                         {res.user.name || res.user.email}
                       </span>
                       <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
-                        {res.yurt.name} · {new Date(res.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                        {res.yurt?.name ?? 'Pending'} · {new Date(res.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                     <StatusBadge type="deposit" status="PENDING" label={t('pendingReview')} />
@@ -270,7 +270,7 @@ export default function DashboardMobile() {
                       {res.user.name || res.user.email}
                     </span>
                     <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
-                      {res.yurt.name} · {res.guestCount} {t('guestSuffix')}
+                      {res.yurt?.name ?? 'Pending'} · {res.guestCount} {t('guestSuffix')}
                     </span>
                   </div>
                   <StatusBadge
