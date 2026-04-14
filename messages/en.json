@@ -669,7 +669,11 @@
         "colExpiresIn": "Expires in",
         "colAction": "Action",
         "remind": "Remind"
-      }
+      },
+      "upcomingAssignments": "Upcoming Assignments",
+      "assigned": "assigned",
+      "unassigned": "unassigned",
+      "viewCalendar": "View Calendar"
     },
     "reservations": {
       "title": "Reservations",

@@ -9,6 +9,7 @@ import {
   Clock4,
 } from 'lucide-react'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import UpcomingAssignments from './UpcomingAssignments'
 import {
   useDashboardData,
   getGreeting,
@@ -350,6 +351,9 @@ export default function DashboardDesktop() {
               </div>
             </div>
           )}
+
+          {/* ─── Upcoming Assignments ─── */}
+          <UpcomingAssignments />
         </div>
       </div>
 

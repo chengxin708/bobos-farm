@@ -15,6 +15,7 @@ import {
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import UpcomingAssignments from './UpcomingAssignments'
 import {
   useDashboardData,
   getGreeting,
@@ -288,6 +289,11 @@ export default function DashboardMobile() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ─── Upcoming Assignments ─── */}
+        <section className="mb-5">
+          <UpcomingAssignments />
         </section>
 
         {/* ─── 最近动态 ─── */}

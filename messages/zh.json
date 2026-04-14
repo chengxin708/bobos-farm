@@ -669,7 +669,11 @@
         "colExpiresIn": "剩余时间",
         "colAction": "操作",
         "remind": "发送提醒"
-      }
+      },
+      "upcomingAssignments": "即将分配",
+      "assigned": "已分配",
+      "unassigned": "待分配",
+      "viewCalendar": "查看日历"
     },
     "reservations": {
       "title": "预订管理",
