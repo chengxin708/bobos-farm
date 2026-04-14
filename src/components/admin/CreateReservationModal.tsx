@@ -272,10 +272,9 @@ export default function CreateReservationModal({
             {/* Yurt Select */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                {t('selectYurt')} <span className="text-red-500">*</span>
+                {t('selectYurt')}
               </label>
               <select
-                required
                 value={yurtId}
                 onChange={(e) => setYurtId(e.target.value)}
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150 bg-white"
@@ -289,7 +288,7 @@ export default function CreateReservationModal({
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               >
-                <option value="" disabled>{t('selectYurtPlaceholder')}</option>
+                <option value="">{t('autoAssign')}</option>
                 {activeYurts.map(y => (
                   <option key={y.id} value={y.id}>
                     {t('yurtCapacity', { name: y.name, capacity: y.capacity })}

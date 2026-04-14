@@ -1306,6 +1306,7 @@
       "date": "预订日期",
       "selectYurt": "选择营地",
       "selectYurtPlaceholder": "请选择营地...",
+      "autoAssign": "自动分配（推荐）",
       "yurtCapacity": "{name}（容量：{capacity}人）",
       "guestCount": "人数",
       "specialRequests": "特殊要求",

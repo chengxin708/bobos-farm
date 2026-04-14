@@ -1306,6 +1306,7 @@
       "date": "Reservation Date",
       "selectYurt": "Select Yurt",
       "selectYurtPlaceholder": "Select a yurt...",
+      "autoAssign": "Auto-assign (recommended)",
       "yurtCapacity": "{name} (capacity: {capacity})",
       "guestCount": "Number of Guests",
       "specialRequests": "Special Requests",
