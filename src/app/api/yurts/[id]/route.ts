@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { checkDateAnomalies } from "@/lib/yurt-assignment";
 import { z } from "zod";
 
 const yurtUpdateSchema = z.object({
@@ -105,6 +106,22 @@ export async function PATCH(
       where: { id },
       data: parsed.data,
     });
+
+    // If status changed, recheck anomalies for all future dates with reservations
+    if (parsed.data.status && parsed.data.status !== existing.status) {
+      const futureDates = await prisma.reservation.findMany({
+        where: {
+          date: { gte: new Date() },
+          status: { notIn: ["CANCELLED", "EXPIRED"] },
+        },
+        select: { date: true },
+        distinct: ["date"],
+      });
+      for (const { date } of futureDates) {
+        void checkDateAnomalies(date);
+      }
+    }
+
     return NextResponse.json(yurt);
   } catch (error) {
     console.error("Failed to update yurt:", error);

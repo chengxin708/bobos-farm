@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { checkDateAnomalies } from "@/lib/yurt-assignment";
 import { z } from "zod";
 
 const bulkAvailabilitySchema = z.object({
@@ -88,6 +89,11 @@ export async function POST(req: NextRequest) {
     }
 
     const results = await prisma.$transaction(operations);
+
+    // Recheck anomalies for each affected date
+    for (const date of dates) {
+      void checkDateAnomalies(date);
+    }
 
     return NextResponse.json(
       {

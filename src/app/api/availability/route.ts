@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
+import { checkDateAnomalies } from "@/lib/yurt-assignment";
 import { z } from "zod";
 
 const availabilitySchema = z.object({
@@ -90,6 +91,9 @@ export async function POST(req: NextRequest) {
       update: { isOpen, note },
       create: { yurtId, date: dateObj, isOpen, note },
     });
+
+    // Recheck anomalies for this date
+    void checkDateAnomalies(dateObj);
 
     return NextResponse.json(availability, { status: 201 });
   } catch (error) {
