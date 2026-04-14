@@ -108,7 +108,7 @@ export default function CreateReservationModal({
           guestEmail,
           guestPhone,
           date,
-          yurtId,
+          yurtId: yurtId || undefined,
           guestCount,
           specialRequests: specialRequests || undefined,
           ...(isAdmin && customDeposit !== '' ? { customDeposit: Number(customDeposit) } : {}),
