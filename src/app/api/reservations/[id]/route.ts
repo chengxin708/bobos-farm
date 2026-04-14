@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { sendAdminDepositSubmitted, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
+import { checkDateAnomalies, assignYurtsForDate } from "@/lib/yurt-assignment";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -165,6 +166,21 @@ export async function PATCH(
         );
       }
 
+      // T-3 cancellation policy
+      const cancelNow = new Date();
+      cancelNow.setHours(0, 0, 0, 0);
+      const cancelResDate = new Date(reservation.date);
+      cancelResDate.setHours(0, 0, 0, 0);
+      const cancelDiffDays = Math.round(
+        (cancelResDate.getTime() - cancelNow.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (cancelDiffDays < 3 && !isAdmin) {
+        return NextResponse.json(
+          { error: "Reservations cannot be cancelled within 3 days of the event" },
+          { status: 400 }
+        );
+      }
+
       // Check refund eligibility: 3+ days before reservation date
       const now = new Date();
       const reservationDate = new Date(reservation.date);
@@ -210,13 +226,16 @@ export async function PATCH(
       if (updated.user.email) {
         sendReservationCancelled(updated.user.email, {
           date: updated.date,
-          yurtName: updated.yurt.name,
+          yurtName: updated.yurt?.name ?? "Pending assignment",
           guestCount: updated.guestCount,
           cancelReason: parsedCancel.data.reason || undefined,
           depositAmount: reservation.depositAmount,
           depositStatus: reservation.depositStatus,
         }).catch(err => console.error('[email] cancel notification failed:', err));
       }
+
+      // Recheck anomalies for this date after cancellation
+      void checkDateAnomalies(new Date(reservation.date));
 
       return NextResponse.json(updated);
     }
@@ -284,7 +303,7 @@ export async function PATCH(
         void sendAdminDepositSubmitted(notifSetting.value, {
           guestName: updated.user.name || updated.user.email,
           date: updated.date,
-          yurtName: updated.yurt.name,
+          yurtName: updated.yurt?.name ?? "Pending assignment",
           guestCount: updated.guestCount,
           depositAmount: reservation.depositAmount,
         });
@@ -354,31 +373,38 @@ export async function PATCH(
         }
       }
 
-      // Check if new date/yurt is available
-      const existingBooking = await prisma.reservation.findUnique({
-        where: {
-          yurtId_date: { yurtId: targetYurtId, date: targetDate },
-        },
-      });
-      if (existingBooking && existingBooking.id !== id) {
-        return NextResponse.json(
-          { error: "The target date is already booked for this yurt" },
-          { status: 409 }
-        );
+      // Check if new date/yurt is available (only if yurt specified)
+      if (targetYurtId) {
+        const existingBooking = await prisma.reservation.findFirst({
+          where: {
+            yurtId: targetYurtId,
+            date: targetDate,
+            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            id: { not: id },
+          },
+        });
+        if (existingBooking) {
+          return NextResponse.json(
+            { error: "The target date is already booked for this yurt" },
+            { status: 409 }
+          );
+        }
+
+        // Check availability is open
+        const availability = await prisma.yurtAvailability.findUnique({
+          where: {
+            yurtId_date: { yurtId: targetYurtId, date: targetDate },
+          },
+        });
+        if (availability && !availability.isOpen) {
+          return NextResponse.json(
+            { error: "The target date is closed for this yurt" },
+            { status: 400 }
+          );
+        }
       }
 
-      // Check availability is open
-      const availability = await prisma.yurtAvailability.findUnique({
-        where: {
-          yurtId_date: { yurtId: targetYurtId, date: targetDate },
-        },
-      });
-      if (availability && !availability.isOpen) {
-        return NextResponse.json(
-          { error: "The target date is closed for this yurt" },
-          { status: 400 }
-        );
-      }
+      const newReservationDate = targetDate;
 
       // Create reschedule history and update reservation in a transaction
       const updated = await prisma.$transaction(async (tx) => {
@@ -386,9 +412,9 @@ export async function PATCH(
           data: {
             reservationId: id,
             oldDate: reservation.date,
-            oldYurtId: reservation.yurtId,
+            oldYurtId: reservation.yurtId ?? "",
             newDate: targetDate,
-            newYurtId: targetYurtId,
+            newYurtId: targetYurtId ?? "",
           },
         });
 
@@ -397,6 +423,8 @@ export async function PATCH(
           data: {
             date: targetDate,
             yurtId: targetYurtId,
+            yurtAssignedAt: null,
+            yurtNotifiedAt: null,
             rescheduledFrom: reservation.date.toISOString(),
           },
           include: {
@@ -423,6 +451,20 @@ export async function PATCH(
         },
       });
 
+      // Recheck anomalies for old and new dates
+      void checkDateAnomalies(new Date(reservation.date)); // old date
+      void checkDateAnomalies(newReservationDate); // new date
+
+      // If new date within T-3, assign immediately
+      const reschNow = new Date();
+      reschNow.setHours(0, 0, 0, 0);
+      const reschDiff = Math.round(
+        (newReservationDate.getTime() - reschNow.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (reschDiff <= 3) {
+        void assignYurtsForDate(newReservationDate);
+      }
+
       return NextResponse.json(updated);
     }
 
@@ -447,12 +489,17 @@ export async function PATCH(
       const updateData: Record<string, unknown> = {};
 
       if (parsedModify.data.guestCount !== undefined) {
-        // Validate guest count does not exceed yurt capacity
-        if (parsedModify.data.guestCount > reservation.yurt.capacity) {
-          return NextResponse.json(
-            { error: `Guest count cannot exceed yurt capacity of ${reservation.yurt.capacity}` },
-            { status: 400 }
-          );
+        // If yurt already assigned, validate capacity
+        if (reservation.yurtId && parsedModify.data.guestCount) {
+          const assignedYurt = await prisma.yurt.findUnique({
+            where: { id: reservation.yurtId },
+          });
+          if (assignedYurt && parsedModify.data.guestCount > assignedYurt.capacity) {
+            return NextResponse.json(
+              { error: `Guest count exceeds assigned yurt capacity (max ${assignedYurt.capacity}). Please contact admin to change yurt.` },
+              { status: 400 }
+            );
+          }
         }
         updateData.guestCount = parsedModify.data.guestCount;
       }
@@ -516,10 +563,15 @@ export async function PATCH(
 
       // Check for conflicts: another reservation on the same date for this yurt
       if (newYurtId !== reservation.yurtId) {
-        const conflict = await prisma.reservation.findUnique({
-          where: { yurtId_date: { yurtId: newYurtId, date: reservation.date } },
+        const conflict = await prisma.reservation.findFirst({
+          where: {
+            yurtId: newYurtId,
+            date: reservation.date,
+            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            id: { not: id },
+          },
         });
-        if (conflict && conflict.id !== id) {
+        if (conflict) {
           return NextResponse.json(
             { error: "This yurt is already booked for this date" },
             { status: 409 }
@@ -529,7 +581,10 @@ export async function PATCH(
 
       const updated = await prisma.reservation.update({
         where: { id },
-        data: { yurtId: newYurtId },
+        data: {
+          yurtId: newYurtId,
+          yurtAssignedAt: new Date(),
+        },
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
@@ -552,8 +607,17 @@ export async function PATCH(
         },
       });
 
-      // Fire-and-forget: send yurt assigned email to guest
-      if (updated.user.email) {
+      // Notification timing: send now only if within T-2
+      const assignResDate = new Date(reservation.date);
+      assignResDate.setHours(0, 0, 0, 0);
+      const assignNow = new Date();
+      assignNow.setHours(0, 0, 0, 0);
+      const assignDiffDays = Math.round(
+        (assignResDate.getTime() - assignNow.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (assignDiffDays <= 2 && updated.user.email) {
+        // T-2 or closer: send immediately
         void sendYurtAssigned(updated.user.email, {
           date: updated.date,
           yurtName: targetYurt.name,
@@ -561,7 +625,12 @@ export async function PATCH(
           guestCount: updated.guestCount,
           reservationId: id,
         });
+        await prisma.reservation.update({
+          where: { id },
+          data: { yurtNotifiedAt: new Date() },
+        });
       }
+      // Otherwise: T-2 10AM cron will handle notification
 
       return NextResponse.json(updated);
     }
@@ -606,21 +675,26 @@ export async function PATCH(
         targetYurt = newYurt;
       }
 
-      // Validate guest count against yurt capacity
+      // Validate guest count against yurt capacity (only if yurt assigned/specified)
       const effectiveGuestCount = guestCount ?? reservation.guestCount;
-      if (effectiveGuestCount > targetYurt.capacity) {
+      if (targetYurt && effectiveGuestCount > targetYurt.capacity) {
         return NextResponse.json(
           { error: `Guest count cannot exceed yurt capacity of ${targetYurt.capacity}` },
           { status: 400 }
         );
       }
 
-      // Check conflict if date or yurt changed
-      if (dateChanged || yurtChanged) {
-        const conflict = await prisma.reservation.findUnique({
-          where: { yurtId_date: { yurtId: targetYurtId, date: targetDate } },
+      // Check conflict if date or yurt changed (only when yurt is specified)
+      if ((dateChanged || yurtChanged) && targetYurtId) {
+        const conflict = await prisma.reservation.findFirst({
+          where: {
+            yurtId: targetYurtId,
+            date: targetDate,
+            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            id: { not: id },
+          },
         });
-        if (conflict && conflict.id !== id) {
+        if (conflict) {
           return NextResponse.json(
             { error: "This yurt is already booked for this date" },
             { status: 409 }
@@ -667,7 +741,7 @@ export async function PATCH(
         changes.date = { from: reservation.date.toISOString().slice(0, 10), to: date };
       }
       if (yurtChanged) {
-        changes.yurt = { from: reservation.yurt.name, to: updated.yurt.name };
+        changes.yurt = { from: reservation.yurt?.name ?? "Unassigned", to: updated.yurt?.name ?? "Unassigned" };
       }
       if (guestCount !== undefined && guestCount !== reservation.guestCount) {
         changes.guestCount = { from: reservation.guestCount, to: guestCount };
@@ -687,7 +761,7 @@ export async function PATCH(
       if (updated.user.email && Object.keys(changes).length > 0) {
         sendReservationModified(updated.user.email, {
           date: updated.date,
-          yurtName: updated.yurt.name,
+          yurtName: updated.yurt?.name ?? "Pending assignment",
           guestCount: updated.guestCount,
           changes: changes as {
             date?: { from: string; to: string };
