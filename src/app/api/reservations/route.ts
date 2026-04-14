@@ -7,6 +7,7 @@ import {
   sendAdminNewReservation,
 } from "@/lib/email";
 import { sendPushToAdmins } from "@/lib/push";
+import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies } from "@/lib/yurt-assignment";
 
 const createReservationBodySchema = z.object({
   yurtId: z.string().min(1).optional(), // optional for customers (auto-assigned)
@@ -295,12 +296,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Yurt assignment: auto-assign if not provided ──
-    let assignedYurtId: string;
-    let assignedYurtName: string;
-
-    if (requestedYurtId) {
-      // Customer explicitly specified a yurt (backwards compatibility)
+    // ── Capacity validation: simulate assignment ──
+    // For customer bookings (no explicit yurtId), validate via full BFD simulation
+    if (!requestedYurtId) {
+      const { assignable } = await simulateWithNewReservation(reservationDate, guestCount);
+      if (!assignable) {
+        return NextResponse.json(
+          { error: "This date cannot accommodate your group size. Please choose another date." },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Admin specified a yurtId — validate it directly
       const yurt = await prisma.yurt.findUnique({ where: { id: requestedYurtId } });
       if (!yurt || yurt.status !== "ACTIVE") {
         return NextResponse.json({ error: "Yurt not available" }, { status: 400 });
@@ -308,66 +315,23 @@ export async function POST(req: NextRequest) {
       if (guestCount > yurt.capacity) {
         return NextResponse.json({ error: "Guest count exceeds yurt capacity" }, { status: 400 });
       }
-      // Check unique constraint
-      const existing = await prisma.reservation.findUnique({
-        where: { yurtId_date: { yurtId: requestedYurtId, date: reservationDate } },
+      // Check conflict (code-level, no more DB unique constraint)
+      const conflict = await prisma.reservation.findFirst({
+        where: {
+          yurtId: requestedYurtId,
+          date: reservationDate,
+          status: { notIn: ["CANCELLED", "EXPIRED"] },
+        },
       });
-      if (existing) {
+      if (conflict) {
         return NextResponse.json({ error: "This yurt is already booked for this date" }, { status: 409 });
       }
-      // Check availability
       const avail = await prisma.yurtAvailability.findUnique({
         where: { yurtId_date: { yurtId: requestedYurtId, date: reservationDate } },
       });
       if (avail && !avail.isOpen) {
         return NextResponse.json({ error: "This date is closed for this yurt" }, { status: 400 });
       }
-      assignedYurtId = requestedYurtId;
-      assignedYurtName = yurt.name;
-    } else {
-      // Auto-assign: find an available yurt for this date
-      const activeYurts = await prisma.yurt.findMany({ where: { status: "ACTIVE" } });
-      if (activeYurts.length === 0) {
-        return NextResponse.json({ error: "No yurts available" }, { status: 400 });
-      }
-
-      // Get yurts with ANY active reservation on this date
-      // (includes PENDING_PAYMENT to respect DB unique constraint on yurtId+date)
-      const occupiedYurtIds = (
-        await prisma.reservation.findMany({
-          where: {
-            date: reservationDate,
-            status: { notIn: ["CANCELLED", "EXPIRED"] },
-          },
-          select: { yurtId: true },
-        })
-      ).map((r) => r.yurtId);
-
-      // Also check admin-set closures
-      const closedYurts = await prisma.yurtAvailability.findMany({
-        where: {
-          date: reservationDate,
-          isOpen: false,
-        },
-        select: { yurtId: true },
-      });
-      const closedYurtIds = closedYurts.map((c) => c.yurtId);
-
-      const availableYurts = activeYurts.filter(
-        (y) => !occupiedYurtIds.includes(y.id) && !closedYurtIds.includes(y.id) && guestCount <= y.capacity
-      );
-
-      if (availableYurts.length === 0) {
-        return NextResponse.json(
-          { error: "This date is fully booked. Please choose another date." },
-          { status: 400 }
-        );
-      }
-
-      // Assign first available yurt (sorted by sortOrder if present)
-      const assigned = availableYurts.sort((a, b) => a.sortOrder - b.sortOrder)[0];
-      assignedYurtId = assigned.id;
-      assignedYurtName = assigned.name;
     }
 
     // Get deposit amount from settings
@@ -386,7 +350,7 @@ export async function POST(req: NextRequest) {
     const reservation = await prisma.reservation.create({
       data: {
         userId: session.user.id!,
-        yurtId: assignedYurtId,
+        yurtId: requestedYurtId || null, // null for customer bookings, set for admin
         date: reservationDate,
         guestCount,
         specialRequests: specialRequests || null,
@@ -394,12 +358,40 @@ export async function POST(req: NextRequest) {
         depositAmount,
         depositStatus: "UNPAID",
         paymentDeadline,
+        ...(requestedYurtId ? { yurtAssignedAt: new Date() } : {}),
       },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
       },
     });
+
+    // T-3 window: if reservation date is ≤3 days away, assign yurt immediately
+    if (!requestedYurtId) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const diffDays = Math.round(
+        (reservationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (diffDays <= 3) {
+        // Immediate assignment
+        const plan = await assignYurtsForDate(reservationDate);
+        // Refresh reservation to get updated yurtId
+        const updated = await prisma.reservation.findUnique({
+          where: { id: reservation.id },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+            yurt: { select: { id: true, name: true, capacity: true } },
+          },
+        });
+        if (updated) {
+          Object.assign(reservation, updated);
+        }
+      } else {
+        // Fire-and-forget: check for anomalies
+        void checkDateAnomalies(reservationDate);
+      }
+    }
 
     // Log activity
     await prisma.activityLog.create({
@@ -408,7 +400,7 @@ export async function POST(req: NextRequest) {
         action: "RESERVATION_CREATED",
         targetType: "Reservation",
         targetId: reservation.id,
-        details: { yurtName: assignedYurtName, date, guestCount, autoAssigned: !requestedYurtId },
+        details: { yurtName: reservation.yurt?.name || "To be assigned", date, guestCount, autoAssigned: !requestedYurtId },
       },
     });
 
@@ -423,7 +415,7 @@ export async function POST(req: NextRequest) {
       void sendReservationCreated(reservation.user.email, {
         reservationId: reservation.id,
         date,
-        yurtName: assignedYurtName,
+        yurtName: reservation.yurt?.name || "To be assigned",
         guestCount,
         depositAmount,
         paymentDeadline,
@@ -437,7 +429,7 @@ export async function POST(req: NextRequest) {
       void sendAdminNewReservation(emailSettingsMap.notification_email, {
         guestName: reservation.user.name || reservation.user.email,
         date,
-        yurtName: assignedYurtName,
+        yurtName: reservation.yurt?.name || "To be assigned",
         guestCount,
       });
     }
@@ -445,7 +437,7 @@ export async function POST(req: NextRequest) {
     // Fire-and-forget: push notification to admins
     sendPushToAdmins({
       title: "New Reservation",
-      body: `${reservation.user.name || reservation.user.email} booked ${assignedYurtName} on ${date}`,
+      body: `${reservation.user.name || reservation.user.email} booked ${reservation.yurt?.name || "unassigned"} on ${date}`,
       url: "/admin/reservations",
       tag: "new-reservation",
     }).catch(() => {});
