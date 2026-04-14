@@ -8,7 +8,7 @@ import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { ChevronLeft, ChevronRight, Users, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -59,6 +59,15 @@ interface AvailabilityEntry {
   yurt: { id: string; name: string }
 }
 
+interface CalendarSummaryEntry {
+  totalGuests: number
+  totalCapacity: number
+  reservationCount: number
+  assignedCount: number
+  unassignedCount: number
+  hasAnomaly: boolean
+}
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 const fetcher = (url: string) => fetch(url).then(r => {
@@ -101,7 +110,6 @@ function getWeekRange(baseDate: Date): { start: Date; end: Date } {
   return { start, end }
 }
 
-// DAY_HEADERS and MONTH_NAMES are now derived from i18n keys in the component
 const DAY_INDICES = [0, 1, 2, 3, 4, 5, 6] as const
 
 function statusLabel(status: string, t: ReturnType<typeof useTranslations>): string {
@@ -132,7 +140,6 @@ function getDisplayName(user: ReservationUser): string {
 }
 
 // ── Closed-cell diagonal stripe pattern as CSS background ──────
-const CLOSED_STRIPE_BG = 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.04) 4px, rgba(0,0,0,0.04) 5px)'
 const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
 
 // ── Component ──────────────────────────────────────────────────────
@@ -142,7 +149,7 @@ export default function CalendarDesktop() {
   const { data: session, status: sessionStatus } = useSession()
   const router = useRouter()
 
-  const [view, setView] = useState<ViewMode>('month')
+  const [view, setView] = useState<ViewMode>('week')
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
@@ -195,17 +202,42 @@ export default function CalendarDesktop() {
     fetcher
   )
 
+  // Calendar summary for month view (capacity, assignment status)
+  const { data: calendarSummary } = useSWR<Record<string, CalendarSummaryEntry>>(
+    view === 'month'
+      ? `/api/calendar-summary?startDate=${dateRange.start}&endDate=${dateRange.end}`
+      : null,
+    fetcher
+  )
+
   // ── Indexed lookups ──────────────────────────────────────────
 
-  /** Map: "YYYY-MM-DD" -> yurtId -> Reservation */
+  /** Map: "YYYY-MM-DD" -> yurtId -> Reservation[] (assigned) */
   const resByDateYurt = useMemo(() => {
-    const map = new Map<string, Map<string, Reservation>>()
+    const map = new Map<string, Map<string, Reservation[]>>()
     if (!reservations) return map
     for (const r of reservations) {
-      if (!r.yurtId) continue // skip unassigned reservations
+      if (!r.yurtId) continue
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, new Map())
-      map.get(dateKey)!.set(r.yurtId, r)
+      const yurtMap = map.get(dateKey)!
+      if (!yurtMap.has(r.yurtId)) yurtMap.set(r.yurtId, [])
+      yurtMap.get(r.yurtId)!.push(r)
+    }
+    return map
+  }, [reservations])
+
+  /** Map: "YYYY-MM-DD" -> Reservation[] (unassigned / pending) */
+  const unassignedByDate = useMemo(() => {
+    const map = new Map<string, Reservation[]>()
+    if (!reservations) return map
+    for (const r of reservations) {
+      if (r.yurtId !== null) continue
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      const dateKey = r.date.split('T')[0]
+      if (!map.has(dateKey)) map.set(dateKey, [])
+      map.get(dateKey)!.push(r)
     }
     return map
   }, [reservations])
@@ -223,6 +255,29 @@ export default function CalendarDesktop() {
     }
     return map
   }, [availability])
+
+  /** Per-date capacity summary (for week view footer) */
+  const weekCapacity = useMemo(() => {
+    if (!reservations || !yurts) return new Map<string, { used: number; total: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }>()
+    const activeTotal = (yurts || []).filter(y => y.status === 'ACTIVE').reduce((sum, y) => sum + y.capacity, 0)
+    const map = new Map<string, { used: number; total: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }>()
+
+    for (const r of reservations) {
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      const dateKey = r.date.split('T')[0]
+      if (!map.has(dateKey)) {
+        map.set(dateKey, { used: 0, total: activeTotal, assignedCount: 0, unassignedCount: 0, hasAnomaly: false })
+      }
+      const entry = map.get(dateKey)!
+      entry.used += r.guestCount
+      if (r.yurtId) {
+        entry.assignedCount++
+      } else {
+        entry.unassignedCount++
+      }
+    }
+    return map
+  }, [reservations, yurts])
 
   // ── Reservation actions (for detail drawer) ─────────────────
   const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>): Promise<void> => {
@@ -255,6 +310,11 @@ export default function CalendarDesktop() {
   const activeYurts = useMemo(() =>
     (yurts || []).filter(y => y.status === 'ACTIVE').sort((a, b) => a.sortOrder - b.sortOrder),
     [yurts]
+  )
+
+  const totalCapacity = useMemo(() =>
+    activeYurts.reduce((sum, y) => sum + y.capacity, 0),
+    [activeYurts]
   )
 
   // ── Navigation ───────────────────────────────────────────────
@@ -296,6 +356,13 @@ export default function CalendarDesktop() {
     })
   }, [])
 
+  /** Switch to week view for a specific date (used from month view click) */
+  const goToWeekOf = useCallback((dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00')
+    setWeekBase(d)
+    setView('week')
+  }, [])
+
   // ── Month grid cells ─────────────────────────────────────────
 
   const monthCells = useMemo(() => {
@@ -333,157 +400,56 @@ export default function CalendarDesktop() {
 
   const todayStr = formatDate(today)
 
-  /** Collect reservations for a given date across all yurts (for month view) */
-  function getDateReservations(dateStr: string): Reservation[] {
-    const dayMap = resByDateYurt.get(dateStr)
-    if (!dayMap) return []
-    return Array.from(dayMap.values())
-  }
-
-  /** Check if any yurt is closed on this date */
-  function hasClosedYurts(dateStr: string): boolean {
-    return closedByDateYurt.has(dateStr) && closedByDateYurt.get(dateStr)!.size > 0
-  }
-
-  function renderMonthCell(day: number | null, idx: number) {
-    if (day === null) {
-      return (
-        <div key={idx} className="min-h-[80px] border-b border-r border-[#E8ECE4]/60 bg-[#FAFAF7]/50" />
-      )
-    }
-
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const isToday = dateStr === todayStr
-    const dayRes = getDateReservations(dateStr)
-    const closed = hasClosedYurts(dateStr)
-    const maxVisible = 2
-    const visibleRes = dayRes.slice(0, maxVisible)
-    const remaining = dayRes.length - maxVisible
+  /** Render a compact reservation card for week view cells */
+  function renderReservationCard(res: Reservation) {
+    const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+    const colors = isHeld
+      ? { border: 'border-l-[#F4A623]', bg: 'bg-[#F4A623]/10', text: 'text-[#F4A623]', dot: 'bg-[#F4A623]', initBg: 'bg-[#F4A623]' }
+      : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
+    const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
 
     return (
-      <div
-        key={idx}
+      <button
+        key={res.id}
+        onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
         className={`
-          min-h-[80px] p-2 border-b border-r border-[#E8ECE4]/60
-          transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
-          ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
+          w-full text-left p-2 rounded-lg border-l-[3px] border-0 cursor-pointer
+          ${colors.border} ${colors.bg}
+          transition-shadow duration-150 hover:shadow-md
+          ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
         `}
-        onClick={() => { setCreateModalDate(dateStr); setCreateModalYurtId(undefined); setShowCreateModal(true) }}
-        title={t('createReservation')}
       >
-        {/* Date number */}
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className={`
-            text-[13px] font-semibold
-            ${isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'}
-          `}>
-            {day}
-          </span>
-          <span className="w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-[#6B7F5E]">
-            <Plus size={12} className="text-white" />
-          </span>
+        <div className="flex items-center gap-1.5 mb-1">
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 ${colors.initBg}`}>
+            {initials}
+          </div>
+          <div className={`text-[11px] font-semibold ${colors.text} truncate`}>
+            {getDisplayName(res.user)}
+          </div>
         </div>
-
-        {/* Yurt slot rows — show max 4, collapse rest */}
-        {(() => {
-          const MAX_VISIBLE = 4
-          const bookedYurts = activeYurts.filter(y => {
-            const r = dayRes.find(r => r.yurtId === y.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
-            return !!r
-          })
-          const availableYurts = activeYurts.filter(y => {
-            const isClosed = closedByDateYurt.get(dateStr)?.has(y.id)
-            const r = dayRes.find(r => r.yurtId === y.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')
-            return !r && !isClosed
-          })
-          const totalAvailable = availableYurts.length
-
-          // Show booked first (always), then fill remaining slots with available
-          const visibleBooked = bookedYurts.slice(0, MAX_VISIBLE)
-          const remainingSlots = MAX_VISIBLE - visibleBooked.length
-          const visibleAvailable = availableYurts.slice(0, Math.max(0, remainingSlots))
-          const hiddenCount = activeYurts.length - visibleBooked.length - visibleAvailable.length
-
-          return (
-            <div className="flex flex-col gap-px mt-1">
-              {/* Booked yurts */}
-              {visibleBooked.map(yurt => {
-                const res = dayRes.find(r => r.yurtId === yurt.id && r.status !== 'CANCELLED' && r.status !== 'EXPIRED')!
-                const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
-                const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
-                const colors = isHeld
-                  ? { bg: 'bg-[#F4A623]/15', text: 'text-[#F4A623]' }
-                  : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
-                return (
-                  <button
-                    key={yurt.id}
-                    onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
-                    className={`flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden transition-all hover:brightness-90 ${colors.bg} ${colors.text}`}
-                  >
-                    <span className="w-5 shrink-0 font-bold text-center">{initials}</span>
-                    <span className="truncate">{getDisplayName(res.user)}</span>
-                    {isHeld && <span className="ml-auto shrink-0 text-[8px] font-bold uppercase">Held</span>}
-                  </button>
-                )
-              })}
-
-              {/* Available summary or individual slots */}
-              {totalAvailable > 0 && visibleAvailable.length > 0 && (
-                totalAvailable <= 2 ? (
-                  // Show individual available slots if few
-                  visibleAvailable.map(yurt => {
-                    const initials = yurt.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)
-                    return (
-                      <button
-                        key={yurt.id}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setCreateModalDate(dateStr)
-                          setCreateModalYurtId(yurt.id)
-                          setShowCreateModal(true)
-                        }}
-                        className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/30 hover:text-[#6B7F5E]/60 hover:bg-[#6B7F5E]/5 transition-all"
-                      >
-                        <span className="w-5 shrink-0 font-bold text-center text-[#6B7F5E]/40">{initials}</span>
-                        <span className="text-[#6B7F5E]/30">—</span>
-                      </button>
-                    )
-                  })
-                ) : (
-                  // Summarize available count if many
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCreateModalDate(dateStr)
-                      setCreateModalYurtId(undefined)
-                      setShowCreateModal(true)
-                    }}
-                    className="flex items-center h-5 px-1 rounded text-[9px] cursor-pointer border-0 w-full text-left whitespace-nowrap overflow-hidden bg-transparent text-[#6B7F5E]/50 hover:text-[#6B7F5E] hover:bg-[#6B7F5E]/5 transition-all"
-                  >
-                    <span className="text-[#6B7F5E]/50">+{totalAvailable} available</span>
-                  </button>
-                )
-              )}
-
-              {/* Hidden count */}
-              {hiddenCount > 0 && (
-                <span className="text-[8px] text-[#8A7E6B]/40 px-1">+{hiddenCount} more</span>
-              )}
-            </div>
-          )
-        })()}
-      </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 text-[#8A7E6B]">
+            <Users size={9} />
+            <span className="text-[10px]">{res.guestCount}</span>
+          </div>
+          <div className={`text-[9px] font-medium px-1.5 py-px rounded-full ${colors.bg} ${colors.text}`}>
+            {isHeld ? t('status.held') : statusLabel(res.status, t)}
+          </div>
+        </div>
+      </button>
     )
   }
 
+  /** Render the week view tape chart */
   function renderWeekView() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[900px]">
+            {/* ── Header row ── */}
             <thead>
               <tr className="border-b border-[#E8ECE4]">
-                <th className="w-36 px-4 py-3 text-left text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B] border-r border-[#E8ECE4] bg-[#FAFAF7]" />
+                <th className="w-40 px-4 py-3 text-left text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B] border-r border-[#E8ECE4] bg-[#FAFAF7]" />
                 {weekDays.map((d, i) => {
                   const dateStr = formatDate(d)
                   const isToday = dateStr === todayStr
@@ -509,9 +475,12 @@ export default function CalendarDesktop() {
                 })}
               </tr>
             </thead>
+
             <tbody>
+              {/* ── Yurt rows ── */}
               {activeYurts.map(yurt => (
-                <tr key={yurt.id} className="border-b border-[#E8ECE4] last:border-b-0">
+                <tr key={yurt.id} className="border-b border-[#E8ECE4]">
+                  {/* Yurt label */}
                   <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FAFAF7]">
                     <div className="text-sm font-semibold text-[#2C2416]">{yurt.name}</div>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -519,15 +488,17 @@ export default function CalendarDesktop() {
                       <span className="text-[10px] text-[#8A7E6B]">{yurt.capacity}</span>
                     </div>
                   </td>
+                  {/* Day cells for this yurt */}
                   {weekDays.map((d, i) => {
                     const dateStr = formatDate(d)
                     const isToday = dateStr === todayStr
-                    const res = resByDateYurt.get(dateStr)?.get(yurt.id)
+                    const yurtReservations = resByDateYurt.get(dateStr)?.get(yurt.id) || []
                     const isClosed = closedByDateYurt.get(dateStr)?.has(yurt.id)
 
-                    if (isClosed && !res) {
+                    // Closed cell
+                    if (isClosed && yurtReservations.length === 0) {
                       return (
-                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
                           <div
                             className="p-3 rounded-lg bg-gray-50 text-center"
                             style={{ backgroundImage: CLOSED_CROSSHATCH_BG }}
@@ -538,47 +509,20 @@ export default function CalendarDesktop() {
                       )
                     }
 
-                    if (res) {
-                      const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
-                      const colors = isHeld
-                        ? { border: 'border-l-[#F4A623]', bg: 'bg-[#F4A623]/10', text: 'text-[#F4A623]', dot: 'bg-[#F4A623]', initBg: 'bg-[#F4A623]' }
-                        : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
-                      const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
-
+                    // Cell with reservation(s)
+                    if (yurtReservations.length > 0) {
                       return (
-                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
-                          <button
-                            onClick={() => setSelectedResId(res.id)}
-                            className={`
-                              w-full text-left p-3 rounded-lg border-l-[3px] border-0 cursor-pointer
-                              ${colors.border} ${colors.bg}
-                              transition-shadow duration-150 hover:shadow-md
-                              ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
-                            `}
-                          >
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${colors.initBg}`}>
-                                {initials}
-                              </div>
-                              <div className={`text-xs font-semibold ${colors.text} truncate`}>
-                                {getDisplayName(res.user)}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 text-[#8A7E6B]">
-                              <Users size={10} />
-                              <span className="text-[11px]">{t('guests', { count: res.guestCount })}</span>
-                            </div>
-                            <div className={`inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
-                              {isHeld ? t('status.held') : statusLabel(res.status, t)}
-                            </div>
-                          </button>
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                          <div className="flex flex-col gap-1.5">
+                            {yurtReservations.map(res => renderReservationCard(res))}
+                          </div>
                         </td>
                       )
                     }
 
                     // Available cell — click to create reservation with date + yurt prefill
                     return (
-                      <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                      <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
                         <button
                           onClick={() => {
                             setCreateModalDate(dateStr)
@@ -588,16 +532,220 @@ export default function CalendarDesktop() {
                           className="w-full p-3 rounded-lg bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/10 transition-colors cursor-pointer text-left group/avail"
                           title={t('createReservation')}
                         >
-                          <div className="text-[11px] text-[#5B8C3E] font-medium group-hover/avail:text-[#4A7A2D]">{t('status.available')}</div>
+                          <div className="text-[11px] text-[#5B8C3E] font-medium opacity-0 group-hover/avail:opacity-100 transition-opacity">{t('status.available')}</div>
                         </button>
                       </td>
                     )
                   })}
                 </tr>
               ))}
+
+              {/* ── Pending (unassigned) row ── */}
+              <tr className="border-b border-[#E8ECE4]">
+                <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FFF8E1]">
+                  <div className="flex items-center gap-1.5">
+                    <ClipboardList size={14} className="text-[#E8B730]" />
+                    <span className="text-sm font-semibold text-[#2C2416]">Pending</span>
+                  </div>
+                  <div className="text-[10px] text-[#8A7E6B] mt-0.5">Unassigned</div>
+                </td>
+                {weekDays.map((d, i) => {
+                  const dateStr = formatDate(d)
+                  const isToday = dateStr === todayStr
+                  const pending = unassignedByDate.get(dateStr) || []
+
+                  return (
+                    <td
+                      key={i}
+                      className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFBEB]' : 'bg-[#FFF8E1]/30'}`}
+                    >
+                      {pending.length > 0 ? (
+                        <div className="flex flex-col gap-1.5">
+                          {pending.map(res => renderReservationCard(res))}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setCreateModalDate(dateStr)
+                            setCreateModalYurtId(undefined)
+                            setShowCreateModal(true)
+                          }}
+                          className="w-full p-2 rounded-lg hover:bg-[#E8B730]/10 transition-colors cursor-pointer text-center"
+                          title={t('createReservation')}
+                        >
+                          <span className="text-[11px] text-[#E8B730]/40 opacity-0 hover:opacity-100 transition-opacity">+</span>
+                        </button>
+                      )}
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* ── Capacity footer row ── */}
+              <tr>
+                <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FAFAF7]">
+                  <div className="text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">Capacity</div>
+                </td>
+                {weekDays.map((d, i) => {
+                  const dateStr = formatDate(d)
+                  const isToday = dateStr === todayStr
+                  const cap = weekCapacity.get(dateStr)
+                  const used = cap?.used ?? 0
+                  const total = cap?.total ?? totalCapacity
+                  const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0
+                  const assignedCount = cap?.assignedCount ?? 0
+                  const unassignedCount = cap?.unassignedCount ?? 0
+
+                  // Determine assignment status indicator
+                  let statusIcon: React.ReactNode = null
+                  if (assignedCount + unassignedCount > 0) {
+                    if (cap?.hasAnomaly) {
+                      statusIcon = (
+                        <div className="flex items-center gap-1 mt-1">
+                          <AlertTriangle size={10} className="text-[#C4533A]" />
+                          <span className="text-[9px] text-[#C4533A] font-medium">anomaly</span>
+                        </div>
+                      )
+                    } else if (unassignedCount > 0) {
+                      statusIcon = (
+                        <div className="flex items-center gap-1 mt-1">
+                          {Array.from({ length: Math.min(unassignedCount, 3) }).map((_, j) => (
+                            <span key={j} className="w-1.5 h-1.5 rounded-full bg-[#E8B730]" />
+                          ))}
+                          <span className="text-[9px] text-[#E8B730] font-medium">pend</span>
+                        </div>
+                      )
+                    } else {
+                      statusIcon = (
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[10px] text-[#4A7C59] font-bold">&#10003;</span>
+                          <span className="text-[9px] text-[#4A7C59] font-medium">done</span>
+                        </div>
+                      )
+                    }
+                  }
+
+                  return (
+                    <td
+                      key={i}
+                      className={`px-2 py-2.5 border-r border-[#E8ECE4] last:border-r-0 text-center ${isToday ? 'bg-[#FFFDF5]' : 'bg-[#FAFAF7]'}`}
+                    >
+                      <div className="text-[11px] font-semibold text-[#2C2416]">
+                        {used}/{total}
+                      </div>
+                      {/* Capacity bar */}
+                      <div className="mx-auto mt-1 w-full h-1.5 rounded-full bg-[#E8ECE4] overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: pct > 90 ? '#C4533A' : pct > 70 ? '#E8B730' : '#5B8C3E',
+                          }}
+                        />
+                      </div>
+                      {/* Status indicator */}
+                      {statusIcon}
+                    </td>
+                  )
+                })}
+              </tr>
             </tbody>
           </table>
         </div>
+      </div>
+    )
+  }
+
+  /** Render a month cell (heat map style) */
+  function renderMonthCell(day: number | null, idx: number) {
+    if (day === null) {
+      return (
+        <div key={idx} className="min-h-[90px] border-b border-r border-[#E8ECE4]/60 bg-[#FAFAF7]/50" />
+      )
+    }
+
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const isToday = dateStr === todayStr
+    const summary = calendarSummary?.[dateStr]
+    const resCount = summary?.reservationCount ?? 0
+    const totalGuests = summary?.totalGuests ?? 0
+    const totalCap = summary?.totalCapacity ?? totalCapacity
+    const assignedCount = summary?.assignedCount ?? 0
+    const unassignedCount = summary?.unassignedCount ?? 0
+    const hasAnomaly = summary?.hasAnomaly ?? false
+    const pct = totalCap > 0 ? Math.min(100, Math.round((totalGuests / totalCap) * 100)) : 0
+
+    // Determine status indicator
+    let statusIndicator: React.ReactNode = null
+    if (resCount > 0) {
+      if (hasAnomaly) {
+        statusIndicator = <AlertTriangle size={10} className="text-[#C4533A]" />
+      } else if (unassignedCount > 0) {
+        statusIndicator = <span className="w-2 h-2 rounded-full bg-[#E8B730] inline-block" />
+      } else {
+        statusIndicator = <span className="text-[10px] text-[#4A7C59] font-bold">&#10003;</span>
+      }
+    }
+
+    return (
+      <div
+        key={idx}
+        className={`
+          min-h-[90px] p-2 border-b border-r border-[#E8ECE4]/60
+          transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
+          ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
+        `}
+        onClick={() => goToWeekOf(dateStr)}
+        title={t('clickViewDetails')}
+      >
+        {/* Date number + status indicator */}
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className={`
+            text-[13px] font-semibold
+            ${isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'}
+          `}>
+            {day}
+          </span>
+          <div className="flex items-center gap-1">
+            {statusIndicator}
+          </div>
+        </div>
+
+        {/* Reservation count */}
+        {resCount > 0 && (
+          <div className="mb-1.5">
+            <span className="text-[11px] font-semibold text-[#2C2416]">{resCount}</span>
+            <span className="text-[10px] text-[#8A7E6B] ml-1">{resCount === 1 ? 'res' : 'res'}</span>
+            {unassignedCount > 0 && (
+              <span className="text-[9px] text-[#E8B730] ml-1.5 font-medium">
+                ({unassignedCount} pend)
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Capacity bar */}
+        {resCount > 0 && (
+          <div className="mt-auto">
+            <div className="w-full h-1 rounded-full bg-[#E8ECE4] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: pct > 90 ? '#C4533A' : pct > 70 ? '#E8B730' : '#5B8C3E',
+                }}
+              />
+            </div>
+            <div className="text-[9px] text-[#8A7E6B] mt-0.5">{totalGuests}/{totalCap}</div>
+          </div>
+        )}
+
+        {/* Empty day — show + on hover */}
+        {resCount === 0 && (
+          <div className="flex-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Plus size={14} className="text-[#8A7E6B]/30" />
+          </div>
+        )}
       </div>
     )
   }
@@ -614,7 +762,7 @@ export default function CalendarDesktop() {
 
   // ── Main render ──────────────────────────────────────────────
 
-  const navLabel = useMemo(() => {
+  const navLabel = (() => {
     if (view === 'month') {
       return t('navLabel.month', { month: t(`monthNames.${currentMonth}`), year: currentYear })
     }
@@ -626,7 +774,7 @@ export default function CalendarDesktop() {
       ? t('navLabel.endWithMonth', { endMonth: t(`monthNames.${weekRange.end.getMonth()}`), endDay })
       : String(endDay)
     return t('navLabel.weekRange', { startMonth, startDay, endLabel, year })
-  }, [view, currentMonth, currentYear, weekRange, t])
+  })()
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -638,21 +786,9 @@ export default function CalendarDesktop() {
           {/* View Toggle Pills */}
           <div className="flex">
             <button
-              onClick={() => setView('month')}
-              className={`
-                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200
-                ${view === 'month'
-                  ? 'bg-[#6B7F5E] text-white shadow-sm'
-                  : 'bg-transparent text-[#2C2416] border border-[#E8ECE4] hover:bg-[#F5F2ED]'
-                }
-              `}
-            >
-              {t('views.month')}
-            </button>
-            <button
               onClick={() => setView('week')}
               className={`
-                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ml-2
+                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200
                 ${view === 'week'
                   ? 'bg-[#6B7F5E] text-white shadow-sm'
                   : 'bg-transparent text-[#2C2416] border border-[#E8ECE4] hover:bg-[#F5F2ED]'
@@ -660,6 +796,18 @@ export default function CalendarDesktop() {
               `}
             >
               {t('views.week')}
+            </button>
+            <button
+              onClick={() => setView('month')}
+              className={`
+                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ml-2
+                ${view === 'month'
+                  ? 'bg-[#6B7F5E] text-white shadow-sm'
+                  : 'bg-transparent text-[#2C2416] border border-[#E8ECE4] hover:bg-[#F5F2ED]'
+                }
+              `}
+            >
+              {t('views.month')}
             </button>
           </div>
 
@@ -714,7 +862,9 @@ export default function CalendarDesktop() {
 
         {/* ── Calendar Content ─────────────────────────────── */}
 
-        {view === 'month' ? (
+        {view === 'week' ? (
+          renderWeekView()
+        ) : (
           <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden flex-1 flex flex-col">
             {/* Day Headers */}
             <div className="grid grid-cols-7 border-b border-[#E8ECE4] bg-[#FAFAF7]">
@@ -729,8 +879,6 @@ export default function CalendarDesktop() {
               {monthCells.map((day, idx) => renderMonthCell(day, idx))}
             </div>
           </div>
-        ) : (
-          renderWeekView()
         )}
 
         {/* Loading indicator */}
