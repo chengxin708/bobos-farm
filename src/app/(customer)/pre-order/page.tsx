@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 import Image from 'next/image'
@@ -82,6 +83,7 @@ interface Reservation {
   status: string
   yurt: ReservationYurt
   order: Order | null
+  user?: { name: string | null; email: string }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -161,6 +163,8 @@ function PreOrderPage() {
   const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
   const reservationId = searchParams.get('reservationId')
 
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -434,7 +438,14 @@ function PreOrderPage() {
         )}
       </div>
 
-      {/* ── Category Nav — sticky ─────────────────────────────── */}
+      {/* Admin banner — ordering on behalf of customer */}
+      {isAdmin && reservation?.user && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mx-4 mt-2 text-sm text-amber-800">
+          Ordering on behalf of {reservation.user.name || reservation.user.email}
+        </div>
+      )}
+
+      {/* ── Category Nav — sticky ──────────────────────���──────── */}
       <div className="sticky top-[104px] z-20 bg-[#F8F7F4]/95 backdrop-blur-sm px-4 py-2 border-b border-[#F2EDE6]">
         {!categories ? (
           <TabsSkeleton />

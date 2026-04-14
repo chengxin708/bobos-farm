@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (reservation.status !== "CONFIRMED") {
+    if (!isAdmin && reservation.status !== "CONFIRMED") {
       return NextResponse.json(
         { error: "Reservation must be confirmed to place an order" },
         { status: 400 }
