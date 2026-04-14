@@ -10,7 +10,7 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -120,6 +120,9 @@ function getDisplayName(user: ReservationUser): string {
   return user.name || user.email?.split('@')[0] || '?'
 }
 
+/** Closed-cell diagonal stripe pattern */
+const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function CalendarMobile() {
@@ -213,15 +216,30 @@ export default function CalendarMobile() {
 
   // ── Indexed lookups ──────────────────────────────────────────
 
-  /** Map: "YYYY-MM-DD" -> yurtId -> Reservation */
+  /** Map: "YYYY-MM-DD" -> yurtId -> Reservation (assigned, active only) */
   const resByDateYurt = useMemo(() => {
     const map = new Map<string, Map<string, Reservation>>()
     if (!reservations) return map
     for (const r of reservations) {
-      if (!r.yurtId) continue // skip unassigned reservations
+      if (!r.yurtId) continue
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, new Map())
       map.get(dateKey)!.set(r.yurtId, r)
+    }
+    return map
+  }, [reservations])
+
+  /** Map: "YYYY-MM-DD" -> Reservation[] (unassigned, active only) */
+  const unassignedByDate = useMemo(() => {
+    const map = new Map<string, Reservation[]>()
+    if (!reservations) return map
+    for (const r of reservations) {
+      if (r.yurtId !== null) continue
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      const dateKey = r.date.split('T')[0]
+      if (!map.has(dateKey)) map.set(dateKey, [])
+      map.get(dateKey)!.push(r)
     }
     return map
   }, [reservations])
@@ -240,7 +258,7 @@ export default function CalendarMobile() {
     return map
   }, [availability])
 
-  /** Set of date strings that have any bookings */
+  /** Set of date strings that have any active bookings */
   const datesWithBookings = useMemo(() => {
     const set = new Set<string>()
     if (!reservations) return set
@@ -255,6 +273,11 @@ export default function CalendarMobile() {
   const activeYurts = useMemo(() =>
     (yurts || []).filter(y => y.status === 'ACTIVE').sort((a, b) => a.sortOrder - b.sortOrder),
     [yurts]
+  )
+
+  const totalCapacity = useMemo(() =>
+    activeYurts.reduce((sum, y) => sum + y.capacity, 0),
+    [activeYurts]
   )
 
   // ── Navigation ───────────────────────────────────────────────
@@ -284,6 +307,29 @@ export default function CalendarMobile() {
     if (!dayMap) return new Map<string, Reservation>()
     return dayMap
   }, [resByDateYurt, selectedDateStr])
+
+  const selectedDayUnassigned = useMemo(() => {
+    return unassignedByDate.get(selectedDateStr) || []
+  }, [unassignedByDate, selectedDateStr])
+
+  /** Capacity info for selected date */
+  const selectedDayCapacity = useMemo(() => {
+    if (!reservations) return { used: 0, total: totalCapacity, assignedCount: 0, unassignedCount: 0, hasAnomaly: false }
+    let used = 0, assignedCount = 0, unassignedCount = 0
+    for (const r of reservations) {
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      const dateKey = r.date.split('T')[0]
+      if (dateKey !== selectedDateStr) continue
+      used += r.guestCount
+      if (r.yurtId) {
+        assignedCount++
+      } else {
+        unassignedCount++
+      }
+    }
+    const hasAnomaly = used > totalCapacity
+    return { used, total: totalCapacity, assignedCount, unassignedCount, hasAnomaly }
+  }, [reservations, selectedDateStr, totalCapacity])
 
   // ── Week label ───────────────────────────────────────────────
 
@@ -320,6 +366,40 @@ export default function CalendarMobile() {
         </div>
       </>
     )
+  }
+
+  // ── Capacity bar helpers ─────────────────────────────────────
+
+  const { used, total, assignedCount, unassignedCount, hasAnomaly } = selectedDayCapacity
+  const capacityPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0
+
+  // Status indicator for capacity header
+  let statusIndicator: React.ReactNode = null
+  if (assignedCount + unassignedCount > 0) {
+    if (hasAnomaly) {
+      statusIndicator = (
+        <span className="flex items-center gap-1">
+          <AlertTriangle size={12} className="text-[#C4533A]" />
+          <span className="text-[11px] text-[#C4533A] font-semibold">{t('anomaly')}</span>
+        </span>
+      )
+    } else if (unassignedCount > 0) {
+      statusIndicator = (
+        <span className="flex items-center gap-1">
+          {Array.from({ length: Math.min(unassignedCount, 3) }).map((_, j) => (
+            <span key={j} className="w-1.5 h-1.5 rounded-full bg-[#E8B730]" />
+          ))}
+          <span className="text-[11px] text-[#E8B730] font-semibold">{t('pendingShort')}</span>
+        </span>
+      )
+    } else {
+      statusIndicator = (
+        <span className="flex items-center gap-1">
+          <span className="text-[12px] text-[#4A7C59] font-bold">&#10003;</span>
+          <span className="text-[11px] text-[#4A7C59] font-semibold">{t('allAssigned')}</span>
+        </span>
+      )
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────
@@ -399,43 +479,81 @@ export default function CalendarMobile() {
 
         {/* ── Selected Date Detail ────────────────────────── */}
         <div className="flex-1 px-4 py-4">
-          {/* Date heading */}
-          <h2 className="text-[17px] font-bold text-[#2C2416] mb-3" style={{ fontFamily: 'var(--font-playfair)' }}>
-            {selectedDateHeading}
-          </h2>
+
+          {/* ── Capacity Bar Header ─────────────────────── */}
+          <div className="bg-white rounded-xl border border-[#E8ECE4] p-4 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-[17px] font-bold text-[#2C2416]" style={{ fontFamily: 'var(--font-playfair)' }}>
+                {selectedDateHeading}
+              </h2>
+              {statusIndicator}
+            </div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[13px] text-[#8A7E6B]">
+                {t('capacity')}: {used}/{total}
+              </span>
+              <span className="text-[13px] font-semibold text-[#2C2416]">
+                {capacityPct}%
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div className="w-full h-2 rounded-full bg-[#E8ECE4] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${capacityPct}%`,
+                  backgroundColor: hasAnomaly ? '#C4533A' : '#5B8C3E',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* ── Anomaly Banner ──────────────────────────── */}
+          {hasAnomaly && (
+            <div className="flex items-center gap-2 bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl px-4 py-3 mb-4">
+              <AlertTriangle size={16} className="text-[#C4533A] shrink-0" />
+              <span className="text-[13px] text-[#92400E] font-medium">{t('anomalyOverbooked')}</span>
+            </div>
+          )}
 
           {/* Loading */}
           {loadingRes && (
             <div className="text-center text-sm text-[#8A7E6B] py-8">{t('loading')}</div>
           )}
 
-          {/* Yurt cards */}
+          {/* ── Yurt Cards ─────────────────────────────── */}
           {!loadingRes && activeYurts.map(yurt => {
             const res = selectedDayReservations.get(yurt.id)
             const isClosed = closedByDateYurt.get(selectedDateStr)?.has(yurt.id)
+            const isHeld = res?.holdByAdmin && res?.status === 'PENDING_PAYMENT'
 
+            // Booked yurt card
             if (res) {
-              const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
-              // Booked card — tap to view reservation detail
               return (
                 <button
                   key={yurt.id}
                   onClick={() => setSelectedResId(res.id)}
-                  className="w-full text-left bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 cursor-pointer hover:border-[#6B7F5E]/40 transition-colors"
+                  className="w-full text-left bg-white rounded-xl border border-[#E8ECE4] mb-3 overflow-hidden cursor-pointer hover:border-[#6B7F5E]/40 transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
-                    <StatusBadge
-                      type="reservation"
-                      status={res.status}
-                      label={isHeld ? t('status.held') : statusLabel(res.status, t)}
-                    />
+                  {/* Yurt header */}
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
+                    <span className="text-[13px] font-semibold text-[#6B7F5E]">
+                      {yurt.name} ({yurt.capacity})
+                    </span>
                   </div>
-                  <div className={`${res.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
-                    <div className="text-[15px] font-semibold text-[#2C2416]">
-                      {getDisplayName(res.user)}
+                  {/* Reservation content */}
+                  <div className={`px-4 py-3 ${res.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[15px] font-semibold text-[#2C2416]">
+                        {getDisplayName(res.user)}
+                      </span>
+                      <StatusBadge
+                        type="reservation"
+                        status={res.status}
+                        label={isHeld ? t('status.held') : statusLabel(res.status, t)}
+                      />
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-[#8A7E6B]">
+                    <div className="flex items-center gap-1.5 text-[#8A7E6B]">
                       <Users size={13} />
                       <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                     </div>
@@ -445,29 +563,33 @@ export default function CalendarMobile() {
                       </p>
                     )}
                   </div>
-                  <span className="text-[11px] text-[#6B7F5E] mt-2 block">
-                    {t('clickViewDetails')}
-                  </span>
                 </button>
               )
             }
 
+            // Closed yurt card
             if (isClosed) {
-              // Closed card
               return (
                 <div
                   key={yurt.id}
-                  className="bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 opacity-60"
+                  className="bg-white rounded-xl border border-[#E8ECE4] mb-3 overflow-hidden opacity-60"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-[#8A7E6B]">{yurt.name}</span>
-                    <span className="text-[12px] text-[#8A7E6B]">{t('status.closed')}</span>
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
+                    <span className="text-[13px] font-semibold text-[#8A7E6B]">
+                      {yurt.name} ({yurt.capacity})
+                    </span>
+                  </div>
+                  <div
+                    className="px-4 py-3 text-center"
+                    style={{ backgroundImage: CLOSED_CROSSHATCH_BG }}
+                  >
+                    <span className="text-[13px] text-[#8A7E6B]">{t('status.closed')}</span>
                   </div>
                 </div>
               )
             }
 
-            // Available card — tap to create reservation with date + yurt prefill
+            // Available yurt card — tap to create reservation with date + yurt prefill
             return (
               <button
                 key={yurt.id}
@@ -475,15 +597,65 @@ export default function CalendarMobile() {
                   setCreateYurtId(yurt.id)
                   setShowCreateModal(true)
                 }}
-                className="w-full bg-white rounded-xl p-4 border border-[#E8ECE4] mb-3 text-left hover:border-[#6B7F5E]/40 hover:bg-[#6B7F5E]/[0.02] transition-colors cursor-pointer"
+                className="w-full text-left bg-white rounded-xl border border-[#E8ECE4] mb-3 overflow-hidden hover:border-[#6B7F5E]/40 hover:bg-[#6B7F5E]/[0.02] transition-colors cursor-pointer"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-[#6B7F5E]">{yurt.name}</span>
-                  <span className="text-[13px] text-[#6B7F5E]">{t('available')} — {t('clickToBook')}</span>
+                <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
+                  <span className="text-[13px] font-semibold text-[#6B7F5E]">
+                    {yurt.name} ({yurt.capacity})
+                  </span>
+                </div>
+                <div className="px-4 py-3">
+                  <span className="text-[13px] text-[#5B8C3E]">{t('available')} — {t('clickToBook')}</span>
                 </div>
               </button>
             )
           })}
+
+          {/* ── Pending Assignment Section ──────────────── */}
+          {!loadingRes && selectedDayUnassigned.length > 0 && (
+            <div className="mt-2 mb-4">
+              {/* Section header */}
+              <div className="flex items-center gap-2 bg-[#FFF8E1] rounded-t-xl border border-[#E8ECE4] border-b-0 px-4 py-3">
+                <ClipboardList size={16} className="text-[#E8B730]" />
+                <span className="text-[14px] font-semibold text-[#92400E]">
+                  {t('pendingCount', { count: selectedDayUnassigned.length })}
+                </span>
+              </div>
+              {/* Unassigned reservation cards */}
+              <div className="bg-[#FFF8E1]/30 rounded-b-xl border border-[#E8ECE4] border-t-0 px-3 py-3 space-y-2">
+                {selectedDayUnassigned.map(res => {
+                  const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+                  return (
+                    <button
+                      key={res.id}
+                      onClick={() => setSelectedResId(res.id)}
+                      className="w-full text-left bg-white rounded-lg border border-[#E8ECE4] p-3 cursor-pointer hover:border-[#E8B730]/60 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[15px] font-semibold text-[#2C2416]">
+                          {getDisplayName(res.user)}
+                        </span>
+                        <StatusBadge
+                          type="reservation"
+                          status={res.status}
+                          label={isHeld ? t('status.held') : statusLabel(res.status, t)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#8A7E6B]">
+                        <Users size={13} />
+                        <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
+                      </div>
+                      {res.specialRequests && (
+                        <p className="text-[12px] text-[#8A7E6B] mt-1.5 line-clamp-2">
+                          {res.specialRequests}
+                        </p>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Empty state */}
           {!loadingRes && activeYurts.length === 0 && (
