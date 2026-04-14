@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, ExternalLink } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -42,6 +43,14 @@ interface ReservationDetailProps {
   onOrderChanged?: () => void
 }
 
+// ── Yurt type for assign dropdown ────────────────────────────────
+interface YurtOption {
+  id: string
+  name: string
+  capacity: number
+  status: string
+}
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function ReservationDetail({
@@ -55,6 +64,8 @@ export default function ReservationDetail({
   const t = useTranslations('admin.reservations')
   const tOrders = useTranslations('admin.orders')
   const locale = useLocale()
+  const { data: session } = useSession()
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
   const panelOrder = reservation.order || null
 
   const [detailTab, setDetailTab] = useState<'info' | 'order'>('info')
@@ -66,6 +77,47 @@ export default function ReservationDetail({
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
+
+  // Assign Yurt state
+  const [selectedYurtId, setSelectedYurtId] = useState('')
+  const [assigningYurt, setAssigningYurt] = useState(false)
+
+  // Fetch available yurts when no yurt assigned
+  const { data: allYurts } = useSWR<YurtOption[]>(
+    reservation.yurtId === null ? '/api/yurts' : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  // Fetch reservations for the same date to determine occupied yurts
+  const { data: dateReservations } = useSWR<Reservation[]>(
+    reservation.yurtId === null ? `/api/reservations?date=${reservation.date}` : null,
+    (url: string) => fetch(url).then(r => r.json()).then(d => d.reservations ?? d),
+    { revalidateOnFocus: false }
+  )
+
+  const occupiedYurtIds = new Set(
+    (dateReservations || [])
+      .filter(r => r.id !== reservation.id && r.yurtId && !['CANCELLED', 'EXPIRED'].includes(r.status))
+      .map(r => r.yurtId)
+  )
+
+  const activeYurts = (allYurts || []).filter(y => y.status === 'ACTIVE')
+
+  const handleAssignYurt = async () => {
+    if (!selectedYurtId) return
+    setAssigningYurt(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_yurt', yurtId: selectedYurtId }),
+      })
+      if (res.ok) {
+        onOrderChanged?.()
+      }
+    } catch { /* ignore */ }
+    finally { setAssigningYurt(false) }
+  }
 
   const handleConfirmAction = useCallback(() => {
     if (!confirmAction) return
@@ -177,6 +229,34 @@ export default function ReservationDetail({
   function renderInfoTab() {
     return (
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+        {/* Assign Yurt — shown when no yurt assigned */}
+        {reservation.yurtId === null && isAdmin && (
+          <div className="rounded-lg p-4" style={{ backgroundColor: '#FFF8E1' }}>
+            <label className="text-sm font-semibold text-[#8B6914] block mb-2">{t('assignYurt')}</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedYurtId}
+                onChange={e => setSelectedYurtId(e.target.value)}
+                className="flex-1 h-9 px-3 text-sm rounded-lg border border-[#E8E2D9] bg-white outline-none focus:border-[#6B7F5E]"
+              >
+                <option value="">{t('selectYurt')}</option>
+                {activeYurts.map(y => (
+                  <option key={y.id} value={y.id} disabled={occupiedYurtIds.has(y.id)}>
+                    {y.name} ({y.capacity} guests){occupiedYurtIds.has(y.id) ? ' — occupied' : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAssignYurt}
+                disabled={!selectedYurtId || assigningYurt}
+                className="h-9 px-4 text-sm font-semibold rounded-lg bg-[#8B6914] text-white hover:bg-[#8B6914]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('assign')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Status badge */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${STATUS_BADGE[reservation.status]?.bg} ${STATUS_BADGE[reservation.status]?.text}`}>
@@ -418,6 +498,17 @@ export default function ReservationDetail({
             >
               {tOrders('placeOrder')}
             </button>
+          )}
+          {isAdmin && (
+            <a
+              href={`/pre-order?reservationId=${reservation.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-[#8B6914] text-[#8B6914] hover:bg-[#8B6914]/5"
+            >
+              <ExternalLink size={14} />
+              {t('preOrderForCustomer')}
+            </a>
           )}
         </div>
       )
