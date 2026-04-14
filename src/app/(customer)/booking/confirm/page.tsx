@@ -397,7 +397,7 @@ export default function BookingConfirmPage() {
         {/* Yurt assignment note */}
         <div className="flex items-center gap-3">
           <Tent size={16} className="text-[#6B6157] shrink-0" />
-          <span className="text-[15px] text-[#6B6157] italic">Yurt will be assigned by our team</span>
+          <span className="text-[15px] text-[#6B6157] italic">{t('yurtPendingAssignment')}</span>
         </div>
         {/* Guests */}
         <div className="flex items-center gap-3">

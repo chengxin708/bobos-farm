@@ -251,7 +251,8 @@
       "cancellationPolicyText": "我了解预订日期前3天内取消不予退款。",
       "cancellationPolicyLink": "查看完整取消政策",
       "completedTransfer": "我已完成转账",
-      "cancelReservation": "取消预订"
+      "cancelReservation": "取消预订",
+      "yurtPendingAssignment": "蒙古包将在活动前3天分配"
     },
     "slots": {
       "available": "剩余 {count} 个位置",
@@ -263,6 +264,7 @@
   "reservations": {
     "title": "我的预订",
     "subtitle": "管理您的近期到访",
+    "pendingAssignment": "待分配",
     "upcoming": "即将到来",
     "past": "过往",
     "deposit": "订金",

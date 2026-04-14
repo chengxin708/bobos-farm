@@ -251,7 +251,8 @@
       "cancellationPolicyText": "I understand that cancellations within 3 days of the reservation date are non-refundable.",
       "cancellationPolicyLink": "View full cancellation policy",
       "completedTransfer": "I Have Completed the Transfer",
-      "cancelReservation": "Cancel reservation"
+      "cancelReservation": "Cancel reservation",
+      "yurtPendingAssignment": "Your yurt will be assigned 3 days before your reservation"
     },
     "slots": {
       "available": "{count} spots available",
@@ -263,6 +264,7 @@
   "reservations": {
     "title": "My Reservations",
     "subtitle": "Manage your upcoming visits",
+    "pendingAssignment": "Pending assignment",
     "upcoming": "Upcoming",
     "past": "Past",
     "deposit": "Deposit",

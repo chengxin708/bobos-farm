@@ -503,7 +503,7 @@ export default function ReservationsPage() {
                   <div className="flex items-center gap-4 text-sm text-[#8E8E93]">
                     <span className="flex items-center gap-1.5">
                       <Tent size={15} className="text-[#8E8E93]" />
-                      {r.yurt?.name}
+                      {r.yurt?.name ?? <span className="italic">{t('pendingAssignment')}</span>}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users size={15} className="text-[#8E8E93]" />
@@ -633,7 +633,7 @@ export default function ReservationsPage() {
                   <div className="flex items-center gap-4 text-sm text-[#8E8E93]">
                     <span className="flex items-center gap-1.5">
                       <Tent size={14} />
-                      {r.yurt?.name}
+                      {r.yurt?.name ?? <span className="italic">{t('pendingAssignment')}</span>}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users size={14} />
