@@ -319,7 +319,8 @@
       "reasonPlaceholder": "告诉我们您取消的原因...",
       "keep": "保留预订",
       "confirm": "取消预订",
-      "cancelling": "取消中..."
+      "cancelling": "取消中...",
+      "contactSupport": "如需帮助，请致电"
     },
     "emptyTitle": "暂无预订",
     "emptySubtitle": "预订您的第一次农场体验",

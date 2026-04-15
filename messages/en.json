@@ -319,7 +319,8 @@
       "reasonPlaceholder": "Let us know why you're cancelling...",
       "keep": "Keep Reservation",
       "confirm": "Cancel Reservation",
-      "cancelling": "Cancelling..."
+      "cancelling": "Cancelling...",
+      "contactSupport": "Need help? Call us at"
     },
     "emptyTitle": "No reservations yet",
     "emptySubtitle": "Book your first farm experience",

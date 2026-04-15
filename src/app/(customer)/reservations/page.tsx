@@ -136,6 +136,14 @@ export default function ReservationsPage() {
     fetcher
   )
 
+  // Fetch business phone for support contact
+  const { data: publicSettings } = useSWR<Record<string, string>>(
+    '/api/settings/public',
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  const businessPhone = publicSettings?.business_phone || ''
+
   // Unauthenticated: show prompt + full-screen login modal
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [loginEmail, setLoginEmail] = useState('')
@@ -708,6 +716,12 @@ export default function ReservationsPage() {
                 </div>
                 <p className="text-xs text-[#8E8E93]">
                   {t('modify.contactToReschedule')}
+                  {businessPhone && (
+                    <>
+                      {' '}
+                      <a href={`tel:${businessPhone}`} className="text-[#6B7F5E] font-semibold underline">{businessPhone}</a>
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -831,6 +845,13 @@ export default function ReservationsPage() {
               {cancelError && (
                 <div className="bg-[#C4453A]/10 text-[#C4453A] text-sm rounded-lg px-3 py-2">
                   {cancelError}
+                </div>
+              )}
+
+              {businessPhone && (
+                <div className="bg-[#F8F7F4] rounded-lg px-4 py-3 text-sm text-[#1A1208]/70">
+                  {t('cancelDialog.contactSupport')}{' '}
+                  <a href={`tel:${businessPhone}`} className="text-[#6B7F5E] font-semibold underline">{businessPhone}</a>
                 </div>
               )}
 
