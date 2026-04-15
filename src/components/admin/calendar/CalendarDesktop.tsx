@@ -165,6 +165,7 @@ export default function CalendarDesktop() {
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
+  const [swapLoading, setSwapLoading] = useState(false)
 
   // Fetch full detail + activity logs for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -184,6 +185,14 @@ export default function CalendarDesktop() {
       router.push('/')
     }
   }, [sessionStatus, session, router])
+
+  // Esc key to exit swap mode
+  useEffect(() => {
+    if (!swapSourceId) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSwapSourceId(null) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [swapSourceId])
 
   // ── Date ranges ──────────────────────────────────────────────
 
@@ -310,18 +319,32 @@ export default function CalendarDesktop() {
     return map
   }, [reservations, yurts])
 
+  const [suggestionLoading, setSuggestionLoading] = useState(false)
+
   async function handleApplySuggestion(dateStr: string) {
     const suggestion = optimizationByDate.get(dateStr)
-    if (!suggestion) return
-    // Apply each move as a series of assign_yurt actions
-    for (const move of suggestion.moves) {
-      await fetch(`/api/reservations/${move.reservationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
-      })
+    if (!suggestion || suggestionLoading) return
+    if (!confirm('确定应用此优化建议？将重新分配包房。')) return
+    setSuggestionLoading(true)
+    try {
+      for (const move of suggestion.moves) {
+        const res = await fetch(`/api/reservations/${move.reservationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+          alert(err.error || 'Failed to apply optimization')
+          return
+        }
+      }
+      mutateReservations()
+    } catch {
+      alert('Network error — could not apply optimization')
+    } finally {
+      setSuggestionLoading(false)
     }
-    mutateReservations()
   }
 
   // ── Reservation actions (for detail drawer) ─────────────────
@@ -445,20 +468,33 @@ export default function CalendarDesktop() {
 
   const todayStr = formatDate(today)
 
+  /** Derive the date of the swap source reservation */
+  const swapSourceDate = useMemo(() => {
+    if (!swapSourceId || !reservations) return null
+    const src = reservations.find(r => r.id === swapSourceId)
+    return src ? src.date.split('T')[0] : null
+  }, [swapSourceId, reservations])
+
   async function handleSwap(targetId: string) {
-    if (!swapSourceId) return
+    if (!swapSourceId || swapLoading) return
+    setSwapLoading(true)
     try {
       const resp = await fetch('/api/reservations/swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
       })
-      if (resp.ok) {
-        mutateReservations()
-        setSwapSourceId(null)
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Unknown error' }))
+        alert(err.error || 'Swap failed')
+        return
       }
+      mutateReservations()
+      setSwapSourceId(null)
     } catch {
-      // ignore
+      alert('Network error — could not complete swap')
+    } finally {
+      setSwapLoading(false)
     }
   }
 
@@ -470,16 +506,18 @@ export default function CalendarDesktop() {
       : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
     const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
     const isSwapSource = swapSourceId === res.id
-    const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.yurtId && res.status !== 'CANCELLED'
+    const resDate = res.date.split('T')[0]
+    const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.yurtId && res.status !== 'CANCELLED' && resDate === swapSourceDate
 
     return (
       <button
         key={res.id}
+        disabled={swapLoading && !!isSwapTarget}
         onClick={(e) => {
           e.stopPropagation()
-          if (isSwapTarget) {
+          if (isSwapTarget && !swapLoading) {
             handleSwap(res.id)
-          } else {
+          } else if (!isSwapTarget) {
             setSelectedResId(res.id)
           }
         }}

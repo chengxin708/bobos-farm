@@ -143,6 +143,7 @@ export default function CalendarMobile() {
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
+  const [swapLoading, setSwapLoading] = useState(false)
 
   // Fetch full detail for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -162,6 +163,14 @@ export default function CalendarMobile() {
       router.push('/')
     }
   }, [sessionStatus, session, router])
+
+  // Esc key to exit swap mode
+  useEffect(() => {
+    if (!swapSourceId) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSwapSourceId(null) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [swapSourceId])
 
   // ── Week days ────────────────────────────────────────────────
 
@@ -218,19 +227,25 @@ export default function CalendarMobile() {
   }, [handleResAction])
 
   async function handleSwap(targetId: string) {
-    if (!swapSourceId) return
+    if (!swapSourceId || swapLoading) return
+    setSwapLoading(true)
     try {
       const resp = await fetch('/api/reservations/swap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
       })
-      if (resp.ok) {
-        mutateReservations()
-        setSwapSourceId(null)
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Unknown error' }))
+        alert(err.error || 'Swap failed')
+        return
       }
+      mutateReservations()
+      setSwapSourceId(null)
     } catch {
-      // ignore
+      alert('Network error — could not complete swap')
+    } finally {
+      setSwapLoading(false)
     }
   }
 
@@ -385,16 +400,31 @@ export default function CalendarMobile() {
     return computeOptimizationSuggestion(activeYurtInputs, assignments)
   }, [yurts, reservations, selectedDateStr])
 
+  const [suggestionLoading, setSuggestionLoading] = useState(false)
+
   async function handleApplySuggestion() {
-    if (!selectedDaySuggestion) return
-    for (const move of selectedDaySuggestion.moves) {
-      await fetch(`/api/reservations/${move.reservationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
-      })
+    if (!selectedDaySuggestion || suggestionLoading) return
+    if (!confirm('确定应用此优化建议？将重新分配包房。')) return
+    setSuggestionLoading(true)
+    try {
+      for (const move of selectedDaySuggestion.moves) {
+        const res = await fetch(`/api/reservations/${move.reservationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+          alert(err.error || 'Failed to apply optimization')
+          return
+        }
+      }
+      mutateReservations()
+    } catch {
+      alert('Network error — could not apply optimization')
+    } finally {
+      setSuggestionLoading(false)
     }
-    mutateReservations()
   }
 
   // ── Week label ───────────────────────────────────────────────
@@ -711,10 +741,11 @@ export default function CalendarMobile() {
               return (
                 <button
                   key={yurt.id}
+                  disabled={swapLoading && !!isSwapTarget}
                   onClick={() => {
-                    if (isSwapTarget) {
+                    if (isSwapTarget && !swapLoading) {
                       handleSwap(res.id)
-                    } else {
+                    } else if (!isSwapTarget) {
                       setSelectedResId(res.id)
                     }
                   }}
