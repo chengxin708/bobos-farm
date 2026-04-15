@@ -38,55 +38,53 @@ async function main() {
   });
   console.log("Demo customer created:", customer.email);
 
-  // Create 3 yurts
+  // Clear old yurts (cascades to reservations + availability)
+  const oldYurtIds = ["yurt-golden-meadow", "yurt-sunset-ridge", "yurt-willow-creek"];
+  for (const id of oldYurtIds) {
+    await prisma.yurt.deleteMany({ where: { id } });
+  }
+  console.log("Old yurts cleared");
+
+  // Create 3 private rooms (包房)
   const yurts = await Promise.all([
     prisma.yurt.upsert({
-      where: { id: "yurt-golden-meadow" },
-      update: {},
+      where: { id: "room-1" },
+      update: { name: "包房 #1", capacity: 28, sortOrder: 1 },
       create: {
-        id: "yurt-golden-meadow",
-        name: "Golden Meadow",
-        description:
-          "Our largest yurt with panoramic meadow views, wood-burning stove, and a private outdoor fire pit.",
-        capacity: 15,
+        id: "room-1",
+        name: "包房 #1",
+        description: "最大包房，可容纳28人",
+        capacity: 28,
         status: "ACTIVE",
-        imageUrl:
-          "https://images.unsplash.com/photo-1618767689160-da3fb810aad7?w=500&q=80",
         sortOrder: 1,
       },
     }),
     prisma.yurt.upsert({
-      where: { id: "yurt-sunset-ridge" },
-      update: {},
+      where: { id: "room-2" },
+      update: { name: "包房 #2", capacity: 24, sortOrder: 2 },
       create: {
-        id: "yurt-sunset-ridge",
-        name: "Sunset Ridge",
-        description:
-          "A cozy mid-size yurt perched on the ridge with stunning sunset views over the valley.",
-        capacity: 8,
+        id: "room-2",
+        name: "包房 #2",
+        description: "中型包房，可容纳24人",
+        capacity: 24,
         status: "ACTIVE",
-        imageUrl:
-          "https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?w=500&q=80",
         sortOrder: 2,
       },
     }),
     prisma.yurt.upsert({
-      where: { id: "yurt-willow-creek" },
-      update: {},
+      where: { id: "room-3" },
+      update: { name: "包房 #3", capacity: 16, sortOrder: 3 },
       create: {
-        id: "yurt-willow-creek",
-        name: "Willow Creek",
-        description:
-          "An intimate riverside yurt surrounded by willow trees, perfect for smaller gatherings.",
-        capacity: 6,
+        id: "room-3",
+        name: "包房 #3",
+        description: "小型包房，可容纳16人",
+        capacity: 16,
         status: "ACTIVE",
-        imageUrl:
-          "https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=500&q=80",
         sortOrder: 3,
       },
     }),
   ]);
-  console.log("Yurts created:", yurts.map((y) => y.name).join(", "));
+  console.log("Rooms created:", yurts.map((y) => `${y.name} (${y.capacity}人)`).join(", "));
 
   // Create menu categories
   const categories = await Promise.all([
