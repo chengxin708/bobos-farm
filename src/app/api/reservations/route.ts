@@ -7,7 +7,7 @@ import {
   sendAdminNewReservation,
 } from "@/lib/email";
 import { sendPushToAdmins } from "@/lib/push";
-import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies } from "@/lib/yurt-assignment";
+import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
 const createReservationBodySchema = z.object({
   yurtId: z.string().min(1).optional(), // optional for customers (auto-assigned)
@@ -379,30 +379,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // T-3 window: if reservation date is ≤3 days away, assign yurt immediately
+    // Run deterministic assignment for this date
     if (!requestedYurtId) {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const diffDays = Math.round(
-        (reservationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      if (diffDays <= 3) {
-        // Immediate assignment
-        const plan = await assignYurtsForDate(reservationDate);
-        // Refresh reservation to get updated yurtId
-        const updated = await prisma.reservation.findUnique({
-          where: { id: reservation.id },
-          include: {
-            user: { select: { id: true, name: true, email: true, phone: true } },
-            yurt: { select: { id: true, name: true, capacity: true } },
-          },
-        });
-        if (updated) {
-          Object.assign(reservation, updated);
-        }
-      } else {
-        // Fire-and-forget: check for anomalies
-        void checkDateAnomalies(reservationDate);
+      await tryDeterministicAssignment(reservationDate);
+      // Refresh reservation to get updated yurtId
+      const updated = await prisma.reservation.findUnique({
+        where: { id: reservation.id },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+      if (updated) {
+        Object.assign(reservation, updated);
       }
     }
 
