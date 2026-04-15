@@ -1114,7 +1114,7 @@ export default function CalendarDesktop() {
             onClose={() => setSelectedResId(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={actionUpdating}
-            onOrderChanged={() => mutateReservations()}
+            onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); }}
           />
         </div>
       )}

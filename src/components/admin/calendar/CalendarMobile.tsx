@@ -917,7 +917,7 @@ export default function CalendarMobile() {
               onClose={() => setSelectedResId(null)}
               onAction={{ confirmDeposit, cancelReservation, completeReservation }}
               isUpdating={actionUpdating}
-              onOrderChanged={() => mutateReservations()}
+              onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); }}
             />
           </div>
         </div>
