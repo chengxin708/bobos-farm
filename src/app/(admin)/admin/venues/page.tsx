@@ -7,8 +7,8 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
-  Plus, Edit, Eye, Users, AlertTriangle, X, ChevronRight,
-  ChevronLeft, Save, Calendar, Trash2,
+  Eye, Users, AlertTriangle, X, ChevronRight,
+  ChevronLeft, Save, Calendar,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -123,10 +123,6 @@ export default function VenuesPage() {
   // YURTS TAB STATE
   // ════════════════════════════════════════════════════════════════
 
-  const [yurtModalOpen, setYurtModalOpen] = useState(false)
-  const [editingYurt, setEditingYurt] = useState<Yurt | null>(null)
-  const [yurtForm, setYurtForm] = useState<YurtFormData>(defaultYurtForm)
-  const [yurtSaving, setYurtSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -141,80 +137,6 @@ export default function VenuesPage() {
   }, [])
 
   const { data: yurts, isLoading: yurtsLoading, mutate: mutateYurts } = useSWR<Yurt[]>('/api/yurts', fetcher)
-
-  const openAddYurtModal = useCallback(() => {
-    setEditingYurt(null)
-    setYurtForm(defaultYurtForm)
-    setYurtModalOpen(true)
-  }, [])
-
-  const openEditYurtModal = useCallback((yurt: Yurt) => {
-    setEditingYurt(yurt)
-    setYurtForm({
-      name: yurt.name,
-      description: yurt.description || '',
-      capacity: yurt.capacity,
-      status: yurt.status,
-      imageUrl: yurt.imageUrl || '',
-    })
-    setYurtModalOpen(true)
-  }, [])
-
-  const handleSaveYurt = useCallback(async () => {
-    if (!yurtForm.name.trim()) { alert(tV('nameRequired')); return }
-    if (yurtForm.capacity < 1) { alert(tV('capacityMin')); return }
-
-    if (editingYurt && editingYurt.status === 'ACTIVE' && yurtForm.status === 'MAINTENANCE') {
-      if (!confirm(tV('confirmMaintenance', { name: yurtForm.name }))) return
-    }
-
-    setYurtSaving(true)
-    try {
-      const url = editingYurt ? `/api/yurts/${editingYurt.id}` : '/api/yurts'
-      const method = editingYurt ? 'PATCH' : 'POST'
-      const body: Record<string, unknown> = {
-        name: yurtForm.name,
-        description: yurtForm.description || undefined,
-        capacity: yurtForm.capacity,
-        status: yurtForm.status,
-      }
-      if (yurtForm.imageUrl) body.imageUrl = yurtForm.imageUrl
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        alert(err.error || tV('saveFailed'))
-        return
-      }
-      mutateYurts()
-      setYurtModalOpen(false)
-      showSuccess(editingYurt ? tV('updateSuccess', { name: yurtForm.name }) : tV('createSuccess', { name: yurtForm.name }))
-    } catch {
-      alert(tV('saveFailed'))
-    } finally {
-      setYurtSaving(false)
-    }
-  }, [yurtForm, editingYurt, mutateYurts, showSuccess, tV])
-
-  const handleDeleteYurt = useCallback(async (yurt: Yurt) => {
-    if (!confirm(tV('confirmDelete'))) return
-    try {
-      const res = await fetch(`/api/yurts/${yurt.id}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const err = await res.json()
-        alert(err.error || tV('deleteFailed'))
-        return
-      }
-      mutateYurts()
-      showSuccess(tV('deleteSuccess', { name: yurt.name }))
-    } catch {
-      alert(tV('deleteFailed'))
-    }
-  }, [mutateYurts, showSuccess, tV])
 
   // ════════════════════════════════════════════════════════════════
   // AVAILABILITY TAB STATE
@@ -495,17 +417,9 @@ export default function VenuesPage() {
         {activeTab === 'yurts' && (
           <div className="flex-1 px-4 md:px-6 py-4 flex flex-col gap-4 overflow-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-[#3D2B1F] font-playfair">{tY('title')}</h2>
-                <p className="text-sm text-[#8C8478]">{tY('subtitle')}</p>
-              </div>
-              <button
-                onClick={openAddYurtModal}
-                className="flex items-center gap-1.5 bg-[#6B7F5E] text-white text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer border-none hover:bg-[#5A6E4F] transition-colors"
-              >
-                <Plus size={14} /> {tY('addYurt')}
-              </button>
+            <div>
+              <h2 className="text-xl font-bold text-[#3D2B1F] font-playfair">{tY('title')}</h2>
+              <p className="text-sm text-[#8C8478]">{tY('subtitle')}</p>
             </div>
 
             {/* Loading */}
@@ -556,21 +470,8 @@ export default function VenuesPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => openEditYurtModal(yurt)}
-                    className="flex items-center gap-1.5 text-sm text-[#6B7F5E] font-semibold cursor-pointer bg-transparent border-none hover:text-[#5A6E4F] transition-colors"
-                  >
-                    <Edit size={14} /> {tY('actions.edit')}
-                  </button>
                   <button className="flex items-center gap-1.5 text-sm text-[#3D2B1F] cursor-pointer bg-transparent border-none">
                     <Eye size={14} /> {tY('actions.viewDetails')}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteYurt(yurt)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#DC3545] border border-[#DC3545]/30 rounded-lg hover:bg-[#DC3545]/5 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                    {tV('deleteBtn')}
                   </button>
                 </div>
               </div>
@@ -887,105 +788,6 @@ export default function VenuesPage() {
       </div>
 
       {/* ── Yurt Edit/Add Modal ── */}
-      {yurtModalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 md:p-6">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 md:px-6 py-4 border-b border-[#E8ECE4]">
-              <h3 className="text-lg font-bold text-[#3D2B1F] font-playfair">
-                {editingYurt ? tV('modal.editTitle', { name: editingYurt.name }) : tV('modal.addTitle')}
-              </h3>
-              <button
-                onClick={() => setYurtModalOpen(false)}
-                className="p-1 hover:bg-[#F8F7F4] rounded cursor-pointer bg-transparent border-none"
-              >
-                <X size={18} className="text-[#8C8478]" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5 flex flex-col gap-4">
-              {/* Name */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.name')}</label>
-                <input
-                  type="text"
-                  value={yurtForm.name}
-                  onChange={(e) => setYurtForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder={tV('modal.namePlaceholder')}
-                  className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.description')}</label>
-                <textarea
-                  value={yurtForm.description}
-                  onChange={(e) => setYurtForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder={tV('modal.descriptionPlaceholder')}
-                  className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] h-24 resize-none outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
-                />
-              </div>
-
-              {/* Capacity */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.capacity')}</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={yurtForm.capacity}
-                  onChange={(e) => setYurtForm(f => ({ ...f, capacity: parseInt(e.target.value) || 1 }))}
-                  className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] w-32 outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
-                />
-              </div>
-
-              {/* Status */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.status')}</label>
-                <select
-                  value={yurtForm.status}
-                  onChange={(e) => setYurtForm(f => ({ ...f, status: e.target.value as 'ACTIVE' | 'MAINTENANCE' }))}
-                  className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 bg-white"
-                >
-                  <option value="ACTIVE">{tY('status.active')}</option>
-                  <option value="MAINTENANCE">{tY('status.maintenance')}</option>
-                </select>
-              </div>
-
-              {/* Image URL */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-[#3D2B1F]">{tV('modal.imageUrl')}</label>
-                <input
-                  type="text"
-                  value={yurtForm.imageUrl}
-                  onChange={(e) => setYurtForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  placeholder={tV('modal.imageUrlPlaceholder')}
-                  className="border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#3D2B1F] outline-none focus:ring-2 focus:ring-[#6B7F5E]/30"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-5 md:px-6 py-4 border-t border-[#E8ECE4]">
-              <button
-                onClick={() => setYurtModalOpen(false)}
-                className="px-5 py-2 text-sm font-semibold text-[#8C8478] border border-[#E8ECE4] rounded-lg bg-white cursor-pointer hover:bg-[#F8F7F4]"
-              >
-                {tV('modal.cancel')}
-              </button>
-              <button
-                onClick={handleSaveYurt}
-                disabled={yurtSaving}
-                className="px-5 py-2 text-sm font-semibold text-white bg-[#6B7F5E] rounded-lg cursor-pointer disabled:opacity-50 hover:bg-[#5A6E4F] border-none"
-              >
-                {yurtSaving ? tV('modal.saving') : editingYurt ? tV('modal.saveChanges') : tV('modal.addYurt')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
