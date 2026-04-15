@@ -913,7 +913,7 @@ export default function CalendarMobile() {
           <div className="flex-1 overflow-y-auto">
             <ReservationDetail
               reservation={selectedResFull}
-              activityLogs={selectedResLogs}
+              activityLogs={selectedResLogs || []}
               onClose={() => setSelectedResId(null)}
               onAction={{ confirmDeposit, cancelReservation, completeReservation }}
               isUpdating={actionUpdating}

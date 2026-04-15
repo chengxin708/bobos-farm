@@ -1110,7 +1110,7 @@ export default function CalendarDesktop() {
         <div className="w-[400px] border-l border-[#E8ECE4] bg-white flex flex-col overflow-hidden shrink-0">
           <ReservationDetail
             reservation={selectedResFull}
-            activityLogs={selectedResLogs}
+            activityLogs={selectedResLogs || []}
             onClose={() => setSelectedResId(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={actionUpdating}
