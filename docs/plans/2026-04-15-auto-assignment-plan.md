@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Replace T-3 batch assignment with real-time deterministic assignment that triggers on every booking change, keeping large rooms available for large groups.
+**Goal:** Real-time deterministic room assignment, admin room swap, order status in calendar, optimization suggestions, venues view-only.
 
-**Architecture:** New `tryDeterministicAssignment(date)` function in `yurt-assignment.ts` runs 3 phases (immediate → single-candidate propagation → group determinism). Called after every reservation create/cancel/modify/manual-assign. Existing BFD algorithm retained for T-7 fallback and booking validation.
+**Architecture:** `tryDeterministicAssignment(date)` in `yurt-assignment.ts` runs 3 phases. `manuallyAssigned` flag locks admin overrides. Swap API for room exchange. Calendar shows order info + optimization banners.
 
 **Tech Stack:** Prisma ORM, Next.js API routes, Jest for unit tests
 
@@ -12,363 +12,104 @@
 
 ---
 
-### Task 1: Unit Tests for Deterministic Assignment (pure function)
+## Part A: Assignment Engine
+
+### Task 1: Schema — add `manuallyAssigned` field
 
 **Files:**
-- Create: `src/lib/__tests__/yurt-assignment.test.ts`
+- Modify: `prisma/schema.prisma` (~line 182)
 
-**Step 1: Write the test file**
+**Step 1: Add field to Reservation model**
 
-```typescript
-import { computeDeterministicAssignment } from '../yurt-assignment';
+After `yurtNotifiedAt DateTime?`, add:
 
-const ROOMS = [
-  { id: 'room-1', name: '#1', capacity: 28 },
-  { id: 'room-2', name: '#2', capacity: 24 },
-  { id: 'room-3', name: '#3', capacity: 16 },
-];
-
-describe('computeDeterministicAssignment', () => {
-  // Phase 1: Immediate deterministic
-  test('25-28 guests → assign #1 immediately', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 26, yurtId: null, createdAt: new Date('2026-01-01') },
-    ]);
-    expect(result.assignments).toEqual([
-      expect.objectContaining({ reservationId: 'r1', yurtId: 'room-1' }),
-    ]);
-    expect(result.pending).toHaveLength(0);
-  });
-
-  test('≤16 guests → assign #3 immediately', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 15, yurtId: null, createdAt: new Date('2026-01-01') },
-    ]);
-    expect(result.assignments).toEqual([
-      expect.objectContaining({ reservationId: 'r1', yurtId: 'room-3' }),
-    ]);
-  });
-
-  test('17-24 guests alone → pending', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-01') },
-    ]);
-    expect(result.assignments).toHaveLength(0);
-    expect(result.pending).toEqual(['r1']);
-  });
-
-  // Phase 2: Cascade
-  test('25 + 20 → #1 + cascade #2', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 25, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'r2', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'r1', yurtId: 'room-1' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'r2', yurtId: 'room-2' }),
-    );
-    expect(result.pending).toHaveLength(0);
-  });
-
-  test('20 pending, then 25 arrives → cascade assigns 20→#2', () => {
-    // Simulates: B=20 was pending, A=25 arrives on same date
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rB', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rA', guestCount: 25, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rA', yurtId: 'room-1' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rB', yurtId: 'room-2' }),
-    );
-  });
-
-  // Phase 3: Group determinism (N pending == N rooms)
-  test('20 + 20 → Phase 3: first→#1, second→#2', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rA', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rB', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    // FIFO: first arrival → biggest room
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rA', yurtId: 'room-1' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rB', yurtId: 'room-2' }),
-    );
-  });
-
-  test('15 + 20 + 18 → #3 + Phase 3: 20→#1, 18→#2', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rA', guestCount: 15, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rB', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-02') },
-      { id: 'rC', guestCount: 18, yurtId: null, createdAt: new Date('2026-01-03') },
-    ]);
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rA', yurtId: 'room-3' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rB', yurtId: 'room-1' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rC', yurtId: 'room-2' }),
-    );
-  });
-
-  // Pending stays pending
-  test('15 + 20 → #3 assigned, 20 pending (1 pending, 2 rooms)', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rA', guestCount: 15, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rB', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rA', yurtId: 'room-3' }),
-    );
-    expect(result.pending).toEqual(['rB']);
-  });
-
-  // Admin override preserved
-  test('preserves existing admin assignment', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 20, yurtId: 'room-1', createdAt: new Date('2026-01-01') },
-      { id: 'r2', guestCount: 18, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    // r1 locked to #1, r2 candidates = {#2} → assign #2
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'r1', yurtId: 'room-1' }),
-    );
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'r2', yurtId: 'room-2' }),
-    );
-  });
-
-  // ≤16 but #3 occupied → pending
-  test('15(#3) + 12 → 12 pending (not assigned to #2 or #1)', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rA', guestCount: 15, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rB', guestCount: 12, yurtId: null, createdAt: new Date('2026-01-02') },
-    ]);
-    expect(result.assignments).toContainEqual(
-      expect.objectContaining({ reservationId: 'rA', yurtId: 'room-3' }),
-    );
-    expect(result.pending).toEqual(['rB']);
-  });
-
-  // Anomaly
-  test('>28 guests → anomaly', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'r1', guestCount: 30, yurtId: null, createdAt: new Date('2026-01-01') },
-    ]);
-    expect(result.anomalies).toContainEqual(
-      expect.objectContaining({ reservationId: 'r1', reason: 'exceeds_max_capacity' }),
-    );
-  });
-
-  // Full house
-  test('25 + 20 + 15 → all assigned, no pending', () => {
-    const result = computeDeterministicAssignment(ROOMS, [
-      { id: 'rA', guestCount: 25, yurtId: null, createdAt: new Date('2026-01-01') },
-      { id: 'rB', guestCount: 20, yurtId: null, createdAt: new Date('2026-01-02') },
-      { id: 'rC', guestCount: 15, yurtId: null, createdAt: new Date('2026-01-03') },
-    ]);
-    expect(result.assignments).toHaveLength(3);
-    expect(result.pending).toHaveLength(0);
-  });
-});
+```prisma
+manuallyAssigned       Boolean           @default(false)
 ```
 
-**Step 2: Run test to verify it fails**
+**Step 2: Push to DB**
 
-Run: `npx jest src/lib/__tests__/yurt-assignment.test.ts --no-cache`
-Expected: FAIL — `computeDeterministicAssignment` not exported yet
+Run: `npx prisma db push`
 
-**Step 3: Commit test file**
+**Step 3: Generate client**
+
+Run: `npx prisma generate`
+
+**Step 4: Commit**
 
 ```bash
-git add src/lib/__tests__/yurt-assignment.test.ts
-git commit -m "test: add unit tests for deterministic room assignment"
+git add prisma/schema.prisma
+git commit -m "feat(schema): add manuallyAssigned field to Reservation"
 ```
 
 ---
 
-### Task 2: Implement `computeDeterministicAssignment` Pure Function
+### Task 2: Unit Tests for Deterministic Assignment
+
+**Files:**
+- Create: `src/lib/__tests__/yurt-assignment.test.ts`
+
+**Step 1: Write test file**
+
+Cover all scenarios from the design doc. Key test cases:
+
+1. 25-28 → #1 immediately
+2. ≤16 → #3 immediately
+3. 17-24 alone → pending
+4. 25 + 20 → cascade #2
+5. 20 + 20 → Phase 3 FIFO (first→#1, second→#2)
+6. 15 + 20 + 18 → #3 + Phase 3 (20→#1, 18→#2)
+7. 15 + 20 → #3 assigned, 20 pending
+8. Admin override preserved (manuallyAssigned skipped)
+9. 15(#3) + 12 → 12 pending
+10. >28 → anomaly
+11. Full house: 25 + 20 + 15 → all assigned
+
+See design doc Task 1 in previous plan version for full test code. Add `manuallyAssigned: false` to all test inputs and `manuallyAssigned: true` test for admin override.
+
+**Step 2: Run test — verify fails**
+
+Run: `npx jest src/lib/__tests__/yurt-assignment.test.ts --no-cache`
+
+**Step 3: Commit**
+
+```bash
+git add src/lib/__tests__/yurt-assignment.test.ts
+git commit -m "test: unit tests for deterministic room assignment"
+```
+
+---
+
+### Task 3: Implement `computeDeterministicAssignment` Pure Function
 
 **Files:**
 - Modify: `src/lib/yurt-assignment.ts`
 
-**Step 1: Add types and export the new pure function**
+**Step 1: Add types and function**
 
-Add after the existing `ReservationInput` interface (~line 35):
-
+New types:
 ```typescript
-interface DeterministicReservationInput {
+export interface DeterministicReservationInput {
   id: string;
   guestCount: number;
-  yurtId: string | null; // null = unassigned, non-null = locked (admin override)
-  createdAt: Date;       // for FIFO ordering in Phase 3
+  yurtId: string | null;
+  manuallyAssigned: boolean;
+  createdAt: Date;
 }
 
-interface DeterministicResult {
-  assignments: AssignmentResult[];  // reuse existing type
-  pending: string[];                // reservation IDs still unassigned
-  anomalies: Anomaly[];             // reuse existing type
-}
-```
-
-Add the function after `computeBestFitDecreasing` (~line 135):
-
-```typescript
-/**
- * Deterministic room assignment with 3 phases.
- * Pure function — no DB access, no side effects.
- *
- * Phase 1: Immediate (25-28→#1, ≤16→#3 if available)
- * Phase 2: Single-candidate cascade (iterate until stable)
- * Phase 3: Group determinism (N pending == N candidate rooms → FIFO assign, big room first)
- */
-export function computeDeterministicAssignment(
-  availableYurts: YurtInput[],
-  reservations: DeterministicReservationInput[]
-): DeterministicResult {
-  const assignments: AssignmentResult[] = [];
-  const anomalies: Anomaly[] = [];
-  const usedYurtIds = new Set<string>();
-
-  // Build lookup
-  const yurtMap = new Map(availableYurts.map((y) => [y.id, y]));
-  const sortedYurts = [...availableYurts].sort((a, b) => a.capacity - b.capacity);
-  const maxCapacity = sortedYurts.length > 0 ? sortedYurts[sortedYurts.length - 1].capacity : 0;
-  const smallestYurt = sortedYurts.length > 0 ? sortedYurts[0] : null;
-
-  // Separate locked (admin-assigned) vs unassigned
-  const locked: DeterministicReservationInput[] = [];
-  const unassigned: DeterministicReservationInput[] = [];
-
-  for (const res of reservations) {
-    if (res.yurtId) {
-      locked.push(res);
-    } else {
-      unassigned.push(res);
-    }
-  }
-
-  // Lock existing assignments
-  for (const res of locked) {
-    const yurt = yurtMap.get(res.yurtId!);
-    if (yurt) {
-      assignments.push({
-        reservationId: res.id,
-        yurtId: yurt.id,
-        yurtName: yurt.name,
-        guestCount: res.guestCount,
-      });
-      usedYurtIds.add(yurt.id);
-    }
-  }
-
-  // Helper: get candidate rooms for a reservation
-  function getCandidates(guestCount: number): YurtInput[] {
-    return sortedYurts.filter(
-      (y) => y.capacity >= guestCount && !usedYurtIds.has(y.id)
-    );
-  }
-
-  // Helper: assign a reservation to a room
-  function assign(resId: string, guestCount: number, yurt: YurtInput) {
-    assignments.push({
-      reservationId: resId,
-      yurtId: yurt.id,
-      yurtName: yurt.name,
-      guestCount,
-    });
-    usedYurtIds.add(yurt.id);
-  }
-
-  // Track pending set (mutated through phases)
-  let pendingSet = [...unassigned];
-
-  // ── Phase 1: Immediate deterministic ──
-  const stillPending: DeterministicReservationInput[] = [];
-  for (const res of pendingSet) {
-    if (res.guestCount > maxCapacity) {
-      anomalies.push({ reservationId: res.id, guestCount: res.guestCount, reason: 'exceeds_max_capacity' });
-      continue;
-    }
-    // 25-28 → #1 (only room that fits, assuming room config)
-    // Generalized: if only 1 candidate, assign
-    const candidates = getCandidates(res.guestCount);
-    if (candidates.length === 1) {
-      assign(res.id, res.guestCount, candidates[0]);
-      continue;
-    }
-    // ≤ smallest room capacity AND smallest room available → assign smallest
-    if (smallestYurt && res.guestCount <= smallestYurt.capacity && !usedYurtIds.has(smallestYurt.id)) {
-      assign(res.id, res.guestCount, smallestYurt);
-      continue;
-    }
-    stillPending.push(res);
-  }
-  pendingSet = stillPending;
-
-  // ── Phase 2: Single-candidate propagation ──
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const nextPending: DeterministicReservationInput[] = [];
-    for (const res of pendingSet) {
-      const candidates = getCandidates(res.guestCount);
-      if (candidates.length === 0) {
-        anomalies.push({ reservationId: res.id, guestCount: res.guestCount, reason: 'no_yurt_available' });
-        changed = true;
-        continue;
-      }
-      if (candidates.length === 1) {
-        assign(res.id, res.guestCount, candidates[0]);
-        changed = true;
-        continue;
-      }
-      nextPending.push(res);
-    }
-    pendingSet = nextPending;
-  }
-
-  // ── Phase 3: Group determinism ──
-  if (pendingSet.length > 0) {
-    // Collect all candidate rooms across all pending reservations
-    const allCandidateIds = new Set<string>();
-    for (const res of pendingSet) {
-      for (const c of getCandidates(res.guestCount)) {
-        allCandidateIds.add(c.id);
-      }
-    }
-
-    if (pendingSet.length === allCandidateIds.size) {
-      // N pending == N candidate rooms → all forced
-      // FIFO order (by createdAt), biggest room first
-      const sorted = [...pendingSet].sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-      );
-      const candidateRooms = sortedYurts
-        .filter((y) => allCandidateIds.has(y.id))
-        .sort((a, b) => b.capacity - a.capacity); // DESC by capacity
-
-      for (let i = 0; i < sorted.length; i++) {
-        assign(sorted[i].id, sorted[i].guestCount, candidateRooms[i]);
-      }
-      pendingSet = [];
-    }
-  }
-
-  return {
-    assignments,
-    pending: pendingSet.map((r) => r.id),
-    anomalies,
-  };
+export interface DeterministicResult {
+  assignments: AssignmentResult[];
+  pending: string[];
+  anomalies: Anomaly[];
 }
 ```
+
+Function `computeDeterministicAssignment(availableYurts, reservations)`:
+- Phase 1: Lock `manuallyAssigned` + existing yurtId. Then: 25-28→#1, ≤16→#3 if available.
+- Phase 2: Single-candidate propagation loop.
+- Phase 3: N pending == N candidate rooms → FIFO (createdAt ASC), biggest room first.
+
+Key difference from old algorithm: `manuallyAssigned` reservations are locked and NEVER reassigned, even if their yurtId could theoretically be freed.
 
 **Step 2: Run tests**
 
@@ -379,97 +120,33 @@ Expected: ALL PASS
 
 ```bash
 git add src/lib/yurt-assignment.ts
-git commit -m "feat: implement computeDeterministicAssignment pure function (3 phases)"
+git commit -m "feat: implement computeDeterministicAssignment (3 phases)"
 ```
 
 ---
 
-### Task 3: Add `tryDeterministicAssignment` DB Wrapper
+### Task 4: `tryDeterministicAssignment` DB Wrapper
 
 **Files:**
 - Modify: `src/lib/yurt-assignment.ts`
 
-**Step 1: Add the DB-aware wrapper function**
-
-Add after `assignYurtsForDate` (~line 288):
+**Step 1: Add DB wrapper**
 
 ```typescript
-/**
- * Run deterministic assignment for a target date.
- * Fetches data from DB, runs the pure algorithm, writes newly assigned rooms.
- * Returns the result for logging/response.
- */
-export async function tryDeterministicAssignment(
-  targetDate: Date
-): Promise<DeterministicResult> {
-  const [availableYurts, rawReservations] = await Promise.all([
-    getAvailableYurts(targetDate),
-    prisma.reservation.findMany({
-      where: {
-        date: targetDate,
-        status: { notIn: ["CANCELLED", "EXPIRED"] },
-      },
-      select: { id: true, guestCount: true, yurtId: true, createdAt: true },
-      orderBy: { createdAt: "asc" },
-    }),
-  ]);
-
-  const reservations: DeterministicReservationInput[] = rawReservations.map((r) => ({
-    id: r.id,
-    guestCount: r.guestCount,
-    yurtId: r.yurtId,
-    createdAt: r.createdAt,
-  }));
-
-  const result = computeDeterministicAssignment(availableYurts, reservations);
-
-  // Find newly assigned reservations (were null, now assigned)
-  const alreadyAssignedIds = new Set(
-    rawReservations.filter((r) => r.yurtId !== null).map((r) => r.id)
-  );
-  const newAssignments = result.assignments.filter(
-    (a) => !alreadyAssignedIds.has(a.reservationId)
-  );
-
-  // Write to DB
-  if (newAssignments.length > 0) {
-    const updates = newAssignments.map((a) =>
-      prisma.reservation.update({
-        where: { id: a.reservationId },
-        data: {
-          yurtId: a.yurtId,
-          yurtAssignedAt: new Date(),
-        },
-      })
-    );
-    await prisma.$transaction(updates);
-  }
-
-  // Notify admins of anomalies
-  if (result.anomalies.length > 0) {
-    const dateStr = targetDate.toISOString().split("T")[0];
-    await sendPushToAdmins({
-      title: "Room Assignment Issue",
-      body: `${dateStr}: ${result.anomalies.length} reservation(s) cannot be auto-assigned`,
-      url: `/admin/calendar?date=${dateStr}`,
-      tag: `yurt-anomaly-${dateStr}`,
-    });
-  }
-
-  return result;
-}
+export async function tryDeterministicAssignment(targetDate: Date): Promise<DeterministicResult>
 ```
 
-**Step 2: Export the new types from the module**
+- Fetch available yurts + active reservations (including `manuallyAssigned`, `createdAt`)
+- Call `computeDeterministicAssignment`
+- Write newly assigned yurtIds to DB (skip already-assigned)
+- Set `yurtAssignedAt = now()` for newly assigned
+- Notify admins of anomalies via push
 
-At the top of the file, update exports so `DeterministicReservationInput` and `DeterministicResult` are exported (they're used by the function signature which is already exported).
-
-**Step 3: Verify TypeScript compiles**
+**Step 2: Verify compiles**
 
 Run: `npx tsc --noEmit`
-Expected: No errors
 
-**Step 4: Commit**
+**Step 3: Commit**
 
 ```bash
 git add src/lib/yurt-assignment.ts
@@ -478,203 +155,332 @@ git commit -m "feat: add tryDeterministicAssignment DB wrapper"
 
 ---
 
-### Task 4: Wire Up — Reservation Creation
+### Task 5: Wire Up — Reservation Create
 
 **Files:**
-- Modify: `src/app/api/reservations/route.ts` (~lines 382-407)
+- Modify: `src/app/api/reservations/route.ts` (~line 382-407)
 
-**Step 1: Replace T-3 logic with deterministic assignment**
+**Step 1: Replace T-3 block**
 
-Find the block (~line 382):
+Replace the entire "T-3 window" block with:
 ```typescript
-// T-3 window: if reservation date is ≤3 days away, assign yurt immediately
-```
-
-Replace the entire T-3 block with:
-
-```typescript
-// Deterministic auto-assignment: runs for every new reservation
 if (!requestedYurtId) {
-  const result = await tryDeterministicAssignment(reservationDate);
+  await tryDeterministicAssignment(reservationDate);
   // Refresh reservation to get updated yurtId
-  const updated = await prisma.reservation.findUnique({
-    where: { id: reservation.id },
-    include: {
-      user: { select: { id: true, name: true, email: true, phone: true } },
-      yurt: { select: { id: true, name: true, capacity: true } },
-    },
-  });
-  if (updated) {
-    Object.assign(reservation, updated);
-  }
+  const updated = await prisma.reservation.findUnique({ ... });
+  if (updated) Object.assign(reservation, updated);
 }
 ```
 
-Also update the import at top of file: add `tryDeterministicAssignment` alongside existing imports from `@/lib/yurt-assignment`.
+Import `tryDeterministicAssignment` at top.
 
-**Step 2: Verify TypeScript compiles**
-
-Run: `npx tsc --noEmit`
-
-**Step 3: Commit**
-
-```bash
-git add src/app/api/reservations/route.ts
-git commit -m "feat: trigger deterministic assignment on reservation creation"
-```
+**Step 2: Verify compiles, commit**
 
 ---
 
-### Task 5: Wire Up — Cancellation
+### Task 6: Wire Up — Cancel + T-7 Policy
 
 **Files:**
-- Modify: `src/app/api/reservations/[id]/route.ts` (cancel action, ~line 150)
+- Modify: `src/app/api/reservations/[id]/route.ts` (cancel action ~line 150)
 
-**Step 1: Add deterministic assignment after cancellation**
-
-After the cancel update completes and activity log is created, add:
+**Step 1: After cancel update, trigger reassignment**
 
 ```typescript
-// Re-run deterministic assignment for freed capacity
 void tryDeterministicAssignment(new Date(reservation.date));
 ```
 
-Also update the cancel policy from T-3 to T-7 (~line 177):
-```typescript
-if (cancelDiffDays < 7 && !isAdmin) {
-```
+**Step 2: Change cancel/refund policy T-3 → T-7**
 
-And refund eligibility (~line 189):
-```typescript
-const refundEligible = diffDays >= 7;
-```
-
-Update the import at top of file: add `tryDeterministicAssignment`.
-
-**Step 2: Verify TypeScript compiles**
-
-Run: `npx tsc --noEmit`
+- Line ~177: `cancelDiffDays < 3` → `cancelDiffDays < 7`
+- Line ~189: `diffDays >= 3` → `diffDays >= 7`
 
 **Step 3: Commit**
 
-```bash
-git add src/app/api/reservations/[id]/route.ts
-git commit -m "feat: trigger deterministic assignment on cancel, change policy to T-7"
-```
-
 ---
 
-### Task 6: Wire Up — Admin Manual Assign & Edit
+### Task 7: Wire Up — Admin Assign/Edit/Reschedule
 
 **Files:**
 - Modify: `src/app/api/reservations/[id]/route.ts`
 
-**Step 1: Add cascade after manual assign_yurt action**
+**Step 1: assign_yurt action — set manuallyAssigned + cascade**
 
-After the `assign_yurt` handler updates the reservation and logs activity (~line 608), before the notification timing block, add:
-
+In the assign_yurt handler (~line 582), add to update data:
 ```typescript
-// Cascade: manual assignment may unlock other pending reservations
-void tryDeterministicAssignment(new Date(reservation.date));
-```
-
-**Step 2: Add re-assignment after admin edit action**
-
-In the `edit` action handler, after the update completes (~line 735), add:
-
-```typescript
-// Re-run assignment for affected date(s)
-void tryDeterministicAssignment(new Date(updated.date));
-if (dateChanged) {
-  void tryDeterministicAssignment(new Date(reservation.date)); // old date too
+data: {
+  yurtId: newYurtId,
+  yurtAssignedAt: new Date(),
+  manuallyAssigned: true,  // NEW
 }
 ```
 
-**Step 3: Update reschedule handler**
-
-In the reschedule action (~line 458), replace T-3 check with:
-
+After update, trigger cascade:
 ```typescript
-// Re-run deterministic assignment for both old and new dates
+void tryDeterministicAssignment(new Date(reservation.date));
+```
+
+**Step 2: edit action — release old assignment if date/yurt/guestCount changed**
+
+If admin changes guestCount or date, and the reservation was NOT manuallyAssigned, clear yurtId:
+```typescript
+if (!reservation.manuallyAssigned && (dateChanged || guestCountChanged)) {
+  updateData.yurtId = null;
+  updateData.yurtAssignedAt = null;
+  updateData.manuallyAssigned = false;
+}
+```
+
+After edit, trigger for affected dates:
+```typescript
+void tryDeterministicAssignment(new Date(updated.date));
+if (dateChanged) void tryDeterministicAssignment(new Date(reservation.date));
+```
+
+**Step 3: reschedule — replace T-3 with deterministic**
+
+Replace `checkDateAnomalies` + T-3 conditional with:
+```typescript
 void tryDeterministicAssignment(new Date(reservation.date)); // old date
 void tryDeterministicAssignment(newReservationDate); // new date
 ```
 
-Remove the old `checkDateAnomalies` calls and T-3 conditional.
-
-**Step 4: Verify TypeScript compiles**
-
-Run: `npx tsc --noEmit`
-
-**Step 5: Commit**
-
-```bash
-git add src/app/api/reservations/[id]/route.ts
-git commit -m "feat: trigger deterministic assignment on admin assign/edit/reschedule"
-```
+**Step 4: Commit**
 
 ---
 
-### Task 7: Update Cron Job — T-3 → T-7
+### Task 8: Cron T-3 → T-7
 
 **Files:**
 - Modify: `src/app/api/cron/assign-yurts/route.ts`
 
-**Step 1: Change target date offset from +3 to +7**
+**Step 1: Change offset**
 
-Line 22: change `targetDate.setUTCDate(targetDate.getUTCDate() + 3)` to:
+Line 22: `+ 3` → `+ 7`
+Line 18: update comment
+
+**Step 2: Commit**
+
+---
+
+## Part B: Room Swap API
+
+### Task 9: Swap Endpoint
+
+**Files:**
+- Create: `src/app/api/reservations/swap/route.ts`
+
+**Step 1: Create POST handler**
 
 ```typescript
-targetDate.setUTCDate(targetDate.getUTCDate() + 7);
-```
-
-Update the comment on line 18:
-```typescript
-// Target date = today + 7 days in America/New_York timezone
+// POST /api/reservations/swap
+// Body: { reservationIdA: string, reservationIdB: string }
+// Auth: admin only
+// Validates: both on same date, both have yurtId assigned
+// Action: swap yurtIds atomically, set manuallyAssigned=true on both
+// After swap: void tryDeterministicAssignment(date) for cascade
 ```
 
 **Step 2: Commit**
 
+---
+
+## Part C: Calendar Enhancements
+
+### Task 10: Include Order Data in Reservation API
+
+**Files:**
+- Modify: `src/app/api/reservations/route.ts` (GET handler)
+- Modify: `src/app/api/reservations/[id]/route.ts` (GET handler)
+
+**Step 1: Add order include to reservation queries**
+
+In the GET handler's Prisma query, add to `include`:
+```prisma
+order: { select: { status: true, estimatedTotal: true, finalTotal: true } }
+```
+
+Also update the calendar-specific query if separate.
+
+**Step 2: Update Reservation interfaces in calendar components**
+
+Add to the `Reservation` interface in `CalendarDesktop.tsx` and `CalendarMobile.tsx`:
+```typescript
+order?: { status: string; estimatedTotal: number | null; finalTotal: number | null } | null
+```
+
+**Step 3: Commit**
+
+---
+
+### Task 11: Display Order Status in Calendar Cards
+
+**Files:**
+- Modify: `src/components/admin/calendar/CalendarDesktop.tsx`
+- Modify: `src/components/admin/calendar/CalendarMobile.tsx`
+
+**Step 1: Add order status to reservation cards**
+
+In the `renderReservationCard` function (Desktop) and yurt card rendering (Mobile), after guest count line, add:
+
+```tsx
+{res.order && (
+  <div className="text-[10px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+    {res.order.status === 'DRAFT' ? '📝' : res.order.status === 'PAID' ? '✅' : '🍽'}
+    {' '}
+    {res.order.finalTotal != null
+      ? `$${res.order.finalTotal}`
+      : res.order.estimatedTotal != null
+        ? `$${res.order.estimatedTotal}`
+        : t('orderDraft')}
+  </div>
+)}
+```
+
+**Step 2: Add i18n keys**
+
+Add to `admin.calendar` in both zh.json and en.json:
+```json
+"orderDraft": "草稿" / "Draft"
+"orderPlaced": "已点单" / "Ordered"  
+"orderPaid": "已结账" / "Paid"
+```
+
+**Step 3: Commit**
+
+---
+
+### Task 12: Swap UI in Calendar
+
+**Files:**
+- Modify: `src/components/admin/calendar/CalendarDesktop.tsx`
+- Modify: `src/components/admin/calendar/CalendarMobile.tsx`
+
+**Step 1: Add swap button to assigned reservation cards**
+
+Each assigned reservation card gets a small swap icon (ArrowLeftRight from lucide). Clicking enters "swap mode":
+1. First click: select source reservation (highlight it)
+2. Second click on another assigned reservation on same date: confirm swap
+3. Call `POST /api/reservations/swap` → refresh data
+
+**Step 2: Add swap state management**
+
+```typescript
+const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
+```
+
+**Step 3: Add i18n keys**
+
+```json
+"swapRoom": "互换包房" / "Swap Room"
+"swapSelect": "选择要互换的预约" / "Select reservation to swap with"
+"swapCancel": "取消互换" / "Cancel swap"
+"swapSuccess": "包房互换成功" / "Room swap successful"
+```
+
+**Step 4: Commit**
+
+---
+
+### Task 13: Optimization Suggestion Banner
+
+**Files:**
+- Modify: `src/lib/yurt-assignment.ts`
+- Modify: `src/components/admin/calendar/CalendarDesktop.tsx`
+- Modify: `src/components/admin/calendar/CalendarMobile.tsx`
+
+**Step 1: Add `computeOptimizationSuggestion` function**
+
+Pure function: takes current assignments, runs BFD, compares waste. Returns suggestion if better arrangement exists.
+
+```typescript
+export function computeOptimizationSuggestion(
+  availableYurts: YurtInput[],
+  currentAssignments: { reservationId: string; yurtId: string; guestCount: number }[]
+): { current: number; suggested: number; moves: { reservationId: string; fromYurtId: string; toYurtId: string }[] } | null
+```
+
+Returns null if current is already optimal.
+
+**Step 2: Compute in calendar component**
+
+In the calendar component, after loading reservations, compute suggestions per date. Show a yellow banner at the top of dates that have suggestions:
+
+```tsx
+{suggestion && (
+  <div className="bg-[#FFF8E1] border border-[#E8B730]/30 rounded-lg px-3 py-2 text-[11px] text-[#92400E]">
+    💡 {t('optimizationAvailable')}
+    <button onClick={() => handleApplySuggestion(date)}>{t('apply')}</button>
+  </div>
+)}
+```
+
+**Step 3: Add i18n keys**
+
+```json
+"optimizationAvailable": "发现更优分配方案" / "Better assignment available"
+"applySuggestion": "应用建议" / "Apply suggestion"
+"currentWaste": "当前浪费" / "Current waste"
+"suggestedWaste": "建议浪费" / "Suggested waste"
+```
+
+**Step 4: Commit**
+
+---
+
+## Part D: Venues View-Only
+
+### Task 14: Remove Edit/Delete from Venues Page
+
+**Files:**
+- Modify: `src/app/(admin)/admin/venues/page.tsx`
+
+**Step 1: Remove create/edit/delete UI**
+
+- Remove "Add Yurt" / "新建" button
+- Remove edit icon/button on each yurt card
+- Remove delete button/action
+- Remove the create/edit modal
+- Keep the read-only display of rooms (name, alias, capacity, status)
+
+**Step 2: Commit**
+
 ```bash
-git add src/app/api/cron/assign-yurts/route.ts
-git commit -m "feat: change cron assignment deadline from T-3 to T-7"
+git add src/app/(admin)/admin/venues/page.tsx
+git commit -m "feat(admin): make venues page view-only, remove edit/delete"
 ```
 
 ---
 
-### Task 8: Run Full Test Suite & Manual Verification
+## Part E: Final Integration
+
+### Task 15: Full Test & Manual Verification
 
 **Step 1: Run unit tests**
 
 ```bash
 npx jest --no-cache
 ```
-Expected: ALL PASS
 
-**Step 2: TypeScript compile check**
+**Step 2: TypeScript check**
 
 ```bash
 npx tsc --noEmit
 ```
-Expected: No errors
 
-**Step 3: Manual test via dev server**
+**Step 3: Manual test scenarios**
 
-1. Start dev server: `npm run dev`
-2. Create a 26-person reservation → should auto-assign to #1
-3. Create a 15-person reservation for same date → should auto-assign to #3
-4. Create a 20-person reservation for same date → should auto-assign to #2 (cascade: only room left)
-5. Cancel the 26-person reservation → #1 freed, verify no reassignment of existing
-6. Create a 20-person reservation alone on new date → should be pending
+1. Create 26-person reservation → auto-assign #1
+2. Create 15-person on same date → auto-assign #3
+3. Create 20-person on same date → cascade to #2
+4. Cancel 26-person → #1 freed, others stay
+5. Create two 20-person on new date → Phase 3: first→#1, second→#2
+6. Admin swap #1 ↔ #2 → both locked, cards show updated rooms
+7. Verify optimization banner appears when swap creates suboptimal arrangement
+8. Verify order status shows on calendar cards
+9. Verify venues page is view-only
+10. Verify cancel/refund uses T-7 policy
 
-**Step 4: Commit any fixes**
-
-```bash
-git add -A
-git commit -m "fix: address issues found during manual testing"
-```
-
-**Step 5: Push to GitHub**
+**Step 4: Push**
 
 ```bash
 git push origin main

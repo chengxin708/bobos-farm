@@ -4,7 +4,7 @@
 
 ## Core Principle
 
-**Don't let small groups occupy large room resources.** Large rooms should be reserved for larger groups. Assign immediately only when the outcome is certain; otherwise wait until it becomes certain or T-7 forces it.
+**Don't let small groups occupy large room resources.** Large rooms should be reserved for larger groups. Assign immediately only when the outcome is certain; otherwise wait until it becomes certain or T-7 forces it. Once admin manually intervenes, that assignment is locked — the system will never override it.
 
 ## Room Configuration
 
@@ -64,22 +64,121 @@ Example: A=20(first), B=18(second). Both pending, candidates = {#2, #1}. 2 pendi
 
 7 days before the reservation date, a daily cron job force-assigns all remaining pending reservations using BFD (Best-Fit Decreasing). If any still cannot be assigned, notify admin for manual intervention.
 
-### Admin Override
+## Admin Override (manual intervention)
 
-Admin can manually assign any room at any time. Manual assignments are treated as locked and preserved by Phases 2-3 (they reduce the available room pool but are never reassigned).
+### Locking mechanism
 
-Already-assigned reservations are never reassigned by the algorithm. Only admin can move a reservation to a different room.
+Add `manuallyAssigned Boolean @default(false)` to Reservation schema.
+
+When admin performs ANY of these actions, set `manuallyAssigned = true`:
+- Manual room assignment (assign_yurt action)
+- Room swap
+- Admin edit that changes yurtId
+
+**Locked reservations are NEVER reassigned by Phases 1-3.** They are treated as immutable in the assignment algorithm (same as current behavior of preserving existing yurtId, but now explicitly flagged).
+
+### Room Swap
+
+Admin can swap rooms between two reservations on the same date. This is a single atomic operation:
+
+```
+swap(reservationA, reservationB):
+  tempYurt = A.yurtId
+  A.yurtId = B.yurtId
+  B.yurtId = tempYurt
+  A.manuallyAssigned = true
+  B.manuallyAssigned = true
+```
+
+API: `POST /api/reservations/swap` with `{ reservationIdA, reservationIdB }`
+
+UI: In calendar week view, each assigned reservation card has a swap icon. Click → select the other reservation on same date → confirm swap.
+
+## Optimization Suggestions
+
+When the system detects a better assignment arrangement exists, show a notification to admin.
+
+### What is "better"?
+
+Run BFD on all reservations for a date (ignoring current assignments). Compare BFD output with actual current assignments. If BFD produces tighter fits (less wasted capacity), it's "better."
+
+Specifically: `sum(assignedRoom.capacity - guestCount)` is lower in the BFD suggestion.
+
+### When to check
+
+- After every assignment change (create, cancel, swap, admin edit)
+- Only for dates that have at least 1 `manuallyAssigned` reservation (otherwise the algorithm already produced the optimal arrangement)
+
+### Frontend notification
+
+Calendar page shows a banner/badge:
+
+```
+📋 4/20: 发现更优分配方案 → [查看]
+```
+
+Clicking navigates to that date in calendar view with a modal showing:
+
+| 预约 | 当前包房 | 建议包房 | 差异 |
+|------|---------|---------|------|
+| 张三 (20人) | #1 (28) | #2 (24) | -4 浪费 |
+| 李四 (22人) | #2 (24) | #1 (28) | +4 浪费 |
+
+Admin can "apply suggestion" (resets manuallyAssigned) or dismiss.
+
+### Storage
+
+Don't persist suggestions — compute on the fly when rendering calendar. The check is lightweight (3 rooms, max 3 reservations per date).
+
+## Calendar View Enhancements
+
+### Order Status Display
+
+Each reservation card in the calendar shows order info:
+
+```
+张三 · 20人 · 已确认
+🍽 已点单 $280          ← NEW: order status
+```
+
+States:
+- No order → show nothing
+- Order DRAFT → "📝 草稿"
+- Order SUBMITTED/LOCKED → "🍽 已点单 ${estimatedTotal}"
+- Order BILLED/PAID → "✅ $${finalTotal}"
+
+Data: Include `order { status, estimatedTotal, finalTotal }` in the reservation API response for calendar queries.
+
+### Reservation API Change
+
+The `/api/reservations?startDate=...&endDate=...` endpoint needs to include order summary:
+
+```prisma
+include: {
+  order: { select: { status: true, estimatedTotal: true, finalTotal: true } }
+}
+```
+
+## Admin Venues Page — View Only
+
+Remove all create/edit/delete functionality from the venues admin page. Admin can only view room configuration (name, alias, capacity, status). Room configuration changes require developer/seed updates.
+
+Changes:
+- Remove "Add Yurt" button
+- Remove edit/delete actions on each yurt card
+- Remove POST/PATCH/DELETE handlers or gate them (keep for future if needed)
 
 ## Trigger Points
 
 | Event | Triggered By | Action |
 |-------|-------------|--------|
 | New reservation created | Customer / Admin | Run Phases 1-3 for that date |
-| Reservation cancelled | Customer / Admin | Release room → run Phases 1-3 |
-| Reservation expired (payment timeout) | System | Release room → run Phases 1-3 |
-| Admin modifies guest count or date | Admin | Release old assignment → run Phases 1-3 for both old and new date |
-| Admin manual room assignment | Admin | Lock assignment → run Phases 2-3 for cascade |
-| T-7 daily cron | System | Phase 4: BFD force-assign, notify admin of anomalies |
+| Reservation cancelled | Customer / Admin | Release room → run Phases 1-3 (skip `manuallyAssigned` reservations) |
+| Reservation expired | System | Release room → run Phases 1-3 |
+| Admin modifies guest count or date | Admin | Release old assignment → run Phases 1-3 for both dates |
+| Admin manual room assignment | Admin | Lock (`manuallyAssigned=true`) → run Phases 2-3 for cascade |
+| Admin room swap | Admin | Lock both → run Phases 2-3 for cascade |
+| T-7 daily cron | System | Phase 4: BFD force-assign remaining, notify admin of anomalies |
 
 ## Booking Validation
 
@@ -93,8 +192,6 @@ function canBook(date, guestCount):
   return plan.anomalies.length == 0
 ```
 
-Effect: if #1 is occupied by a 26-person group, max bookable becomes 24. If #1 and #3 are occupied, max bookable is 24 (#2 only). If all occupied, date is full.
-
 ## Scenario Walkthrough
 
 ### Single reservation
@@ -105,16 +202,15 @@ Effect: if #1 is occupied by a 26-person group, max bookable becomes 24. If #1 a
 | A=15 | Phase 1: ≤16, #3 open → #3 | A=#3 |
 | A=20 | Phase 1: 17-24 → pending | A=pending |
 
-### Two reservations (order matters)
+### Two reservations
 
 | Arrival Order | Process | Result |
 |--------------|---------|--------|
-| A=25, then B=20 | A→#1 (Ph1), B candidates={#2} → B→#2 (Ph2) | A=#1, B=#2 |
+| A=25, then B=20 | A→#1 (Ph1), cascade B→#2 (Ph2) | A=#1, B=#2 |
 | B=20, then A=25 | B pending, A→#1 (Ph1), cascade B→#2 (Ph2) | A=#1, B=#2 |
 | A=20, then B=20 | Both pending (Ph1-2 skip), Ph3: 2==2 → A→#1, B→#2 | A=#1, B=#2 |
 | A=20, then B=18 | Both pending, Ph3: 2==2 → A→#1, B→#2 | A=#1, B=#2 |
-| B=20 alone, then A=25 later | B pending → A→#1 → cascade B→#2 | A=#1, B=#2 |
-| A=15, then B=20 | A→#3 (Ph1), B pending (Ph2-3: 1 pending, 2 rooms → skip) | A=#3, B=pending |
+| A=15, then B=20 | A→#3 (Ph1), B pending (1 pending, 2 rooms → skip) | A=#3, B=pending |
 
 ### Three reservations
 
@@ -122,22 +218,28 @@ Effect: if #1 is occupied by a 26-person group, max bookable becomes 24. If #1 a
 |--------------|---------|--------|
 | A=15, B=20, C=25 | A→#3, C→#1, cascade B→#2 | A=#3, C=#1, B=#2 |
 | A=15, B=20, C=18 | A→#3, B+C pending, Ph3: 2==2 → B→#1, C→#2 | A=#3, B=#1, C=#2 |
-| A=25, B=15, C=20 | A→#1, B→#3, C candidates={#2} → C→#2 | A=#1, B=#3, C=#2 |
-| A=20, B=18, C=22 | All >16, all pending, only 2 rooms fit → anomaly (caught at booking time) | C rejected |
+| A=25, B=15, C=20 | A→#1, B→#3, cascade C→#2 | A=#1, B=#3, C=#2 |
+
+### Admin override
+
+| Scenario | Process |
+|----------|---------|
+| Admin assigns B=20 to #1 | B.manuallyAssigned=true, B locked to #1 |
+| System later tries to reassign B | Skipped (manuallyAssigned=true) |
+| Admin swaps A(#1) ↔ B(#2) | Both locked, yurtIds exchanged |
+| Optimization detected | Frontend shows "发现更优方案" banner |
 
 ### Cancellation
 
 | Scenario | Process |
 |----------|---------|
 | A=25(#1), B=20(#2). A cancels. | #1 released. B stays in #2 (already assigned, not reassigned). |
-| A=25(#1), B=20(pending). A cancels. | #1 released. Re-run: B candidates={#2,#1} → 2 → stays pending. |
-| A=15(#3), B=20(pending), C=18(pending). B cancels. | C alone pending, candidates={#2,#1} → 2 → stays pending. |
-| Full day (3 assigned). C cancels. | Room released. New bookings now possible on this date. |
+| A=25(#1), B=20(pending). A cancels. | #1 released. B candidates={#2,#1} → 2 → stays pending. |
 
 ## Key Dates
 
 - **T-7**: Auto-assignment deadline (BFD fallback) + cancellation refund deadline
-- **T-2**: Customer notification email with room assignment sent
+- **T-2**: Customer notification email with room assignment
 - Customer can only cancel, not modify (cancel + rebook)
 - Admin can modify guest count and date at any time
 
@@ -156,8 +258,13 @@ Booking ────────────────── T-7 ────�
 
 | File | Change |
 |------|--------|
-| `src/lib/yurt-assignment.ts` | New `tryDeterministicAssignment()` with Phases 1-3. Keep existing `computeBestFitDecreasing()` for Phase 4 and validation. |
-| `src/app/api/reservations/route.ts` | After creation: call `tryDeterministicAssignment(date)` |
-| `src/app/api/reservations/[id]/route.ts` | After cancel/modify/manual-assign: call `tryDeterministicAssignment(date)` |
-| `src/app/api/cron/assign-yurts/route.ts` | Change from T-3 to T-7 |
-| Booking UI (date/guest count picker) | Show dynamic max capacity per date via `simulateWithNewReservation()` |
+| `prisma/schema.prisma` | Add `manuallyAssigned` field to Reservation |
+| `src/lib/yurt-assignment.ts` | New `computeDeterministicAssignment()` + `tryDeterministicAssignment()` |
+| `src/app/api/reservations/route.ts` | Trigger assignment after creation |
+| `src/app/api/reservations/[id]/route.ts` | Trigger on cancel/modify/assign, set manuallyAssigned, T-7 policy |
+| `src/app/api/reservations/swap/route.ts` | NEW: swap endpoint |
+| `src/app/api/cron/assign-yurts/route.ts` | Change T-3 → T-7 |
+| `src/app/api/reservations/route.ts` (GET) | Include order summary in response |
+| `src/components/admin/calendar/CalendarDesktop.tsx` | Order status display, swap UI, optimization banner |
+| `src/components/admin/calendar/CalendarMobile.tsx` | Order status display, swap UI |
+| `src/app/(admin)/admin/venues/page.tsx` | Remove create/edit/delete, view only |
