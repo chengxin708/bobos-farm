@@ -139,9 +139,9 @@ export default function CalendarMobile() {
   today.setHours(0, 0, 0, 0)
   const todayStr = formatDate(today)
 
-  const [scrollOffset, setScrollOffset] = useState(0) // days offset from today
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
   const dateStripRef = useRef<HTMLDivElement>(null)
+  const todayPillRef = useRef<HTMLButtonElement>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createYurtId, setCreateYurtId] = useState<string | undefined>(undefined)
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
@@ -177,28 +177,39 @@ export default function CalendarMobile() {
     return () => window.removeEventListener('keydown', handler)
   }, [swapSourceId])
 
-  // ── Date strip — scrollable from today ───────────────────────
+  // ── Date strip — static list, native scroll ─────────────────
 
-  // Generate 21 days centered around scrollOffset for a wide visible range
-  const visibleDays = useMemo(() => {
+  const PAST_DAYS = 30
+  const FUTURE_DAYS = 180
+
+  // Generate once: 30 days back + today + 180 days forward
+  const allDays = useMemo(() => {
     const days: Date[] = []
-    // Show from 7 days before scrollOffset to 13 days after
-    for (let i = scrollOffset - 7; i <= scrollOffset + 13; i++) {
+    for (let i = -PAST_DAYS; i <= FUTURE_DAYS; i++) {
       const d = new Date(today)
       d.setDate(today.getDate() + i)
       days.push(d)
     }
     return days
-  }, [scrollOffset, today])
+  }, [today])
 
-  // Data fetch range: wider to avoid refetching on small scrolls
+  // Fixed data range covering the whole strip
   const dateRange = useMemo(() => {
     const start = new Date(today)
-    start.setDate(today.getDate() + scrollOffset - 7)
+    start.setDate(today.getDate() - PAST_DAYS)
     const end = new Date(today)
-    end.setDate(today.getDate() + scrollOffset + 13)
+    end.setDate(today.getDate() + FUTURE_DAYS)
     return { start: formatDate(start), end: formatDate(end) }
-  }, [scrollOffset, today])
+  }, [today])
+
+  // Scroll to today on mount
+  useEffect(() => {
+    if (todayPillRef.current && dateStripRef.current) {
+      const strip = dateStripRef.current
+      const pill = todayPillRef.current
+      strip.scrollLeft = pill.offsetLeft - 16
+    }
+  }, [])
 
   // ── Data fetching ────────────────────────────────────────────
 
@@ -369,8 +380,12 @@ export default function CalendarMobile() {
   // ── Navigation ───────────────────────────────────────────────
 
   const goToToday = useCallback(() => {
-    setScrollOffset(0)
     setSelectedDate(new Date(today))
+    if (todayPillRef.current && dateStripRef.current) {
+      const strip = dateStripRef.current
+      const pill = todayPillRef.current
+      strip.scrollTo({ left: pill.offsetLeft - 16, behavior: 'smooth' })
+    }
   }, [today])
 
   // ── Selected date details ────────────────────────────────────
@@ -527,7 +542,7 @@ export default function CalendarMobile() {
               {monthYearLabel}
             </span>
             <div className="flex items-center gap-2">
-              {scrollOffset !== 0 && (
+              {selectedDateStr !== todayStr && (
                 <button
                   onClick={goToToday}
                   className="px-2.5 py-1 text-[12px] font-semibold text-[#6B7F5E] border border-[#6B7F5E] rounded-full hover:bg-[#6B7F5E]/5 transition-colors"
@@ -545,21 +560,13 @@ export default function CalendarMobile() {
             </div>
           </div>
 
-          {/* Scrollable date strip */}
+          {/* Scrollable date strip — static list, pure native scroll */}
           <div
             ref={dateStripRef}
-            className="flex gap-1 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1 snap-x"
-            onScroll={(e) => {
-              const el = e.currentTarget
-              // Load more dates when near edges
-              if (el.scrollLeft < 60) {
-                setScrollOffset(prev => prev - 7)
-              } else if (el.scrollWidth - el.scrollLeft - el.clientWidth < 60) {
-                setScrollOffset(prev => prev + 7)
-              }
-            }}
+            className="flex gap-1 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            {visibleDays.map((d) => {
+            {allDays.map((d) => {
               const dateStr = formatDate(d)
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selectedDateStr
@@ -567,37 +574,56 @@ export default function CalendarMobile() {
               const hasPending = datesWithPending.has(dateStr)
               const isNewMonth = d.getDate() === 1
 
+              // Room status for this date
+              const dayYurtMap = resByDateYurt.get(dateStr)
+              const unassignedList = unassignedByDate.get(dateStr)
+              const pendingCount = unassignedList?.length || 0
+
               return (
                 <button
                   key={dateStr}
+                  ref={isToday ? todayPillRef : undefined}
                   onClick={() => setSelectedDate(new Date(d))}
                   className={`
-                    flex flex-col items-center py-1.5 px-2 min-w-[44px] rounded-xl transition-all duration-150 shrink-0 snap-start
+                    flex flex-col items-center py-1.5 px-1.5 min-w-[48px] rounded-xl shrink-0
                     ${isSelected && !isToday ? 'ring-2 ring-[#6B7F5E] bg-[#6B7F5E]/5' : ''}
                     ${isToday && isSelected ? 'bg-[#6B7F5E] text-white' : ''}
-                    ${isToday && !isSelected ? 'bg-[#6B7F5E]/20' : ''}
-                    ${!isToday && !isSelected ? 'hover:bg-[#F5F2ED]' : ''}
+                    ${isToday && !isSelected ? 'bg-[#6B7F5E]/15' : ''}
+                    ${!isToday && !isSelected ? '' : ''}
                     ${isNewMonth && !isToday && !isSelected ? 'border-l-2 border-[#E8ECE4]' : ''}
                   `}
                 >
-                  <span className={`text-[11px] font-medium ${isToday && isSelected ? 'text-white/80' : 'text-[#8A7E6B]'}`}>
+                  <span className={`text-[10px] font-medium ${isToday && isSelected ? 'text-white/80' : 'text-[#8A7E6B]'}`}>
                     {t(`dayShort.${d.getDay()}`)}
                   </span>
-                  <span className={`text-[15px] font-semibold mt-0.5 ${isToday && isSelected ? 'text-white' : 'text-[#2C2416]'}`}>
+                  <span className={`text-[15px] font-bold mt-0.5 ${isToday && isSelected ? 'text-white' : 'text-[#2C2416]'}`}>
                     {d.getDate()}
                   </span>
-                  {/* Booking dot */}
-                  <div className="h-1.5 mt-0.5">
-                    {hasBookings && (
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        isToday && isSelected
-                          ? 'bg-white'
-                          : hasPending
-                            ? 'bg-[#E8B730]'
-                            : 'bg-[#6B7F5E]'
-                      }`} />
-                    )}
-                  </div>
+                  {/* Room dots: #1 #2 #3 + pending count */}
+                  {(hasBookings || pendingCount > 0) && (
+                    <div className="flex items-center gap-[2px] mt-1">
+                      {activeYurts.slice(0, 3).map(y => {
+                        const hasRes = dayYurtMap?.has(y.id)
+                        return (
+                          <div
+                            key={y.id}
+                            className={`w-[6px] h-[6px] rounded-full ${
+                              hasRes
+                                ? isToday && isSelected ? 'bg-white' : 'bg-[#6B7F5E]'
+                                : isToday && isSelected ? 'bg-white/30' : 'bg-[#E8ECE4]'
+                            }`}
+                          />
+                        )
+                      })}
+                      {pendingCount > 0 && (
+                        <span className={`text-[8px] font-bold ml-[1px] ${
+                          isToday && isSelected ? 'text-[#FFC107]' : 'text-[#E8B730]'
+                        }`}>
+                          {pendingCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               )
             })}
