@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import {
-  Eye, Users, AlertTriangle, X, ChevronRight,
+  Users, AlertTriangle, X, ChevronRight,
   ChevronLeft, Save, Calendar,
 } from 'lucide-react'
 
@@ -467,12 +467,6 @@ export default function VenuesPage() {
                   {yurt.imageUrl && (
                     <span className="text-[#6B7F5E] text-xs">{tV('hasImage')}</span>
                   )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1.5 text-sm text-[#3D2B1F] cursor-pointer bg-transparent border-none">
-                    <Eye size={14} /> {tY('actions.viewDetails')}
-                  </button>
                 </div>
               </div>
             ))}
