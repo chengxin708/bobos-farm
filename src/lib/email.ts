@@ -570,6 +570,113 @@ export async function sendReservationCancelled(
   }
 }
 
+// ── 8. Pre-order Reminder ──────────────────────────────────────────
+
+interface OrderItemSummary {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+interface PreOrderReminderData {
+  date: string | Date;
+  yurtName: string;
+  guestCount: number;
+  reservationId: string;
+  orderStatus: "NONE" | "DRAFT" | "SUBMITTED";
+  orderItems: OrderItemSummary[];
+  estimatedTotal: number;
+  siteUrl?: string;
+}
+
+export async function sendPreOrderReminder(
+  to: string,
+  data: PreOrderReminderData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.preOrderReminder[lang];
+  const l = emailStrings.labels[lang];
+
+  try {
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
+
+    // Reservation info section
+    const reservationSection = `
+      <h3 style="margin:0 0 8px;font-size:15px;color:#3D2B1F;">${s.reservationInfo}</h3>
+      ${infoTable(
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount))
+      )}
+    `;
+
+    // Order section
+    let orderSection = "";
+    if (data.orderStatus === "NONE") {
+      orderSection = `
+        <h3 style="margin:20px 0 8px;font-size:15px;color:#3D2B1F;">${s.orderSection}</h3>
+        <p style="font-size:13px;color:#8A7E6B;margin:0;">${s.noOrder}</p>
+      `;
+    } else {
+      const statusMsg = data.orderStatus === "DRAFT" ? s.draftOrder : s.submittedOrder;
+      const itemRows = data.orderItems.map(item =>
+        `<tr>
+          <td style="padding:6px 0;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;">${item.name}</td>
+          <td style="padding:6px 8px;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;text-align:center;">×${item.quantity}</td>
+          <td style="padding:6px 0;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;text-align:right;">$${(item.price * item.quantity).toFixed(0)}</td>
+        </tr>`
+      ).join("");
+
+      orderSection = `
+        <h3 style="margin:20px 0 8px;font-size:15px;color:#3D2B1F;">${s.orderSection}</h3>
+        <p style="font-size:13px;color:#8A7E6B;margin:0 0 8px;">${statusMsg}</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid #E8ECE4;">
+              <th style="padding:6px 0;font-size:12px;color:#8A7E6B;text-align:left;">${s.itemHeader}</th>
+              <th style="padding:6px 8px;font-size:12px;color:#8A7E6B;text-align:center;">${s.qtyHeader}</th>
+              <th style="padding:6px 0;font-size:12px;color:#8A7E6B;text-align:right;">$</th>
+            </tr>
+          </thead>
+          <tbody>${itemRows}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="padding:8px 0;font-size:14px;font-weight:bold;color:#3D2B1F;">${s.subtotal}</td>
+              <td style="padding:8px 0;font-size:14px;font-weight:bold;color:#3D2B1F;text-align:right;">$${data.estimatedTotal.toFixed(0)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+    }
+
+    const modifyNote = data.orderStatus === "SUBMITTED"
+      ? `<p style="font-size:12px;color:#8A7E6B;margin:12px 0 0;">${s.modifyNote}</p>`
+      : "";
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+
+      ${reservationSection}
+      ${orderSection}
+      ${modifyNote}
+
+      ${primaryButton(s.button, `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
+
+      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
+
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendPreOrderReminder failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 // ── Marketing Email Helper ─────────────────────────────────────────
 
 /**

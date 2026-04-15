@@ -1186,7 +1186,10 @@
         "subtitle": "Configure pre-ordering and menu settings.",
         "deadlineLabel": "Pre-order Deadline",
         "deadlineUnit": "days before reservation",
-        "deadlineHelp": "Number of days before the reservation date that pre-orders must be placed."
+        "deadlineHelp": "Number of days before the reservation date that pre-orders must be placed.",
+        "reminderLabel": "Pre-order Reminder",
+        "reminderUnit": "days before reservation",
+        "reminderHelp": "Days before reservation to send pre-order reminder email. Set to 0 to disable."
       },
       "guestPolicies": {
         "title": "Guest Policies",

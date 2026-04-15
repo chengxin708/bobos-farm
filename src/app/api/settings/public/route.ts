@@ -11,6 +11,7 @@ const PUBLIC_SETTING_KEYS = [
   "zelle_recipient",
   "zelle_recipient_name",
   "preorder_deadline_days",
+  "cancellation_window_days",
   "business_name",
   "business_phone",
   "business_email",

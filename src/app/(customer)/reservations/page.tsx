@@ -143,6 +143,7 @@ export default function ReservationsPage() {
     { revalidateOnFocus: false }
   )
   const businessPhone = publicSettings?.business_phone || ''
+  const cancelWindowDays = publicSettings?.cancellation_window_days ? Number(publicSettings.cancellation_window_days) : 7
 
   // Unauthenticated: show prompt + full-screen login modal
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -804,7 +805,7 @@ export default function ReservationsPage() {
       {confirmCancelId && (() => {
         const reservation = reservations?.find(r => r.id === confirmCancelId)
         const daysUntil = reservation ? getDaysUntil(reservation.date) : 0
-        const refundEligible = daysUntil >= 7
+        const refundEligible = daysUntil >= cancelWindowDays
 
         return (
           <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4">

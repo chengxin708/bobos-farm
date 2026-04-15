@@ -25,6 +25,7 @@ const ALLOWED_SETTING_KEYS = [
   "zelle_recipient",
   "zelle_recipient_name",
   "preorder_deadline_days",
+  "preorder_reminder_days",
   "email_from_name",
   "email_booking_confirmation",
   "email_payment_reminder",

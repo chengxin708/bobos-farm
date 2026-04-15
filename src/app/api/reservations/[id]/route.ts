@@ -147,6 +147,12 @@ export async function PATCH(
       }
     }
 
+    // Load cancellation window setting (default: 7 days)
+    const cancelWindowSetting = await prisma.systemSetting.findUnique({
+      where: { key: "cancellation_window_days" },
+    });
+    const cancelWindowDays = cancelWindowSetting?.value ? parseInt(cancelWindowSetting.value, 10) : 7;
+
     // ---------- CANCEL ----------
     if (action === "cancel") {
       const parsedCancel = cancelActionSchema.safeParse(body);
@@ -166,7 +172,7 @@ export async function PATCH(
         );
       }
 
-      // T-7 cancellation policy
+      // Cancellation policy: must cancel N days before
       const cancelNow = new Date();
       cancelNow.setHours(0, 0, 0, 0);
       const cancelResDate = new Date(reservation.date);
@@ -174,19 +180,19 @@ export async function PATCH(
       const cancelDiffDays = Math.round(
         (cancelResDate.getTime() - cancelNow.getTime()) / (1000 * 60 * 60 * 24)
       );
-      if (cancelDiffDays < 7 && !isAdmin) {
+      if (cancelDiffDays < cancelWindowDays && !isAdmin) {
         return NextResponse.json(
-          { error: "Reservations cannot be cancelled within 7 days of the event" },
+          { error: `Reservations cannot be cancelled within ${cancelWindowDays} days of the event` },
           { status: 400 }
         );
       }
 
-      // Check refund eligibility: 7+ days before reservation date
+      // Check refund eligibility: N+ days before reservation date
       const now = new Date();
       const reservationDate = new Date(reservation.date);
       const diffMs = reservationDate.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      const refundEligible = diffDays >= 7;
+      const refundEligible = diffDays >= cancelWindowDays;
 
       const updated = await prisma.reservation.update({
         where: { id },
@@ -341,17 +347,17 @@ export async function PATCH(
         );
       }
 
-      // Check 7+ day rule
+      // Check cancellation window rule
       const now = new Date();
       const currentDate = new Date(reservation.date);
       const diffMs = currentDate.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-      if (diffDays < 7 && !isAdmin) {
+      if (diffDays < cancelWindowDays && !isAdmin) {
         return NextResponse.json(
           {
             error:
-              "Rescheduling requires at least 7 days before the reservation date",
+              `Rescheduling requires at least ${cancelWindowDays} days before the reservation date`,
           },
           { status: 400 }
         );

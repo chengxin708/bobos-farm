@@ -13,6 +13,7 @@ const orderUpdateSchema = z.object({
     )
     .min(1, "At least one item is required"),
   notes: z.string().nullish(),
+  draft: z.boolean().optional(),
 });
 
 /** Shared include for returning full order details */
@@ -361,7 +362,7 @@ export async function PATCH(
       );
     }
 
-    const { items, notes } = parsed.data;
+    const { items, notes, draft } = parsed.data;
 
     // Fetch order with reservation ownership
     const order = await prisma.order.findUnique({
@@ -416,8 +417,9 @@ export async function PATCH(
         data: {
           notes: notes !== undefined ? (notes || null) : order.notes,
           estimatedTotal,
-          status: "SUBMITTED",
-          submittedAt: new Date(),
+          ...(draft
+            ? { status: order.status === "DRAFT" ? "DRAFT" : order.status }
+            : { status: "SUBMITTED", submittedAt: new Date() }),
           items: {
             create: items.map((item) => ({
               menuItemId: item.menuItemId,

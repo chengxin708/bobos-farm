@@ -1186,7 +1186,10 @@
         "subtitle": "配置预订和菜单设置。",
         "deadlineLabel": "预订截止时间",
         "deadlineUnit": "天（预订日期前）",
-        "deadlineHelp": "预订日期前必须提交预订单的天数。"
+        "deadlineHelp": "预订日期前必须提交预订单的天数。",
+        "reminderLabel": "点餐提醒时间",
+        "reminderUnit": "天（预订日期前）",
+        "reminderHelp": "预订日期前几天发送点餐提醒邮件。设为0则不发送提醒。"
       },
       "guestPolicies": {
         "title": "客户政策",

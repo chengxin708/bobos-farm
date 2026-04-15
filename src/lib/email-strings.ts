@@ -151,6 +151,41 @@ const reservationCancelled = {
   },
 } as const;
 
+const preOrderReminder = {
+  en: {
+    subject: "Bobo's Farm — Pre-order Your Dishes",
+    title: "Don't Forget to Pre-order!",
+    body: "Your reservation is coming up soon. Pre-order your dishes now to ensure we prepare everything fresh for your visit.",
+    reservationInfo: "Reservation Details",
+    orderSection: "Current Order",
+    noOrder: "You haven't placed an order yet.",
+    draftOrder: "You have a draft order that hasn't been submitted:",
+    submittedOrder: "Your order has been submitted:",
+    modifyNote: "You can modify your order until midnight, 7 days before your reservation date.",
+    itemHeader: "Item",
+    qtyHeader: "Qty",
+    subtotal: "Subtotal",
+    button: "Pre-order Now",
+    footer: "We look forward to seeing you!",
+  },
+  zh: {
+    subject: "Bobo's Farm — 提前点餐提醒",
+    title: "别忘了提前点餐！",
+    body: "您的预订即将到来，现在预点菜品，我们将为您准备最新鲜的食材。",
+    reservationInfo: "预订详情",
+    orderSection: "当前订单",
+    noOrder: "您尚未下单。",
+    draftOrder: "您有一份未提交的草稿订单：",
+    submittedOrder: "您的订单已提交：",
+    modifyNote: "您可以在预订日期前7天的零点之前修改订单。",
+    itemHeader: "菜品",
+    qtyHeader: "数量",
+    subtotal: "小计",
+    button: "立即点餐",
+    footer: "期待您的到来！",
+  },
+} as const;
+
 export const emailStrings = {
   labels,
   reservationCreated,
@@ -159,6 +194,7 @@ export const emailStrings = {
   yurtAssigned,
   reservationModified,
   reservationCancelled,
+  preOrderReminder,
 } as const;
 
 export type { Lang };

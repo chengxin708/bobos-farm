@@ -14,6 +14,7 @@ const orderCreateSchema = z.object({
     )
     .min(1, "At least one item is required"),
   notes: z.string().nullish(),
+  draft: z.boolean().optional(),
 });
 
 // GET /api/orders — Admin only: list all orders
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { reservationId, items, notes } = parsed.data;
+    const { reservationId, items, notes, draft } = parsed.data;
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
@@ -142,8 +143,8 @@ export async function POST(req: NextRequest) {
         reservationId,
         notes,
         estimatedTotal,
-        status: "SUBMITTED",
-        submittedAt: new Date(),
+        status: draft ? "DRAFT" : "SUBMITTED",
+        submittedAt: draft ? null : new Date(),
         items: {
           create: items.map((item) => ({
             menuItemId: item.menuItemId,

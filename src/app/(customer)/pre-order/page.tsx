@@ -349,6 +349,49 @@ function PreOrderPage() {
   const resYurt = reservation?.yurt?.name || ''
   const resGuests = reservation?.guestCount?.toString() || ''
 
+  // Auto-save draft (debounced)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const draftOrderId = useRef<string | null>(existingOrder?.id ?? null)
+
+  useEffect(() => {
+    // Only auto-save if we have items, a reservation, and the order isn't already submitted+
+    if (!reservationId || orderItems.length === 0 || !initialized) return
+    if (existingOrder && existingOrder.status !== 'DRAFT') return
+
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        const payload = {
+          items: orderItems.map(i => ({ menuItemId: i.id, quantity: i.qty })),
+          notes: notes.trim() || undefined,
+          draft: true,
+        }
+
+        if (draftOrderId.current) {
+          await fetch(`/api/orders/${draftOrderId.current}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        } else {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, reservationId }),
+          })
+          if (res.ok) {
+            const data = await res.json()
+            draftOrderId.current = data.id
+          }
+        }
+      } catch { /* silent auto-save failure */ }
+    }, 2000)
+
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [orderItems, notes, reservationId, existingOrder, initialized])
+
   // Submit / Update handler
   const handleSubmit = async () => {
     if (submittingOrder || orderItems.length === 0) return
@@ -356,8 +399,13 @@ function PreOrderPage() {
     setOrderError(null)
 
     try {
-      if (isEditMode && existingOrder) {
-        const res = await fetch(`/api/orders/${existingOrder.id}`, {
+      // Cancel any pending auto-save
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+
+      const orderId = existingOrder?.id || draftOrderId.current
+      if (orderId) {
+        // Update existing order (DRAFT or SUBMITTED) → mark as SUBMITTED
+        const res = await fetch(`/api/orders/${orderId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -370,6 +418,7 @@ function PreOrderPage() {
           throw new Error(data.error || 'Failed to update order')
         }
       } else {
+        // Create new order as SUBMITTED
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
