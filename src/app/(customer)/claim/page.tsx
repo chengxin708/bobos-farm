@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
@@ -17,7 +17,19 @@ interface ReservationInfo {
   userId: string
 }
 
-export default function ClaimPage() {
+export default function ClaimPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 flex items-center justify-center bg-[#F8F7F4]">
+        <Loader2 size={24} className="animate-spin text-[#6B7F5E]" />
+      </div>
+    }>
+      <ClaimPage />
+    </Suspense>
+  )
+}
+
+function ClaimPage() {
   const t = useTranslations("claim")
   const router = useRouter()
   const searchParams = useSearchParams()
