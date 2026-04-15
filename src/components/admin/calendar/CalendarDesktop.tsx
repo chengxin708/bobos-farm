@@ -8,7 +8,7 @@ import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -146,6 +146,9 @@ function getDisplayName(user: ReservationUser): string {
 // ── Closed-cell diagonal stripe pattern as CSS background ──────
 const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
 
+/** Format money with 2 decimal places */
+const fmtMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function CalendarDesktop() {
@@ -166,6 +169,7 @@ export default function CalendarDesktop() {
   const [actionUpdating, setActionUpdating] = useState(false)
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
+  const [swapSuccess, setSwapSuccess] = useState(false)
 
   // Fetch full detail + activity logs for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -491,12 +495,27 @@ export default function CalendarDesktop() {
       }
       mutateReservations()
       setSwapSourceId(null)
+      setSwapSuccess(true)
+      setTimeout(() => setSwapSuccess(false), 2000)
     } catch {
       alert('Network error — could not complete swap')
     } finally {
       setSwapLoading(false)
     }
   }
+
+  /** Count of assigned (non-cancelled) reservations per date */
+  const assignedCountByDate = useMemo(() => {
+    const map = new Map<string, number>()
+    if (!reservations) return map
+    for (const r of reservations) {
+      if (!r.yurtId) continue
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      const dateKey = r.date.split('T')[0]
+      map.set(dateKey, (map.get(dateKey) || 0) + 1)
+    }
+    return map
+  }, [reservations])
 
   /** Render a compact reservation card for week view cells */
   function renderReservationCard(res: Reservation) {
@@ -537,13 +556,13 @@ export default function CalendarDesktop() {
           <div className={`text-[11px] font-semibold ${colors.text} truncate flex-1`}>
             {getDisplayName(res.user)}
           </div>
-          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && (
+          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && (assignedCountByDate.get(resDate) ?? 0) >= 2 && (
             <button
               onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
-              className="p-0.5 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
+              className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
               title={t('swapRoom')}
             >
-              <ArrowLeftRight size={10} />
+              <ArrowLeftRight size={14} />
             </button>
           )}
         </div>
@@ -557,13 +576,13 @@ export default function CalendarDesktop() {
           </div>
         </div>
         {res.order && (
-          <div className="text-[10px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
-            {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+          <div className="flex items-center gap-0.5 text-[10px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+            {res.order.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : res.order.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
             {' '}
             {res.order.finalTotal != null
-              ? `$${res.order.finalTotal}`
+              ? `$${fmtMoney(res.order.finalTotal)}`
               : res.order.estimatedTotal != null
-                ? `~$${res.order.estimatedTotal}`
+                ? `~$${fmtMoney(res.order.estimatedTotal)}`
                 : t('orderDraft')}
           </div>
         )}
@@ -584,6 +603,11 @@ export default function CalendarDesktop() {
             >
               {t('swapCancel')}
             </button>
+          </div>
+        )}
+        {swapSuccess && (
+          <div className="flex items-center justify-center px-4 py-2 bg-[#5B8C3E]/10 border-b border-[#5B8C3E]/30 text-[12px] text-[#5B8C3E]">
+            ✓ {t('swapSuccess')}
           </div>
         )}
         <div className="overflow-x-auto">

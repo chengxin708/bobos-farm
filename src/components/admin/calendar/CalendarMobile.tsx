@@ -10,7 +10,7 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -125,6 +125,9 @@ function getDisplayName(user: ReservationUser): string {
 /** Closed-cell diagonal stripe pattern */
 const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
 
+/** Format money with 2 decimal places */
+const fmtMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function CalendarMobile() {
@@ -144,6 +147,7 @@ export default function CalendarMobile() {
   const [actionUpdating, setActionUpdating] = useState(false)
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
+  const [swapSuccess, setSwapSuccess] = useState(false)
 
   // Fetch full detail for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -242,6 +246,8 @@ export default function CalendarMobile() {
       }
       mutateReservations()
       setSwapSourceId(null)
+      setSwapSuccess(true)
+      setTimeout(() => setSwapSuccess(false), 2000)
     } catch {
       alert('Network error — could not complete swap')
     } finally {
@@ -675,13 +681,13 @@ export default function CalendarMobile() {
                         <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                       </div>
                       {res.order && (
-                        <div className="text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
-                          {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+                        <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                          {res.order.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : res.order.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
                           {' '}
                           {res.order.finalTotal != null
-                            ? `$${res.order.finalTotal}`
+                            ? `$${fmtMoney(res.order.finalTotal)}`
                             : res.order.estimatedTotal != null
-                              ? `~$${res.order.estimatedTotal}`
+                              ? `~$${fmtMoney(res.order.estimatedTotal)}`
                               : t('orderDraft')}
                         </div>
                       )}
@@ -707,6 +713,11 @@ export default function CalendarMobile() {
               >
                 {t('swapCancel')}
               </button>
+            </div>
+          )}
+          {swapSuccess && (
+            <div className="flex items-center justify-center px-4 py-2 mb-3 bg-[#5B8C3E]/10 border border-[#5B8C3E]/30 rounded-xl text-[12px] text-[#5B8C3E]">
+              ✓ {t('swapSuccess')}
             </div>
           )}
 
@@ -756,7 +767,7 @@ export default function CalendarMobile() {
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
                       {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
-                    {res.status !== 'CANCELLED' && !swapSourceId && (
+                    {res.status !== 'CANCELLED' && !swapSourceId && Array.from(selectedDayReservations.values()).filter(r => r.status !== 'CANCELLED' && r.status !== 'EXPIRED').length >= 2 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
                         className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
@@ -783,13 +794,13 @@ export default function CalendarMobile() {
                       <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                     </div>
                     {res.order && (
-                      <div className="text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
-                        {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+                      <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                        {res.order.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : res.order.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
                         {' '}
                         {res.order.finalTotal != null
-                          ? `$${res.order.finalTotal}`
+                          ? `$${fmtMoney(res.order.finalTotal)}`
                           : res.order.estimatedTotal != null
-                            ? `~$${res.order.estimatedTotal}`
+                            ? `~$${fmtMoney(res.order.estimatedTotal)}`
                             : t('orderDraft')}
                       </div>
                     )}
