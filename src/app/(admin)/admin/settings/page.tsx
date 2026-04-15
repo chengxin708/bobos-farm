@@ -64,7 +64,7 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   payment_timeout_hours: 1,
   max_advance_booking_days: 1,
   min_advance_booking_days: 1,
-  cancellation_window_days: 2,
+  cancellation_window_days: 7,
   preorder_deadline_days: 3,
   guest_warning_threshold: 4,
   zelle_recipient: 5,
@@ -686,13 +686,14 @@ export default function Settings() {
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
-              value={formValues.cancellation_window_days ?? ''}
-              onChange={e => updateField('cancellation_window_days', e.target.value)}
-              className={smallInputClass('cancellation_window_days')}
+              value={7}
+              disabled
+              className={`${smallInputClass('cancellation_window_days')} opacity-60 cursor-not-allowed`}
             />
             <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('cancellation.windowUnit')}</span>
           </div>
           <p className="text-xs text-[#8C8478]">{t('cancellation.windowHelp')}</p>
+          <p className="text-xs text-amber-600 mt-1">此值由系统固定为 7 天，如需修改请联系开发者。</p>
         </div>
       </div>
     )
