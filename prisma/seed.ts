@@ -39,10 +39,10 @@ async function main() {
   console.log("Demo customer created:", customer.email);
 
   // Clear old yurts (cascades to reservations + availability)
-  const oldYurtIds = ["yurt-golden-meadow", "yurt-sunset-ridge", "yurt-willow-creek"];
-  for (const id of oldYurtIds) {
-    await prisma.yurt.deleteMany({ where: { id } });
-  }
+  // Remove any yurts that aren't the 3 current rooms
+  await prisma.yurt.deleteMany({
+    where: { id: { notIn: ["room-1", "room-2", "room-3"] } },
+  });
   console.log("Old yurts cleared");
 
   // Create 3 private rooms (包房)
