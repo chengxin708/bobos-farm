@@ -50,6 +50,7 @@ interface Reservation {
   holdByAdmin?: boolean
   user: ReservationUser
   yurt: ReservationYurt | null
+  order?: { status: string; estimatedTotal: number | null; finalTotal: number | null } | null
 }
 
 interface AvailabilityEntry {

@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, name: true, email: true, phone: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
-        order: { select: { id: true, status: true } },
+        order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
       },
       orderBy: { date: "desc" },
     });
