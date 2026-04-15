@@ -8,7 +8,7 @@ import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -163,6 +163,7 @@ export default function CalendarDesktop() {
   const [createModalYurtId, setCreateModalYurtId] = useState<string | undefined>(undefined)
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
+  const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
 
   // Fetch full detail + activity logs for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -404,6 +405,23 @@ export default function CalendarDesktop() {
 
   const todayStr = formatDate(today)
 
+  async function handleSwap(targetId: string) {
+    if (!swapSourceId) return
+    try {
+      const resp = await fetch('/api/reservations/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
+      })
+      if (resp.ok) {
+        mutateReservations()
+        setSwapSourceId(null)
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   /** Render a compact reservation card for week view cells */
   function renderReservationCard(res: Reservation) {
     const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
@@ -411,25 +429,45 @@ export default function CalendarDesktop() {
       ? { border: 'border-l-[#F4A623]', bg: 'bg-[#F4A623]/10', text: 'text-[#F4A623]', dot: 'bg-[#F4A623]', initBg: 'bg-[#F4A623]' }
       : (STATUS_COLORS[res.status] || STATUS_COLORS.CONFIRMED)
     const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
+    const isSwapSource = swapSourceId === res.id
+    const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.yurtId && res.status !== 'CANCELLED'
 
     return (
       <button
         key={res.id}
-        onClick={(e) => { e.stopPropagation(); setSelectedResId(res.id) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (isSwapTarget) {
+            handleSwap(res.id)
+          } else {
+            setSelectedResId(res.id)
+          }
+        }}
         className={`
           w-full text-left p-2 rounded-lg border-l-[3px] border-0 cursor-pointer
           ${colors.border} ${colors.bg}
           transition-shadow duration-150 hover:shadow-md
           ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
+          ${isSwapSource ? 'ring-2 ring-[#8B6914]' : ''}
+          ${isSwapTarget ? 'ring-2 ring-dashed ring-[#5B8C3E] hover:ring-[#5B8C3E]' : ''}
         `}
       >
         <div className="flex items-center gap-1.5 mb-1">
           <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 ${colors.initBg}`}>
             {initials}
           </div>
-          <div className={`text-[11px] font-semibold ${colors.text} truncate`}>
+          <div className={`text-[11px] font-semibold ${colors.text} truncate flex-1`}>
             {getDisplayName(res.user)}
           </div>
+          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
+              className="p-0.5 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
+              title={t('swapRoom')}
+            >
+              <ArrowLeftRight size={10} />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-0.5 text-[#8A7E6B]">
@@ -459,6 +497,17 @@ export default function CalendarDesktop() {
   function renderWeekView() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
+        {swapSourceId && (
+          <div className="flex items-center justify-between px-4 py-2 bg-[#FFF8E1] border-b border-[#E8B730]/30">
+            <span className="text-[12px] text-[#92400E]">{t('swapSelect')}</span>
+            <button
+              onClick={() => setSwapSourceId(null)}
+              className="text-[11px] text-[#92400E] hover:text-[#78350F] underline cursor-pointer"
+            >
+              {t('swapCancel')}
+            </button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
             {/* ── Header row ── */}

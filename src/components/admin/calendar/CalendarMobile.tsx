@@ -10,7 +10,7 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -141,6 +141,7 @@ export default function CalendarMobile() {
   const [createYurtId, setCreateYurtId] = useState<string | undefined>(undefined)
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
+  const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
 
   // Fetch full detail for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -214,6 +215,23 @@ export default function CalendarMobile() {
   const completeReservation = useCallback((id: string) => {
     handleResAction(id, 'admin', { status: 'COMPLETED' })
   }, [handleResAction])
+
+  async function handleSwap(targetId: string) {
+    if (!swapSourceId) return
+    try {
+      const resp = await fetch('/api/reservations/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
+      })
+      if (resp.ok) {
+        mutateReservations()
+        setSwapSourceId(null)
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   // ── Indexed lookups ──────────────────────────────────────────
 
@@ -620,6 +638,19 @@ export default function CalendarMobile() {
             </div>
           )}
 
+          {/* ── Swap Mode Banner ─────────────────────────── */}
+          {swapSourceId && (
+            <div className="flex items-center justify-between px-4 py-2 mb-3 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl">
+              <span className="text-[13px] text-[#92400E]">{t('swapSelect')}</span>
+              <button
+                onClick={() => setSwapSourceId(null)}
+                className="text-[12px] text-[#92400E] hover:text-[#78350F] underline cursor-pointer"
+              >
+                {t('swapCancel')}
+              </button>
+            </div>
+          )}
+
           {/* ── Yurt Cards ─────────────────────────────── */}
           {!loadingRes && activeYurts.map(yurt => {
             const res = selectedDayReservations.get(yurt.id)
@@ -628,17 +659,34 @@ export default function CalendarMobile() {
 
             // Booked yurt card
             if (res) {
+              const isSwapSource = swapSourceId === res.id
+              const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.status !== 'CANCELLED'
               return (
                 <button
                   key={yurt.id}
-                  onClick={() => setSelectedResId(res.id)}
-                  className="w-full text-left bg-white rounded-xl border border-[#E8ECE4] mb-3 overflow-hidden cursor-pointer hover:border-[#6B7F5E]/40 transition-colors"
+                  onClick={() => {
+                    if (isSwapTarget) {
+                      handleSwap(res.id)
+                    } else {
+                      setSelectedResId(res.id)
+                    }
+                  }}
+                  className={`w-full text-left bg-white rounded-xl border mb-3 overflow-hidden cursor-pointer transition-colors ${isSwapSource ? 'border-[#8B6914] ring-2 ring-[#8B6914]' : isSwapTarget ? 'border-[#5B8C3E] ring-2 ring-dashed ring-[#5B8C3E]' : 'border-[#E8ECE4] hover:border-[#6B7F5E]/40'}`}
                 >
                   {/* Yurt header */}
                   <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
                       {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
+                    {res.status !== 'CANCELLED' && !swapSourceId && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
+                        className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
+                        title={t('swapRoom')}
+                      >
+                        <ArrowLeftRight size={14} />
+                      </button>
+                    )}
                   </div>
                   {/* Reservation content */}
                   <div className={`px-4 py-3 ${res.status === 'CANCELLED' ? 'opacity-60' : ''}`}>
