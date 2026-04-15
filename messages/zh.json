@@ -842,6 +842,12 @@
       "heldByAdmin": "{count} 笔锁位待收款",
       "spotHeld": "已锁位",
       "awaitingDeposit": "待收定金",
+      "shareLink": {
+        "copy": "复制链接",
+        "copied": "已复制",
+        "sms": "短信分享",
+        "smsBody": "Hi {name}，您在 Bobo's Farm 的预约（{date}）已创建。确认码：{code}\n\n点击链接管理预约：{url}"
+      },
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {
         "actionNeeded": "需要处理",

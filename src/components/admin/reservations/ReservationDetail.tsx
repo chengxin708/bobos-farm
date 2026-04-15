@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -76,6 +76,7 @@ export default function ReservationDetail({
   const [showEditEditor, setShowEditEditor] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'deposit' | 'waiveDeposit' | 'complete' | 'cancel' | null>(null)
   const [editingDeposit, setEditingDeposit] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
@@ -305,6 +306,39 @@ export default function ReservationDetail({
             </span>
           )}
           <span className="text-xs font-mono text-[#8C8478]">{reservation.confirmationCode || reservation.id.slice(-8)}</span>
+          {/* Share buttons */}
+          {reservation.confirmationCode && (
+            <div className="flex items-center gap-1 ml-auto">
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/claim?code=${reservation.confirmationCode}`
+                  navigator.clipboard.writeText(url)
+                  setCopiedLink(true)
+                  setTimeout(() => setCopiedLink(false), 2000)
+                }}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] transition-colors"
+                title={t('shareLink.copy')}
+              >
+                {copiedLink ? <Check size={10} /> : <Copy size={10} />}
+                {copiedLink ? t('shareLink.copied') : t('shareLink.copy')}
+              </button>
+              {/* SMS button — mobile only */}
+              <a
+                href={`sms:${reservation.user?.phone || ''}?body=${encodeURIComponent(
+                  t('shareLink.smsBody', {
+                    name: reservation.user?.name || '',
+                    date: formatDateDisplay(reservation.date),
+                    code: reservation.confirmationCode,
+                    url: `${window.location.origin}/claim?code=${reservation.confirmationCode}`,
+                  })
+                )}`}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#6B7F5E]/10 text-[#6B7F5E] hover:bg-[#6B7F5E]/20 transition-colors md:hidden"
+              >
+                <MessageCircle size={10} />
+                {t('shareLink.sms')}
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Reservation Info */}

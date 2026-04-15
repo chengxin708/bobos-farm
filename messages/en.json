@@ -842,6 +842,12 @@
       "heldByAdmin": "{count} spots held pending payment",
       "spotHeld": "Spot Held",
       "awaitingDeposit": "Awaiting Deposit",
+      "shareLink": {
+        "copy": "Copy Link",
+        "copied": "Copied!",
+        "sms": "SMS",
+        "smsBody": "Hi {name}, your reservation at Bobo's Farm ({date}) has been created. Code: {code}\n\nManage your reservation: {url}"
+      },
       "pendingOrders": "{count} orders pending",
       "filters": {
         "actionNeeded": "Action Needed",
