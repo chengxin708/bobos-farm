@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, ExternalLink } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -493,24 +493,13 @@ export default function ReservationDetail({
         <div className="flex-1 overflow-y-auto p-5 flex flex-col items-center justify-center gap-4">
           <ShoppingBag size={40} className="text-[#E8ECE4]" />
           <p className="text-sm text-[#8C8478]">{t('noOrder')}</p>
-          {reservation.status === 'CONFIRMED' && (
+          {reservation.status === 'CONFIRMED' && isAdmin && (
             <button
               onClick={() => setShowOrderEditor(true)}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#6B7F5E]/90"
             >
               {tOrders('placeOrder')}
             </button>
-          )}
-          {isAdmin && (
-            <a
-              href={`/pre-order?reservationId=${reservation.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-[#8B6914] text-[#8B6914] hover:bg-[#8B6914]/5"
-            >
-              <ExternalLink size={14} />
-              {t('preOrderForCustomer')}
-            </a>
           )}
         </div>
       )

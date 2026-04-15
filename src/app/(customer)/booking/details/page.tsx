@@ -234,7 +234,17 @@ export default function BookingDetailsPage() {
           {/* Guest Counter */}
           <div className="rounded-xl border border-[#E8ECE4] p-4">
             <label className="text-sm font-medium text-[#6B6157]">{t('numberOfGuests')}</label>
-            <div className="flex items-center justify-center gap-6 mt-3">
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <button
+                onClick={() => setGuestCount(Math.max(1, guestCount - 10))}
+                disabled={guestCount <= 1}
+                aria-label="Decrease guest count by 10"
+                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors text-xs font-semibold ${
+                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                }`}
+              >
+                -10
+              </button>
               <button
                 onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
                 disabled={guestCount <= 1}
@@ -255,6 +265,16 @@ export default function BookingDetailsPage() {
                 }`}
               >
                 <Plus size={18} />
+              </button>
+              <button
+                onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 10))}
+                disabled={guestCount >= maxGuests}
+                aria-label="Increase guest count by 10"
+                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors text-xs font-semibold ${
+                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
+                }`}
+              >
+                +10
               </button>
             </div>
             <p className="text-[15px] text-[#6B6157] text-center mt-2">

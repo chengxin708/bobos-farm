@@ -481,6 +481,23 @@ export default function CalendarDesktop() {
 
   async function handleSwap(targetId: string) {
     if (!swapSourceId || swapLoading) return
+
+    // Capacity warning before swap
+    const sourceRes = reservations?.find(r => r.id === swapSourceId)
+    const targetRes = reservations?.find(r => r.id === targetId)
+    if (sourceRes && targetRes && sourceRes.yurt && targetRes.yurt) {
+      const warnings: string[] = []
+      if (sourceRes.guestCount > targetRes.yurt.capacity) {
+        warnings.push(`${sourceRes.user?.name || sourceRes.user?.email} (${sourceRes.guestCount}人) → ${targetRes.yurt.name}${targetRes.yurt.alias ? ` (${targetRes.yurt.alias})` : ''} (容量${targetRes.yurt.capacity})`)
+      }
+      if (targetRes.guestCount > sourceRes.yurt.capacity) {
+        warnings.push(`${targetRes.user?.name || targetRes.user?.email} (${targetRes.guestCount}人) → ${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''} (容量${sourceRes.yurt.capacity})`)
+      }
+      if (warnings.length > 0 && !confirm(`⚠️ ${t('swapCapacityWarning')}:\n${warnings.join('\n')}\n\n${t('swapCapacityConfirm')}`)) {
+        return
+      }
+    }
+
     setSwapLoading(true)
     try {
       const resp = await fetch('/api/reservations/swap', {
@@ -534,9 +551,11 @@ export default function CalendarDesktop() {
         disabled={swapLoading && !!isSwapTarget}
         onClick={(e) => {
           e.stopPropagation()
-          if (isSwapTarget && !swapLoading) {
+          if (isSwapSource) {
+            setSwapSourceId(null)
+          } else if (isSwapTarget && !swapLoading) {
             handleSwap(res.id)
-          } else if (!isSwapTarget) {
+          } else if (!swapSourceId) {
             setSelectedResId(res.id)
           }
         }}

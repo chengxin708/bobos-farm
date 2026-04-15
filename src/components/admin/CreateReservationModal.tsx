@@ -56,6 +56,27 @@ export default function CreateReservationModal({
   const { data: yurts } = useSWR<Yurt[]>(isOpen ? '/api/yurts' : null, fetcher)
   const activeYurts = (yurts || []).filter(y => y.status === 'ACTIVE')
 
+  // Fetch existing reservations for selected date to find occupied yurts
+  interface DateReservation { id: string; yurtId: string | null; status: string }
+  const { data: dateReservations } = useSWR<DateReservation[]>(
+    isOpen && date ? `/api/reservations?date=${date}` : null,
+    (url: string) => fetch(url).then(r => r.json()).then(d => d.reservations ?? d),
+    { revalidateOnFocus: false }
+  )
+  const occupiedYurtIds = new Set(
+    (dateReservations || [])
+      .filter(r => r.yurtId && !['CANCELLED', 'EXPIRED'].includes(r.status))
+      .map(r => r.yurtId)
+  )
+  const availableYurts = activeYurts.filter(y => !occupiedYurtIds.has(y.id))
+  const fittingYurts = availableYurts.filter(y => y.capacity >= guestCount)
+
+  // Capacity warnings
+  const selectedYurt = activeYurts.find(y => y.id === yurtId)
+  const capacityExceeded = selectedYurt && guestCount > selectedYurt.capacity
+  const selectedYurtOccupied = selectedYurt && occupiedYurtIds.has(selectedYurt.id)
+  const noRoomAvailable = date && guestCount > 0 && !yurtId && dateReservations && fittingYurts.length === 0
+
   // Reset form when opened
   useEffect(() => {
     if (isOpen) {
@@ -290,12 +311,33 @@ export default function CreateReservationModal({
                 }}
               >
                 <option value="">{t('autoAssign')}</option>
-                {activeYurts.map(y => (
-                  <option key={y.id} value={y.id}>
-                    {t('yurtCapacity', { name: `${y.name}${y.alias ? ` (${y.alias})` : ''}`, capacity: y.capacity })}
-                  </option>
-                ))}
+                {activeYurts.map(y => {
+                  const isOccupied = occupiedYurtIds.has(y.id)
+                  const tooSmall = guestCount > y.capacity
+                  return (
+                    <option key={y.id} value={y.id} disabled={isOccupied}>
+                      {t('yurtCapacity', { name: `${y.name}${y.alias ? ` (${y.alias})` : ''}`, capacity: y.capacity })}
+                      {isOccupied ? ` — ${t('occupied')}` : ''}
+                      {tooSmall && !isOccupied ? ` — ${t('tooSmall')}` : ''}
+                    </option>
+                  )
+                })}
               </select>
+              {capacityExceeded && (
+                <p className="text-xs mt-1" style={{ color: '#DC3545' }}>
+                  ⚠️ {t('capacityWarning', { guests: guestCount, capacity: selectedYurt!.capacity })}
+                </p>
+              )}
+              {selectedYurtOccupied && (
+                <p className="text-xs mt-1" style={{ color: '#DC3545' }}>
+                  ⚠️ {t('yurtOccupied')}
+                </p>
+              )}
+              {noRoomAvailable && (
+                <p className="text-xs mt-1" style={{ color: '#DC3545' }}>
+                  ⚠️ {t('noRoomAvailable')}
+                </p>
+              )}
             </div>
 
             {/* Guest Count */}

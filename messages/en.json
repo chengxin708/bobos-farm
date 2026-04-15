@@ -979,6 +979,8 @@
       "swapSelect": "Select reservation to swap with",
       "swapCancel": "Cancel swap",
       "swapSuccess": "Room swap successful",
+      "swapCapacityWarning": "Guest count exceeds room capacity after swap",
+      "swapCapacityConfirm": "Continue with the swap?",
       "optimizationAvailable": "Better assignment available",
       "applySuggestion": "Apply suggestion",
       "currentWaste": "Current unused",
@@ -1120,8 +1122,8 @@
         "paymentTimeoutUnit": "minutes",
         "paymentTimeoutHelp": "Time allowed for guests to complete payment. If not received within this window, the reservation will automatically be cancelled.",
         "maxAdvanceBooking": "Max Advance Booking",
-        "maxAdvanceBookingUnit": "months",
-        "maxAdvanceBookingHelp": "Maximum number of months in advance guests can book a yurt.",
+        "maxAdvanceBookingUnit": "days",
+        "maxAdvanceBookingHelp": "Maximum number of days in advance guests can book.",
         "minAdvanceBooking": "Min Advance Booking",
         "minAdvanceBookingUnit": "days",
         "minAdvanceBookingHelp": "Minimum number of days before arrival that a booking can be made."
@@ -1439,7 +1441,12 @@
       "depositHint": "Set to $0 to skip deposit",
       "depositDefault": "System default",
       "createFailed": "Failed to create reservation",
-      "networkError": "Network error. Please try again."
+      "networkError": "Network error. Please try again.",
+      "occupied": "Occupied",
+      "tooSmall": "Too small",
+      "capacityWarning": "Guest count ({guests}) exceeds room capacity ({capacity})",
+      "yurtOccupied": "This room is already booked on this date",
+      "noRoomAvailable": "No available room can accommodate this many guests on this date"
     },
     "reports": {
       "title": "Reports & Analytics",

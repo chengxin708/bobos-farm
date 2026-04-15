@@ -979,6 +979,8 @@
       "swapSelect": "选择要互换的预约",
       "swapCancel": "取消互换",
       "swapSuccess": "包房互换成功",
+      "swapCapacityWarning": "互换后人数超过房间容量",
+      "swapCapacityConfirm": "确定要继续互换吗？",
       "optimizationAvailable": "发现更优分配方案",
       "applySuggestion": "应用建议",
       "currentWaste": "当前空余",
@@ -1120,8 +1122,8 @@
         "paymentTimeoutUnit": "分钟",
         "paymentTimeoutHelp": "客户完成支付的允许时间。如果在此期限内未收到付款，预订将自动取消。",
         "maxAdvanceBooking": "最远预订时长",
-        "maxAdvanceBookingUnit": "个月",
-        "maxAdvanceBookingHelp": "客户可以提前预订的最长月数。",
+        "maxAdvanceBookingUnit": "天",
+        "maxAdvanceBookingHelp": "客户可以提前预订的最长天数。",
         "minAdvanceBooking": "最短预订时间",
         "minAdvanceBookingUnit": "天",
         "minAdvanceBookingHelp": "客户可以在入住日期前几天内提交预订。"
@@ -1439,7 +1441,12 @@
       "depositHint": "设为 $0 可跳过定金流程",
       "depositDefault": "系统默认",
       "createFailed": "创建预订失败",
-      "networkError": "网络错误，请重试。"
+      "networkError": "网络错误，请重试。",
+      "occupied": "已占用",
+      "tooSmall": "容量不足",
+      "capacityWarning": "人数（{guests}人）超过该房间容量（{capacity}人）",
+      "yurtOccupied": "该房间在此日期已被预订",
+      "noRoomAvailable": "该日期没有可容纳此人数的空闲房间"
     },
     "reports": {
       "title": "数据报告",
