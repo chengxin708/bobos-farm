@@ -440,6 +440,17 @@ export default function CalendarDesktop() {
             {isHeld ? t('status.held') : statusLabel(res.status, t)}
           </div>
         </div>
+        {res.order && (
+          <div className="text-[10px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+            {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+            {' '}
+            {res.order.finalTotal != null
+              ? `$${res.order.finalTotal}`
+              : res.order.estimatedTotal != null
+                ? `~$${res.order.estimatedTotal}`
+                : t('orderDraft')}
+          </div>
+        )}
       </button>
     )
   }

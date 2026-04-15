@@ -597,6 +597,17 @@ export default function CalendarMobile() {
                         <Users size={13} />
                         <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                       </div>
+                      {res.order && (
+                        <div className="text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                          {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+                          {' '}
+                          {res.order.finalTotal != null
+                            ? `$${res.order.finalTotal}`
+                            : res.order.estimatedTotal != null
+                              ? `~$${res.order.estimatedTotal}`
+                              : t('orderDraft')}
+                        </div>
+                      )}
                       {res.specialRequests && (
                         <p className="text-[12px] text-[#8A7E6B] mt-1.5 line-clamp-2">
                           {res.specialRequests}
@@ -645,6 +656,17 @@ export default function CalendarMobile() {
                       <Users size={13} />
                       <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                     </div>
+                    {res.order && (
+                      <div className="text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                        {res.order.status === 'DRAFT' ? '\u{1F4DD}' : res.order.status === 'PAID' ? '\u2705' : '\u{1F37D}\uFE0F'}
+                        {' '}
+                        {res.order.finalTotal != null
+                          ? `$${res.order.finalTotal}`
+                          : res.order.estimatedTotal != null
+                            ? `~$${res.order.estimatedTotal}`
+                            : t('orderDraft')}
+                      </div>
+                    )}
                     {res.specialRequests && (
                       <p className="text-[12px] text-[#8A7E6B] mt-2 line-clamp-2">
                         {res.specialRequests}

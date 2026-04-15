@@ -971,7 +971,18 @@
         "month": "{year}年{month}",
         "weekRange": "{startMonth}{startDay}日 - {endLabel}，{year}",
         "endWithMonth": "{endMonth}{endDay}日"
-      }
+      },
+      "orderDraft": "草稿",
+      "orderPlaced": "已点单",
+      "orderPaid": "已结账",
+      "swapRoom": "互换包房",
+      "swapSelect": "选择要互换的预约",
+      "swapCancel": "取消互换",
+      "swapSuccess": "包房互换成功",
+      "optimizationAvailable": "发现更优分配方案",
+      "applySuggestion": "应用建议",
+      "currentWaste": "当前浪费",
+      "suggestedWaste": "建议浪费"
     },
     "menu": {
       "title": "菜单管理",

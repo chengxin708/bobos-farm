@@ -971,7 +971,18 @@
         "month": "{month} {year}",
         "weekRange": "{startMonth} {startDay} - {endLabel}, {year}",
         "endWithMonth": "{endMonth} {endDay}"
-      }
+      },
+      "orderDraft": "Draft",
+      "orderPlaced": "Ordered",
+      "orderPaid": "Paid",
+      "swapRoom": "Swap Room",
+      "swapSelect": "Select reservation to swap with",
+      "swapCancel": "Cancel swap",
+      "swapSuccess": "Room swap successful",
+      "optimizationAvailable": "Better assignment available",
+      "applySuggestion": "Apply suggestion",
+      "currentWaste": "Current waste",
+      "suggestedWaste": "Suggested waste"
     },
     "menu": {
       "title": "Menu Management",
