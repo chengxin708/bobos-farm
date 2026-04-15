@@ -74,7 +74,7 @@ export default function ReservationDetail({
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<'deposit' | 'complete' | 'cancel' | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'deposit' | 'waiveDeposit' | 'complete' | 'cancel' | null>(null)
   const [editingDeposit, setEditingDeposit] = useState(false)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
@@ -121,16 +121,34 @@ export default function ReservationDetail({
     finally { setAssigningYurt(false) }
   }
 
+  const handleWaiveDeposit = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'CONFIRMED',
+          depositAmount: 0,
+          depositStatus: 'CONFIRMED',
+          depositConfirmedAt: new Date().toISOString(),
+        }),
+      })
+      if (res.ok) onOrderChanged?.()
+    } catch { /* ignore */ }
+  }, [reservation.id, onOrderChanged])
+
   const handleConfirmAction = useCallback(() => {
     if (!confirmAction) return
     if (confirmAction === 'deposit') onAction.confirmDeposit(reservation.id)
+    if (confirmAction === 'waiveDeposit') handleWaiveDeposit()
     if (confirmAction === 'complete') onAction.completeReservation(reservation.id)
     if (confirmAction === 'cancel') onAction.cancelReservation(reservation.id)
     setConfirmAction(null)
-  }, [confirmAction, onAction, reservation.id])
+  }, [confirmAction, onAction, reservation.id, handleWaiveDeposit])
 
   const confirmDialogConfig = {
     deposit: { title: t('dialog.confirmDeposit'), message: t('dialog.confirmDepositMsg'), variant: 'success' as const, confirmLabel: t('actions.confirm') },
+    waiveDeposit: { title: t('dialog.waiveDeposit'), message: t('dialog.waiveDepositMsg'), variant: 'confirm' as const, confirmLabel: t('dialog.waiveDepositConfirm') },
     complete: { title: t('dialog.completeReservation'), message: t('dialog.completeReservationMsg'), variant: 'confirm' as const, confirmLabel: t('actions.complete') },
     cancel: { title: t('dialog.cancelReservation'), message: t('dialog.cancelReservationMsg'), variant: 'danger' as const, confirmLabel: t('actions.cancel') },
   }
@@ -274,15 +292,16 @@ export default function ReservationDetail({
           </div>
         )}
 
-        {/* Status badge */}
+        {/* Status badge — single label for held reservations */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${STATUS_BADGE[reservation.status]?.bg} ${STATUS_BADGE[reservation.status]?.text}`}>
-            {t(`status.${reservation.status}`)}
-          </span>
-          {reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' && (
+          {reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' ? (
             <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#F4A623]/15 text-[#F4A623] flex items-center gap-1">
               <Lock size={11} />
-              {t('spotHeld')}
+              {t('awaitingDeposit')}
+            </span>
+          ) : (
+            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${STATUS_BADGE[reservation.status]?.bg} ${STATUS_BADGE[reservation.status]?.text}`}>
+              {t(`status.${reservation.status}`)}
             </span>
           )}
           <span className="text-xs text-[#8C8478]">#{reservation.id.slice(-8)}</span>
@@ -691,13 +710,25 @@ export default function ReservationDetail({
 
         {/* Confirm Deposit — PAYMENT_SUBMITTED or PENDING_PAYMENT (admin can confirm directly) */}
         {(reservation.status === 'PAYMENT_SUBMITTED' || reservation.status === 'PENDING_PAYMENT') && isAdmin && (
-          <button
-            onClick={() => setConfirmAction('deposit')}
-            disabled={isUpdating}
-            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
-          >
-            {t('actions.confirmDeposit')}
-          </button>
+          <>
+            <button
+              onClick={() => setConfirmAction('deposit')}
+              disabled={isUpdating}
+              className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
+            >
+              {t('actions.confirmDeposit')}
+            </button>
+            {/* Waive Deposit — skip deposit, confirm directly */}
+            {reservation.holdByAdmin && reservation.depositAmount > 0 && (
+              <button
+                onClick={() => setConfirmAction('waiveDeposit')}
+                disabled={isUpdating}
+                className="w-full py-2 text-sm font-semibold rounded-lg border border-[#8B6914] text-[#8B6914] hover:bg-[#8B6914]/5 disabled:opacity-50"
+              >
+                {t('actions.waiveDeposit')}
+              </button>
+            )}
+          </>
         )}
 
         {/* Complete — CONFIRMED, requires order to be PAID if order exists */}

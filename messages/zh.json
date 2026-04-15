@@ -770,7 +770,8 @@
         "checkoutFirst": "请先结账",
         "close": "关闭",
         "editReservation": "编辑预订",
-        "confirmDeposit": "确认定金已收"
+        "confirmDeposit": "确认定金已收",
+        "waiveDeposit": "免定金确认"
       },
       "editEditor": {
         "title": "编辑预订",
@@ -789,6 +790,9 @@
       "dialog": {
         "confirmDeposit": "确认定金",
         "confirmDepositMsg": "确认此定金？预订将正式生效，客户会收到邮件通知。",
+        "waiveDeposit": "免定金确认",
+        "waiveDepositMsg": "跳过定金要求，直接确认预订？定金金额将设为 $0。",
+        "waiveDepositConfirm": "确认免定金",
         "completeReservation": "完成预订",
         "completeReservationMsg": "将此预订标记为已完成？表示客人已到访结束。",
         "cancelReservation": "取消预订",
@@ -834,6 +838,7 @@
       "pendingDeposits": "{count} 笔定金待确认",
       "heldByAdmin": "{count} 笔锁位待收款",
       "spotHeld": "已锁位",
+      "awaitingDeposit": "待收定金",
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {
         "actionNeeded": "需要处理",
