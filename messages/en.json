@@ -769,7 +769,8 @@
         "completeRequiresCheckout": "Order must be checked out before completing the reservation",
         "checkoutFirst": "checkout first",
         "close": "Close",
-        "editReservation": "Edit Reservation"
+        "editReservation": "Edit Reservation",
+        "confirmDeposit": "Confirm Deposit Received"
       },
       "editEditor": {
         "title": "Edit Reservation",
@@ -816,6 +817,7 @@
         "editDeposit": "Edit deposit amount",
         "unlockDeposit": "Deposit is confirmed — click to unlock for editing",
         "reconfirmDeposit": "Re-confirm",
+        "markRefunded": "Mark Refunded",
         "timeline": "Activity Timeline",
         "created": "Created",
         "updated": "Last Updated",

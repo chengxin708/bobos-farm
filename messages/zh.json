@@ -769,7 +769,8 @@
         "completeRequiresCheckout": "需先结账才能完成预订",
         "checkoutFirst": "请先结账",
         "close": "关闭",
-        "editReservation": "编辑预订"
+        "editReservation": "编辑预订",
+        "confirmDeposit": "确认定金已收"
       },
       "editEditor": {
         "title": "编辑预订",
@@ -816,6 +817,7 @@
         "editDeposit": "编辑定金金额",
         "unlockDeposit": "定金已确认 — 点击解锁后可编辑",
         "reconfirmDeposit": "重新确认",
+        "markRefunded": "标记已退款",
         "timeline": "活动时间线",
         "created": "创建时间",
         "updated": "最后更新",

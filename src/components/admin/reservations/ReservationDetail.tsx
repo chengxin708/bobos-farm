@@ -189,6 +189,21 @@ export default function ReservationDetail({
     finally { setUnlockingDeposit(false) }
   }
 
+  const handleMarkRefunded = async () => {
+    setSavingDeposit(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ depositStatus: 'REFUNDED' }),
+      })
+      if (res.ok) {
+        onOrderChanged?.()
+      }
+    } catch { /* ignore */ }
+    finally { setSavingDeposit(false) }
+  }
+
   const handleRelockDeposit = async () => {
     setSavingDeposit(true)
     try {
@@ -391,13 +406,23 @@ export default function ReservationDetail({
                   {t(`depositStatus.${reservation.depositStatus}`)}
                 </span>
                 {/* Re-confirm button when deposit was unlocked back to PENDING */}
-                {reservation.depositStatus === 'PENDING' && (
+                {reservation.depositStatus === 'PENDING' && isAdmin && (
                   <button
                     onClick={handleRelockDeposit}
                     disabled={savingDeposit}
                     className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5B8C3E]/10 text-[#5B8C3E] hover:bg-[#5B8C3E]/20 disabled:opacity-50 transition-colors"
                   >
                     {t('detail.reconfirmDeposit')}
+                  </button>
+                )}
+                {/* Mark as Refunded — for CONFIRMED or PENDING deposits on cancelled/active reservations */}
+                {reservation.depositStatus === 'CONFIRMED' && isAdmin && (
+                  <button
+                    onClick={handleMarkRefunded}
+                    disabled={savingDeposit}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#2980B9]/10 text-[#2980B9] hover:bg-[#2980B9]/20 disabled:opacity-50 transition-colors"
+                  >
+                    {t('detail.markRefunded')}
                   </button>
                 )}
               </div>
@@ -664,14 +689,14 @@ export default function ReservationDetail({
           </button>
         )}
 
-        {/* Confirm Deposit — PAYMENT_SUBMITTED */}
-        {reservation.status === 'PAYMENT_SUBMITTED' && (
+        {/* Confirm Deposit — PAYMENT_SUBMITTED or PENDING_PAYMENT (admin can confirm directly) */}
+        {(reservation.status === 'PAYMENT_SUBMITTED' || reservation.status === 'PENDING_PAYMENT') && isAdmin && (
           <button
             onClick={() => setConfirmAction('deposit')}
             disabled={isUpdating}
             className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
           >
-            {t('actions.confirm')}
+            {t('actions.confirmDeposit')}
           </button>
         )}
 
