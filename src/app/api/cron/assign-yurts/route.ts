@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Target date = today + 3 days in America/New_York timezone
+  // Target date = today + 7 days in America/New_York timezone (T-7 fallback)
   const etDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const etToday = new Date(etDateStr + "T00:00:00Z");
   const targetDate = new Date(etToday);
-  targetDate.setUTCDate(targetDate.getUTCDate() + 3);
+  targetDate.setUTCDate(targetDate.getUTCDate() + 7);
 
   const plan = await assignYurtsForDate(targetDate);
 
