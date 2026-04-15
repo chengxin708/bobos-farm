@@ -226,6 +226,8 @@
       "phoneNumber": "Phone Number",
       "numberOfGuests": "Number of Guests",
       "capacityNotice": "Our yurts can handle {min}-{max} guests per meal. We recommend a minimum of {min} people for a full dining experience.",
+      "eventTime": "Event Time: 2:00 PM - 6:00 PM",
+      "eventTimeNote": "For custom timing, please add a note or call us to confirm.",
       "specialRequests": "Special Requests / Allergies",
       "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests..."
     },
@@ -265,6 +267,7 @@
     "title": "My Reservations",
     "subtitle": "Manage your upcoming visits",
     "pendingAssignment": "Pending assignment",
+    "confirmCode": "Confirmation",
     "upcoming": "Upcoming",
     "past": "Past",
     "deposit": "Deposit",

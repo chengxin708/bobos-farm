@@ -9,6 +9,19 @@ import {
 import { sendPushToAdmins } from "@/lib/push";
 import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
+/** Generate a unique human-readable confirmation code like BF-A3K9X2 */
+async function generateConfirmationCode(): Promise<string> {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = "BF-";
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    const existing = await prisma.reservation.findUnique({ where: { confirmationCode: code } });
+    if (!existing) return code;
+  }
+  // Fallback: use timestamp-based code
+  return `BF-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+}
+
 const createReservationBodySchema = z.object({
   yurtId: z.string().min(1).optional(), // optional for customers (auto-assigned)
   date: z.string().min(1, "date is required").refine(
@@ -185,8 +198,10 @@ export async function POST(req: NextRequest) {
       // Admin-created reservations: holdByAdmin=true
       // If deposit is $0, skip payment and go straight to CONFIRMED
       // If deposit > 0, PENDING_PAYMENT with holdByAdmin=true (holds spot but awaits payment)
+      const confirmationCode = await generateConfirmationCode();
       const reservation = await prisma.reservation.create({
         data: {
+          confirmationCode,
           userId: customer.id,
           yurtId: yurtId || null,
           date: reservationDate,
@@ -360,8 +375,10 @@ export async function POST(req: NextRequest) {
     const paymentDeadline = new Date();
     paymentDeadline.setMinutes(paymentDeadline.getMinutes() + timeoutMinutes);
 
+    const confirmationCode = await generateConfirmationCode();
     const reservation = await prisma.reservation.create({
       data: {
+        confirmationCode,
         userId: session.user.id!,
         yurtId: requestedYurtId || null, // null for customer bookings, set for admin
         date: reservationDate,

@@ -42,6 +42,7 @@ interface ReservationYurt {
 
 interface Reservation {
   id: string
+  confirmationCode: string
   userId: string
   yurtId: string | null
   date: string
@@ -507,6 +508,13 @@ export default function ReservationsPage() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Confirmation Code */}
+                  {r.confirmationCode && (
+                    <div className="text-xs font-mono text-[#6B7F5E] bg-[#E8ECE4] rounded-lg px-3 py-1.5 self-start">
+                      {t('confirmCode')}: {r.confirmationCode}
+                    </div>
+                  )}
 
                   {/* Yurt + Guests */}
                   <div className="flex items-center gap-4 text-sm text-[#8E8E93]">

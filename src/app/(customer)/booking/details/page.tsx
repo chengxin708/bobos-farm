@@ -159,6 +159,15 @@ export default function BookingDetailsPage() {
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
         <div className="max-w-[560px] mx-auto flex flex-col gap-5">
 
+          {/* Event Time Notice */}
+          <div className="bg-[#E8ECE4] rounded-xl p-3.5 flex items-start gap-2.5">
+            <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
+            <div className="text-sm text-[#3D4A35] leading-relaxed">
+              <p className="font-semibold">{t('eventTime')}</p>
+              <p className="mt-1 text-[#6B6157]">{t('eventTimeNote')}</p>
+            </div>
+          </div>
+
           {/* Contact Name */}
           <div className="flex flex-col gap-1">
             <div className="relative">

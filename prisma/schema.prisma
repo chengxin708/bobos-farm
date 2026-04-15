@@ -164,6 +164,7 @@ model MenuItem {
 
 model Reservation {
   id                     String            @id @default(cuid())
+  confirmationCode       String            @unique
   userId                 String
   yurtId                 String?
   date                   DateTime          @db.Date

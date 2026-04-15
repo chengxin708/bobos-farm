@@ -226,6 +226,8 @@
       "phoneNumber": "联系电话",
       "numberOfGuests": "用餐人数",
       "capacityNotice": "我们的蒙古包可容纳{min}至{max}位宾客。建议最少{min}人，以获得完整的用餐体验。",
+      "eventTime": "活动时间：下午 2:00 - 6:00",
+      "eventTimeNote": "如需调整时间，请在备注中说明或致电确认。",
       "specialRequests": "特殊要求 / 过敏信息",
       "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求..."
     },
@@ -265,6 +267,7 @@
     "title": "我的预订",
     "subtitle": "管理您的近期到访",
     "pendingAssignment": "待分配",
+    "confirmCode": "确认码",
     "upcoming": "即将到来",
     "past": "过往",
     "deposit": "订金",
