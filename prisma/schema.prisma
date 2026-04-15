@@ -183,6 +183,7 @@ model Reservation {
   rescheduledFrom        String?
   yurtAssignedAt         DateTime?
   yurtNotifiedAt         DateTime?
+  manuallyAssigned       Boolean           @default(false)
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 
