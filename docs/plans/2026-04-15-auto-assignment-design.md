@@ -47,18 +47,20 @@ Example: A=25→#1 (Phase 1), then B=20 pending. B's candidates = {#2} (#1 taken
 
 After Phase 2, if the count of remaining pending reservations equals the count of available rooms that can fit them, all assignments are forced — every room will be used.
 
-Assign in FIFO order (first booked → largest room).
+Assign by **guest count DESC** (larger group → larger room). Ties broken by createdAt ASC (first booked gets priority).
 
 ```
-pending = remaining pending reservations, sorted by createdAt ASC
+pending = remaining pending reservations, sorted by guestCount DESC, then createdAt ASC
 candidateRooms = rooms where capacity >= min(pending guestCounts) AND not occupied
 if pending.length > 0 AND pending.length == candidateRooms.length:
   sort candidateRooms by capacity DESC
   for i in range(pending.length):
-    assign pending[i] → candidateRooms[i]  // first arrival → biggest room
+    assign pending[i] → candidateRooms[i]  // largest group → biggest room
 ```
 
-Example: A=20(first), B=18(second). Both pending, candidates = {#2, #1}. 2 pending == 2 rooms → forced. A→#1, B→#2.
+Examples:
+- A=21, B=20 → 21→#1, 20→#2 (regardless of who booked first)
+- A=20, B=20 → first booked→#1, second→#2 (same size, FIFO tiebreak)
 
 ### Phase 4: T-7 Fallback
 
@@ -208,8 +210,9 @@ function canBook(date, guestCount):
 |--------------|---------|--------|
 | A=25, then B=20 | A→#1 (Ph1), cascade B→#2 (Ph2) | A=#1, B=#2 |
 | B=20, then A=25 | B pending, A→#1 (Ph1), cascade B→#2 (Ph2) | A=#1, B=#2 |
-| A=20, then B=20 | Both pending (Ph1-2 skip), Ph3: 2==2 → A→#1, B→#2 | A=#1, B=#2 |
-| A=20, then B=18 | Both pending, Ph3: 2==2 → A→#1, B→#2 | A=#1, B=#2 |
+| A=20, then B=20 | Both pending, Ph3: 2==2, same size → FIFO: A→#1, B→#2 | A=#1, B=#2 |
+| A=20, then B=18 | Both pending, Ph3: 2==2, 20>18 → 20→#1, 18→#2 | A=#1, B=#2 |
+| B=18, then A=21 | Both pending, Ph3: 2==2, 21>18 → 21→#1, 18→#2 | A=#1, B=#2 |
 | A=15, then B=20 | A→#3 (Ph1), B pending (1 pending, 2 rooms → skip) | A=#3, B=pending |
 
 ### Three reservations
@@ -217,7 +220,8 @@ function canBook(date, guestCount):
 | Arrival Order | Process | Result |
 |--------------|---------|--------|
 | A=15, B=20, C=25 | A→#3, C→#1, cascade B→#2 | A=#3, C=#1, B=#2 |
-| A=15, B=20, C=18 | A→#3, B+C pending, Ph3: 2==2 → B→#1, C→#2 | A=#3, B=#1, C=#2 |
+| A=15, B=20, C=18 | A→#3, B+C pending, Ph3: 2==2, 20>18 → B→#1, C→#2 | A=#3, B=#1, C=#2 |
+| A=15, B=18, C=21 | A→#3, B+C pending, Ph3: 2==2, 21>18 → C→#1, B→#2 | A=#3, C=#1, B=#2 |
 | A=25, B=15, C=20 | A→#1, B→#3, cascade C→#2 | A=#1, B=#3, C=#2 |
 
 ### Admin override

@@ -57,13 +57,14 @@ Cover all scenarios from the design doc. Key test cases:
 2. ≤16 → #3 immediately
 3. 17-24 alone → pending
 4. 25 + 20 → cascade #2
-5. 20 + 20 → Phase 3 FIFO (first→#1, second→#2)
-6. 15 + 20 + 18 → #3 + Phase 3 (20→#1, 18→#2)
-7. 15 + 20 → #3 assigned, 20 pending
-8. Admin override preserved (manuallyAssigned skipped)
-9. 15(#3) + 12 → 12 pending
-10. >28 → anomaly
-11. Full house: 25 + 20 + 15 → all assigned
+5. 20 + 20 → Phase 3: same size, FIFO tiebreak (first→#1, second→#2)
+6. 21 + 20 → Phase 3: 21>20, so 21→#1, 20→#2 (regardless of booking order)
+7. 15 + 20 + 18 → #3 + Phase 3: 20>18, so 20→#1, 18→#2
+8. 15 + 20 → #3 assigned, 20 pending
+9. Admin override preserved (manuallyAssigned skipped)
+10. 15(#3) + 12 → 12 pending
+11. >28 → anomaly
+12. Full house: 25 + 20 + 15 → all assigned
 
 See design doc Task 1 in previous plan version for full test code. Add `manuallyAssigned: false` to all test inputs and `manuallyAssigned: true` test for admin override.
 
