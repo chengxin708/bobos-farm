@@ -95,6 +95,7 @@ model Account {
 model Yurt {
   id          String     @id @default(cuid())
   name        String
+  alias       String?
   description String?
   capacity    Int
   status      YurtStatus @default(ACTIVE)
