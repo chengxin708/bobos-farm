@@ -350,6 +350,27 @@ async function getActiveReservations(
   return reservations;
 }
 
+/** Fetch non-CANCELLED/EXPIRED reservations with deterministic fields. */
+async function getActiveReservationsFull(
+  targetDate: Date
+): Promise<DeterministicReservationInput[]> {
+  const reservations = await prisma.reservation.findMany({
+    where: {
+      date: targetDate,
+      status: { notIn: ["CANCELLED", "EXPIRED"] },
+    },
+    select: {
+      id: true,
+      guestCount: true,
+      yurtId: true,
+      manuallyAssigned: true,
+      createdAt: true,
+    },
+  });
+
+  return reservations;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────
 
 /**
@@ -391,6 +412,56 @@ export async function simulateWithNewReservation(
   const plan = computeBestFitDecreasing(availableYurts, virtualReservations);
 
   return { assignable: plan.anomalies.length === 0 };
+}
+
+/**
+ * Run deterministic assignment for a target date.
+ * Fetches data, computes assignments, writes newly assigned yurtIds to DB,
+ * and notifies admins of anomalies.
+ */
+export async function tryDeterministicAssignment(
+  targetDate: Date
+): Promise<DeterministicResult> {
+  const [availableYurts, reservations] = await Promise.all([
+    getAvailableYurts(targetDate),
+    getActiveReservationsFull(targetDate),
+  ]);
+
+  const result = computeDeterministicAssignment(availableYurts, reservations);
+
+  // Find newly assigned reservations (had no yurtId before)
+  const previouslyUnassigned = new Set(
+    reservations.filter((r) => !r.yurtId).map((r) => r.id)
+  );
+
+  const updates = result.assignments
+    .filter((a) => previouslyUnassigned.has(a.reservationId))
+    .map((a) =>
+      prisma.reservation.update({
+        where: { id: a.reservationId },
+        data: {
+          yurtId: a.yurtId,
+          yurtAssignedAt: new Date(),
+        },
+      })
+    );
+
+  if (updates.length > 0) {
+    await prisma.$transaction(updates);
+  }
+
+  // Notify admins of anomalies
+  if (result.anomalies.length > 0) {
+    const dateStr = targetDate.toISOString().split("T")[0];
+    await sendPushToAdmins({
+      title: "Yurt Assignment Issue",
+      body: `${dateStr}: ${result.anomalies.length} reservation(s) cannot be auto-assigned`,
+      url: `/admin/calendar?date=${dateStr}`,
+      tag: `yurt-anomaly-${dateStr}`,
+    });
+  }
+
+  return result;
 }
 
 /**
