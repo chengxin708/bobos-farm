@@ -341,17 +341,17 @@ export async function PATCH(
         );
       }
 
-      // Check 3+ day rule
+      // Check 7+ day rule
       const now = new Date();
       const currentDate = new Date(reservation.date);
       const diffMs = currentDate.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-      if (diffDays < 3 && !isAdmin) {
+      if (diffDays < 7 && !isAdmin) {
         return NextResponse.json(
           {
             error:
-              "Rescheduling requires at least 3 days before the reservation date",
+              "Rescheduling requires at least 7 days before the reservation date",
           },
           { status: 400 }
         );
@@ -451,19 +451,9 @@ export async function PATCH(
         },
       });
 
-      // Recheck anomalies for old and new dates
-      void checkDateAnomalies(new Date(reservation.date)); // old date
-      void checkDateAnomalies(newReservationDate); // new date
-
-      // If new date within T-3, assign immediately
-      const reschNow = new Date();
-      reschNow.setHours(0, 0, 0, 0);
-      const reschDiff = Math.round(
-        (newReservationDate.getTime() - reschNow.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      if (reschDiff <= 3) {
-        void assignYurtsForDate(newReservationDate);
-      }
+      // Trigger deterministic assignment for both old and new dates
+      void tryDeterministicAssignment(new Date(reservation.date)); // old date
+      void tryDeterministicAssignment(newReservationDate); // new date
 
       return NextResponse.json(updated);
     }
@@ -584,12 +574,16 @@ export async function PATCH(
         data: {
           yurtId: newYurtId,
           yurtAssignedAt: new Date(),
+          manuallyAssigned: true,
         },
         include: {
           user: { select: { id: true, name: true, email: true, phone: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
+
+      // Cascade: reassign other reservations on this date
+      void tryDeterministicAssignment(new Date(reservation.date));
 
       // Log activity
       await prisma.activityLog.create({
@@ -716,10 +710,21 @@ export async function PATCH(
       // Build update data
       const updateData: Record<string, unknown> = {};
       if (dateChanged) updateData.date = targetDate;
-      if (yurtChanged) updateData.yurtId = yurtId;
+      if (yurtChanged) {
+        updateData.yurtId = yurtId;
+        updateData.manuallyAssigned = true;
+      }
       if (guestCount !== undefined) updateData.guestCount = guestCount;
       if (specialRequests !== undefined) updateData.specialRequests = specialRequests;
       if (newDepositAmount !== undefined) updateData.depositAmount = newDepositAmount;
+
+      // Release auto-assignment if date or guestCount changed (not manual)
+      const guestCountChanged = guestCount !== undefined && guestCount !== reservation.guestCount;
+      if (!reservation.manuallyAssigned && (dateChanged || guestCountChanged) && !yurtChanged) {
+        updateData.yurtId = null;
+        updateData.yurtAssignedAt = null;
+        updateData.manuallyAssigned = false;
+      }
 
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json({ error: "No fields to update" }, { status: 400 });
@@ -772,6 +777,12 @@ export async function PATCH(
         }).catch((err) =>
           console.error("[email] reservation modified notification failed:", err)
         );
+      }
+
+      // Trigger deterministic assignment for affected dates
+      void tryDeterministicAssignment(new Date(updated.date));
+      if (dateChanged) {
+        void tryDeterministicAssignment(new Date(reservation.date));
       }
 
       return NextResponse.json(updated);
