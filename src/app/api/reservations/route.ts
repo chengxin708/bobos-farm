@@ -46,6 +46,7 @@ const adminCreateReservationSchema = z.object({
   guestEmail: z.union([z.string().email("Invalid email"), z.literal("")]).optional(),
   guestPhone: z.string().min(1, "guestPhone is required"),
   customDeposit: z.number().min(0).optional(),
+  holdAssignment: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { yurtId, date, guestCount, specialRequests, guestName, guestPhone } = parsed.data;
+      const { yurtId, date, guestCount, specialRequests, guestName, guestPhone, holdAssignment } = parsed.data;
       const guestEmail = parsed.data.guestEmail || '';
       const reservationDate = new Date(date);
 
@@ -260,13 +261,13 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Auto-assign yurt if not manually specified
-      if (!yurtId) {
+      // Auto-assign yurt if not manually specified and not held
+      if (!yurtId && !holdAssignment) {
         await tryDeterministicAssignment(reservationDate);
       }
 
       // Re-fetch to include updated yurt assignment
-      const finalReservation = !yurtId
+      const finalReservation = !yurtId && !holdAssignment
         ? await prisma.reservation.findUnique({
             where: { id: reservation.id },
             include: {

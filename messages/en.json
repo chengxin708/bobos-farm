@@ -1453,7 +1453,8 @@
       "tooSmall": "Too small",
       "capacityWarning": "Guest count ({guests}) exceeds room capacity ({capacity})",
       "yurtOccupied": "This room is already booked on this date",
-      "noRoomAvailable": "No available room can accommodate this many guests on this date"
+      "noRoomAvailable": "No available room can accommodate this many guests on this date",
+      "holdNoAssign": "Hold (no auto-assign)"
     },
     "reports": {
       "title": "Reports & Analytics",

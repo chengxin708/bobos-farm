@@ -115,7 +115,8 @@ export default function CreateReservationModal({
           guestEmail,
           guestPhone,
           date,
-          yurtId: yurtId || undefined,
+          yurtId: yurtId === '__hold__' ? undefined : (yurtId || undefined),
+          holdAssignment: yurtId === '__hold__' ? true : undefined,
           guestCount,
           specialRequests: specialRequests || undefined,
           ...(isAdmin && customDeposit !== '' ? { customDeposit: Number(customDeposit) } : {}),
@@ -295,6 +296,7 @@ export default function CreateReservationModal({
                 }}
               >
                 <option value="">{t('autoAssign')}</option>
+                <option value="__hold__">{t('holdNoAssign')}</option>
                 {activeYurts.map(y => {
                   const isOccupied = occupiedYurtIds.has(y.id)
                   const tooSmall = guestCount > y.capacity

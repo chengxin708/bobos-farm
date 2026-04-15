@@ -1453,7 +1453,8 @@
       "tooSmall": "容量不足",
       "capacityWarning": "人数（{guests}人）超过该房间容量（{capacity}人）",
       "yurtOccupied": "该房间在此日期已被预订",
-      "noRoomAvailable": "该日期没有可容纳此人数的空闲房间"
+      "noRoomAvailable": "该日期没有可容纳此人数的空闲房间",
+      "holdNoAssign": "暂不分配（Hold）"
     },
     "reports": {
       "title": "数据报告",

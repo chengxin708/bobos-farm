@@ -28,17 +28,18 @@ function formatDateLocal(dateStr: string, locale: string): string {
   })
 }
 
-function getNext7Days(): { start: string; end: string } {
+function getDateRange(): { start: string; end: string } {
   const now = new Date()
   const start = now.toISOString().split('T')[0]
-  const end = new Date(now.getTime() + 7 * 86400000).toISOString().split('T')[0]
+  // Show all future dates (up to 180 days) to catch all unassigned reservations
+  const end = new Date(now.getTime() + 180 * 86400000).toISOString().split('T')[0]
   return { start, end }
 }
 
 export default function UpcomingAssignments() {
   const t = useTranslations('admin.dashboard')
   const router = useRouter()
-  const { start, end } = getNext7Days()
+  const { start, end } = getDateRange()
 
   const { data } = useSWR<Record<string, DaySummary>>(
     `/api/calendar-summary?startDate=${start}&endDate=${end}`,
@@ -55,10 +56,10 @@ export default function UpcomingAssignments() {
     cur.setDate(cur.getDate() + 1)
   }
 
-  // Filter to only dates with reservations
+  // Filter to only dates with unassigned reservations
   const rows = dates
     .map(d => ({ date: d, summary: data?.[d] }))
-    .filter(r => r.summary && r.summary.reservationCount > 0)
+    .filter(r => r.summary && r.summary.unassignedCount > 0)
 
   if (!data || rows.length === 0) return null
 
