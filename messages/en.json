@@ -247,8 +247,8 @@
       "uploadTitle": "Drop your payment screenshot here",
       "uploadBrowse": "or click to browse",
       "uploadFormats": "Supports: JPG, PNG, PDF (max 5MB)",
-      "cancellationPolicy": "I understand the cancellation policy: cancellation within 3 days of the reservation date are non-refundable.",
-      "cancellationPolicyText": "I understand that cancellations within 3 days of the reservation date are non-refundable.",
+      "cancellationPolicy": "I understand the cancellation policy: cancellation within 7 days of the reservation date are non-refundable.",
+      "cancellationPolicyText": "I understand that cancellations within 7 days of the reservation date are non-refundable.",
       "cancellationPolicyLink": "View full cancellation policy",
       "completedTransfer": "I Have Completed the Transfer",
       "cancelReservation": "Cancel reservation",
@@ -313,8 +313,8 @@
     "cancelDialog": {
       "title": "Cancel Reservation?",
       "message": "Are you sure? This cannot be undone.",
-      "refundEligible": "Since your reservation is 3+ days away, your deposit will be refunded.",
-      "refundNotEligible": "Since your reservation is less than 3 days away, your deposit will not be refunded.",
+      "refundEligible": "Since your reservation is 7+ days away, your deposit will be refunded.",
+      "refundNotEligible": "Since your reservation is less than 7 days away, your deposit will not be refunded.",
       "reasonLabel": "Reason (optional)",
       "reasonPlaceholder": "Let us know why you're cancelling...",
       "keep": "Keep Reservation",
@@ -439,7 +439,7 @@
       },
       "booking": {
         "title": "Booking & Cancellation",
-        "body": "Reservations are confirmed once a deposit is received and verified by our team. Cancellations made 3 or more days before the reservation date are eligible for a full deposit refund. Cancellations made less than 3 days before the reservation date will result in forfeiture of the deposit. Please review our full cancellation policy for details."
+        "body": "Reservations are confirmed once a deposit is received and verified by our team. Cancellations made 7 or more days before the reservation date are eligible for a full deposit refund. Cancellations made less than 7 days before the reservation date will result in forfeiture of the deposit. Please review our full cancellation policy for details."
       },
       "deposits": {
         "title": "Deposits",
@@ -463,12 +463,12 @@
       },
       "refund": {
         "eligible": {
-          "title": "3+ days before reservation: Full refund",
-          "desc": "Cancel at least 3 days before your reservation date and receive a full refund of your $300 deposit."
+          "title": "7+ days before reservation: Full refund",
+          "desc": "Cancel at least 7 days before your reservation date and receive a full refund of your $300 deposit."
         },
         "nonEligible": {
-          "title": "Less than 3 days before reservation: Deposit forfeited",
-          "desc": "Cancellations made within 3 days of the reservation date are non-refundable, as ingredients have already been ordered and preparation has begun."
+          "title": "Less than 7 days before reservation: Deposit forfeited",
+          "desc": "Cancellations made within 7 days of the reservation date are non-refundable, as ingredients have already been ordered and preparation has begun."
         }
       },
       "howToCancel": {
@@ -981,8 +981,8 @@
       "swapSuccess": "Room swap successful",
       "optimizationAvailable": "Better assignment available",
       "applySuggestion": "Apply suggestion",
-      "currentWaste": "Current waste",
-      "suggestedWaste": "Suggested waste"
+      "currentWaste": "Current unused",
+      "suggestedWaste": "Suggested unused"
     },
     "menu": {
       "title": "Menu Management",

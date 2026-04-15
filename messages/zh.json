@@ -247,8 +247,8 @@
       "uploadTitle": "将付款截图拖放至此处",
       "uploadBrowse": "或点击选择文件",
       "uploadFormats": "支持格式：JPG、PNG、PDF（最大5MB）",
-      "cancellationPolicy": "我了解取消政策：预订日期前3天内取消不予退款。",
-      "cancellationPolicyText": "我了解预订日期前3天内取消不予退款。",
+      "cancellationPolicy": "我了解取消政策：预订日期前7天内取消不予退款。",
+      "cancellationPolicyText": "我了解预订日期前7天内取消不予退款。",
       "cancellationPolicyLink": "查看完整取消政策",
       "completedTransfer": "我已完成转账",
       "cancelReservation": "取消预订",
@@ -313,8 +313,8 @@
     "cancelDialog": {
       "title": "取消预订？",
       "message": "确定吗？此操作无法撤销。",
-      "refundEligible": "您的预订距离入住3天以上，订金将予以退还。",
-      "refundNotEligible": "您的预订距离入住不足3天，订金将不予退还。",
+      "refundEligible": "您的预订距离入住7天以上，订金将予以退还。",
+      "refundNotEligible": "您的预订距离入住不足7天，订金将不予退还。",
       "reasonLabel": "原因（选填）",
       "reasonPlaceholder": "告诉我们您取消的原因...",
       "keep": "保留预订",
@@ -439,7 +439,7 @@
       },
       "booking": {
         "title": "预订与取消",
-        "body": "预订在收到并验证定金后确认。预订日期前3天或更早取消可获得全额定金退款。预订日期前不足3天取消将导致定金不予退还。请查看我们的完整取消政策了解详情。"
+        "body": "预订在收到并验证定金后确认。预订日期前7天或更早取消可获得全额定金退款。预订日期前不足7天取消将导致定金不予退还。请查看我们的完整取消政策了解详情。"
       },
       "deposits": {
         "title": "定金",
@@ -463,12 +463,12 @@
       },
       "refund": {
         "eligible": {
-          "title": "预订前3天以上取消：全额退款",
-          "desc": "在预订日期前至少3天取消，可获得300美元定金的全额退款。"
+          "title": "预订前7天以上取消：全额退款",
+          "desc": "在预订日期前至少7天取消，可获得300美元定金的全额退款。"
         },
         "nonEligible": {
-          "title": "预订前不足3天取消：定金不予退还",
-          "desc": "在预订日期前3天内取消不予退款，因为食材已经订购，准备工作已经开始。"
+          "title": "预订前不足7天取消：定金不予退还",
+          "desc": "在预订日期前7天内取消不予退款，因为食材已经订购，准备工作已经开始。"
         }
       },
       "howToCancel": {
@@ -981,8 +981,8 @@
       "swapSuccess": "包房互换成功",
       "optimizationAvailable": "发现更优分配方案",
       "applySuggestion": "应用建议",
-      "currentWaste": "当前浪费",
-      "suggestedWaste": "建议浪费"
+      "currentWaste": "当前空余",
+      "suggestedWaste": "建议空余"
     },
     "menu": {
       "title": "菜单管理",

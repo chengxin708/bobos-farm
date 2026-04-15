@@ -790,7 +790,7 @@ export default function ReservationsPage() {
       {confirmCancelId && (() => {
         const reservation = reservations?.find(r => r.id === confirmCancelId)
         const daysUntil = reservation ? getDaysUntil(reservation.date) : 0
-        const refundEligible = daysUntil >= 3
+        const refundEligible = daysUntil >= 7
 
         return (
           <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4">
