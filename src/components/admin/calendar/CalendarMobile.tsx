@@ -585,12 +585,11 @@ export default function CalendarMobile() {
                   ref={isToday ? todayPillRef : undefined}
                   onClick={() => setSelectedDate(new Date(d))}
                   className={`
-                    flex flex-col items-center py-1.5 px-1.5 min-w-[48px] rounded-xl shrink-0
-                    ${isSelected && !isToday ? 'ring-2 ring-[#6B7F5E] bg-[#6B7F5E]/5' : ''}
-                    ${isToday && isSelected ? 'bg-[#6B7F5E] text-white' : ''}
-                    ${isToday && !isSelected ? 'bg-[#6B7F5E]/15' : ''}
-                    ${!isToday && !isSelected ? '' : ''}
-                    ${isNewMonth && !isToday && !isSelected ? 'border-l-2 border-[#E8ECE4]' : ''}
+                    flex flex-col items-center py-1.5 px-1.5 min-w-[48px] rounded-xl shrink-0 border-2
+                    ${isSelected && !isToday ? 'border-[#6B7F5E] bg-[#6B7F5E]/10' : ''}
+                    ${isToday && isSelected ? 'border-[#6B7F5E] bg-[#6B7F5E] text-white' : ''}
+                    ${isToday && !isSelected ? 'border-[#6B7F5E]/30 bg-[#6B7F5E]/10' : ''}
+                    ${!isToday && !isSelected ? 'border-transparent' : ''}
                   `}
                 >
                   <span className={`text-[10px] font-medium ${isToday && isSelected ? 'text-white/80' : 'text-[#8A7E6B]'}`}>
