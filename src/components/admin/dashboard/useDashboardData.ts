@@ -107,23 +107,23 @@ export function formatCurrency(amount: number): string {
 export function getWeekRange(): { start: string; end: string; dates: Date[] } {
   const now = new Date()
   const day = now.getDay()
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - ((day + 6) % 7))
-  monday.setHours(0, 0, 0, 0)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  sunday.setHours(23, 59, 59, 999)
+  const sunday = new Date(now)
+  sunday.setDate(now.getDate() - day) // Sunday start (US convention)
+  sunday.setHours(0, 0, 0, 0)
+  const saturday = new Date(sunday)
+  saturday.setDate(sunday.getDate() + 6)
+  saturday.setHours(23, 59, 59, 999)
 
   const dates: Date[] = []
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
+    const d = new Date(sunday)
+    d.setDate(sunday.getDate() + i)
     dates.push(d)
   }
 
   return {
-    start: monday.toISOString().split('T')[0],
-    end: sunday.toISOString().split('T')[0],
+    start: sunday.toISOString().split('T')[0],
+    end: saturday.toISOString().split('T')[0],
     dates,
   }
 }

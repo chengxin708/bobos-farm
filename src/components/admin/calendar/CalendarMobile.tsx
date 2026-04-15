@@ -73,13 +73,11 @@ function formatDate(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-/** Get the Monday-start week range for a given date */
+/** Get the Sunday-start week range for a given date (US convention) */
 function getWeekStart(baseDate: Date): Date {
   const d = new Date(baseDate)
-  const day = d.getDay()
-  // Shift to Monday start: Sunday (0) maps to -6, Mon (1) maps to 0, etc.
-  const diff = day === 0 ? -6 : 1 - day
-  d.setDate(d.getDate() + diff)
+  const day = d.getDay() // 0=Sunday, 1=Monday, ...
+  d.setDate(d.getDate() - day)
   d.setHours(0, 0, 0, 0)
   return d
 }
@@ -94,12 +92,12 @@ function getWeekDays(weekStart: Date): Date[] {
   return days
 }
 
-/** Calculate the ISO week number of the month (1-based) */
+/** Calculate the week number of the month (1-based, Sunday start) */
 function getWeekOfMonth(date: Date): number {
   const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
-  const firstMonday = getWeekStart(firstOfMonth)
-  // If firstMonday is before the 1st, the first partial week counts as week 1
-  const diff = date.getTime() - firstMonday.getTime()
+  const firstSunday = getWeekStart(firstOfMonth)
+  // If firstSunday is before the 1st, the first partial week counts as week 1
+  const diff = date.getTime() - firstSunday.getTime()
   return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1
 }
 
