@@ -304,7 +304,7 @@ export default function ReservationDetail({
               {t(`status.${reservation.status}`)}
             </span>
           )}
-          <span className="text-xs text-[#8C8478]">#{reservation.id.slice(-8)}</span>
+          <span className="text-xs font-mono text-[#8C8478]">{reservation.confirmationCode || reservation.id.slice(-8)}</span>
         </div>
 
         {/* Reservation Info */}
