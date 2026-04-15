@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -139,8 +139,9 @@ export default function CalendarMobile() {
   today.setHours(0, 0, 0, 0)
   const todayStr = formatDate(today)
 
-  const [weekStart, setWeekStart] = useState(() => getWeekStart(today))
+  const [scrollOffset, setScrollOffset] = useState(0) // days offset from today
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
+  const dateStripRef = useRef<HTMLDivElement>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createYurtId, setCreateYurtId] = useState<string | undefined>(undefined)
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
@@ -176,20 +177,28 @@ export default function CalendarMobile() {
     return () => window.removeEventListener('keydown', handler)
   }, [swapSourceId])
 
-  // ── Week days ────────────────────────────────────────────────
+  // ── Date strip — scrollable from today ───────────────────────
 
-  const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart])
+  // Generate 21 days centered around scrollOffset for a wide visible range
+  const visibleDays = useMemo(() => {
+    const days: Date[] = []
+    // Show from 7 days before scrollOffset to 13 days after
+    for (let i = scrollOffset - 7; i <= scrollOffset + 13; i++) {
+      const d = new Date(today)
+      d.setDate(today.getDate() + i)
+      days.push(d)
+    }
+    return days
+  }, [scrollOffset, today])
 
-  const weekEnd = useMemo(() => {
-    const end = new Date(weekStart)
-    end.setDate(weekStart.getDate() + 6)
-    return end
-  }, [weekStart])
-
-  const dateRange = useMemo(() => ({
-    start: formatDate(weekStart),
-    end: formatDate(weekEnd),
-  }), [weekStart, weekEnd])
+  // Data fetch range: wider to avoid refetching on small scrolls
+  const dateRange = useMemo(() => {
+    const start = new Date(today)
+    start.setDate(today.getDate() + scrollOffset - 7)
+    const end = new Date(today)
+    end.setDate(today.getDate() + scrollOffset + 13)
+    return { start: formatDate(start), end: formatDate(end) }
+  }, [scrollOffset, today])
 
   // ── Data fetching ────────────────────────────────────────────
 
@@ -359,21 +368,10 @@ export default function CalendarMobile() {
 
   // ── Navigation ───────────────────────────────────────────────
 
-  const prevWeek = useCallback(() => {
-    setWeekStart(prev => {
-      const d = new Date(prev)
-      d.setDate(d.getDate() - 7)
-      return d
-    })
-  }, [])
-
-  const nextWeek = useCallback(() => {
-    setWeekStart(prev => {
-      const d = new Date(prev)
-      d.setDate(d.getDate() + 7)
-      return d
-    })
-  }, [])
+  const goToToday = useCallback(() => {
+    setScrollOffset(0)
+    setSelectedDate(new Date(today))
+  }, [today])
 
   // ── Selected date details ────────────────────────────────────
 
@@ -451,20 +449,12 @@ export default function CalendarMobile() {
     }
   }
 
-  // ── Week label ───────────────────────────────────────────────
+  // ── Month/year label from selected date ──────────────────────
 
-  // Use the middle of the week to determine the month context
-  const weekMidDate = useMemo(() => {
-    const mid = new Date(weekStart)
-    mid.setDate(mid.getDate() + 3)
-    return mid
-  }, [weekStart])
-
-  const weekLabel = useMemo(() => {
-    const month = t(`monthNames.${weekMidDate.getMonth()}`)
-    const weekNum = getWeekOfMonth(weekMidDate)
-    return t('weekLabel', { month, week: String(weekNum) })
-  }, [weekMidDate, t])
+  const monthYearLabel = useMemo(() => {
+    const month = t(`monthNames.${selectedDate.getMonth()}`)
+    return `${month} ${selectedDate.getFullYear()}`
+  }, [selectedDate, t])
 
   // ── Selected date heading ────────────────────────────────────
 
@@ -531,66 +521,76 @@ export default function CalendarMobile() {
       <div className="flex-1 flex flex-col overflow-auto">
         {/* ── Week Selector Header ────────────────────────── */}
         <div className="bg-white border-b border-[#E8ECE4] px-4 pt-3 pb-2">
-          {/* Week navigation row */}
+          {/* Header row: month label + today button + create */}
           <div className="flex items-center justify-between mb-3">
-            <div /> {/* spacer */}
-            <div className="flex items-center gap-4">
-            <button
-              onClick={prevWeek}
-              className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
-            >
-              <ChevronLeft size={20} className="text-[#2C2416]" />
-            </button>
             <span className="text-[15px] font-semibold text-[#2C2416]">
-              {weekLabel}
+              {monthYearLabel}
             </span>
-            <button
-              onClick={nextWeek}
-              className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
-            >
-              <ChevronRight size={20} className="text-[#2C2416]" />
-            </button>
+            <div className="flex items-center gap-2">
+              {scrollOffset !== 0 && (
+                <button
+                  onClick={goToToday}
+                  className="px-2.5 py-1 text-[12px] font-semibold text-[#6B7F5E] border border-[#6B7F5E] rounded-full hover:bg-[#6B7F5E]/5 transition-colors"
+                >
+                  {t('today')}
+                </button>
+              )}
+              <button
+                onClick={() => { setCreateYurtId(undefined); setShowCreateModal(true) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
+              >
+                <CalendarPlus size={14} />
+                {t('createShort')}
+              </button>
             </div>
-            <button
-              onClick={() => { setCreateYurtId(undefined); setShowCreateModal(true) }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
-            >
-              <CalendarPlus size={14} />
-              {t('createShort')}
-            </button>
           </div>
 
-          {/* Day buttons row */}
-          <div className="grid grid-cols-7 gap-1">
-            {weekDays.map((d) => {
+          {/* Scrollable date strip */}
+          <div
+            ref={dateStripRef}
+            className="flex gap-1 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1 snap-x"
+            onScroll={(e) => {
+              const el = e.currentTarget
+              // Load more dates when near edges
+              if (el.scrollLeft < 60) {
+                setScrollOffset(prev => prev - 7)
+              } else if (el.scrollWidth - el.scrollLeft - el.clientWidth < 60) {
+                setScrollOffset(prev => prev + 7)
+              }
+            }}
+          >
+            {visibleDays.map((d) => {
               const dateStr = formatDate(d)
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selectedDateStr
               const hasBookings = datesWithBookings.has(dateStr)
               const hasPending = datesWithPending.has(dateStr)
+              const isNewMonth = d.getDate() === 1
 
               return (
                 <button
                   key={dateStr}
                   onClick={() => setSelectedDate(new Date(d))}
                   className={`
-                    flex flex-col items-center py-1.5 rounded-xl transition-all duration-150
+                    flex flex-col items-center py-1.5 px-2 min-w-[44px] rounded-xl transition-all duration-150 shrink-0 snap-start
                     ${isSelected && !isToday ? 'ring-2 ring-[#6B7F5E] bg-[#6B7F5E]/5' : ''}
-                    ${isToday ? 'bg-[#6B7F5E] text-white' : ''}
+                    ${isToday && isSelected ? 'bg-[#6B7F5E] text-white' : ''}
+                    ${isToday && !isSelected ? 'bg-[#6B7F5E]/20' : ''}
                     ${!isToday && !isSelected ? 'hover:bg-[#F5F2ED]' : ''}
+                    ${isNewMonth && !isToday && !isSelected ? 'border-l-2 border-[#E8ECE4]' : ''}
                   `}
                 >
-                  <span className={`text-[11px] font-medium ${isToday ? 'text-white/80' : 'text-[#8A7E6B]'}`}>
+                  <span className={`text-[11px] font-medium ${isToday && isSelected ? 'text-white/80' : 'text-[#8A7E6B]'}`}>
                     {t(`dayShort.${d.getDay()}`)}
                   </span>
-                  <span className={`text-[15px] font-semibold mt-0.5 ${isToday ? 'text-white' : 'text-[#2C2416]'}`}>
+                  <span className={`text-[15px] font-semibold mt-0.5 ${isToday && isSelected ? 'text-white' : 'text-[#2C2416]'}`}>
                     {d.getDate()}
                   </span>
-                  {/* Booking dot — yellow if has pending, green if all assigned */}
+                  {/* Booking dot */}
                   <div className="h-1.5 mt-0.5">
                     {hasBookings && (
                       <div className={`w-1.5 h-1.5 rounded-full ${
-                        isToday
+                        isToday && isSelected
                           ? 'bg-white'
                           : hasPending
                             ? 'bg-[#E8B730]'
