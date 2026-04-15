@@ -434,7 +434,7 @@ export default function ReservationDetail({
                     {t('detail.reconfirmDeposit')}
                   </button>
                 )}
-                {/* Mark as Refunded — for CONFIRMED or PENDING deposits on cancelled/active reservations */}
+                {/* Mark as Refunded — for CONFIRMED deposits */}
                 {reservation.depositStatus === 'CONFIRMED' && isAdmin && (
                   <button
                     onClick={handleMarkRefunded}
@@ -442,6 +442,16 @@ export default function ReservationDetail({
                     className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#2980B9]/10 text-[#2980B9] hover:bg-[#2980B9]/20 disabled:opacity-50 transition-colors"
                   >
                     {t('detail.markRefunded')}
+                  </button>
+                )}
+                {/* Re-mark as Confirmed — for REFUNDED deposits */}
+                {reservation.depositStatus === 'REFUNDED' && isAdmin && (
+                  <button
+                    onClick={handleRelockDeposit}
+                    disabled={savingDeposit}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5B8C3E]/10 text-[#5B8C3E] hover:bg-[#5B8C3E]/20 disabled:opacity-50 transition-colors"
+                  >
+                    {t('detail.markConfirmed')}
                   </button>
                 )}
               </div>

@@ -831,6 +831,39 @@ export async function PATCH(
         },
       });
 
+      // Log deposit status changes
+      if (parsedAdmin.data.depositStatus && parsedAdmin.data.depositStatus !== reservation.depositStatus) {
+        await prisma.activityLog.create({
+          data: {
+            userId: session.user.id,
+            action: "DEPOSIT_STATUS_CHANGED",
+            targetType: "Reservation",
+            targetId: id,
+            details: {
+              from: reservation.depositStatus,
+              to: parsedAdmin.data.depositStatus,
+              depositAmount: reservation.depositAmount,
+            },
+          },
+        });
+      }
+
+      // Log status changes
+      if (parsedAdmin.data.status && parsedAdmin.data.status !== reservation.status) {
+        await prisma.activityLog.create({
+          data: {
+            userId: session.user.id,
+            action: parsedAdmin.data.status === "CONFIRMED" ? "DEPOSIT_CONFIRMED" : "STATUS_CHANGED",
+            targetType: "Reservation",
+            targetId: id,
+            details: {
+              from: reservation.status,
+              to: parsedAdmin.data.status,
+            },
+          },
+        });
+      }
+
       // Fire-and-forget: email + push notification when deposit is confirmed
       if (
         parsedAdmin.data.depositStatus === "CONFIRMED" &&

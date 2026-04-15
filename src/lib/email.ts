@@ -15,7 +15,7 @@ let _resend: Resend | null = null;
 let _apiKeyChecked = false;
 
 async function getResend(): Promise<Resend | null> {
-  if (_resend && _apiKeyChecked) return _resend;
+  if (_resend) return _resend;
 
   // Try DB first
   const dbSetting = await prisma.systemSetting.findUnique({
@@ -23,11 +23,10 @@ async function getResend(): Promise<Resend | null> {
   }).catch(() => null);
 
   const apiKey = dbSetting?.value || process.env.RESEND_API_KEY;
-  _apiKeyChecked = true;
 
   if (!apiKey) {
     console.warn("[Email] No Resend API key configured (DB or env)");
-    return null;
+    return null; // Don't cache failure — retry next call
   }
 
   _resend = new Resend(apiKey);

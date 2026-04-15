@@ -132,6 +132,10 @@ export function activityLogText(log: ActivityLog, t: (key: string, values?: any)
       return t('activityLog.paymentSubmitted', { actor })
     case 'DEPOSIT_CONFIRMED':
       return t('activityLog.depositConfirmed', { actor })
+    case 'DEPOSIT_STATUS_CHANGED':
+      return t('activityLog.depositStatusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
+    case 'STATUS_CHANGED':
+      return t('activityLog.statusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
     case 'ORDER_SUBMITTED':
       return t('activityLog.orderSubmitted', { actor })
     case 'ORDER_UPDATED':
