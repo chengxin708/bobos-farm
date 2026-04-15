@@ -260,7 +260,23 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return NextResponse.json(reservation, { status: 201 });
+      // Auto-assign yurt if not manually specified
+      if (!yurtId) {
+        await tryDeterministicAssignment(reservationDate);
+      }
+
+      // Re-fetch to include updated yurt assignment
+      const finalReservation = !yurtId
+        ? await prisma.reservation.findUnique({
+            where: { id: reservation.id },
+            include: {
+              user: { select: { id: true, name: true, email: true, phone: true } },
+              yurt: { select: { id: true, name: true, capacity: true } },
+            },
+          })
+        : reservation;
+
+      return NextResponse.json(finalReservation || reservation, { status: 201 });
     }
 
     // ── Customer branch: standard reservation creation ──
