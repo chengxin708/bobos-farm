@@ -21,6 +21,22 @@ export interface AssignmentPlan {
   anomalies: Anomaly[];
 }
 
+// ─── Deterministic Assignment Types ─────────────────────────────────
+
+export interface DeterministicReservationInput {
+  id: string;
+  guestCount: number;
+  yurtId: string | null;
+  manuallyAssigned: boolean;
+  createdAt: Date;
+}
+
+export interface DeterministicResult {
+  assignments: AssignmentResult[];
+  pending: string[];
+  anomalies: Anomaly[];
+}
+
 // ─── Internal pure function (no DB queries) ──────────────────────────
 
 interface YurtInput {
@@ -132,6 +148,165 @@ function computeBestFitDecreasing(
   }
 
   return { assignments, anomalies };
+}
+
+// ─── Deterministic Assignment (3 phases) ────────────────────────────
+
+/**
+ * Pure deterministic assignment algorithm.
+ *
+ * Phase 1: Immediate deterministic — single-candidate + smallest-room optimization
+ * Phase 2: Single-candidate propagation (cascade loop)
+ * Phase 3: Group determinism — N pending == N rooms → assign by size
+ */
+export function computeDeterministicAssignment(
+  availableYurts: YurtInput[],
+  reservations: DeterministicReservationInput[]
+): DeterministicResult {
+  const assignments: AssignmentResult[] = [];
+  const anomalies: Anomaly[] = [];
+
+  const yurtMap = new Map(availableYurts.map((y) => [y.id, y]));
+  const usedYurtIds = new Set<string>();
+  const maxCapacity =
+    availableYurts.length > 0
+      ? Math.max(...availableYurts.map((y) => y.capacity))
+      : 0;
+  const sortedYurtsAsc = [...availableYurts].sort(
+    (a, b) => a.capacity - b.capacity
+  );
+
+  function assignRes(res: DeterministicReservationInput, yurt: YurtInput) {
+    assignments.push({
+      reservationId: res.id,
+      yurtId: yurt.id,
+      yurtName: yurt.name,
+      guestCount: res.guestCount,
+    });
+    usedYurtIds.add(yurt.id);
+  }
+
+  function getAvailableRoomsFor(guestCount: number): YurtInput[] {
+    return sortedYurtsAsc.filter(
+      (y) => !usedYurtIds.has(y.id) && y.capacity >= guestCount
+    );
+  }
+
+  // Phase 0: Lock existing yurtId assignments (manuallyAssigned or auto-assigned)
+  for (const res of reservations) {
+    if (res.yurtId) {
+      const yurt = yurtMap.get(res.yurtId);
+      if (yurt) {
+        assignRes(res, yurt);
+      }
+    }
+  }
+
+  // Get unassigned reservations, sorted by createdAt ASC (FIFO)
+  let unassigned = reservations
+    .filter((r) => !r.yurtId)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  // Filter out exceeds_max_capacity
+  const withinCapacity: DeterministicReservationInput[] = [];
+  for (const res of unassigned) {
+    if (res.guestCount > maxCapacity) {
+      anomalies.push({
+        reservationId: res.id,
+        guestCount: res.guestCount,
+        reason: "exceeds_max_capacity",
+      });
+    } else {
+      withinCapacity.push(res);
+    }
+  }
+  unassigned = withinCapacity;
+
+  // Phase 1a: Single-candidate (e.g., 25-28 → only #1 fits)
+  const afterPhase1a: DeterministicReservationInput[] = [];
+  for (const res of unassigned) {
+    const candidates = getAvailableRoomsFor(res.guestCount);
+    if (candidates.length === 1) {
+      assignRes(res, candidates[0]);
+    } else if (candidates.length === 0) {
+      anomalies.push({
+        reservationId: res.id,
+        guestCount: res.guestCount,
+        reason: "no_yurt_available",
+      });
+    } else {
+      afterPhase1a.push(res);
+    }
+  }
+
+  // Phase 1b: Smallest-room optimization (≤16 → #3)
+  const smallestRoom = sortedYurtsAsc[0];
+  const afterPhase1: DeterministicReservationInput[] = [];
+  for (const res of afterPhase1a) {
+    if (
+      smallestRoom &&
+      !usedYurtIds.has(smallestRoom.id) &&
+      res.guestCount <= smallestRoom.capacity
+    ) {
+      assignRes(res, smallestRoom);
+    } else {
+      afterPhase1.push(res);
+    }
+  }
+
+  // Phase 2: Single-candidate propagation (cascade)
+  let pendingRes = [...afterPhase1];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const stillPending: DeterministicReservationInput[] = [];
+    for (const res of pendingRes) {
+      const candidates = getAvailableRoomsFor(res.guestCount);
+      if (candidates.length === 1) {
+        assignRes(res, candidates[0]);
+        changed = true;
+      } else if (candidates.length === 0) {
+        anomalies.push({
+          reservationId: res.id,
+          guestCount: res.guestCount,
+          reason: "no_yurt_available",
+        });
+        changed = true;
+      } else {
+        stillPending.push(res);
+      }
+    }
+    pendingRes = stillPending;
+  }
+
+  // Phase 3: Group determinism (N pending == N candidate rooms)
+  if (pendingRes.length > 0) {
+    const minGuestCount = Math.min(...pendingRes.map((r) => r.guestCount));
+    const candidateRooms = getAvailableRoomsFor(minGuestCount);
+
+    if (pendingRes.length === candidateRooms.length) {
+      // Sort pending by guestCount DESC, then createdAt ASC (FIFO tiebreak)
+      const sortedPending = [...pendingRes].sort((a, b) => {
+        if (b.guestCount !== a.guestCount) return b.guestCount - a.guestCount;
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
+      // Sort candidate rooms by capacity DESC
+      const sortedRooms = [...candidateRooms].sort(
+        (a, b) => b.capacity - a.capacity
+      );
+
+      for (let i = 0; i < sortedPending.length; i++) {
+        assignRes(sortedPending[i], sortedRooms[i]);
+      }
+      pendingRes = [];
+    }
+  }
+
+  return {
+    assignments,
+    pending: pendingRes.map((r) => r.id),
+    anomalies,
+  };
 }
 
 // ─── DB helpers ──────────────────────────────────────────────────────
