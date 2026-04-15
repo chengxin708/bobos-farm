@@ -949,6 +949,7 @@
       "capacityLabel": "{used}/{total}",
       "pendingAssignment": "待分配",
       "pendingCount": "待分配 ({count})",
+      "weekPendingTotal": "本周待分配: {count}笔",
       "allAssigned": "已全部分配",
       "pendingShort": "待分配",
       "anomaly": "异常",

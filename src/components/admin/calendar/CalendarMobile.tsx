@@ -270,6 +270,24 @@ export default function CalendarMobile() {
     return set
   }, [reservations])
 
+  /** Set of date strings that have unassigned (pending) reservations */
+  const datesWithPending = useMemo(() => {
+    const set = new Set<string>()
+    for (const [dateKey] of unassignedByDate) {
+      set.add(dateKey)
+    }
+    return set
+  }, [unassignedByDate])
+
+  /** Total unassigned count for the whole week */
+  const weekPendingTotal = useMemo(() => {
+    let count = 0
+    for (const [, list] of unassignedByDate) {
+      count += list.length
+    }
+    return count
+  }, [unassignedByDate])
+
   const activeYurts = useMemo(() =>
     (yurts || []).filter(y => y.status === 'ACTIVE').sort((a, b) => a.sortOrder - b.sortOrder),
     [yurts]
@@ -447,6 +465,7 @@ export default function CalendarMobile() {
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selectedDateStr
               const hasBookings = datesWithBookings.has(dateStr)
+              const hasPending = datesWithPending.has(dateStr)
 
               return (
                 <button
@@ -465,10 +484,16 @@ export default function CalendarMobile() {
                   <span className={`text-[15px] font-semibold mt-0.5 ${isToday ? 'text-white' : 'text-[#2C2416]'}`}>
                     {d.getDate()}
                   </span>
-                  {/* Booking dot */}
+                  {/* Booking dot — yellow if has pending, green if all assigned */}
                   <div className="h-1.5 mt-0.5">
                     {hasBookings && (
-                      <div className={`w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-[#6B7F5E]'}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        isToday
+                          ? 'bg-white'
+                          : hasPending
+                            ? 'bg-[#E8B730]'
+                            : 'bg-[#6B7F5E]'
+                      }`} />
                     )}
                   </div>
                 </button>
@@ -476,6 +501,22 @@ export default function CalendarMobile() {
             })}
           </div>
         </div>
+
+        {/* ── Week Pending Summary Banner ─────────────────── */}
+        {!loadingRes && weekPendingTotal > 0 && (
+          <div className="mx-4 mt-3 flex items-center gap-2 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl px-4 py-2.5">
+            <ClipboardList size={15} className="text-[#E8B730] shrink-0" />
+            <span className="text-[13px] font-semibold text-[#92400E]">
+              {t('weekPendingTotal', { count: weekPendingTotal })}
+            </span>
+            <span className="text-[11px] text-[#8A7E6B] ml-auto">
+              {Array.from(unassignedByDate.entries()).map(([dateKey, list]) => {
+                const d = new Date(dateKey + 'T00:00:00')
+                return `${d.getMonth() + 1}/${d.getDate()}(${list.length})`
+              }).join(' · ')}
+            </span>
+          </div>
+        )}
 
         {/* ── Selected Date Detail ────────────────────────── */}
         <div className="flex-1 px-4 py-4">
@@ -519,6 +560,52 @@ export default function CalendarMobile() {
           {/* Loading */}
           {loadingRes && (
             <div className="text-center text-sm text-[#8A7E6B] py-8">{t('loading')}</div>
+          )}
+
+          {/* ── Pending Assignment Section (before yurt cards for visibility) ── */}
+          {!loadingRes && selectedDayUnassigned.length > 0 && (
+            <div className="mb-4">
+              {/* Section header */}
+              <div className="flex items-center gap-2 bg-[#FFF8E1] rounded-t-xl border border-[#E8ECE4] border-b-0 px-4 py-3">
+                <ClipboardList size={16} className="text-[#E8B730]" />
+                <span className="text-[14px] font-semibold text-[#92400E]">
+                  {t('pendingCount', { count: selectedDayUnassigned.length })}
+                </span>
+              </div>
+              {/* Unassigned reservation cards */}
+              <div className="bg-[#FFF8E1]/30 rounded-b-xl border border-[#E8ECE4] border-t-0 px-3 py-3 space-y-2">
+                {selectedDayUnassigned.map(res => {
+                  const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+                  return (
+                    <button
+                      key={res.id}
+                      onClick={() => setSelectedResId(res.id)}
+                      className="w-full text-left bg-white rounded-lg border border-[#E8ECE4] p-3 cursor-pointer hover:border-[#E8B730]/60 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[15px] font-semibold text-[#2C2416]">
+                          {getDisplayName(res.user)}
+                        </span>
+                        <StatusBadge
+                          type="reservation"
+                          status={res.status}
+                          label={isHeld ? t('status.held') : statusLabel(res.status, t)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#8A7E6B]">
+                        <Users size={13} />
+                        <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
+                      </div>
+                      {res.specialRequests && (
+                        <p className="text-[12px] text-[#8A7E6B] mt-1.5 line-clamp-2">
+                          {res.specialRequests}
+                        </p>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           )}
 
           {/* ── Yurt Cards ─────────────────────────────── */}
@@ -610,52 +697,6 @@ export default function CalendarMobile() {
               </button>
             )
           })}
-
-          {/* ── Pending Assignment Section ──────────────── */}
-          {!loadingRes && selectedDayUnassigned.length > 0 && (
-            <div className="mt-2 mb-4">
-              {/* Section header */}
-              <div className="flex items-center gap-2 bg-[#FFF8E1] rounded-t-xl border border-[#E8ECE4] border-b-0 px-4 py-3">
-                <ClipboardList size={16} className="text-[#E8B730]" />
-                <span className="text-[14px] font-semibold text-[#92400E]">
-                  {t('pendingCount', { count: selectedDayUnassigned.length })}
-                </span>
-              </div>
-              {/* Unassigned reservation cards */}
-              <div className="bg-[#FFF8E1]/30 rounded-b-xl border border-[#E8ECE4] border-t-0 px-3 py-3 space-y-2">
-                {selectedDayUnassigned.map(res => {
-                  const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
-                  return (
-                    <button
-                      key={res.id}
-                      onClick={() => setSelectedResId(res.id)}
-                      className="w-full text-left bg-white rounded-lg border border-[#E8ECE4] p-3 cursor-pointer hover:border-[#E8B730]/60 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[15px] font-semibold text-[#2C2416]">
-                          {getDisplayName(res.user)}
-                        </span>
-                        <StatusBadge
-                          type="reservation"
-                          status={res.status}
-                          label={isHeld ? t('status.held') : statusLabel(res.status, t)}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[#8A7E6B]">
-                        <Users size={13} />
-                        <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
-                      </div>
-                      {res.specialRequests && (
-                        <p className="text-[12px] text-[#8A7E6B] mt-1.5 line-clamp-2">
-                          {res.specialRequests}
-                        </p>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Empty state */}
           {!loadingRes && activeYurts.length === 0 && (

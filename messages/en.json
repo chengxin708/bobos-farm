@@ -949,6 +949,7 @@
       "capacityLabel": "{used}/{total}",
       "pendingAssignment": "Pending Assignment",
       "pendingCount": "Pending Assignment ({count})",
+      "weekPendingTotal": "This week: {count} pending",
       "allAssigned": "All assigned",
       "pendingShort": "Pend",
       "anomaly": "Anomaly",
