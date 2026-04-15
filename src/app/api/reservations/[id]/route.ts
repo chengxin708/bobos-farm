@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendDepositConfirmed, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
@@ -831,11 +831,22 @@ export async function PATCH(
         },
       });
 
-      // Fire-and-forget: push notification to customer when deposit is confirmed
+      // Fire-and-forget: email + push notification when deposit is confirmed
       if (
         parsedAdmin.data.depositStatus === "CONFIRMED" &&
         reservation.depositStatus !== "CONFIRMED"
       ) {
+        // Send confirmation email to customer
+        if (updated.user.email) {
+          sendDepositConfirmed(updated.user.email, {
+            date: updated.date,
+            yurtName: updated.yurt?.name ?? "Pending assignment",
+            guestCount: updated.guestCount,
+            reservationId: id,
+          }).catch(err => console.error('[email] deposit confirmed notification failed:', err));
+        }
+
+        // Push notification
         sendPushToUser(updated.userId, {
           title: "Deposit Confirmed",
           body: "Your reservation is confirmed! You can now pre-order menu items.",
