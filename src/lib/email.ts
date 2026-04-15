@@ -6,6 +6,9 @@ import {
   infoRow,
   infoTable,
   primaryButton,
+  sectionTitle,
+  divider,
+  badge,
 } from "./email-template";
 import type { Lang } from "./email-template";
 import { emailStrings } from "./email-strings";
@@ -105,8 +108,8 @@ export async function sendReservationCreated(
       : "";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
@@ -118,7 +121,9 @@ export async function sendReservationCreated(
 
       ${paymentInfo}
 
-      <p style="font-size:13px;color:#C4533A;margin:16px 0 0;">${s.warning}</p>
+      <div style="background-color:#FEF3E2;border-radius:10px;padding:14px 16px;margin:16px 0;">
+        <p style="margin:0;font-size:13px;color:#92400E;line-height:1.5;">${s.warning}</p>
+      </div>
 
       ${primaryButton(s.button, `${siteUrl}/reservations`)}
     `, { lang, type: "transactional", siteUrl });
@@ -156,19 +161,22 @@ export async function sendDepositConfirmed(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="display:inline-block;width:48px;height:48px;border-radius:50%;background-color:#E8F0E4;line-height:48px;text-align:center;font-size:22px;">&#10003;</div>
+      </div>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;text-align:center;">${s.title}</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#6B6157;line-height:1.6;text-align:center;">${s.body}</p>
 
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
         infoRow(l.yurt, data.yurtName) +
         infoRow(l.guests, l.guestUnit(data.guestCount)) +
-        infoRow(l.status, `<span style="color:#4A7C59;font-weight:bold;">${l.confirmed}</span>`)
+        infoRow(l.status, badge(l.confirmed, 'green'))
       )}
 
       ${primaryButton(s.button, `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+      <p style="font-size:13px;color:#9C9588;margin:20px 0 0;text-align:center;line-height:1.5;">${s.footer}</p>
     `, { lang, type: "transactional", siteUrl });
 
     await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
@@ -215,14 +223,14 @@ export async function sendPaymentReminder(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#C4533A;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
-      <div style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin:16px 0;">
-        <p style="margin:0;font-size:14px;color:#C4533A;font-weight:bold;">
+      <div style="background-color:#FDE8E8;border-radius:12px;padding:16px 20px;margin:16px 0;">
+        <p style="margin:0;font-size:15px;color:#C4453A;font-weight:700;">
           ${s.remaining}: ${s.hours(remainingHours)}
         </p>
-        <p style="margin:4px 0 0;font-size:12px;color:#991B1B;">
+        <p style="margin:4px 0 0;font-size:13px;color:#C4453A;">
           ${s.deadlineLabel}: ${deadlineStr}
         </p>
       </div>
@@ -234,18 +242,20 @@ export async function sendPaymentReminder(
       )}
 
       ${data.zelleRecipient
-        ? `<p style="font-size:13px;color:#3D2B1F;margin:12px 0 4px;">
-            <strong>${l.zelleTitle}</strong><br/>
-            ${l.zelleRecipient}: ${data.zelleRecipientName || data.zelleRecipient}<br/>
-            Zelle: ${data.zelleRecipient}
-            ${data.memoCode ? `<br/>${l.zelleMemo}: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
-          </p>`
+        ? `<div style="background-color:#FAFAF8;border-radius:10px;padding:14px 16px;margin:12px 0;">
+            <p style="margin:0;font-size:13px;color:#2C2416;">
+              <strong>${l.zelleTitle}</strong><br/>
+              ${l.zelleRecipient}: ${data.zelleRecipientName || data.zelleRecipient}<br/>
+              Zelle: ${data.zelleRecipient}
+              ${data.memoCode ? `<br/>${l.zelleMemo}: <strong style="color:#8B6914;">${data.memoCode}</strong>` : ""}
+            </p>
+          </div>`
         : ""
       }
 
       ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:12px;color:#C4533A;margin:16px 0 0;">${s.warning}</p>
+      <p style="font-size:12px;color:#C4453A;margin:20px 0 0;text-align:center;">${s.warning}</p>
     `, { lang, type: "transactional", siteUrl });
 
     await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
@@ -278,10 +288,8 @@ export async function sendAdminNewReservation(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">新预订通知</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        有新的预订需要关注。
-      </p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">新预订通知</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;">有新的预订需要关注。</p>
 
       ${infoTable(
         infoRow("客人", data.guestName) +
@@ -290,7 +298,7 @@ export async function sendAdminNewReservation(
         infoRow("人数", `${data.guestCount} 人`)
       )}
 
-      ${primaryButton("查看仪表盘", "https://admin.bobos.farm/admin/dashboard")}
+      ${primaryButton("查看仪表盘", `${siteUrl}/admin/dashboard`)}
     `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
@@ -330,10 +338,8 @@ export async function sendAdminDepositSubmitted(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#8B6914;">定金待确认</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#5A5A5A;">
-        有客人已提交定金付款凭证，请及时确认。
-      </p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">定金待确认</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;">有客人已提交定金付款凭证，请及时确认。</p>
 
       ${infoTable(
         infoRow("客人", data.guestName) +
@@ -343,7 +349,7 @@ export async function sendAdminDepositSubmitted(
         infoRow("定金金额", `$${data.depositAmount}`)
       )}
 
-      ${primaryButton("前往确认定金", "https://admin.bobos.farm/admin/reservations")}
+      ${primaryButton("前往确认定金", `${siteUrl}/admin/reservations`)}
     `, { lang: "zh", type: "transactional", siteUrl });
 
     await client.emails.send({
@@ -386,19 +392,19 @@ export async function sendYurtAssigned(
     const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
-        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.yurt, `<strong>${data.yurtName}</strong>`) +
         (data.yurtDescription ? infoRow(s.description, data.yurtDescription) : "") +
         infoRow(l.guests, l.guestUnit(data.guestCount))
       )}
 
       ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+      <p style="font-size:13px;color:#9C9588;margin:20px 0 0;text-align:center;line-height:1.5;">${s.footer}</p>
     `, { lang, type: "transactional", siteUrl });
 
     await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
@@ -472,18 +478,18 @@ export async function sendReservationModified(
     }
 
     const changesTable = changeRows
-      ? `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#FFF8E1;border-radius:8px;border:1px solid #E8D5A3;margin:16px 0;">
+      ? `<table cellpadding="0" cellspacing="0" style="width:100%;background-color:#FEF3E2;border-radius:12px;overflow:hidden;margin:16px 0;">
           ${changeRows}
         </table>`
       : "";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
       ${changesTable}
 
-      <p style="margin:16px 0 8px;font-size:14px;color:#3D2B1F;font-weight:bold;">${s.updatedInfo}</p>
+      ${sectionTitle(s.updatedInfo)}
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
         infoRow(l.yurt, data.yurtName) +
@@ -492,7 +498,7 @@ export async function sendReservationModified(
 
       ${primaryButton(s.button, `${siteUrl}/reservations`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+      <p style="font-size:13px;color:#9C9588;margin:20px 0 0;text-align:center;line-height:1.5;">${s.footer}</p>
     `, { lang, type: "transactional", siteUrl });
 
     await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
@@ -531,33 +537,34 @@ export async function sendReservationCancelled(
     const willRefund = data.depositStatus === "CONFIRMED";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#DC3545;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
         infoRow(l.yurt, data.yurtName) +
         infoRow(l.guests, l.guestUnit(data.guestCount)) +
-        infoRow(l.status, `<span style="color:#DC3545;font-weight:bold;">${l.cancelled}</span>`)
+        infoRow(l.status, badge(l.cancelled, 'red'))
       )}
 
       ${data.cancelReason ? `
-        <div style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:16px;margin:16px 0;">
-          <p style="margin:0;font-size:13px;color:#991B1B;"><strong>${s.cancelReason}:</strong> ${data.cancelReason}</p>
+        <div style="background-color:#FDE8E8;border-radius:12px;padding:14px 16px;margin:16px 0;">
+          <p style="margin:0;font-size:13px;color:#C4453A;line-height:1.5;"><strong>${s.cancelReason}:</strong> ${data.cancelReason}</p>
         </div>
       ` : ""}
 
       ${willRefund ? `
-        <p style="font-size:14px;color:#5A5A5A;margin:16px 0;">
+        <p style="font-size:14px;color:#6B6157;margin:16px 0;line-height:1.5;">
           ${s.refundNote(data.depositAmount)}
         </p>
       ` : ""}
 
       ${primaryButton(s.button, `${siteUrl}/booking/date`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">
+      ${divider()}
+      <p style="font-size:13px;color:#9C9588;margin:0;text-align:center;line-height:1.6;">
         ${s.contact}<br/>
-        中文: (516) 272-9999 &nbsp;|&nbsp; English: (917) 502-0445
+        中文: (516) 272-9999 &nbsp;&bull;&nbsp; English: (917) 502-0445
       </p>
     `, { lang, type: "transactional", siteUrl });
 
@@ -604,7 +611,7 @@ export async function sendPreOrderReminder(
 
     // Reservation info section
     const reservationSection = `
-      <h3 style="margin:0 0 8px;font-size:15px;color:#3D2B1F;">${s.reservationInfo}</h3>
+      ${sectionTitle(s.reservationInfo)}
       ${infoTable(
         infoRow(l.date, formatDate(data.date, lang)) +
         infoRow(l.yurt, data.yurtName) +
@@ -616,35 +623,37 @@ export async function sendPreOrderReminder(
     let orderSection = "";
     if (data.orderStatus === "NONE") {
       orderSection = `
-        <h3 style="margin:20px 0 8px;font-size:15px;color:#3D2B1F;">${s.orderSection}</h3>
-        <p style="font-size:13px;color:#8A7E6B;margin:0;">${s.noOrder}</p>
+        ${sectionTitle(s.orderSection)}
+        <div style="background-color:#FAFAF8;border-radius:12px;padding:20px;text-align:center;">
+          <p style="font-size:14px;color:#9C9588;margin:0;">${s.noOrder}</p>
+        </div>
       `;
     } else {
       const statusMsg = data.orderStatus === "DRAFT" ? s.draftOrder : s.submittedOrder;
       const itemRows = data.orderItems.map(item =>
         `<tr>
-          <td style="padding:6px 0;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;">${item.name}</td>
-          <td style="padding:6px 8px;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;text-align:center;">×${item.quantity}</td>
-          <td style="padding:6px 0;font-size:13px;color:#3D2B1F;border-bottom:1px solid #F2EDE6;text-align:right;">$${(item.price * item.quantity).toFixed(0)}</td>
+          <td style="padding:8px 0;font-size:13px;color:#2C2416;border-bottom:1px solid #F0EDE8;">${item.name}</td>
+          <td style="padding:8px 8px;font-size:13px;color:#6B6157;border-bottom:1px solid #F0EDE8;text-align:center;">&times;${item.quantity}</td>
+          <td style="padding:8px 0;font-size:13px;color:#2C2416;border-bottom:1px solid #F0EDE8;text-align:right;">$${(item.price * item.quantity).toFixed(0)}</td>
         </tr>`
       ).join("");
 
       orderSection = `
-        <h3 style="margin:20px 0 8px;font-size:15px;color:#3D2B1F;">${s.orderSection}</h3>
-        <p style="font-size:13px;color:#8A7E6B;margin:0 0 8px;">${statusMsg}</p>
+        ${sectionTitle(s.orderSection)}
+        <p style="font-size:13px;color:#9C9588;margin:0 0 12px;">${statusMsg}</p>
         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
           <thead>
-            <tr style="border-bottom:2px solid #E8ECE4;">
-              <th style="padding:6px 0;font-size:12px;color:#8A7E6B;text-align:left;">${s.itemHeader}</th>
-              <th style="padding:6px 8px;font-size:12px;color:#8A7E6B;text-align:center;">${s.qtyHeader}</th>
-              <th style="padding:6px 0;font-size:12px;color:#8A7E6B;text-align:right;">$</th>
+            <tr>
+              <th style="padding:8px 0;font-size:11px;color:#9C9588;text-align:left;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #E8ECE4;">${s.itemHeader}</th>
+              <th style="padding:8px 8px;font-size:11px;color:#9C9588;text-align:center;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #E8ECE4;">${s.qtyHeader}</th>
+              <th style="padding:8px 0;font-size:11px;color:#9C9588;text-align:right;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #E8ECE4;">$</th>
             </tr>
           </thead>
           <tbody>${itemRows}</tbody>
           <tfoot>
             <tr>
-              <td colspan="2" style="padding:8px 0;font-size:14px;font-weight:bold;color:#3D2B1F;">${s.subtotal}</td>
-              <td style="padding:8px 0;font-size:14px;font-weight:bold;color:#3D2B1F;text-align:right;">$${data.estimatedTotal.toFixed(0)}</td>
+              <td colspan="2" style="padding:12px 0 0;font-size:15px;font-weight:700;color:#2C2416;">${s.subtotal}</td>
+              <td style="padding:12px 0 0;font-size:15px;font-weight:700;color:#2C2416;text-align:right;">$${data.estimatedTotal.toFixed(0)}</td>
             </tr>
           </tfoot>
         </table>
@@ -652,12 +661,12 @@ export async function sendPreOrderReminder(
     }
 
     const modifyNote = data.orderStatus === "SUBMITTED"
-      ? `<p style="font-size:12px;color:#8A7E6B;margin:12px 0 0;">${s.modifyNote}</p>`
+      ? `<p style="font-size:12px;color:#9C9588;margin:12px 0 0;text-align:center;">${s.modifyNote}</p>`
       : "";
 
     const html = emailWrapper(`
-      <h2 style="margin:0 0 8px;font-size:20px;color:#3D2B1F;">${s.title}</h2>
-      <p style="margin:0 0 16px;font-size:14px;color:#4A4A4A;">${s.body}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 24px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
 
       ${reservationSection}
       ${orderSection}
@@ -665,7 +674,7 @@ export async function sendPreOrderReminder(
 
       ${primaryButton(s.button, `${siteUrl}/pre-order?reservationId=${data.reservationId}`)}
 
-      <p style="font-size:13px;color:#5A5A5A;margin:16px 0 0;">${s.footer}</p>
+      <p style="font-size:13px;color:#9C9588;margin:20px 0 0;text-align:center;line-height:1.5;">${s.footer}</p>
     `, { lang, type: "transactional", siteUrl });
 
     await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
