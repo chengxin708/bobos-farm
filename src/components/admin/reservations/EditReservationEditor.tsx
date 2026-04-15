@@ -10,6 +10,7 @@ import { ArrowLeft, Minus, Plus, Loader2, ChevronLeft, ChevronRight } from 'luci
 interface Yurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
   sortOrder: number
@@ -407,7 +408,7 @@ export default function EditReservationEditor({
                   >
                     <div>
                       <span className="text-sm font-medium text-[#2C2416]">
-                        {yurt.name}
+                        {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''}
                       </span>
                       <span className="text-xs text-[#8A7E6B] ml-2">
                         (max {yurt.capacity})

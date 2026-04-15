@@ -16,6 +16,7 @@ import {
 interface Yurt {
   id: string
   name: string
+  alias?: string | null
   description: string | null
   capacity: number
   status: 'ACTIVE' | 'MAINTENANCE'
@@ -39,7 +40,7 @@ interface AvailabilityEntry {
   date: string
   isOpen: boolean
   note: string | null
-  yurt: { id: string; name: string }
+  yurt: { id: string; name: string; alias?: string | null }
 }
 
 interface ReservationUser {
@@ -55,7 +56,7 @@ interface Reservation {
   guestCount: number
   status: string
   user: ReservationUser
-  yurt: { id: string; name: string }
+  yurt: { id: string; name: string; alias?: string | null }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -526,7 +527,7 @@ export default function VenuesPage() {
               <div key={yurt.id} className="bg-white rounded-xl border border-[#E8ECE4] p-4 md:p-6 flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-[#3D2B1F] font-playfair">{yurt.name}</h3>
+                    <h3 className="text-lg font-bold text-[#3D2B1F] font-playfair">{yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''}</h3>
                     {yurt.description && (
                       <p className="text-sm text-[#8C8478] mt-1 max-w-[600px]">{yurt.description}</p>
                     )}
@@ -802,7 +803,7 @@ export default function VenuesPage() {
                             <div key={yurt.id} className="flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
                                 <div className={`w-2 h-2 rounded-full ${yurt.isOpen ? 'bg-[#6B7F5E]' : 'bg-[#C4533A]'}`} />
-                                <span className="text-sm text-[#3D2B1F]">{yurt.name}</span>
+                                <span className="text-sm text-[#3D2B1F]">{yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''}</span>
                               </div>
                               <button
                                 onClick={() => handleToggleYurt(yurt.id, !yurt.isOpen)}
@@ -837,7 +838,7 @@ export default function VenuesPage() {
                             <div key={r.id} className="bg-[#FAFAF7] rounded-lg px-3 py-2.5">
                               <div className="text-sm font-medium text-[#3D2B1F]">{r.user?.name || 'Unknown'}</div>
                               <div className="flex items-center gap-1.5 mt-0.5 text-xs text-[#8C8478]">
-                                <span>{r.yurt?.name}</span>
+                                <span>{r.yurt?.name}{r.yurt?.alias ? ` (${r.yurt.alias})` : ''}</span>
                                 <span>&middot;</span>
                                 <Users size={11} className="inline" />
                                 <span>{r.guestCount}</span>

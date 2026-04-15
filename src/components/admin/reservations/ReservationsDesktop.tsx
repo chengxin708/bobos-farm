@@ -79,7 +79,7 @@ function ReservationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-brown truncate">{r.user?.name || 'N/A'}</span>
-            <span className="text-xs text-[#8C8478]">{r.yurt?.name}</span>
+            <span className="text-xs text-[#8C8478]">{r.yurt?.name}{r.yurt?.alias ? ` (${r.yurt.alias})` : ''}</span>
             <span className="text-xs text-[#8C8478]">{r.guestCount}{t('guestsSuffix', { count: r.guestCount }).replace(String(r.guestCount), '').trim()}</span>
           </div>
           {r.user?.email && (

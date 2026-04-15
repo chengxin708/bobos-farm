@@ -10,6 +10,7 @@ import { formatPhoneUS } from '@/lib/phone-mask'
 interface Yurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
 }
@@ -291,7 +292,7 @@ export default function CreateReservationModal({
                 <option value="">{t('autoAssign')}</option>
                 {activeYurts.map(y => (
                   <option key={y.id} value={y.id}>
-                    {t('yurtCapacity', { name: y.name, capacity: y.capacity })}
+                    {t('yurtCapacity', { name: `${y.name}${y.alias ? ` (${y.alias})` : ''}`, capacity: y.capacity })}
                   </option>
                 ))}
               </select>

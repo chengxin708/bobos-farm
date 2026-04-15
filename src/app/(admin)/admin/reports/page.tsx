@@ -24,7 +24,7 @@ interface Reservation {
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   createdAt: string
   user: { id: string; name: string | null; email: string }
-  yurt: { id: string; name: string; capacity: number } | null
+  yurt: { id: string; name: string; alias?: string | null; capacity: number } | null
 }
 
 interface OrderReportData {
@@ -202,7 +202,7 @@ export default function Reports() {
       if (existing) {
         existing.count++
       } else {
-        yurtMap.set(r.yurtId, { name: r.yurt?.name ?? 'Pending', count: 1 })
+        yurtMap.set(r.yurtId, { name: r.yurt?.name ? `${r.yurt.name}${r.yurt.alias ? ` (${r.yurt.alias})` : ''}` : 'Pending', count: 1 })
       }
     })
 
@@ -269,7 +269,7 @@ export default function Reports() {
     const rows = reservations.map(r => [
       r.date,
       r.user.name || r.user.email,
-      r.yurt?.name ?? 'Pending',
+      r.yurt?.name ? `${r.yurt.name}${r.yurt.alias ? ` (${r.yurt.alias})` : ''}` : 'Pending',
       r.guestCount,
       r.status,
       r.depositAmount,

@@ -49,12 +49,11 @@ async function main() {
   const yurts = await Promise.all([
     prisma.yurt.upsert({
       where: { id: "room-1" },
-      update: { name: "包房 #1", alias: "大", capacity: 28, sortOrder: 1 },
+      update: { name: "#1", alias: "大", capacity: 28, sortOrder: 1 },
       create: {
         id: "room-1",
-        name: "包房 #1",
+        name: "#1",
         alias: "大",
-        description: "最大包房，可容纳28人",
         capacity: 28,
         status: "ACTIVE",
         sortOrder: 1,
@@ -62,12 +61,11 @@ async function main() {
     }),
     prisma.yurt.upsert({
       where: { id: "room-2" },
-      update: { name: "包房 #2", alias: "中", capacity: 24, sortOrder: 2 },
+      update: { name: "#2", alias: "中", capacity: 24, sortOrder: 2 },
       create: {
         id: "room-2",
-        name: "包房 #2",
+        name: "#2",
         alias: "中",
-        description: "中型包房，可容纳24人",
         capacity: 24,
         status: "ACTIVE",
         sortOrder: 2,
@@ -75,19 +73,18 @@ async function main() {
     }),
     prisma.yurt.upsert({
       where: { id: "room-3" },
-      update: { name: "包房 #3", alias: "小", capacity: 16, sortOrder: 3 },
+      update: { name: "#3", alias: "小", capacity: 16, sortOrder: 3 },
       create: {
         id: "room-3",
-        name: "包房 #3",
+        name: "#3",
         alias: "小",
-        description: "小型包房，可容纳16人",
         capacity: 16,
         status: "ACTIVE",
         sortOrder: 3,
       },
     }),
   ]);
-  console.log("Rooms created:", yurts.map((y) => `${y.name}(${y.alias}) ${y.capacity}人`).join(", "));
+  console.log("Rooms created:", yurts.map((y) => `${y.name}(${y.alias}) ${y.capacity}`).join(", "));
 
   // Create menu categories
   const categories = await Promise.all([

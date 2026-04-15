@@ -19,6 +19,7 @@ interface ReservationUser {
 interface ReservationYurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
 }
 
@@ -211,7 +212,7 @@ export default function Customers() {
             : r.status === 'PENDING_PAYMENT' ? 'Pending'
             : r.status === 'PAYMENT_SUBMITTED' ? 'Submitted'
             : r.status,
-          yurtName: r.yurt?.name ?? 'Pending',
+          yurtName: r.yurt?.name ? `${r.yurt.name}${r.yurt.alias ? ` (${r.yurt.alias})` : ''}` : 'Pending',
         })),
       }
     }).sort((a, b) => b.totalVisits - a.totalVisits)

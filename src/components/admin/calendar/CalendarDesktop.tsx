@@ -17,6 +17,7 @@ type ViewMode = 'month' | 'week'
 interface Yurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
   sortOrder: number
@@ -32,6 +33,7 @@ interface ReservationUser {
 interface ReservationYurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
 }
 
@@ -483,7 +485,7 @@ export default function CalendarDesktop() {
                 <tr key={yurt.id} className="border-b border-[#E8ECE4]">
                   {/* Yurt label */}
                   <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FAFAF7]">
-                    <div className="text-sm font-semibold text-[#2C2416]">{yurt.name}</div>
+                    <div className="text-sm font-semibold text-[#2C2416]">{yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''}</div>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Users size={10} className="text-[#8A7E6B]" />
                       <span className="text-[10px] text-[#8A7E6B]">{yurt.capacity}</span>

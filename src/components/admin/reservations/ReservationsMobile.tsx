@@ -79,7 +79,7 @@ function ReservationCard({
         />
       </div>
       <div className="text-xs text-[#8C8478]">
-        {r.yurt?.name} · {t('guestsSuffix', { count: r.guestCount })}
+        {r.yurt?.name}{r.yurt?.alias ? ` (${r.yurt.alias})` : ''} · {t('guestsSuffix', { count: r.guestCount })}
       </div>
 
       {/* Inline action buttons for PAYMENT_SUBMITTED */}

@@ -18,6 +18,7 @@ export interface ReservationUser {
 export interface ReservationYurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
 }
 

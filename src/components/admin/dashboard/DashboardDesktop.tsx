@@ -165,7 +165,7 @@ export default function DashboardDesktop() {
                       <tr key={yurt.id} style={ri < activeYurts.length - 1 ? { borderBottom: '1px solid #F0EBE4' } : {}}>
                         <td className="py-2.5 pr-3">
                           <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: '#2C2416' }}>
-                            {yurt.name}
+                            {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''}
                           </span>
                         </td>
                         {DAY_LABEL_KEYS.map((di) => {
@@ -318,7 +318,7 @@ export default function DashboardDesktop() {
                         {new Date(row.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                       </span>
                       <span className="w-[130px] text-[13px]" style={{ color: '#2C2416' }}>
-                        {row.yurt?.name ?? tc('pendingYurt')}
+                        {row.yurt?.name ? `${row.yurt.name}${row.yurt.alias ? ` (${row.yurt.alias})` : ''}` : tc('pendingYurt')}
                       </span>
                       <div className="w-[110px]">
                         <span

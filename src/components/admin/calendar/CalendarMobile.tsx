@@ -17,6 +17,7 @@ import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardLis
 interface Yurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
   sortOrder: number
@@ -32,6 +33,7 @@ interface ReservationUser {
 interface ReservationYurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
 }
 
@@ -623,7 +625,7 @@ export default function CalendarMobile() {
                   {/* Yurt header */}
                   <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
-                      {yurt.name} ({yurt.capacity})
+                      {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
                   </div>
                   {/* Reservation content */}
@@ -661,7 +663,7 @@ export default function CalendarMobile() {
                 >
                   <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
                     <span className="text-[13px] font-semibold text-[#8A7E6B]">
-                      {yurt.name} ({yurt.capacity})
+                      {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
                   </div>
                   <div
@@ -686,7 +688,7 @@ export default function CalendarMobile() {
               >
                 <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
                   <span className="text-[13px] font-semibold text-[#6B7F5E]">
-                    {yurt.name} ({yurt.capacity})
+                    {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                   </span>
                 </div>
                 <div className="px-4 py-3">

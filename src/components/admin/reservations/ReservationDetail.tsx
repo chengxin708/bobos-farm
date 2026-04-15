@@ -47,6 +47,7 @@ interface ReservationDetailProps {
 interface YurtOption {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
 }
@@ -243,7 +244,7 @@ export default function ReservationDetail({
                 <option value="">{t('selectYurt')}</option>
                 {activeYurts.map(y => (
                   <option key={y.id} value={y.id} disabled={occupiedYurtIds.has(y.id)}>
-                    {y.name} ({tc('capacityGuests', { capacity: y.capacity })}){occupiedYurtIds.has(y.id) ? ` — ${tc('occupied')}` : ''}
+                    {y.name}{y.alias ? ` (${y.alias})` : ''} ({tc('capacityGuests', { capacity: y.capacity })}){occupiedYurtIds.has(y.id) ? ` — ${tc('occupied')}` : ''}
                   </option>
                 ))}
               </select>
@@ -282,7 +283,7 @@ export default function ReservationDetail({
             </div>
             <div>
               <div className="text-[10px] text-[#8C8478] uppercase">{t('detail.yurt')}</div>
-              <div className="text-sm text-brown font-medium">{reservation.yurt?.name}</div>
+              <div className="text-sm text-brown font-medium">{reservation.yurt?.name}{reservation.yurt?.alias ? ` (${reservation.yurt.alias})` : ''}</div>
             </div>
             <div>
               <div className="text-[10px] text-[#8C8478] uppercase">{t('detail.guests')}</div>

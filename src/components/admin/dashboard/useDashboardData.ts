@@ -23,6 +23,7 @@ export interface ReservationUser {
 export interface ReservationYurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
 }
 
@@ -46,6 +47,7 @@ export interface Reservation {
 export interface Yurt {
   id: string
   name: string
+  alias?: string | null
   capacity: number
   status: string
   sortOrder: number

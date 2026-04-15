@@ -13,7 +13,7 @@ interface PendingReservation {
   depositAmount: number
   createdAt: string
   user: { name: string | null; email: string }
-  yurt: { name: string } | null
+  yurt: { name: string; alias?: string | null } | null
 }
 
 const fetcher = (url: string) => fetch(url).then(r => r.ok ? r.json() : [])
@@ -109,7 +109,7 @@ export default function NotificationBell() {
                       {item.user.name || item.user.email}
                     </p>
                     <p className="text-xs text-[#8C8478] mt-0.5">
-                      ${item.depositAmount} · {item.yurt?.name ?? t('pendingYurt')} · {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      ${item.depositAmount} · {item.yurt?.name ? `${item.yurt.name}${item.yurt.alias ? ` (${item.yurt.alias})` : ''}` : t('pendingYurt')} · {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </p>
                     <p className="text-[10px] text-[#8C8478] mt-1">
                       {timeAgo(item.createdAt)}
