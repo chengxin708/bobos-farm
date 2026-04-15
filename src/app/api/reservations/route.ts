@@ -13,7 +13,7 @@ import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, try
 async function generateConfirmationCode(): Promise<string> {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   for (let attempt = 0; attempt < 10; attempt++) {
-    let code = "BF-";
+    let code = "";
     for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
     const existing = await prisma.reservation.findUnique({ where: { confirmationCode: code } });
     if (!existing) return code;
