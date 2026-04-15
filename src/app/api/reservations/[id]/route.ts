@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { sendAdminDepositSubmitted, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
-import { checkDateAnomalies, assignYurtsForDate } from "@/lib/yurt-assignment";
+import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -166,7 +166,7 @@ export async function PATCH(
         );
       }
 
-      // T-3 cancellation policy
+      // T-7 cancellation policy
       const cancelNow = new Date();
       cancelNow.setHours(0, 0, 0, 0);
       const cancelResDate = new Date(reservation.date);
@@ -174,19 +174,19 @@ export async function PATCH(
       const cancelDiffDays = Math.round(
         (cancelResDate.getTime() - cancelNow.getTime()) / (1000 * 60 * 60 * 24)
       );
-      if (cancelDiffDays < 3 && !isAdmin) {
+      if (cancelDiffDays < 7 && !isAdmin) {
         return NextResponse.json(
-          { error: "Reservations cannot be cancelled within 3 days of the event" },
+          { error: "Reservations cannot be cancelled within 7 days of the event" },
           { status: 400 }
         );
       }
 
-      // Check refund eligibility: 3+ days before reservation date
+      // Check refund eligibility: 7+ days before reservation date
       const now = new Date();
       const reservationDate = new Date(reservation.date);
       const diffMs = reservationDate.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      const refundEligible = diffDays >= 3;
+      const refundEligible = diffDays >= 7;
 
       const updated = await prisma.reservation.update({
         where: { id },
@@ -234,8 +234,8 @@ export async function PATCH(
         }).catch(err => console.error('[email] cancel notification failed:', err));
       }
 
-      // Recheck anomalies for this date after cancellation
-      void checkDateAnomalies(new Date(reservation.date));
+      // Reassign rooms after cancellation
+      void tryDeterministicAssignment(new Date(reservation.date));
 
       return NextResponse.json(updated);
     }
