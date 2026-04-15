@@ -66,7 +66,6 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   min_advance_booking_days: 1,
   cancellation_window_days: 7,
   preorder_deadline_days: 3,
-  preorder_reminder_days: 3,
   guest_warning_threshold: 4,
   zelle_recipient: 5,
   zelle_recipient_name: 5,
@@ -720,20 +719,6 @@ export default function Settings() {
           <p className="text-xs text-[#8C8478]">{t('ordering.deadlineHelp')}</p>
         </div>
 
-        {/* Pre-order Reminder */}
-        <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.reminderLabel')}</label>
-          <div className="flex items-center gap-2 mb-1">
-            <input
-              type="number"
-              value={formValues.preorder_reminder_days ?? ''}
-              onChange={e => updateField('preorder_reminder_days', e.target.value)}
-              className={smallInputClass('preorder_reminder_days')}
-            />
-            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.reminderUnit')}</span>
-          </div>
-          <p className="text-xs text-[#8C8478]">{t('ordering.reminderHelp')}</p>
-        </div>
       </div>
     )
   }

@@ -19,11 +19,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Read reminder days from settings (default: 8)
+    // Use preorder_deadline_days as the reminder date (same day as deadline)
     const setting = await prisma.systemSetting.findUnique({
-      where: { key: "preorder_reminder_days" },
+      where: { key: "preorder_deadline_days" },
     });
-    const reminderDays = setting?.value ? parseInt(setting.value, 10) : 8;
+    const reminderDays = setting?.value ? parseInt(setting.value, 10) : 3;
 
     // Calculate target date: today + reminderDays
     const targetDate = new Date();
