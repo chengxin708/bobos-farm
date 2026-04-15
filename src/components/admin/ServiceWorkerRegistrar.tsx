@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, createContext, useContext } from 'react'
+import { useTranslations } from 'next-intl'
 import { RefreshCw, X } from 'lucide-react'
 
 // Context to expose SW update state to Settings page
@@ -19,6 +20,7 @@ export function useSwUpdate() {
 }
 
 export default function ServiceWorkerRegistrar({ children }: { children?: React.ReactNode }) {
+  const tc = useTranslations('admin.common')
   const [hasUpdate, setHasUpdate] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null)
@@ -99,12 +101,12 @@ export default function ServiceWorkerRegistrar({ children }: { children?: React.
       {hasUpdate && !dismissed && (
         <div className="bg-[#6B7F5E] text-white px-4 py-2 flex items-center justify-center gap-3 shrink-0 text-sm">
           <RefreshCw size={14} className="animate-spin-slow" />
-          <span>New version available</span>
+          <span>{tc('newVersionAvailable')}</span>
           <button
             onClick={forceRefresh}
             className="px-3 py-1 bg-white text-[#6B7F5E] text-xs font-semibold rounded-full border-0 cursor-pointer hover:bg-white/90"
           >
-            Update now
+            {tc('updateNow')}
           </button>
           <button
             onClick={() => setDismissed(true)}

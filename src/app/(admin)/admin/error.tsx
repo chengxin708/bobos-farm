@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 
 export default function AdminError({
   error,
@@ -9,6 +10,8 @@ export default function AdminError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const tc = useTranslations('admin.common')
+
   useEffect(() => {
     console.error("Admin section error:", error)
   }, [error])
@@ -19,24 +22,23 @@ export default function AdminError({
         <span className="text-[#DC3545] text-2xl font-bold">!</span>
       </div>
       <h2 className="text-xl font-bold text-brown text-center">
-        Something went wrong
+        {tc('somethingWentWrong')}
       </h2>
       <p className="text-sm text-gray-text text-center max-w-md">
-        An unexpected error occurred. Please try again or return to the
-        dashboard.
+        {tc('errorDescription')}
       </p>
       <div className="flex gap-3">
         <a
           href="/admin/dashboard"
           className="px-5 py-2 rounded-md border border-beige text-brown text-sm font-medium no-underline"
         >
-          Dashboard
+          {tc('dashboard')}
         </a>
         <button
           onClick={reset}
           className="px-5 py-2 rounded-md bg-amber text-white text-sm font-semibold cursor-pointer border-none"
         >
-          Try Again
+          {tc('tryAgain')}
         </button>
       </div>
     </div>

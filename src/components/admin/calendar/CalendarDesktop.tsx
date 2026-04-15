@@ -146,6 +146,7 @@ const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, tran
 
 export default function CalendarDesktop() {
   const t = useTranslations('admin.calendar')
+  const tc = useTranslations('admin.common')
   const { data: session, status: sessionStatus } = useSession()
   const router = useRouter()
 
@@ -545,9 +546,9 @@ export default function CalendarDesktop() {
                 <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FFF8E1]">
                   <div className="flex items-center gap-1.5">
                     <ClipboardList size={14} className="text-[#E8B730]" />
-                    <span className="text-sm font-semibold text-[#2C2416]">Pending</span>
+                    <span className="text-sm font-semibold text-[#2C2416]">{t('pendingAssignment')}</span>
                   </div>
-                  <div className="text-[10px] text-[#8A7E6B] mt-0.5">Unassigned</div>
+                  <div className="text-[10px] text-[#8A7E6B] mt-0.5">{tc('unassigned')}</div>
                 </td>
                 {weekDays.map((d, i) => {
                   const dateStr = formatDate(d)
@@ -584,7 +585,7 @@ export default function CalendarDesktop() {
               {/* ── Capacity footer row ── */}
               <tr>
                 <td className="px-4 py-3 border-r border-[#E8ECE4] bg-[#FAFAF7]">
-                  <div className="text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">Capacity</div>
+                  <div className="text-[11px] uppercase tracking-wider font-semibold text-[#8A7E6B]">{t('capacity')}</div>
                 </td>
                 {weekDays.map((d, i) => {
                   const dateStr = formatDate(d)
@@ -603,7 +604,7 @@ export default function CalendarDesktop() {
                       statusIcon = (
                         <div className="flex items-center gap-1 mt-1">
                           <AlertTriangle size={10} className="text-[#C4533A]" />
-                          <span className="text-[9px] text-[#C4533A] font-medium">anomaly</span>
+                          <span className="text-[9px] text-[#C4533A] font-medium">{t('anomaly')}</span>
                         </div>
                       )
                     } else if (unassignedCount > 0) {
@@ -612,14 +613,14 @@ export default function CalendarDesktop() {
                           {Array.from({ length: Math.min(unassignedCount, 3) }).map((_, j) => (
                             <span key={j} className="w-1.5 h-1.5 rounded-full bg-[#E8B730]" />
                           ))}
-                          <span className="text-[9px] text-[#E8B730] font-medium">pend</span>
+                          <span className="text-[9px] text-[#E8B730] font-medium">{t('pendingShort')}</span>
                         </div>
                       )
                     } else {
                       statusIcon = (
                         <div className="flex items-center gap-1 mt-1">
                           <span className="text-[10px] text-[#4A7C59] font-bold">&#10003;</span>
-                          <span className="text-[9px] text-[#4A7C59] font-medium">done</span>
+                          <span className="text-[9px] text-[#4A7C59] font-medium">{tc('done')}</span>
                         </div>
                       )
                     }

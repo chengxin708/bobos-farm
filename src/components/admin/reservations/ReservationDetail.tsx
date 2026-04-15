@@ -62,6 +62,7 @@ export default function ReservationDetail({
   onOrderChanged,
 }: ReservationDetailProps) {
   const t = useTranslations('admin.reservations')
+  const tc = useTranslations('admin.common')
   const tOrders = useTranslations('admin.orders')
   const locale = useLocale()
   const { data: session } = useSession()
@@ -242,7 +243,7 @@ export default function ReservationDetail({
                 <option value="">{t('selectYurt')}</option>
                 {activeYurts.map(y => (
                   <option key={y.id} value={y.id} disabled={occupiedYurtIds.has(y.id)}>
-                    {y.name} ({y.capacity} guests){occupiedYurtIds.has(y.id) ? ' — occupied' : ''}
+                    {y.name} ({tc('capacityGuests', { capacity: y.capacity })}){occupiedYurtIds.has(y.id) ? ` — ${tc('occupied')}` : ''}
                   </option>
                 ))}
               </select>

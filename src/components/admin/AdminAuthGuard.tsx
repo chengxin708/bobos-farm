@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useEffect, type ReactNode } from "react"
 
 /**
@@ -12,6 +13,7 @@ import { useEffect, type ReactNode } from "react"
 export default function AdminAuthGuard({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const tc = useTranslations('admin.common')
 
   useEffect(() => {
     if (status === "loading") return
@@ -33,7 +35,7 @@ export default function AdminAuthGuard({ children }: { children: ReactNode }) {
       <div className="flex-1 flex items-center justify-center bg-cream-bg min-h-screen">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-[3px] border-beige border-t-amber animate-spin" />
-          <span className="text-sm text-gray-text">Loading...</span>
+          <span className="text-sm text-gray-text">{tc('loading')}</span>
         </div>
       </div>
     )

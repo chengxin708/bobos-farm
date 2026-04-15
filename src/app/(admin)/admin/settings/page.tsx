@@ -80,6 +80,7 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
 // ── Push Permission Button ─────────────────────────────────────────
 
 function PushPermissionButton() {
+  const t = useTranslations('admin.settings')
   const [status, setStatus] = useState<'loading' | 'granted' | 'denied' | 'default' | 'unsupported'>('loading')
 
   useEffect(() => {
@@ -132,14 +133,14 @@ function PushPermissionButton() {
   if (status === 'loading') return null
 
   if (status === 'unsupported') {
-    return <p className="text-sm text-[#8C8478]">This browser does not support push notifications.</p>
+    return <p className="text-sm text-[#8C8478]">{t('pushUnsupported')}</p>
   }
 
   if (status === 'granted') {
     return (
       <div className="flex items-center gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-[#5B8C3E]" />
-        <span className="text-sm text-[#5B8C3E] font-medium">Push notifications enabled</span>
+        <span className="text-sm text-[#5B8C3E] font-medium">{t('pushEnabled')}</span>
       </div>
     )
   }
@@ -149,10 +150,10 @@ function PushPermissionButton() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-[#DC3545]" />
-          <span className="text-sm text-[#DC3545] font-medium">Push notifications blocked</span>
+          <span className="text-sm text-[#DC3545] font-medium">{t('pushBlocked')}</span>
         </div>
         <p className="text-xs text-[#8C8478]">
-          To re-enable, click the lock icon in your browser address bar → Site settings → Notifications → Allow
+          {t('pushBlockedHelp')}
         </p>
       </div>
     )
@@ -164,7 +165,7 @@ function PushPermissionButton() {
       onClick={handleEnable}
       className="px-4 py-2 bg-[#6B7F5E] text-white text-sm font-medium rounded-lg border-0 cursor-pointer hover:bg-[#5A6E4F] transition-colors"
     >
-      Enable Push Notifications
+      {t('pushEnable')}
     </button>
   )
 }
@@ -172,6 +173,7 @@ function PushPermissionButton() {
 // ── Manual Refresh Button ──────────────────────────────────────────
 
 function ManualRefreshButton() {
+  const t = useTranslations('admin.settings')
   const { hasUpdate, forceRefresh } = useSwUpdate()
   const [refreshing, setRefreshing] = useState(false)
 
@@ -187,7 +189,7 @@ function ManualRefreshButton() {
       {hasUpdate && (
         <div className="flex items-center gap-2 text-sm text-[#E67E22] font-medium">
           <span className="inline-block w-2 h-2 rounded-full bg-[#E67E22]" />
-          New version available
+          {t('newVersionAvailable')}
         </div>
       )}
       <button
@@ -195,7 +197,7 @@ function ManualRefreshButton() {
         disabled={refreshing}
         className="flex items-center gap-2 px-4 py-2 bg-[#1A1208] text-white text-sm font-medium rounded-lg border-0 cursor-pointer hover:bg-[#1A1208]/80 transition-colors disabled:opacity-50 w-fit"
       >
-        {refreshing ? 'Refreshing...' : hasUpdate ? 'Update & Refresh' : 'Force Refresh'}
+        {refreshing ? t('refreshing') : hasUpdate ? t('updateRefresh') : t('forceRefresh')}
       </button>
     </div>
   )
@@ -204,11 +206,13 @@ function ManualRefreshButton() {
 // ── Payment Methods Editor ─────────────────────────────────────────
 
 function PaymentMethodsEditor() {
+  const t = useTranslations('admin.settings')
   const [methods, setMethods] = useState<string[]>([])
   const [newMethod, setNewMethod] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState(false)
   const saveMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -241,7 +245,8 @@ function PaymentMethodsEditor() {
 
   const saveToServer = async (data: string[]) => {
     setSaving(true)
-    setSaveMsg(null)
+    setSaveSuccess(false)
+    setSaveError(false)
     try {
       const res = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
@@ -249,11 +254,11 @@ function PaymentMethodsEditor() {
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to save')
-      setSaveMsg('Saved!')
+      setSaveSuccess(true)
       if (saveMsgTimer.current) clearTimeout(saveMsgTimer.current)
-      saveMsgTimer.current = setTimeout(() => setSaveMsg(null), 2000)
+      saveMsgTimer.current = setTimeout(() => setSaveSuccess(false), 2000)
     } catch {
-      setSaveMsg('Save failed')
+      setSaveError(true)
     } finally {
       setSaving(false)
     }
@@ -263,7 +268,7 @@ function PaymentMethodsEditor() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
         <div className="flex items-center gap-2 text-sm text-[#8C8478]">
-          <Loader2 size={16} className="animate-spin" /> Loading...
+          <Loader2 size={16} className="animate-spin" /> {t('paymentMethods.loading')}
         </div>
       </div>
     )
@@ -271,9 +276,9 @@ function PaymentMethodsEditor() {
 
   return (
     <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-      <h2 className="text-base font-semibold text-[#1A1208] font-serif">Custom Payment Methods</h2>
+      <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('paymentMethods.title')}</h2>
       <p className="text-sm text-[#8C8478] mt-1 mb-6">
-        Manage available payment methods shown during checkout.
+        {t('paymentMethods.description')}
       </p>
 
       {/* Current methods list */}
@@ -288,7 +293,7 @@ function PaymentMethodsEditor() {
               onClick={() => handleRemove(index)}
               disabled={methods.length <= 1}
               className="p-1 text-[#8C8478] hover:text-[#DC3545] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title={methods.length <= 1 ? 'At least one payment method is required' : 'Remove'}
+              title={methods.length <= 1 ? t('paymentMethods.minRequired') : t('paymentMethods.remove')}
             >
               <Trash2 size={14} />
             </button>
@@ -303,7 +308,7 @@ function PaymentMethodsEditor() {
           value={newMethod}
           onChange={e => setNewMethod(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
-          placeholder="New payment method name"
+          placeholder={t('paymentMethods.placeholder')}
           className="flex-1 border border-[#E8ECE4] rounded-lg px-3 py-2 text-sm text-[#1A1208] focus:outline-none focus:border-[#6B7F5E] transition-colors max-w-xs"
         />
         <button
@@ -312,14 +317,14 @@ function PaymentMethodsEditor() {
           className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#5A6E4F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Plus size={14} />
-          Add
+          {t('paymentMethods.add')}
         </button>
       </div>
 
       {/* Status message */}
-      {(saving || saveMsg) && (
-        <p className={`text-xs mt-3 font-medium ${saveMsg === 'Saved!' ? 'text-[#6B7F5E]' : saving ? 'text-[#8C8478]' : 'text-[#DC3545]'}`}>
-          {saving ? 'Saving...' : saveMsg}
+      {(saving || saveSuccess || saveError) && (
+        <p className={`text-xs mt-3 font-medium ${saveSuccess ? 'text-[#6B7F5E]' : saving ? 'text-[#8C8478]' : 'text-[#DC3545]'}`}>
+          {saving ? t('paymentMethods.saving') : saveSuccess ? t('paymentMethods.saved') : t('paymentMethods.saveFailed')}
         </p>
       )}
     </div>
@@ -362,11 +367,11 @@ export default function Settings() {
     setPwSuccess(false)
 
     if (newPassword !== confirmPassword) {
-      setPwError('New password and confirmation do not match.')
+      setPwError(t('general.passwordMismatch'))
       return
     }
     if (newPassword.length < 8) {
-      setPwError('New password must be at least 8 characters.')
+      setPwError(t('general.passwordTooShort'))
       return
     }
 
@@ -379,7 +384,7 @@ export default function Settings() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        throw new Error(data?.error || 'Failed to update password')
+        throw new Error(data?.error || t('general.passwordFailed'))
       }
       setCurrentPassword('')
       setNewPassword('')
@@ -388,11 +393,11 @@ export default function Settings() {
       if (pwSuccessTimerRef.current) clearTimeout(pwSuccessTimerRef.current)
       pwSuccessTimerRef.current = setTimeout(() => setPwSuccess(false), 3000)
     } catch (err) {
-      setPwError(err instanceof Error ? err.message : 'Failed to update password.')
+      setPwError(err instanceof Error ? err.message : t('general.passwordFailed'))
     } finally {
       setPwSaving(false)
     }
-  }, [currentPassword, newPassword, confirmPassword])
+  }, [currentPassword, newPassword, confirmPassword, t])
 
   const { data: settings, mutate } = useSWR<SystemSetting[]>('/api/settings', fetcher)
 
@@ -477,12 +482,12 @@ export default function Settings() {
   function renderGeneralTab() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">General Settings</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Business information and general configuration.</p>
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('general.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('general.subtitle')}</p>
 
         {/* Business Name */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Name</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.businessName')}</label>
           <input
             type="text"
             value={formValues.business_name ?? ''}
@@ -490,12 +495,12 @@ export default function Settings() {
             className={inputClass('business_name')}
             placeholder="Bobo's Farm"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Your business name as shown to customers.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('general.businessNameHelp')}</p>
         </div>
 
         {/* Business Email */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Email</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.businessEmail')}</label>
           <input
             type="email"
             value={formValues.business_email ?? ''}
@@ -503,12 +508,12 @@ export default function Settings() {
             className={inputClass('business_email')}
             placeholder="info@bobosfarm.com"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Primary contact email for your business.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('general.businessEmailHelp')}</p>
         </div>
 
         {/* Business Phone */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Phone</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.businessPhone')}</label>
           <input
             type="text"
             value={formValues.business_phone ?? ''}
@@ -516,12 +521,12 @@ export default function Settings() {
             className={inputClass('business_phone')}
             placeholder="(555) 000-0000"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Business phone number shown to customers.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('general.businessPhoneHelp')}</p>
         </div>
 
         {/* Business Address */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Business Address</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.businessAddress')}</label>
           <input
             type="text"
             value={formValues.business_address ?? ''}
@@ -529,17 +534,17 @@ export default function Settings() {
             className={inputClass('business_address')}
             placeholder="891 Albany Post Rd, New Paltz, NY 12561"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Physical address of your business.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('general.businessAddressHelp')}</p>
         </div>
 
         {/* Password Change Section */}
         <div className="border-t border-[#E8ECE4] pt-8 mt-4">
-          <h2 className="text-base font-semibold text-[#1A1208] font-serif">Change Password</h2>
-          <p className="text-sm text-[#8C8478] mt-1 mb-6">Update your account password.</p>
+          <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('general.changePassword')}</h2>
+          <p className="text-sm text-[#8C8478] mt-1 mb-6">{t('general.changePasswordHelp')}</p>
 
           <form onSubmit={handlePasswordChange} className="space-y-5">
             <div>
-              <label className="text-sm font-semibold text-[#1A1208] block mb-1">Current Password</label>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.currentPassword')}</label>
               <input
                 type="password"
                 value={currentPassword}
@@ -551,7 +556,7 @@ export default function Settings() {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-[#1A1208] block mb-1">New Password</label>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.newPassword')}</label>
               <input
                 type="password"
                 value={newPassword}
@@ -561,11 +566,11 @@ export default function Settings() {
                 minLength={8}
                 autoComplete="new-password"
               />
-              <p className="text-xs text-[#8C8478] mt-1">Must be at least 8 characters.</p>
+              <p className="text-xs text-[#8C8478] mt-1">{t('general.passwordMinLength')}</p>
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-[#1A1208] block mb-1">Confirm New Password</label>
+              <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.confirmPassword')}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -581,7 +586,7 @@ export default function Settings() {
               <p className="text-sm text-[#DC3545] font-medium">{pwError}</p>
             )}
             {pwSuccess && (
-              <p className="text-sm text-[#6B7F5E] font-medium">Password updated successfully!</p>
+              <p className="text-sm text-[#6B7F5E] font-medium">{t('general.passwordSuccess')}</p>
             )}
 
             <button
@@ -593,7 +598,7 @@ export default function Settings() {
                   : 'hover:bg-[#5A6E4F]'
               }`}
             >
-              {pwSaving ? 'Updating...' : 'Update Password'}
+              {pwSaving ? t('general.updating') : t('general.updatePassword')}
             </button>
           </form>
         </div>
@@ -673,11 +678,11 @@ export default function Settings() {
   function renderCancellationTab() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Cancellation Settings</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure cancellation policies and refund windows.</p>
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('cancellation.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('cancellation.subtitle')}</p>
 
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Cancellation Window</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('cancellation.windowLabel')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
@@ -685,9 +690,9 @@ export default function Settings() {
               onChange={e => updateField('cancellation_window_days', e.target.value)}
               className={smallInputClass('cancellation_window_days')}
             />
-            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">days</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('cancellation.windowUnit')}</span>
           </div>
-          <p className="text-xs text-[#8C8478]">Number of days before reservation date that cancellation is allowed with full refund.</p>
+          <p className="text-xs text-[#8C8478]">{t('cancellation.windowHelp')}</p>
         </div>
       </div>
     )
@@ -696,12 +701,12 @@ export default function Settings() {
   function renderOrderingTab() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Ordering Settings</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure pre-ordering and menu settings.</p>
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('ordering.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('ordering.subtitle')}</p>
 
         {/* Pre-order Deadline */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Pre-order Deadline</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.deadlineLabel')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
@@ -709,9 +714,9 @@ export default function Settings() {
               onChange={e => updateField('preorder_deadline_days', e.target.value)}
               className={smallInputClass('preorder_deadline_days')}
             />
-            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">days before reservation</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.deadlineUnit')}</span>
           </div>
-          <p className="text-xs text-[#8C8478]">Number of days before the reservation date that pre-orders must be placed.</p>
+          <p className="text-xs text-[#8C8478]">{t('ordering.deadlineHelp')}</p>
         </div>
       </div>
     )
@@ -720,11 +725,11 @@ export default function Settings() {
   function renderGuestPoliciesTab() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Guest Policies</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure guest warning thresholds and policies.</p>
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('guestPolicies.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('guestPolicies.subtitle')}</p>
 
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Guest Warning Threshold</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('guestPolicies.thresholdLabel')}</label>
           <div className="flex items-center gap-2 mb-1">
             <input
               type="number"
@@ -732,9 +737,9 @@ export default function Settings() {
               onChange={e => updateField('guest_warning_threshold', e.target.value)}
               className={smallInputClass('guest_warning_threshold')}
             />
-            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">guests</span>
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('guestPolicies.thresholdUnit')}</span>
           </div>
-          <p className="text-xs text-[#8C8478]">Minimum number of guests below which a warning is shown during booking.</p>
+          <p className="text-xs text-[#8C8478]">{t('guestPolicies.thresholdHelp')}</p>
         </div>
       </div>
     )
@@ -744,11 +749,11 @@ export default function Settings() {
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-          <h2 className="text-base font-semibold text-[#1A1208] font-serif">Payment Settings</h2>
-          <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure Zelle payment recipient information.</p>
+          <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('payment.title')}</h2>
+          <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('payment.subtitle')}</p>
 
           <div className="mb-8">
-            <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Name</label>
+            <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('payment.zelleRecipientName')}</label>
             <input
               type="text"
               value={formValues.zelle_recipient_name ?? ''}
@@ -756,11 +761,11 @@ export default function Settings() {
               className={`${inputClass('zelle_recipient_name')} mb-1`}
               placeholder="Enter recipient name"
             />
-            <p className="text-xs text-[#8C8478]">Name displayed to customers during payment.</p>
+            <p className="text-xs text-[#8C8478]">{t('payment.zelleRecipientNameHelp')}</p>
           </div>
 
           <div className="mb-8">
-            <label className="text-sm font-semibold text-[#1A1208] block mb-1">Zelle Recipient Email</label>
+            <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('payment.zelleRecipientEmail')}</label>
             <input
               type="email"
               value={formValues.zelle_recipient ?? ''}
@@ -768,7 +773,7 @@ export default function Settings() {
               className={`${inputClass('zelle_recipient')} mb-1`}
               placeholder="Enter Zelle email"
             />
-            <p className="text-xs text-[#8C8478]">Zelle email address where customers send deposit payments.</p>
+            <p className="text-xs text-[#8C8478]">{t('payment.zelleRecipientEmailHelp')}</p>
           </div>
         </div>
 
@@ -787,12 +792,12 @@ export default function Settings() {
 
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
-        <h2 className="text-base font-semibold text-[#1A1208] font-serif">Notification Settings</h2>
-        <p className="text-sm text-[#8C8478] mt-1 mb-8">Configure email notification preferences.</p>
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('notifications.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('notifications.subtitle')}</p>
 
         {/* Resend API Key */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Resend API Key</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('notifications.resendApiKey')}</label>
           <input
             type="password"
             value={formValues.resend_api_key ?? ''}
@@ -801,13 +806,15 @@ export default function Settings() {
             placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
           />
           <p className="text-xs text-[#8C8478] mt-1">
-            从 <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-[#6B7F5E] underline">resend.com</a> 获取 API Key。保存后邮件通知即可生效。
+            {t.rich('notifications.resendApiKeyHelp', {
+              link: (chunks) => <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-[#6B7F5E] underline">{chunks}</a>,
+            })}
           </p>
         </div>
 
         {/* Admin Notification Email */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Admin Notification Email</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('notifications.adminEmail')}</label>
           <input
             type="email"
             value={formValues.notification_email ?? ''}
@@ -815,12 +822,12 @@ export default function Settings() {
             className={inputClass('notification_email')}
             placeholder="admin@bobosfarm.com"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Admin alerts (new bookings, deposit submissions) will be sent to this address.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('notifications.adminEmailHelp')}</p>
         </div>
 
         {/* Email Sender Name */}
         <div className="mb-8">
-          <label className="text-sm font-semibold text-[#1A1208] block mb-1">Email Sender Name</label>
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('notifications.senderName')}</label>
           <input
             type="text"
             value={formValues.email_from_name ?? ''}
@@ -828,14 +835,14 @@ export default function Settings() {
             className={inputClass('email_from_name')}
             placeholder="Bobo's Farm"
           />
-          <p className="text-xs text-[#8C8478] mt-1">Display name shown in the email &ldquo;From&rdquo; field.</p>
+          <p className="text-xs text-[#8C8478] mt-1">{t('notifications.senderNameHelp')}</p>
         </div>
 
         {/* Toggle: Booking Confirmation */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-semibold text-[#1A1208]">Booking Confirmation Email</p>
-            <p className="text-xs text-[#8C8478] mt-0.5">Send confirmation email when a booking is created.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">{t('notifications.bookingConfirmation')}</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">{t('notifications.bookingConfirmationHelp')}</p>
           </div>
           <button
             type="button"
@@ -855,8 +862,8 @@ export default function Settings() {
         {/* Toggle: Payment Reminder */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-semibold text-[#1A1208]">Payment Reminder Email</p>
-            <p className="text-xs text-[#8C8478] mt-0.5">Allow sending payment reminder emails to customers.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">{t('notifications.paymentReminder')}</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">{t('notifications.paymentReminderHelp')}</p>
           </div>
           <button
             type="button"
@@ -876,8 +883,8 @@ export default function Settings() {
         {/* Toggle: Admin New Booking Alert */}
         <div className="mb-6 flex items-center justify-between max-w-sm">
           <div>
-            <p className="text-sm font-semibold text-[#1A1208]">Admin New Booking Alert</p>
-            <p className="text-xs text-[#8C8478] mt-0.5">Send notification to admin when a new booking is created.</p>
+            <p className="text-sm font-semibold text-[#1A1208]">{t('notifications.adminNewBooking')}</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">{t('notifications.adminNewBookingHelp')}</p>
           </div>
           <button
             type="button"
@@ -896,15 +903,15 @@ export default function Settings() {
 
         {/* Push Notifications */}
         <div className="border-t border-[#E8ECE4] pt-6 mt-6">
-          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">Push Notifications</h3>
-          <p className="text-xs text-[#8C8478] mb-4">Receive instant push notifications on this device for new bookings and deposit submissions.</p>
+          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">{t('notifications.pushTitle')}</h3>
+          <p className="text-xs text-[#8C8478] mb-4">{t('notifications.pushDescription')}</p>
           <PushPermissionButton />
         </div>
 
         {/* App Version & Manual Refresh */}
         <div className="border-t border-[#E8ECE4] pt-6 mt-6">
-          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">App Version</h3>
-          <p className="text-xs text-[#8C8478] mb-4">Clear all cached data and reload the latest version of the app.</p>
+          <h3 className="text-base font-semibold text-[#1A1208] font-serif mb-2">{t('notifications.appVersionTitle')}</h3>
+          <p className="text-xs text-[#8C8478] mb-4">{t('notifications.appVersionDescription')}</p>
           <ManualRefreshButton />
         </div>
       </div>
@@ -1192,7 +1199,7 @@ export default function Settings() {
             <div className="flex-1">
               {!settings ? (
                 <div className="flex items-center justify-center py-12">
-                  <span className="text-sm text-[#8C8478]">Loading settings...</span>
+                  <span className="text-sm text-[#8C8478]">{t('loadingSettings')}</span>
                 </div>
               ) : (
                 TAB_RENDERERS[activeTab]()
@@ -1203,7 +1210,7 @@ export default function Settings() {
             {settings && (
               <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#E8ECE4]">
                 <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-[#6B7F5E]' : saveSuccess ? 'text-[#6B7F5E]' : 'text-transparent'}`}>
-                  {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.')}
+                  {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? t('savedSuccessfully') : '.')}
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -1220,7 +1227,7 @@ export default function Settings() {
                       hasChanges && !saving ? 'bg-[#6B7F5E] text-white hover:bg-[#5A6E4F]' : 'bg-gray-200 text-[#8C8478]'
                     }`}
                   >
-                    {saving ? 'Saving...' : t('footer.saveChanges')}
+                    {saving ? t('saving') : t('footer.saveChanges')}
                   </button>
                 </div>
               </div>
@@ -1233,7 +1240,7 @@ export default function Settings() {
           <div className="max-w-2xl mx-auto flex-1 w-full">
             {!settings ? (
               <div className="flex items-center justify-center py-12">
-                <span className="text-sm text-[#8C8478]">Loading settings...</span>
+                <span className="text-sm text-[#8C8478]">{t('loadingSettings')}</span>
               </div>
             ) : (
               TAB_RENDERERS[activeTab]()
@@ -1244,7 +1251,7 @@ export default function Settings() {
           {settings && (
             <div className="max-w-2xl mx-auto w-full flex items-center justify-between pt-6 border-t border-[#E8ECE4]">
               <span className={`text-xs font-medium ${saveError ? 'text-[#DC3545]' : hasChanges ? 'text-[#6B7F5E]' : saveSuccess ? 'text-[#6B7F5E]' : 'text-transparent'}`}>
-                {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? 'Saved successfully!' : '.')}
+                {saveError || (hasChanges ? t('footer.unsavedChanges') : saveSuccess ? t('savedSuccessfully') : '.')}
               </span>
               <div className="flex gap-3">
                 <button
@@ -1261,7 +1268,7 @@ export default function Settings() {
                     hasChanges && !saving ? 'bg-[#6B7F5E] text-white hover:bg-[#5A6E4F]' : 'bg-gray-200 text-[#8C8478]'
                   }`}
                 >
-                  {saving ? 'Saving...' : t('footer.saveChanges')}
+                  {saving ? t('saving') : t('footer.saveChanges')}
                 </button>
               </div>
             </div>

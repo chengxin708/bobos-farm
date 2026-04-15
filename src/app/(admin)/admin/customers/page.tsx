@@ -97,6 +97,7 @@ type FilterType = 'all' | 'vip' | 'regular' | 'blocked'
 
 export default function Customers() {
   const t = useTranslations('admin.customers')
+  const tc = useTranslations('admin.common')
   const isMobile = useIsMobile()
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -303,7 +304,7 @@ export default function Customers() {
           {/* Table */}
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-sm text-[#8C8478]">Loading customers...</div>
+              <div className="text-sm text-[#8C8478]">{tc('loadingCustomers')}</div>
             </div>
           ) : (
             <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">

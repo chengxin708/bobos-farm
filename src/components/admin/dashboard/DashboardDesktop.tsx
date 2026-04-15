@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import {
   TriangleAlert,
@@ -22,6 +23,7 @@ import {
 } from './useDashboardData'
 
 export default function DashboardDesktop() {
+  const tc = useTranslations('admin.common')
   const {
     t,
     today,
@@ -316,7 +318,7 @@ export default function DashboardDesktop() {
                         {new Date(row.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                       </span>
                       <span className="w-[130px] text-[13px]" style={{ color: '#2C2416' }}>
-                        {row.yurt?.name ?? 'Pending'}
+                        {row.yurt?.name ?? tc('pendingYurt')}
                       </span>
                       <div className="w-[110px]">
                         <span

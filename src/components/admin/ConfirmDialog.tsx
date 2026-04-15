@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { AlertTriangle, CheckCircle, XCircle, X } from 'lucide-react'
 
 interface ConfirmDialogProps {
@@ -40,13 +41,16 @@ export default function ConfirmDialog({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'confirm',
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const tc = useTranslations('admin.common')
+  const resolvedConfirmLabel = confirmLabel ?? tc('confirm')
+  const resolvedCancelLabel = cancelLabel ?? tc('cancel')
   const overlayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -98,14 +102,14 @@ export default function ConfirmDialog({
             disabled={loading}
             className="flex-1 py-2.5 text-sm font-medium text-[#1A1208] bg-transparent border border-[#E8ECE4] rounded-xl cursor-pointer hover:bg-[#F8F7F4] transition-colors disabled:opacity-50"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
             className={`flex-1 py-2.5 text-sm font-medium text-white border-0 rounded-xl cursor-pointer transition-colors disabled:opacity-50 ${config.btnBg}`}
           >
-            {loading ? '...' : confirmLabel}
+            {loading ? '...' : resolvedConfirmLabel}
           </button>
         </div>
       </div>

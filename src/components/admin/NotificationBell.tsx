@@ -109,7 +109,7 @@ export default function NotificationBell() {
                       {item.user.name || item.user.email}
                     </p>
                     <p className="text-xs text-[#8C8478] mt-0.5">
-                      ${item.depositAmount} · {item.yurt?.name ?? 'Pending'} · {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      ${item.depositAmount} · {item.yurt?.name ?? t('pendingYurt')} · {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </p>
                     <p className="text-[10px] text-[#8C8478] mt-1">
                       {timeAgo(item.createdAt)}

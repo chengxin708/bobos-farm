@@ -70,6 +70,7 @@ export default function CheckoutPanel({
   onCompleted,
 }: CheckoutPanelProps) {
   const t = useTranslations('admin.orders')
+  const tc = useTranslations('admin.common')
   const [discount, setDiscount] = useState<number>(order.discount ?? 0)
   const [paymentMethod, setPaymentMethod] = useState<string>(order.paymentMethod ?? '')
   const [paymentMethods, setPaymentMethods] = useState<string[]>(DEFAULT_PAYMENT_METHODS)
@@ -235,7 +236,7 @@ export default function CheckoutPanel({
                   {reservation.user.name || reservation.user.email}
                 </span>
                 {' · '}
-                {reservation.yurt?.name ?? 'Pending'}
+                {reservation.yurt?.name ?? tc('pendingYurt')}
                 {' · '}
                 {formatDate(reservation.date)}
                 {' · '}

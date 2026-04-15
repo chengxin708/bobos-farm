@@ -96,6 +96,7 @@ const emptyForm: ItemFormData = {
 
 export function MenuManagementContent({ onClose }: { onClose?: () => void }) {
   const t = useTranslations('admin.menu')
+  const tc = useTranslations('admin.common')
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -446,7 +447,7 @@ export function MenuManagementContent({ onClose }: { onClose?: () => void }) {
       <>
         {headerBar}
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-[#8C8478]">Loading...</div>
+          <div className="text-[#8C8478]">{tc('loading')}</div>
         </div>
       </>
     )
