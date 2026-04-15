@@ -714,13 +714,18 @@ export default function ReservationDetail({
 
         {/* Cancel — non-terminal states */}
         {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
-          <button
-            onClick={() => setConfirmAction('cancel')}
-            disabled={isUpdating}
-            className="w-full py-2 text-sm font-semibold rounded-lg border border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545]/5 disabled:opacity-50"
-          >
-            {t('actions.cancel')}
-          </button>
+          <div className="flex flex-col items-center gap-1">
+            <button
+              onClick={() => setConfirmAction('cancel')}
+              disabled={isUpdating}
+              className="w-full py-2 text-sm font-semibold rounded-lg border border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545]/5 disabled:opacity-50"
+            >
+              {t('actions.cancel')}
+            </button>
+            {isAdmin && (
+              <span className="text-[11px] text-[#8A7E6B]">管理员可随时取消，不受 7 天限制</span>
+            )}
+          </div>
         )}
 
         {/* Close panel */}
