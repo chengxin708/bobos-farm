@@ -8,7 +8,8 @@ import useSWR from 'swr'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb } from 'lucide-react'
+import { computeOptimizationSuggestion } from '@/lib/yurt-assignment'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -283,6 +284,45 @@ export default function CalendarDesktop() {
     }
     return map
   }, [reservations, yurts])
+
+  /** Per-date optimization suggestions */
+  const optimizationByDate = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof computeOptimizationSuggestion>>()
+    if (!reservations || !yurts) return map
+    const activeYurtInputs = yurts.filter(y => y.status === 'ACTIVE').map(y => ({
+      id: y.id, name: y.name, capacity: y.capacity,
+    }))
+
+    // Group assigned reservations by date
+    const byDate = new Map<string, { reservationId: string; yurtId: string; guestCount: number }[]>()
+    for (const r of reservations) {
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED' || !r.yurtId) continue
+      const dateKey = r.date.split('T')[0]
+      if (!byDate.has(dateKey)) byDate.set(dateKey, [])
+      byDate.get(dateKey)!.push({ reservationId: r.id, yurtId: r.yurtId, guestCount: r.guestCount })
+    }
+
+    for (const [dateKey, assignments] of byDate) {
+      if (assignments.length < 2) continue
+      const suggestion = computeOptimizationSuggestion(activeYurtInputs, assignments)
+      if (suggestion) map.set(dateKey, suggestion)
+    }
+    return map
+  }, [reservations, yurts])
+
+  async function handleApplySuggestion(dateStr: string) {
+    const suggestion = optimizationByDate.get(dateStr)
+    if (!suggestion) return
+    // Apply each move as a series of assign_yurt actions
+    for (const move of suggestion.moves) {
+      await fetch(`/api/reservations/${move.reservationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
+      })
+    }
+    mutateReservations()
+  }
 
   // ── Reservation actions (for detail drawer) ─────────────────
   const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>): Promise<void> => {
@@ -644,6 +684,39 @@ export default function CalendarDesktop() {
                   )
                 })}
               </tr>
+
+              {/* ── Optimization suggestion row ── */}
+              {weekDays.some(d => optimizationByDate.has(formatDate(d))) && (
+                <tr className="border-b border-[#E8ECE4]">
+                  <td className="px-4 py-2 border-r border-[#E8ECE4] bg-[#FFF8E1]/50">
+                    <div className="flex items-center gap-1.5">
+                      <Lightbulb size={12} className="text-[#E8B730]" />
+                      <span className="text-[10px] font-semibold text-[#92400E]">{t('optimizationAvailable')}</span>
+                    </div>
+                  </td>
+                  {weekDays.map((d, i) => {
+                    const dateStr = formatDate(d)
+                    const suggestion = optimizationByDate.get(dateStr)
+                    return (
+                      <td key={i} className="px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top">
+                        {suggestion && (
+                          <div className="bg-[#FFF8E1] border border-[#E8B730]/30 rounded-lg px-2 py-1.5">
+                            <div className="text-[9px] text-[#92400E]">
+                              {t('currentWaste')}: {suggestion.currentWaste} &rarr; {suggestion.suggestedWaste}
+                            </div>
+                            <button
+                              onClick={() => handleApplySuggestion(dateStr)}
+                              className="mt-1 text-[9px] font-medium text-[#8B6914] hover:text-[#6B5210] underline cursor-pointer"
+                            >
+                              {t('applySuggestion')}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )}
 
               {/* ── Capacity footer row ── */}
               <tr>

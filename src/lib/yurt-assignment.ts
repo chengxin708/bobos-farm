@@ -309,6 +309,80 @@ export function computeDeterministicAssignment(
   };
 }
 
+// ─── Optimization Suggestion ────────────────────────────────────────
+
+export interface OptimizationSuggestion {
+  currentWaste: number;
+  suggestedWaste: number;
+  moves: {
+    reservationId: string;
+    fromYurtId: string;
+    toYurtId: string;
+  }[];
+}
+
+/**
+ * Compare current assignments against BFD-optimal.
+ * Returns null if current is already optimal.
+ */
+export function computeOptimizationSuggestion(
+  availableYurts: YurtInput[],
+  currentAssignments: {
+    reservationId: string;
+    yurtId: string;
+    guestCount: number;
+  }[]
+): OptimizationSuggestion | null {
+  if (currentAssignments.length === 0) return null;
+
+  const yurtMap = new Map(availableYurts.map((y) => [y.id, y]));
+
+  // Current waste
+  let currentWaste = 0;
+  for (const a of currentAssignments) {
+    const yurt = yurtMap.get(a.yurtId);
+    if (yurt) currentWaste += yurt.capacity - a.guestCount;
+  }
+
+  // BFD optimal: treat all as unassigned
+  const bfdInput: ReservationInput[] = currentAssignments.map((a) => ({
+    id: a.reservationId,
+    guestCount: a.guestCount,
+    yurtId: null,
+  }));
+  const bfdPlan = computeBestFitDecreasing(availableYurts, bfdInput);
+
+  // BFD waste
+  let suggestedWaste = 0;
+  for (const a of bfdPlan.assignments) {
+    const yurt = yurtMap.get(a.yurtId);
+    if (yurt) suggestedWaste += yurt.capacity - a.guestCount;
+  }
+
+  // If not better, return null
+  if (suggestedWaste >= currentWaste) return null;
+
+  // Compute moves
+  const currentMap = new Map(
+    currentAssignments.map((a) => [a.reservationId, a.yurtId])
+  );
+  const moves: OptimizationSuggestion["moves"] = [];
+  for (const a of bfdPlan.assignments) {
+    const currentYurtId = currentMap.get(a.reservationId);
+    if (currentYurtId && currentYurtId !== a.yurtId) {
+      moves.push({
+        reservationId: a.reservationId,
+        fromYurtId: currentYurtId,
+        toYurtId: a.yurtId,
+      });
+    }
+  }
+
+  if (moves.length === 0) return null;
+
+  return { currentWaste, suggestedWaste, moves };
+}
+
 // ─── DB helpers ──────────────────────────────────────────────────────
 
 /** Fetch ACTIVE yurts available on a given date (excludes date-specific closures). */

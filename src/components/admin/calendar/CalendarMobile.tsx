@@ -10,7 +10,8 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb } from 'lucide-react'
+import { computeOptimizationSuggestion } from '@/lib/yurt-assignment'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -368,6 +369,34 @@ export default function CalendarMobile() {
     return { used, total: totalCapacity, assignedCount, unassignedCount, hasAnomaly }
   }, [reservations, selectedDateStr, totalCapacity])
 
+  /** Optimization suggestion for selected date */
+  const selectedDaySuggestion = useMemo(() => {
+    if (!yurts || !reservations) return null
+    const activeYurtInputs = yurts.filter(y => y.status === 'ACTIVE').map(y => ({
+      id: y.id, name: y.name, capacity: y.capacity,
+    }))
+    const assignments: { reservationId: string; yurtId: string; guestCount: number }[] = []
+    for (const r of reservations) {
+      if (r.status === 'CANCELLED' || r.status === 'EXPIRED' || !r.yurtId) continue
+      if (r.date.split('T')[0] !== selectedDateStr) continue
+      assignments.push({ reservationId: r.id, yurtId: r.yurtId, guestCount: r.guestCount })
+    }
+    if (assignments.length < 2) return null
+    return computeOptimizationSuggestion(activeYurtInputs, assignments)
+  }, [yurts, reservations, selectedDateStr])
+
+  async function handleApplySuggestion() {
+    if (!selectedDaySuggestion) return
+    for (const move of selectedDaySuggestion.moves) {
+      await fetch(`/api/reservations/${move.reservationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
+      })
+    }
+    mutateReservations()
+  }
+
   // ── Week label ───────────────────────────────────────────────
 
   // Use the middle of the week to determine the month context
@@ -647,6 +676,24 @@ export default function CalendarMobile() {
                 className="text-[12px] text-[#92400E] hover:text-[#78350F] underline cursor-pointer"
               >
                 {t('swapCancel')}
+              </button>
+            </div>
+          )}
+
+          {/* ── Optimization Suggestion ────────────────── */}
+          {selectedDaySuggestion && (
+            <div className="flex items-center justify-between px-4 py-2 mb-3 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl">
+              <div className="flex items-center gap-1.5">
+                <Lightbulb size={14} className="text-[#E8B730]" />
+                <span className="text-[13px] text-[#92400E]">
+                  {t('optimizationAvailable')} ({t('currentWaste')}: {selectedDaySuggestion.currentWaste} &rarr; {selectedDaySuggestion.suggestedWaste})
+                </span>
+              </div>
+              <button
+                onClick={handleApplySuggestion}
+                className="text-[12px] font-medium text-[#8B6914] hover:text-[#6B5210] underline cursor-pointer"
+              >
+                {t('applySuggestion')}
               </button>
             </div>
           )}
