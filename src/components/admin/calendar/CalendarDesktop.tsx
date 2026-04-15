@@ -9,7 +9,7 @@ import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
 import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb } from 'lucide-react'
-import { computeOptimizationSuggestion } from '@/lib/yurt-assignment'
+import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
 
 // ── Types ──────────────────────────────────────────────────────────
 

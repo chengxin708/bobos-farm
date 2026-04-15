@@ -2,7 +2,7 @@ import {
   computeDeterministicAssignment,
   DeterministicReservationInput,
   DeterministicResult,
-} from '../yurt-assignment';
+} from '../yurt-assignment-pure';
 
 // ─── Test fixtures ──────────────────────────────────────────────────
 
