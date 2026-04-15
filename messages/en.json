@@ -1508,5 +1508,25 @@
         "noOrderData": "No order data available yet"
       }
     }
+  },
+  "claim": {
+    "title": "Look Up Reservation",
+    "subtitle": "Enter your confirmation code to view reservation details",
+    "codePlaceholder": "Enter confirmation code",
+    "lookup": "Look Up",
+    "notFound": "No reservation found for this confirmation code",
+    "reservationDetails": "Reservation Details",
+    "loginToClaim": "Log in to claim this reservation",
+    "claimButton": "Claim to My Account",
+    "claiming": "Claiming...",
+    "claimed": "Linked to your account",
+    "alreadyClaimed": "This reservation has been claimed by another account",
+    "claimSuccess": "Reservation successfully claimed!",
+    "date": "Date",
+    "guests": "Guests",
+    "yurt": "Yurt",
+    "status": "Status",
+    "guest": "Guest",
+    "back": "Back to Home"
   }
 }

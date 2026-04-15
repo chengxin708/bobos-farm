@@ -1508,5 +1508,25 @@
         "noOrderData": "暂无订单数据"
       }
     }
+  },
+  "claim": {
+    "title": "查询预约",
+    "subtitle": "输入您的确认码查看预约详情",
+    "codePlaceholder": "输入确认码",
+    "lookup": "查询",
+    "notFound": "未找到此确认码对应的预约",
+    "reservationDetails": "预约详情",
+    "loginToClaim": "登录后绑定到您的账号",
+    "claimButton": "绑定到我的账号",
+    "claiming": "绑定中...",
+    "claimed": "已绑定到您的账号",
+    "alreadyClaimed": "此预约已被其他账号绑定",
+    "claimSuccess": "预约已成功绑定！",
+    "date": "日期",
+    "guests": "人数",
+    "yurt": "包房",
+    "status": "状态",
+    "guest": "客人",
+    "back": "返回首页"
   }
 }
