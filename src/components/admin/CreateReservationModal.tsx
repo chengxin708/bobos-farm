@@ -99,22 +99,7 @@ export default function CreateReservationModal({
     }
   }, [isOpen, defaultDate, defaultYurtId])
 
-  // Escape key to close
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose()
-  }, [onClose])
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, handleKeyDown])
-
-  // Click outside to close
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose()
-  }
+  // Only close via X button — no backdrop click or Escape to prevent accidental closure
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,7 +142,6 @@ export default function CreateReservationModal({
   return (
     <div
       className={`fixed inset-0 z-50 md:flex md:items-center md:justify-center md:p-4 transition-all duration-200 ${visible ? 'md:bg-black/40' : 'md:bg-black/0'}`}
-      onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
