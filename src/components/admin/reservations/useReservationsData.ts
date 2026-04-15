@@ -64,6 +64,7 @@ export interface ActivityLog {
 
 export interface Reservation {
   id: string
+  confirmationCode?: string
   userId: string
   yurtId: string | null
   date: string
