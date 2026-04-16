@@ -520,51 +520,36 @@ export default function ReservationDetail({
 
         <hr className="border-[#E8ECE4]" />
 
-        {/* Activity Timeline */}
+        {/* Activity Timeline — unified chronological view */}
         <div className="space-y-3">
           <div className="flex items-center gap-1.5">
             <History size={14} className="text-[#8B6914]" />
             <h4 className="text-sm font-bold text-brown">{t('detail.timeline')}</h4>
           </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-xs text-[#8C8478]">{t('detail.created')}</span>
-              <span className="text-xs text-brown">{formatDateTime(reservation.createdAt)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-xs text-[#8C8478]">{t('detail.updated')}</span>
-              <span className="text-xs text-brown">{formatDateTime(reservation.updatedAt)}</span>
-            </div>
-            {reservation.cancelledAt && (
-              <div className="flex justify-between">
-                <span className="text-xs text-[#DC3545]">{t('cancelled')}</span>
-                <span className="text-xs text-brown">{formatDateTime(reservation.cancelledAt)}</span>
-              </div>
-            )}
-            {reservation.cancelReason && (
-              <div className="mt-1 p-2 rounded bg-[#DC3545]/5 text-xs text-[#DC3545]">
-                {t('cancelReason', { reason: reservation.cancelReason })}
-              </div>
-            )}
-          </div>
 
-          {/* Modification history from activity logs */}
-          {activityLogs.length > 0 && (
-            <div className="mt-2 space-y-2">
-              <div className="text-[10px] text-[#8C8478] uppercase font-semibold">{t('detail.modifications')}</div>
-              <div className="relative pl-3.5 space-y-0">
-                {/* Vertical timeline line */}
-                <div className="absolute left-[5px] top-1 bottom-1 w-px bg-[#E8ECE4]" />
-                {activityLogs.map((log) => (
+          {activityLogs.length > 0 ? (
+            <div className="relative pl-3.5 space-y-0">
+              {/* Vertical timeline line */}
+              <div className="absolute left-[5px] top-1 bottom-1 w-px bg-[#E8ECE4]" />
+              {activityLogs.map((log) => {
+                const isCancelOrExpire = log.action === 'RESERVATION_CANCELLED' || log.action === 'RESERVATION_EXPIRED'
+                const dotColor = isCancelOrExpire ? 'bg-[#DC3545]' : 'bg-[#8B6914]'
+                return (
                   <div key={log.id} className="relative flex items-start gap-2.5 py-1.5">
-                    <span className="relative z-10 mt-1.5 shrink-0 w-[7px] h-[7px] rounded-full bg-[#8B6914] ring-2 ring-white" />
+                    <span className={`relative z-10 mt-1.5 shrink-0 w-[7px] h-[7px] rounded-full ${dotColor} ring-2 ring-white`} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs text-brown leading-snug block">{activityLogText(log, t)}</span>
+                      <span className={`text-xs leading-snug block ${isCancelOrExpire ? 'text-[#DC3545]' : 'text-brown'}`}>
+                        {activityLogText(log, t)}
+                      </span>
                       <span className="text-[10px] text-[#8C8478]">{formatDateTime(log.createdAt)}</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-xs text-[#8C8478]">
+              {t('detail.created')}: {formatDateTime(reservation.createdAt)}
             </div>
           )}
         </div>
