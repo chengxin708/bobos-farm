@@ -45,7 +45,7 @@ interface Reservation {
   date: string
   guestCount: number
   specialRequests: string | null
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: string
   holdByAdmin?: boolean
@@ -237,7 +237,7 @@ export default function CalendarDesktop() {
     if (!reservations) return map
     for (const r of reservations) {
       if (!r.yurtId) continue
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, new Map())
       const yurtMap = map.get(dateKey)!
@@ -253,7 +253,7 @@ export default function CalendarDesktop() {
     if (!reservations) return map
     for (const r of reservations) {
       if (r.yurtId !== null) continue
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, [])
       map.get(dateKey)!.push(r)
@@ -282,7 +282,7 @@ export default function CalendarDesktop() {
     const map = new Map<string, { used: number; total: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }>()
 
     for (const r of reservations) {
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) {
         map.set(dateKey, { used: 0, total: activeTotal, assignedCount: 0, unassignedCount: 0, hasAnomaly: false })
@@ -309,7 +309,7 @@ export default function CalendarDesktop() {
     // Group assigned reservations by date
     const byDate = new Map<string, { reservationId: string; yurtId: string; guestCount: number }[]>()
     for (const r of reservations) {
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED' || !r.yurtId) continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED' || !r.yurtId) continue
       const dateKey = r.date.split('T')[0]
       if (!byDate.has(dateKey)) byDate.set(dateKey, [])
       byDate.get(dateKey)!.push({ reservationId: r.id, yurtId: r.yurtId, guestCount: r.guestCount })
@@ -574,7 +574,7 @@ export default function CalendarDesktop() {
     if (!reservations) return map
     for (const r of reservations) {
       if (!r.yurtId) continue
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       map.set(dateKey, (map.get(dateKey) || 0) + 1)
     }

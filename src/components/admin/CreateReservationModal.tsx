@@ -65,7 +65,7 @@ export default function CreateReservationModal({
   )
   const occupiedYurtIds = new Set(
     (dateReservations || [])
-      .filter(r => r.yurtId && !['CANCELLED', 'EXPIRED'].includes(r.status))
+      .filter(r => r.yurtId && !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED'].includes(r.status))
       .map(r => r.yurtId)
   )
   const availableYurts = activeYurts.filter(y => !occupiedYurtIds.has(y.id))

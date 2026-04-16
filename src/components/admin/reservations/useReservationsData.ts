@@ -148,7 +148,7 @@ export function activityLogText(log: ActivityLog, t: (key: string, values?: any)
     case 'DEPOSIT_REFUNDED':
       return t('activityLog.depositRefunded', { actor })
     case 'STATUS_CHANGED': {
-      const resStatusKey: Record<string, string> = { PENDING_PAYMENT: 'PENDING_PAYMENT', PAYMENT_SUBMITTED: 'PAYMENT_SUBMITTED', CONFIRMED: 'CONFIRMED', COMPLETED: 'COMPLETED', CANCELLED: 'CANCELLED', EXPIRED: 'EXPIRED' }
+      const resStatusKey: Record<string, string> = { PENDING_PAYMENT: 'PENDING_PAYMENT', PAYMENT_SUBMITTED: 'PAYMENT_SUBMITTED', CONFIRMED: 'CONFIRMED', COMPLETED: 'COMPLETED', CANCELLED: 'CANCELLED', CANCELLED_PENDING_REFUND: 'CANCELLED_PENDING_REFUND', EXPIRED: 'EXPIRED' }
       const fromStatus = resStatusKey[details?.from as string] ? t(`status.${details?.from}`) : (details?.from as string || '?')
       const toStatus = resStatusKey[details?.to as string] ? t(`status.${details?.to}`) : (details?.to as string || '?')
       return t('activityLog.statusChanged', { actor, from: fromStatus, to: toStatus })

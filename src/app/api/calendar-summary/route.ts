@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   const reservations = await prisma.reservation.findMany({
     where: {
       date: { gte: start, lte: end },
-      status: { notIn: ["CANCELLED", "EXPIRED"] },
+      status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
     },
     select: { date: true, guestCount: true, yurtId: true },
   });

@@ -48,7 +48,7 @@ interface Reservation {
   date: string
   guestCount: number
   specialRequests: string | null
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   depositConfirmedAt: string | null
@@ -298,7 +298,7 @@ export default function ReservationsPage() {
 
     for (const r of reservations) {
       const rDate = new Date(r.date).getTime()
-      const isUpcoming = rDate >= now && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(r.status)
+      const isUpcoming = rDate >= now && !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(r.status)
       if (isUpcoming) {
         upcomingList.push(r)
       } else {
@@ -600,7 +600,7 @@ export default function ReservationsPage() {
                   </div>
 
                   {/* Cancel link */}
-                  {!isCancelling && !['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(r.status) && (
+                  {!isCancelling && !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(r.status) && (
                     <button
                       onClick={() => handleCancelRequest(r.id)}
                       className="self-start text-[#C4453A] text-sm cursor-pointer bg-transparent border-none p-0 hover:underline mt-0.5"

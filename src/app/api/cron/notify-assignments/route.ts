@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       yurtId: { not: null },
       yurtAssignedAt: { not: null },
       yurtNotifiedAt: null,
-      status: { notIn: ["CANCELLED", "EXPIRED"] },
+      status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
     },
     include: {
       user: { select: { email: true } },

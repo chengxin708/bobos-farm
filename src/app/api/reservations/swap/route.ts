@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Both must be active
-  const inactive = ["CANCELLED", "EXPIRED"];
+  const inactive = ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"];
   if (inactive.includes(resA.status) || inactive.includes(resB.status)) {
     return NextResponse.json(
       { error: "Cannot swap cancelled or expired reservations" },

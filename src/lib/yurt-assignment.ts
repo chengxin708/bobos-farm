@@ -55,7 +55,7 @@ async function getActiveReservations(
   const reservations = await prisma.reservation.findMany({
     where: {
       date: targetDate,
-      status: { notIn: ["CANCELLED", "EXPIRED"] },
+      status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
     },
     select: { id: true, guestCount: true, yurtId: true },
     orderBy: { guestCount: "desc" },
@@ -71,7 +71,7 @@ async function getActiveReservationsFull(
   const reservations = await prisma.reservation.findMany({
     where: {
       date: targetDate,
-      status: { notIn: ["CANCELLED", "EXPIRED"] },
+      status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
     },
     select: {
       id: true,
@@ -209,7 +209,7 @@ export async function assignYurtsForDate(
   const existingReservations = await prisma.reservation.findMany({
     where: {
       date: targetDate,
-      status: { notIn: ["CANCELLED", "EXPIRED"] },
+      status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
       yurtId: { not: null },
     },
     select: { id: true },

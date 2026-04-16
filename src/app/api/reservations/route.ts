@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
       where.userId = session.user.id;
     } else {
       const status = searchParams.get("status");
-      const validStatuses = ["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "EXPIRED", "COMPLETED"];
+      const validStatuses = ["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED", "COMPLETED"];
       if (status && validStatuses.includes(status)) where.status = status;
 
       const yurtId = searchParams.get("yurtId");
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
           where: {
             yurtId,
             date: reservationDate,
-            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
           },
         });
         if (existing) {
@@ -365,7 +365,7 @@ export async function POST(req: NextRequest) {
         where: {
           yurtId: requestedYurtId,
           date: reservationDate,
-          status: { notIn: ["CANCELLED", "EXPIRED"] },
+          status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
         },
       });
       if (conflict) {

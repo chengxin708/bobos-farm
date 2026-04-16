@@ -45,7 +45,7 @@ interface Reservation {
   date: string
   guestCount: number
   specialRequests: string | null
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: string
   holdByAdmin?: boolean
@@ -307,7 +307,7 @@ export default function CalendarMobile() {
     if (!reservations) return map
     for (const r of reservations) {
       if (!r.yurtId) continue
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, new Map())
       map.get(dateKey)!.set(r.yurtId, r)
@@ -321,7 +321,7 @@ export default function CalendarMobile() {
     if (!reservations) return map
     for (const r of reservations) {
       if (r.yurtId !== null) continue
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) map.set(dateKey, [])
       map.get(dateKey)!.push(r)
@@ -348,7 +348,7 @@ export default function CalendarMobile() {
     const set = new Set<string>()
     if (!reservations) return set
     for (const r of reservations) {
-      if (r.status !== 'CANCELLED' && r.status !== 'EXPIRED') {
+      if (r.status !== 'CANCELLED' && r.status !== 'CANCELLED_PENDING_REFUND' && r.status !== 'EXPIRED') {
         set.add(r.date.split('T')[0])
       }
     }
@@ -461,7 +461,7 @@ export default function CalendarMobile() {
     if (!reservations) return { used: 0, total: totalCapacity, assignedCount: 0, unassignedCount: 0, hasAnomaly: false }
     let used = 0, assignedCount = 0, unassignedCount = 0
     for (const r of reservations) {
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED') continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (dateKey !== selectedDateStr) continue
       used += r.guestCount
@@ -483,7 +483,7 @@ export default function CalendarMobile() {
     }))
     const assignments: { reservationId: string; yurtId: string; guestCount: number }[] = []
     for (const r of reservations) {
-      if (r.status === 'CANCELLED' || r.status === 'EXPIRED' || !r.yurtId) continue
+      if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED' || !r.yurtId) continue
       if (r.date.split('T')[0] !== selectedDateStr) continue
       assignments.push({ reservationId: r.id, yurtId: r.yurtId, guestCount: r.guestCount })
     }
@@ -874,7 +874,7 @@ export default function CalendarMobile() {
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
                       {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
-                    {res.status !== 'CANCELLED' && !swapSourceId && Array.from(selectedDayReservations.values()).filter(r => r.status !== 'CANCELLED' && r.status !== 'EXPIRED').length >= 2 && (
+                    {res.status !== 'CANCELLED' && !swapSourceId && Array.from(selectedDayReservations.values()).filter(r => r.status !== 'CANCELLED' && r.status !== 'CANCELLED_PENDING_REFUND' && r.status !== 'EXPIRED').length >= 2 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
                         className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"

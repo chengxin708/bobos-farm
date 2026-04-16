@@ -439,6 +439,7 @@ export async function PATCH(
 
       if (
         reservation.status === "CANCELLED" ||
+        reservation.status === "CANCELLED_PENDING_REFUND" ||
         reservation.status === "EXPIRED"
       ) {
         return NextResponse.json(
@@ -485,7 +486,7 @@ export async function PATCH(
           where: {
             yurtId: targetYurtId,
             date: targetDate,
-            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
             id: { not: id },
           },
         });
@@ -575,7 +576,7 @@ export async function PATCH(
       }
 
       // Only allow modification of active reservations
-      if (["CANCELLED", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
+      if (["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
         return NextResponse.json(
           { error: "Cannot modify a cancelled, expired, or completed reservation" },
           { status: 400 }
@@ -663,7 +664,7 @@ export async function PATCH(
           where: {
             yurtId: newYurtId,
             date: reservation.date,
-            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
             id: { not: id },
           },
         });
@@ -736,7 +737,7 @@ export async function PATCH(
       }
 
       // Only allow modification of active reservations
-      if (["CANCELLED", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
+      if (["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED", "COMPLETED"].includes(reservation.status)) {
         return NextResponse.json(
           { error: "Cannot edit a cancelled, expired, or completed reservation" },
           { status: 400 }
@@ -776,7 +777,7 @@ export async function PATCH(
           where: {
             yurtId: targetYurtId,
             date: targetDate,
-            status: { notIn: ["CANCELLED", "EXPIRED"] },
+            status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
             id: { not: id },
           },
         });

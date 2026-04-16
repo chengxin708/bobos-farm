@@ -34,7 +34,7 @@ export interface Reservation {
   date: string
   guestCount: number
   specialRequests: string | null
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   paymentDeadline: string | null
@@ -328,7 +328,7 @@ export function useDashboardData() {
         const dateStr = toDateStr(date)
         const match = weekRes.find(
           r => r.yurtId === yurt.id && r.date.startsWith(dateStr) &&
-            r.status !== 'CANCELLED' && r.status !== 'EXPIRED'
+            r.status !== 'CANCELLED' && r.status !== 'CANCELLED_PENDING_REFUND' && r.status !== 'EXPIRED'
         )
         if (match) return STATUS_TO_CELL[match.status] || 'confirmed' as CellStatus
         return 'available' as CellStatus

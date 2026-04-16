@@ -53,7 +53,7 @@ export async function GET(
           lte: threeMonthsLater,
         },
         status: {
-          notIn: ["CANCELLED", "EXPIRED"],
+          notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"],
         },
       },
       select: { date: true },
@@ -112,7 +112,7 @@ export async function PATCH(
       const futureDates = await prisma.reservation.findMany({
         where: {
           date: { gte: new Date() },
-          status: { notIn: ["CANCELLED", "EXPIRED"] },
+          status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
         },
         select: { date: true },
         distinct: ["date"],
@@ -152,7 +152,7 @@ export async function DELETE(
     const activeReservations = await prisma.reservation.count({
       where: {
         yurtId: id,
-        status: { notIn: ["CANCELLED", "EXPIRED"] },
+        status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
       },
     });
 

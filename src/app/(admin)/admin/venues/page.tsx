@@ -182,7 +182,7 @@ export default function VenuesPage() {
   const reservationsByDate = useMemo(() => {
     const idx: Record<string, Reservation[]> = {}
     reservations?.forEach(r => {
-      if (['CANCELLED', 'EXPIRED'].includes(r.status)) return
+      if (['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED'].includes(r.status)) return
       const dateKey = toDateKey(r.date)
       if (!idx[dateKey]) idx[dateKey] = []
       idx[dateKey].push(r)
