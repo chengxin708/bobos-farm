@@ -70,7 +70,7 @@ export interface Reservation {
   date: string
   guestCount: number
   specialRequests: string | null
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   depositConfirmedAt: string | null
@@ -87,7 +87,7 @@ export interface Reservation {
   order?: Order | OrderSummary | null
 }
 
-export type FilterMode = 'action-needed' | 'confirmed' | 'completed' | 'all'
+export type FilterMode = 'action-needed' | 'pending-refund' | 'confirmed' | 'completed' | 'all'
 
 export interface DateGroup {
   dateLabel: string
@@ -176,6 +176,7 @@ export const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   CONFIRMED:         { bg: 'bg-[#2980B9]/15', text: 'text-[#2980B9]' },
   COMPLETED:         { bg: 'bg-[#5B8C3E]/15', text: 'text-[#5B8C3E]' },
   CANCELLED:         { bg: 'bg-[#DC3545]/15', text: 'text-[#DC3545]' },
+  CANCELLED_PENDING_REFUND: { bg: 'bg-[#DC3545]/15', text: 'text-[#DC3545]' },
   EXPIRED:           { bg: 'bg-gray-100',      text: 'text-gray-500' },
 }
 
@@ -299,11 +300,15 @@ export function useReservationsData() {
     [allReservations]
   )
   const actionNeededCount = useMemo(
-    () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED').length,
+    () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED' || r.status === 'CANCELLED_PENDING_REFUND').length,
     [allReservations]
   )
   const confirmedCount = useMemo(
     () => allReservations.filter(r => r.status === 'CONFIRMED').length,
+    [allReservations]
+  )
+  const pendingRefundCount = useMemo(
+    () => allReservations.filter(r => r.status === 'CANCELLED_PENDING_REFUND').length,
     [allReservations]
   )
   const completedCount = useMemo(
@@ -353,7 +358,9 @@ export function useReservationsData() {
     // Apply filter chip — only in active (non-history) mode
     if (!showHistory) {
       if (filter === 'action-needed') {
-        list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED')
+        list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED' || r.status === 'CANCELLED_PENDING_REFUND')
+      } else if (filter === 'pending-refund') {
+        list = list.filter(r => r.status === 'CANCELLED_PENDING_REFUND')
       } else if (filter === 'confirmed') {
         list = list.filter(r => r.status === 'CONFIRMED')
       } else if (filter === 'completed') {
@@ -437,9 +444,42 @@ export function useReservationsData() {
     if (ok) showSuccess(t('cancelledSuccess'))
   }, [handleAction, showSuccess, t])
 
+  const cancelAndRefund = useCallback(async (id: string) => {
+    setUpdating(true)
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel_and_refund' }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || t('updateFailed'))
+        return
+      }
+      const updated = await res.json()
+      if (selectedRes?.id === id) setSelectedRes(updated)
+      mutateReservations()
+      mutateDetail()
+      mutateActivityLogs()
+      showSuccess(t('cancelledSuccess'))
+    } catch {
+      alert(t('updateFailed'))
+    } finally {
+      setUpdating(false)
+    }
+  }, [selectedRes, mutateReservations, mutateDetail, mutateActivityLogs, showSuccess, t])
+
   const completeReservation = useCallback(async (id: string) => {
     const ok = await handleAction(id, 'admin', { status: 'COMPLETED' })
     if (ok) showSuccess(t('completedSuccess'))
+  }, [handleAction, showSuccess, t])
+
+  const markRefunded = useCallback(async (id: string) => {
+    const ok = await handleAction(id, 'admin', {
+      depositStatus: 'REFUNDED',
+    })
+    if (ok) showSuccess(t('refundedSuccess'))
   }, [handleAction, showSuccess, t])
 
   const handleLockOrder = useCallback(async (id: string) => {
@@ -519,6 +559,7 @@ export function useReservationsData() {
     pendingOrderCount,
     heldByAdminCount,
     actionNeededCount,
+    pendingRefundCount,
     confirmedCount,
     completedCount,
     // Data
@@ -533,7 +574,9 @@ export function useReservationsData() {
     // Actions
     confirmDeposit,
     cancelReservation,
+    cancelAndRefund,
     completeReservation,
+    markRefunded,
     handleLockOrder,
     handleUnlockOrder,
     updating,
