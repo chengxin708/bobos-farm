@@ -454,42 +454,42 @@ export default function ReservationDetail({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.depositStatus')}</span>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DEPOSIT_BADGE[reservation.depositStatus]?.bg} ${DEPOSIT_BADGE[reservation.depositStatus]?.text}`}>
-                  {t(`depositStatus.${reservation.depositStatus}`)}
-                </span>
-                {/* Re-confirm button when deposit was unlocked back to PENDING */}
-                {reservation.depositStatus === 'PENDING' && isAdmin && (
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${DEPOSIT_BADGE[reservation.depositStatus]?.bg} ${DEPOSIT_BADGE[reservation.depositStatus]?.text}`}>
+                {t(`depositStatus.${reservation.depositStatus}`)}
+              </span>
+            </div>
+            {/* Deposit action buttons — separate row, clear button style */}
+            {isAdmin && (reservation.depositStatus === 'PENDING' || reservation.depositStatus === 'CONFIRMED' || reservation.depositStatus === 'REFUNDED') && (
+              <div className="flex gap-2 mt-1">
+                {reservation.depositStatus === 'PENDING' && (
                   <button
                     onClick={handleRelockDeposit}
                     disabled={savingDeposit}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5B8C3E]/10 text-[#5B8C3E] hover:bg-[#5B8C3E]/20 disabled:opacity-50 transition-colors"
+                    className="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-[#5B8C3E] text-[#5B8C3E] hover:bg-[#5B8C3E]/10 disabled:opacity-50 transition-colors"
                   >
                     {t('detail.reconfirmDeposit')}
                   </button>
                 )}
-                {/* Mark as Refunded — for CONFIRMED deposits */}
-                {reservation.depositStatus === 'CONFIRMED' && isAdmin && (
+                {reservation.depositStatus === 'CONFIRMED' && (
                   <button
                     onClick={handleMarkRefunded}
                     disabled={savingDeposit}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#2980B9]/10 text-[#2980B9] hover:bg-[#2980B9]/20 disabled:opacity-50 transition-colors"
+                    className="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-[#2980B9] text-[#2980B9] hover:bg-[#2980B9]/10 disabled:opacity-50 transition-colors"
                   >
                     {t('detail.markRefunded')}
                   </button>
                 )}
-                {/* Re-mark as Confirmed — for REFUNDED deposits */}
-                {reservation.depositStatus === 'REFUNDED' && isAdmin && (
+                {reservation.depositStatus === 'REFUNDED' && (
                   <button
                     onClick={handleRelockDeposit}
                     disabled={savingDeposit}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5B8C3E]/10 text-[#5B8C3E] hover:bg-[#5B8C3E]/20 disabled:opacity-50 transition-colors"
+                    className="flex-1 py-1.5 text-xs font-semibold rounded-lg border border-[#5B8C3E] text-[#5B8C3E] hover:bg-[#5B8C3E]/10 disabled:opacity-50 transition-colors"
                   >
                     {t('detail.markConfirmed')}
                   </button>
                 )}
               </div>
-            </div>
+            )}
             {reservation.paymentReference && (
               <div className="flex justify-between">
                 <span className="text-xs text-[#8C8478]">{t('detail.paymentReference')}</span>

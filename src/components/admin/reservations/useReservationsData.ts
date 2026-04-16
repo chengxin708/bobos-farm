@@ -137,14 +137,22 @@ export function activityLogText(log: ActivityLog, t: (key: string, values?: any)
       return t('activityLog.expired')
     case 'DEPOSIT_CONFIRMED':
       return t('activityLog.depositConfirmed', { actor })
-    case 'DEPOSIT_STATUS_CHANGED':
-      return t('activityLog.depositStatusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
+    case 'DEPOSIT_STATUS_CHANGED': {
+      const depositStatusKey: Record<string, string> = { UNPAID: 'unpaid', PENDING: 'pending', CONFIRMED: 'confirmed', REFUNDED: 'refunded' }
+      const fromLabel = depositStatusKey[details?.from as string] ? t(`depositStatus.${details?.from}`) : (details?.from as string || '?')
+      const toLabel = depositStatusKey[details?.to as string] ? t(`depositStatus.${details?.to}`) : (details?.to as string || '?')
+      return t('activityLog.depositStatusChanged', { actor, from: fromLabel, to: toLabel })
+    }
     case 'DEPOSIT_RELEASED':
       return t('activityLog.depositReleased', { actor })
     case 'DEPOSIT_REFUNDED':
       return t('activityLog.depositRefunded', { actor })
-    case 'STATUS_CHANGED':
-      return t('activityLog.statusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
+    case 'STATUS_CHANGED': {
+      const resStatusKey: Record<string, string> = { PENDING_PAYMENT: 'PENDING_PAYMENT', PAYMENT_SUBMITTED: 'PAYMENT_SUBMITTED', CONFIRMED: 'CONFIRMED', COMPLETED: 'COMPLETED', CANCELLED: 'CANCELLED', EXPIRED: 'EXPIRED' }
+      const fromStatus = resStatusKey[details?.from as string] ? t(`status.${details?.from}`) : (details?.from as string || '?')
+      const toStatus = resStatusKey[details?.to as string] ? t(`status.${details?.to}`) : (details?.to as string || '?')
+      return t('activityLog.statusChanged', { actor, from: fromStatus, to: toStatus })
+    }
     case 'YURT_ASSIGNED':
       return t('activityLog.yurtAssigned', { actor, yurt: (details?.yurtName as string) || '?' })
     case 'YURT_SWAPPED':
