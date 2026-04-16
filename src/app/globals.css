@@ -48,6 +48,9 @@
 
   --font-logo-display: var(--font-logo), serif;
 
+  /* === Admin: Apple system font stack === */
+  --font-admin: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+
   /* === Legacy aliases (admin pages still reference these) === */
   --font-playfair: var(--font-dm-serif), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;
   --font-lato: var(--font-logo), var(--font-noto-serif-sc), "Songti SC", "SimSun", serif;

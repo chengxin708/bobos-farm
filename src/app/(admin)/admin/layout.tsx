@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <PwaHead />
         <PushNotificationManager />
         <ServiceWorkerRegistrar>
-          <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
+          <div className="fixed inset-0 flex flex-col bg-[#F8F7F4] font-[family-name:var(--font-admin)] font-normal">
             <AdminNavbar />
             <OfflineBanner />
             <PwaInstallPrompt />
