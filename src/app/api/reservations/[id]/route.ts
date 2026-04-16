@@ -201,10 +201,7 @@ export async function PATCH(
           cancelledAt: now,
           cancelReason: parsedCancel.data.reason || null,
           refundEligible,
-          depositStatus:
-            refundEligible && reservation.depositStatus === "CONFIRMED"
-              ? "REFUNDED"
-              : reservation.depositStatus,
+          // Keep deposit status unchanged — admin must manually mark refund
         },
         include: {
           user: {
