@@ -860,11 +860,14 @@ export default function CalendarMobile() {
 
           {/* ── Swap Mode Banner ─────────────────────────── */}
           {swapSourceId && (
-            <div className="flex items-center justify-between px-4 py-2 mb-3 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl">
-              <span className="text-[13px] text-[#92400E]">{t('swapSelect')}</span>
+            <div className="flex items-center justify-between px-4 py-3 mb-3 bg-[#FFF8E1] border-2 border-[#E8B730] rounded-xl">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight size={16} className="text-[#92400E]" />
+                <span className="text-sm font-medium text-[#92400E]">{t('swapSelect')}</span>
+              </div>
               <button
                 onClick={() => setSwapSourceId(null)}
-                className="text-[12px] text-[#92400E] hover:text-[#78350F] underline cursor-pointer"
+                className="px-3 py-1.5 text-sm font-medium text-[#92400E] bg-[#92400E]/10 active:bg-[#92400E]/20 rounded-lg"
               >
                 {t('swapCancel')}
               </button>
@@ -924,7 +927,7 @@ export default function CalendarMobile() {
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
                       {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
-                    {res.status !== 'CANCELLED' && !swapSourceId && activeYurts.length >= 2 && (
+                    {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(res.status) && !swapSourceId && activeYurts.length >= 2 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
                         className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"

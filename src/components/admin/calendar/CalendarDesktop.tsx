@@ -674,7 +674,7 @@ export default function CalendarDesktop() {
           <div className={`text-[11px] font-semibold ${colors.text} truncate flex-1`}>
             {getDisplayName(res.user)}
           </div>
-          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && activeYurts.length >= 2 && (
+          {res.yurtId && !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(res.status) && !swapSourceId && activeYurts.length >= 2 && (
             <button
               onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
               className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
