@@ -1171,6 +1171,19 @@
         "showMore": "Show {count} More \u2192",
         "adminNotes": "ADMIN NOTES",
         "saveNote": "Save Note"
+      },
+      "detailPage": {
+        "title": "Customer Details",
+        "backToList": "Back to Customers",
+        "upcoming": "Upcoming",
+        "history": "History",
+        "showHistory": "Show History ({count})",
+        "hideHistory": "Hide History",
+        "noUpcoming": "No upcoming reservations",
+        "noHistory": "No past reservations",
+        "guests": "{count} guests",
+        "reservationCount": "Reservations",
+        "pending": "Pending assignment"
       }
     },
     "settings": {

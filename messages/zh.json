@@ -1171,6 +1171,19 @@
         "showMore": "显示更多 {count} 条 →",
         "adminNotes": "管理备注",
         "saveNote": "保存备注"
+      },
+      "detailPage": {
+        "title": "客户详情",
+        "backToList": "返回客户列表",
+        "upcoming": "即将到来",
+        "history": "历史记录",
+        "showHistory": "展开历史记录 ({count})",
+        "hideHistory": "收起历史记录",
+        "noUpcoming": "没有即将到来的预约",
+        "noHistory": "没有历史预约",
+        "guests": "{count} 位客人",
+        "reservationCount": "预约记录",
+        "pending": "待分配"
       }
     },
     "settings": {
