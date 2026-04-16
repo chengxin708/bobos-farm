@@ -376,6 +376,12 @@ export default function CalendarDesktop() {
   const cancelReservation = useCallback((id: string) => {
     handleResAction(id, 'cancel')
   }, [handleResAction])
+  const cancelAndRefund = useCallback((id: string) => {
+    handleResAction(id, 'cancel', { cancelAndRefund: true })
+  }, [handleResAction])
+  const markRefunded = useCallback((id: string) => {
+    handleResAction(id, 'admin', { status: 'CANCELLED', depositStatus: 'REFUNDED' })
+  }, [handleResAction])
   const completeReservation = useCallback((id: string) => {
     handleResAction(id, 'admin', { status: 'COMPLETED' })
   }, [handleResAction])
@@ -1161,7 +1167,7 @@ export default function CalendarDesktop() {
             reservation={selectedResFull}
             activityLogs={selectedResLogs || []}
             onClose={() => setSelectedResId(null)}
-            onAction={{ confirmDeposit, cancelReservation, completeReservation }}
+            onAction={{ confirmDeposit, cancelReservation, cancelAndRefund, markRefunded, completeReservation }}
             isUpdating={actionUpdating}
             onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); mutateSelectedResLogs(); }}
           />

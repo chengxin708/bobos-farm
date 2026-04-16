@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, X, History, AlertCircle, ShoppingBag, Lock } from 'lucide-react'
+import { Search, X, History, AlertCircle, ShoppingBag, Lock, RefreshCcw } from 'lucide-react'
 import StatusBadge from '@/components/admin/StatusBadge'
 import ReservationDetail from './ReservationDetail'
 import {
@@ -51,6 +51,7 @@ function ReservationCard({
   onClick,
   onConfirmDeposit,
   onRejectDeposit,
+  onMarkRefunded,
   isUpdating,
   t,
 }: {
@@ -59,6 +60,7 @@ function ReservationCard({
   onClick: () => void
   onConfirmDeposit: (id: string) => void
   onRejectDeposit: (id: string) => void
+  onMarkRefunded: (id: string) => void
   isUpdating: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: (key: string, values?: any) => string
@@ -112,6 +114,22 @@ function ReservationCard({
           </button>
         </div>
       )}
+
+      {/* Inline action for CANCELLED_PENDING_REFUND */}
+      {r.status === 'CANCELLED_PENDING_REFUND' && (
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#E8ECE4]">
+          <span className="text-xs text-[#DC3545] font-medium flex-1">
+            {t('refundAmount', { amount: r.depositAmount })}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMarkRefunded(r.id) }}
+            disabled={isUpdating}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
+          >
+            {t('actions.markRefunded')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -131,6 +149,7 @@ export default function ReservationsDesktop() {
     historyStatus, setHistoryStatus,
     search, setSearch,
     pendingDepositCount,
+    pendingRefundCount,
     pendingOrderCount,
     heldByAdminCount,
     actionNeededCount,
@@ -142,6 +161,8 @@ export default function ReservationsDesktop() {
     detailRes,
     activityLogs,
     confirmDeposit,
+    markRefunded,
+    cancelAndRefund,
     cancelReservation,
     completeReservation,
     updating,
@@ -234,7 +255,7 @@ export default function ReservationsDesktop() {
           <div className="flex flex-col gap-3">
             {/* Status chips */}
             <div className="flex items-center gap-2">
-              {['all', 'COMPLETED', 'CANCELLED', 'EXPIRED'].map(s => (
+              {['all', 'COMPLETED', 'CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED'].map(s => (
                 <FilterChip
                   key={s}
                   label={s === 'all' ? t('filters.all') : t(`status.${s}`)}
@@ -272,7 +293,7 @@ export default function ReservationsDesktop() {
         )}
 
         {/* Action alerts — only when not in history mode */}
-        {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0) && (
+        {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0 || pendingRefundCount > 0) && (
           <div className="flex items-center gap-3 flex-wrap">
             {pendingDepositCount > 0 && (
               <button
@@ -301,6 +322,15 @@ export default function ReservationsDesktop() {
                 {t('pendingOrders', { count: pendingOrderCount })}
               </button>
             )}
+            {pendingRefundCount > 0 && (
+              <button
+                onClick={() => { setFilter('pending-refund'); setShowHistory(false) }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#DC3545]/10 border border-[#DC3545]/20 text-[#DC3545] text-sm font-semibold hover:bg-[#DC3545]/15 transition-colors"
+              >
+                <RefreshCcw size={16} />
+                {t('pendingRefunds', { count: pendingRefundCount })}
+              </button>
+            )}
           </div>
         )}
 
@@ -312,6 +342,12 @@ export default function ReservationsDesktop() {
               count={actionNeededCount}
               active={filter === 'action-needed'}
               onClick={() => setFilter('action-needed')}
+            />
+            <FilterChip
+              label={t('filters.pendingRefund')}
+              count={pendingRefundCount}
+              active={filter === 'pending-refund'}
+              onClick={() => setFilter('pending-refund')}
             />
             <FilterChip
               label={t('filters.confirmed')}
@@ -360,6 +396,7 @@ export default function ReservationsDesktop() {
                       onClick={() => setSelectedRes(r)}
                       onConfirmDeposit={confirmDeposit}
                       onRejectDeposit={cancelReservation}
+                      onMarkRefunded={markRefunded}
                       isUpdating={updating}
                       t={t}
                     />
@@ -378,7 +415,7 @@ export default function ReservationsDesktop() {
             reservation={detailRes || selectedRes}
             activityLogs={activityLogs}
             onClose={() => setSelectedRes(null)}
-            onAction={{ confirmDeposit, cancelReservation, completeReservation }}
+            onAction={{ confirmDeposit, cancelReservation, cancelAndRefund, markRefunded, completeReservation }}
             isUpdating={updating}
             onOrderChanged={() => { mutateReservations(); mutateDetail(); mutateActivityLogs() }}
           />

@@ -37,6 +37,8 @@ interface ReservationDetailProps {
   onAction: {
     confirmDeposit: (id: string) => void
     cancelReservation: (id: string) => void
+    cancelAndRefund: (id: string) => void
+    markRefunded: (id: string) => void
     completeReservation: (id: string) => void
   }
   isUpdating: boolean
@@ -74,7 +76,7 @@ export default function ReservationDetail({
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<'deposit' | 'waiveDeposit' | 'complete' | 'cancel' | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'deposit' | 'waiveDeposit' | 'complete' | 'cancel' | 'cancelAndRefund' | 'markRefunded' | null>(null)
   const [editingDeposit, setEditingDeposit] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const [depositInput, setDepositInput] = useState('')
@@ -144,6 +146,8 @@ export default function ReservationDetail({
     if (confirmAction === 'waiveDeposit') handleWaiveDeposit()
     if (confirmAction === 'complete') onAction.completeReservation(reservation.id)
     if (confirmAction === 'cancel') onAction.cancelReservation(reservation.id)
+    if (confirmAction === 'cancelAndRefund') onAction.cancelAndRefund(reservation.id)
+    if (confirmAction === 'markRefunded') onAction.markRefunded(reservation.id)
     setConfirmAction(null)
   }, [confirmAction, onAction, reservation.id, handleWaiveDeposit])
 
@@ -153,11 +157,25 @@ export default function ReservationDetail({
     complete: { title: t('dialog.completeReservation'), message: t('dialog.completeReservationMsg'), variant: 'confirm' as const, confirmLabel: t('actions.complete') },
     cancel: {
       title: t('dialog.cancelReservation'),
-      message: reservation.depositStatus === 'CONFIRMED'
-        ? t('dialog.cancelWithDepositMsg', { amount: reservation.depositAmount })
+      message: (reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0)
+        ? t('dialog.cancelWithRefundMsg', { amount: reservation.depositAmount })
         : t('dialog.cancelReservationMsg'),
       variant: 'danger' as const,
-      confirmLabel: t('actions.cancel'),
+      confirmLabel: (reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0)
+        ? t('actions.cancelPendingRefund')
+        : t('actions.cancel'),
+    },
+    cancelAndRefund: {
+      title: t('dialog.cancelWithRefundTitle'),
+      message: t('dialog.cancelWithRefundMsg', { amount: reservation.depositAmount }),
+      variant: 'danger' as const,
+      confirmLabel: t('actions.cancelAndRefund'),
+    },
+    markRefunded: {
+      title: t('detail.markRefunded'),
+      message: t('dialog.markRefundedMsg', { amount: reservation.depositAmount }),
+      variant: 'success' as const,
+      confirmLabel: t('actions.markRefunded'),
     },
   }
 
@@ -525,6 +543,32 @@ export default function ReservationDetail({
           </div>
         </div>
 
+        {/* Cancellation Info — shown for CANCELLED_PENDING_REFUND */}
+        {reservation.status === 'CANCELLED_PENDING_REFUND' && (
+          <>
+            <hr className="border-[#E8ECE4]" />
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-[#DC3545]">{t('detail.cancellationInfo')}</h4>
+              <div className="space-y-2">
+                {reservation.cancelledAt && (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-[#8C8478]">{t('detail.cancelledAt')}</span>
+                    <span className="text-sm text-brown">{formatDateTime(reservation.cancelledAt)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-xs text-[#8C8478]">{t('detail.cancelReason')}</span>
+                  <span className="text-sm text-brown">{reservation.cancelReason || t('detail.noReason')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-[#8C8478]">{t('detail.refundAmount')}</span>
+                  <span className="text-base font-bold text-[#DC3545]">${reservation.depositAmount}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         <hr className="border-[#E8ECE4]" />
 
         {/* Activity Timeline — unified chronological view */}
@@ -735,7 +779,7 @@ export default function ReservationDetail({
     return (
       <div className="px-5 py-4 border-t border-[#E8ECE4] flex flex-col gap-2">
         {/* Edit Reservation — non-terminal states */}
-        {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
+        {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
           <button
             onClick={() => setShowEditEditor(true)}
             className="w-full py-2 text-sm font-semibold rounded-lg border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5"
@@ -794,7 +838,7 @@ export default function ReservationDetail({
         )}
 
         {/* Cancel — non-terminal states */}
-        {!['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
+        {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
           <div className="flex flex-col items-center gap-1">
             <button
               onClick={() => setConfirmAction('cancel')}
@@ -803,10 +847,31 @@ export default function ReservationDetail({
             >
               {t('actions.cancel')}
             </button>
+            {/* One-step cancel+refund option when deposit is confirmed */}
+            {reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0 && (
+              <button
+                onClick={() => setConfirmAction('cancelAndRefund')}
+                disabled={isUpdating}
+                className="w-full py-2 text-sm font-semibold rounded-lg border border-[#8C8478] text-[#8C8478] hover:bg-[#8C8478]/5 disabled:opacity-50"
+              >
+                {t('actions.cancelAndRefund')}
+              </button>
+            )}
             {isAdmin && (
               <span className="text-[11px] text-[#8A7E6B]">管理员可随时取消，不受 7 天限制</span>
             )}
           </div>
+        )}
+
+        {/* Mark Refunded — only for CANCELLED_PENDING_REFUND */}
+        {reservation.status === 'CANCELLED_PENDING_REFUND' && isAdmin && (
+          <button
+            onClick={() => setConfirmAction('markRefunded')}
+            disabled={isUpdating}
+            className="w-full py-2 text-sm font-semibold rounded-lg bg-[#5B8C3E] text-white hover:bg-[#5B8C3E]/90 disabled:opacity-50"
+          >
+            {t('actions.markRefunded')}
+          </button>
         )}
 
         {/* Close panel */}

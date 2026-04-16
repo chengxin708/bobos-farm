@@ -6,6 +6,7 @@ const RESERVATION_STATUS = {
   CONFIRMED:         { bg: 'bg-[#2980B9]/15', text: 'text-[#2980B9]' },
   COMPLETED:         { bg: 'bg-[#5B8C3E]/15', text: 'text-[#5B8C3E]' },
   CANCELLED:         { bg: 'bg-[#DC3545]/15', text: 'text-[#DC3545]' },
+  CANCELLED_PENDING_REFUND: { bg: 'bg-[#DC3545]/15', text: 'text-[#DC3545]' },
   EXPIRED:           { bg: 'bg-[#8C8478]/10', text: 'text-[#8C8478]' },
 } as const
 
