@@ -151,6 +151,23 @@ const reservationCancelled = {
   },
 } as const;
 
+const depositRefunded = {
+  en: {
+    subject: "Bobo's Farm — Deposit Refunded",
+    title: "Deposit Refunded",
+    body: "Your deposit has been marked as refunded. Please allow a few business days for the funds to appear in your account.",
+    button: "View My Reservations",
+    footer: "If you have any questions, please contact us. We hope to see you again!",
+  },
+  zh: {
+    subject: "Bobo's Farm — 定金已退款",
+    title: "定金已退款",
+    body: "您的定金已标记为退款处理，请留意您的账户到账情况。",
+    button: "查看我的预订",
+    footer: "如有任何问题，请联系我们。期待下次再见！",
+  },
+} as const;
+
 const preOrderReminder = {
   en: {
     subject: "Bobo's Farm — Pre-order Your Dishes",
@@ -194,6 +211,7 @@ export const emailStrings = {
   yurtAssigned,
   reservationModified,
   reservationCancelled,
+  depositRefunded,
   preOrderReminder,
 } as const;
 

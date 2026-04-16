@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted, sendDepositConfirmed, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendDepositConfirmed, sendDepositRefunded, sendReservationCancelled, sendReservationModified, sendYurtAssigned, shouldSkipEmail } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
@@ -848,6 +848,24 @@ export async function PATCH(
         });
       }
 
+      // Fire-and-forget: email when deposit is refunded (with debounce)
+      if (
+        parsedAdmin.data.depositStatus === "REFUNDED" &&
+        reservation.depositStatus !== "REFUNDED" &&
+        updated.user.email
+      ) {
+        const refundEmail = updated.user.email;
+        shouldSkipEmail(id, "deposit_refunded").then(skip => {
+          if (skip) return;
+          sendDepositRefunded(refundEmail, {
+            date: updated.date,
+            yurtName: updated.yurt?.name ?? "N/A",
+            guestCount: updated.guestCount,
+            depositAmount: reservation.depositAmount,
+          }).catch(err => console.error('[email] deposit refunded notification failed:', err));
+        });
+      }
+
       // Log status changes
       if (parsedAdmin.data.status && parsedAdmin.data.status !== reservation.status) {
         await prisma.activityLog.create({
@@ -865,18 +883,23 @@ export async function PATCH(
       }
 
       // Fire-and-forget: email + push notification when deposit is confirmed
+      // Uses debounce to prevent duplicate emails within 2 minutes
       if (
         parsedAdmin.data.depositStatus === "CONFIRMED" &&
         reservation.depositStatus !== "CONFIRMED"
       ) {
-        // Send confirmation email to customer
+        // Send confirmation email to customer (with debounce)
         if (updated.user.email) {
-          sendDepositConfirmed(updated.user.email, {
-            date: updated.date,
-            yurtName: updated.yurt?.name ?? "Pending assignment",
-            guestCount: updated.guestCount,
-            reservationId: id,
-          }).catch(err => console.error('[email] deposit confirmed notification failed:', err));
+          const userEmail = updated.user.email;
+          shouldSkipEmail(id, "deposit_confirmed").then(skip => {
+            if (skip) return;
+            sendDepositConfirmed(userEmail, {
+              date: updated.date,
+              yurtName: updated.yurt?.name ?? "Pending assignment",
+              guestCount: updated.guestCount,
+              reservationId: id,
+            }).catch(err => console.error('[email] deposit confirmed notification failed:', err));
+          });
         }
 
         // Push notification

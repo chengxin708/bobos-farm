@@ -61,6 +61,45 @@ async function getUserLang(email: string): Promise<Lang> {
   return user?.preferredLanguage === "ZH" ? "zh" : "en";
 }
 
+// ── Debounce — prevent duplicate emails within cooldown ────────────
+
+const EMAIL_COOLDOWN_MS = 120_000; // 2 minutes
+
+/**
+ * Check if an email was recently sent for this reservation.
+ * Returns true if we should skip (still in cooldown).
+ * If not in cooldown, marks the timestamp so future calls within
+ * the window will be skipped.
+ */
+export async function shouldSkipEmail(reservationId: string, emailType: string): Promise<boolean> {
+  const key = `email_cooldown_${emailType}`;
+  const log = await prisma.activityLog.findFirst({
+    where: {
+      targetId: reservationId,
+      targetType: "Reservation",
+      action: key,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (log && Date.now() - new Date(log.createdAt).getTime() < EMAIL_COOLDOWN_MS) {
+    return true; // Still in cooldown
+  }
+
+  // Mark this email as sent
+  await prisma.activityLog.create({
+    data: {
+      userId: null,
+      action: key,
+      targetType: "Reservation",
+      targetId: reservationId,
+      details: { emailType, sentAt: new Date().toISOString() },
+    },
+  });
+
+  return false;
+}
+
 // ── Return type ─────────────────────────────────────────────────────
 
 interface EmailResult {
@@ -576,7 +615,56 @@ export async function sendReservationCancelled(
   }
 }
 
-// ── 8. Pre-order Reminder ──────────────────────────────────────────
+// ── 8. Deposit Refunded ────────────────────────────────────────────
+
+interface DepositRefundedData {
+  date: string | Date;
+  yurtName: string;
+  guestCount: number;
+  depositAmount: number;
+  siteUrl?: string;
+}
+
+export async function sendDepositRefunded(
+  to: string,
+  data: DepositRefundedData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.depositRefunded[lang];
+  const l = emailStrings.labels[lang];
+
+  try {
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
+
+      ${infoTable(
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount)) +
+        infoRow(l.deposit, `$${data.depositAmount}`) +
+        infoRow(l.status, badge(lang === 'zh' ? '已退款' : 'Refunded', 'blue'))
+      )}
+
+      ${primaryButton(s.button, `${siteUrl}/reservations`)}
+
+      <p style="font-size:13px;color:#9C9588;margin:20px 0 0;text-align:center;line-height:1.5;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
+
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendDepositRefunded failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+// ── 9. Pre-order Reminder ──────────────────────────────────────────
 
 interface OrderItemSummary {
   name: string;
