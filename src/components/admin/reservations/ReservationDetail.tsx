@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2 } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -72,7 +72,7 @@ export default function ReservationDetail({
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
   const panelOrder = reservation.order || null
 
-  const [detailTab, setDetailTab] = useState<'info' | 'order'>('info')
+  const [detailTab, setDetailTab] = useState<'info' | 'order' | 'notes'>('info')
   const [showOrderEditor, setShowOrderEditor] = useState(false)
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
@@ -82,6 +82,20 @@ export default function ReservationDetail({
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
+
+  // Notes
+  const { data: notesList, mutate: mutateNotes } = useSWR<Array<{
+    id: string; content: string; pinned: boolean; createdAt: string; updatedAt: string;
+    user: { id: string; name: string | null }
+  }>>(
+    reservation.id ? `/api/reservations/${reservation.id}/notes` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  const [newNote, setNewNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteContent, setEditingNoteContent] = useState('')
 
   // Assign Yurt state
   const [selectedYurtId, setSelectedYurtId] = useState('')
@@ -123,6 +137,39 @@ export default function ReservationDetail({
     } catch { /* ignore */ }
     finally { setAssigningYurt(false) }
   }
+
+  const handleAddNote = useCallback(async () => {
+    if (!newNote.trim()) return
+    setSavingNote(true)
+    try {
+      await fetch(`/api/reservations/${reservation.id}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newNote.trim() }),
+      })
+      setNewNote('')
+      mutateNotes()
+    } catch { /* ignore */ } finally { setSavingNote(false) }
+  }, [newNote, reservation.id, mutateNotes])
+
+  const handleUpdateNote = useCallback(async (noteId: string, data: { content?: string; pinned?: boolean }) => {
+    try {
+      await fetch(`/api/reservations/${reservation.id}/notes/${noteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      setEditingNoteId(null)
+      mutateNotes()
+    } catch { /* ignore */ }
+  }, [reservation.id, mutateNotes])
+
+  const handleDeleteNote = useCallback(async (noteId: string) => {
+    try {
+      await fetch(`/api/reservations/${reservation.id}/notes/${noteId}`, { method: 'DELETE' })
+      mutateNotes()
+    } catch { /* ignore */ }
+  }, [reservation.id, mutateNotes])
 
   const handleWaiveDeposit = useCallback(async () => {
     try {
@@ -773,6 +820,99 @@ export default function ReservationDetail({
     )
   }
 
+  // ── Tab: Notes ──────────────────────────────────────────────
+
+  function renderNotesTab() {
+    return (
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+        {/* Add note input */}
+        <div className="flex gap-2">
+          <textarea
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder={t('notes.addPlaceholder')}
+            className="flex-1 border border-[#E8ECE4] rounded-lg p-2.5 text-sm h-16 resize-none text-brown placeholder:text-[#8C8478] focus:outline-none focus:border-[#6B7F5E]"
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddNote() } }}
+          />
+          <button
+            onClick={handleAddNote}
+            disabled={savingNote || !newNote.trim()}
+            className="self-end px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#5A6E4F] disabled:opacity-50"
+          >
+            {savingNote ? t('notes.saving') : t('notes.add')}
+          </button>
+        </div>
+
+        {/* Notes list */}
+        {!notesList || notesList.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-[#8C8478]">{t('notes.empty')}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {notesList.map((note) => (
+              <div key={note.id} className={`rounded-lg border p-3 ${note.pinned ? 'border-[#F4A623]/30 bg-[#F4A623]/5' : 'border-[#E8ECE4]'}`}>
+                {editingNoteId === note.id ? (
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      value={editingNoteContent}
+                      onChange={(e) => setEditingNoteContent(e.target.value)}
+                      className="border border-[#E8ECE4] rounded-lg p-2 text-sm h-16 resize-none text-brown focus:outline-none focus:border-[#6B7F5E]"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setEditingNoteId(null)} className="px-3 py-1 text-xs text-[#8C8478] hover:text-brown">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleUpdateNote(note.id, { content: editingNoteContent })}
+                        className="px-3 py-1 text-xs font-semibold text-[#6B7F5E] hover:text-[#5A6E4F]"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-brown whitespace-pre-wrap">{note.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-[#8C8478]">
+                        {note.user.name || 'Admin'} · {formatDateTime(note.createdAt)}
+                      </span>
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleUpdateNote(note.id, { pinned: !note.pinned })}
+                            className={`p-1 rounded hover:bg-[#F4A623]/10 ${note.pinned ? 'text-[#F4A623]' : 'text-[#8C8478]'}`}
+                            title={note.pinned ? t('notes.unpin') : t('notes.pin')}
+                          >
+                            <Pin size={12} />
+                          </button>
+                          <button
+                            onClick={() => { setEditingNoteId(note.id); setEditingNoteContent(note.content) }}
+                            className="p-1 rounded hover:bg-[#E8ECE4]/50 text-[#8C8478]"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm(t('notes.deleteConfirm'))) handleDeleteNote(note.id) }}
+                            className="p-1 rounded hover:bg-[#DC3545]/10 text-[#8C8478] hover:text-[#DC3545]"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // ── Info tab action buttons ─────────────────────────────────
 
   function renderInfoActions() {
@@ -926,6 +1066,21 @@ export default function ReservationDetail({
             <span className="ml-1.5 text-[10px] text-[#5B8C3E] font-semibold">&#10003;</span>
           )}
         </button>
+        <button
+          onClick={() => setDetailTab('notes')}
+          className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
+            detailTab === 'notes'
+              ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E]'
+              : 'text-[#8C8478]'
+          }`}
+        >
+          {t('detail.tabs.notes')}
+          {notesList && notesList.length > 0 && (
+            <span className="text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center bg-[#6B7F5E]/10 text-[#6B7F5E]">
+              {notesList.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Tab content */}
@@ -934,9 +1089,11 @@ export default function ReservationDetail({
           {renderInfoTab()}
           {renderInfoActions()}
         </>
-      ) : (
+      ) : detailTab === 'order' ? (
         renderOrderTab()
-      )}
+      ) : detailTab === 'notes' ? (
+        renderNotesTab()
+      ) : null}
 
       {/* AdminOrderEditor overlay */}
       <AdminOrderEditor
