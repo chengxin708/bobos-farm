@@ -8,6 +8,7 @@ import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
 import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
@@ -149,6 +150,8 @@ export default function CalendarMobile() {
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
   const [swapSuccess, setSwapSuccess] = useState(false)
+  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[] } | null>(null)
+  const [pendingOptimization, setPendingOptimization] = useState(false)
 
   // Fetch full detail for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -271,11 +274,16 @@ export default function CalendarMobile() {
       if (targetRes.guestCount > sourceRes.yurt.capacity) {
         warnings.push(t('swapWarningLine', { guest: getDisplayName(targetRes.user), count: targetRes.guestCount, room: `${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''}`, capacity: sourceRes.yurt.capacity }))
       }
-      if (warnings.length > 0 && !confirm(`⚠️ ${t('swapCapacityWarning')}:\n${warnings.join('\n')}\n\n${t('swapCapacityConfirm')}`)) {
+      if (warnings.length > 0) {
+        setPendingSwap({ targetId, warnings })
         return
       }
     }
 
+    executeSwap(targetId)
+  }
+
+  async function executeSwap(targetId: string) {
     setSwapLoading(true)
     try {
       const resp = await fetch('/api/reservations/swap', {
@@ -495,7 +503,12 @@ export default function CalendarMobile() {
 
   async function handleApplySuggestion() {
     if (!selectedDaySuggestion || suggestionLoading) return
-    if (!confirm(t('optimizationConfirm'))) return
+    setPendingOptimization(true)
+  }
+
+  async function executeOptimization() {
+    if (!selectedDaySuggestion) return
+    setPendingOptimization(false)
     setSuggestionLoading(true)
     try {
       for (const move of selectedDaySuggestion.moves) {
@@ -1008,6 +1021,33 @@ export default function CalendarMobile() {
             />
           </div>
         </div>
+      )}
+
+      {/* Swap capacity warning dialog */}
+      {pendingSwap && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('swapCapacityWarning')}
+          message={pendingSwap.warnings.join('\n')}
+          variant="danger"
+          confirmLabel={t('swapCapacityConfirmBtn')}
+          onConfirm={() => { const tid = pendingSwap.targetId; setPendingSwap(null); executeSwap(tid) }}
+          onCancel={() => setPendingSwap(null)}
+        />
+      )}
+
+      {/* Optimization confirm dialog */}
+      {pendingOptimization && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('optimizationTitle')}
+          message={t('optimizationConfirm')}
+          variant="confirm"
+          confirmLabel={t('optimizationApply')}
+          loading={suggestionLoading}
+          onConfirm={executeOptimization}
+          onCancel={() => setPendingOptimization(false)}
+        />
       )}
     </>
   )

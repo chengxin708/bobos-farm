@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
@@ -170,6 +171,8 @@ export default function CalendarDesktop() {
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
   const [swapSuccess, setSwapSuccess] = useState(false)
+  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[] } | null>(null)
+  const [pendingOptimization, setPendingOptimization] = useState<string | null>(null)
 
   // Fetch full detail + activity logs for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -328,7 +331,13 @@ export default function CalendarDesktop() {
   async function handleApplySuggestion(dateStr: string) {
     const suggestion = optimizationByDate.get(dateStr)
     if (!suggestion || suggestionLoading) return
-    if (!confirm(t('optimizationConfirm'))) return
+    setPendingOptimization(dateStr)
+  }
+
+  async function executeOptimization(dateStr: string) {
+    const suggestion = optimizationByDate.get(dateStr)
+    if (!suggestion) return
+    setPendingOptimization(null)
     setSuggestionLoading(true)
     try {
       for (const move of suggestion.moves) {
@@ -540,11 +549,16 @@ export default function CalendarDesktop() {
       if (targetRes.guestCount > sourceRes.yurt.capacity) {
         warnings.push(t('swapWarningLine', { guest: targetRes.user?.name || targetRes.user?.email, count: targetRes.guestCount, room: `${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''}`, capacity: sourceRes.yurt.capacity }))
       }
-      if (warnings.length > 0 && !confirm(`⚠️ ${t('swapCapacityWarning')}:\n${warnings.join('\n')}\n\n${t('swapCapacityConfirm')}`)) {
+      if (warnings.length > 0) {
+        setPendingSwap({ targetId, warnings })
         return
       }
     }
 
+    executeSwap(targetId)
+  }
+
+  async function executeSwap(targetId: string) {
     setSwapLoading(true)
     try {
       const resp = await fetch('/api/reservations/swap', {
@@ -1181,6 +1195,33 @@ export default function CalendarDesktop() {
         defaultDate={createModalDate}
         defaultYurtId={createModalYurtId}
       />
+
+      {/* Swap capacity warning dialog */}
+      {pendingSwap && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('swapCapacityWarning')}
+          message={pendingSwap.warnings.join('\n')}
+          variant="danger"
+          confirmLabel={t('swapCapacityConfirmBtn')}
+          onConfirm={() => { const tid = pendingSwap.targetId; setPendingSwap(null); executeSwap(tid) }}
+          onCancel={() => setPendingSwap(null)}
+        />
+      )}
+
+      {/* Optimization confirm dialog */}
+      {pendingOptimization && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('optimizationTitle')}
+          message={t('optimizationConfirm')}
+          variant="confirm"
+          confirmLabel={t('optimizationApply')}
+          loading={suggestionLoading}
+          onConfirm={() => executeOptimization(pendingOptimization)}
+          onCancel={() => setPendingOptimization(null)}
+        />
+      )}
     </div>
   )
 }

@@ -1055,6 +1055,7 @@
       "swapSuccess": "Room swap successful",
       "swapCapacityWarning": "Guest count exceeds room capacity after swap",
       "swapCapacityConfirm": "Continue with the swap?",
+      "swapCapacityConfirmBtn": "Swap Anyway",
       "optimizationAvailable": "Better assignment available",
       "applySuggestion": "Apply suggestion",
       "currentWaste": "Current unused",
@@ -1064,6 +1065,8 @@
       "swapNetworkError": "Network error — could not complete swap",
       "optimizationError": "Failed to apply optimization",
       "optimizationNetworkError": "Network error — could not apply optimization",
+      "optimizationTitle": "Apply Optimization",
+      "optimizationApply": "Apply",
       "optimizationConfirm": "Apply this optimization? Rooms will be reassigned.",
       "unknownError": "Unknown error"
     },
