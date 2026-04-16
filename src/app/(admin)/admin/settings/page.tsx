@@ -1177,8 +1177,8 @@ export default function Settings() {
         </div>
 
         {/* Mobile tab selector */}
-        <div className="md:hidden w-full">
-          <div className="flex overflow-x-auto gap-1 p-3 border-b border-[#E8ECE4] bg-white">
+        <div className="md:hidden w-full flex flex-col overflow-hidden">
+          <div className="flex overflow-x-auto gap-1 p-3 border-b border-[#E8ECE4] bg-white shrink-0">
             {settingsTabs.map((tab, i) => (
               <button
                 key={tab.label}
