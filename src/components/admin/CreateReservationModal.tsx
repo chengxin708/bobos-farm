@@ -215,7 +215,7 @@ export default function CreateReservationModal({
                 type="email"
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="guest@example.com"
+                placeholder={t('emailPlaceholder')}
                 className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
                 style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
                 onFocus={(e) => {

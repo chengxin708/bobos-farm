@@ -88,17 +88,17 @@ export default function BookingDetailsPage() {
   // Validation errors
   const errors = useMemo(() => {
     const e: Record<string, string | null> = {}
-    e.contactName = contactName.trim().length === 0 ? 'Please enter your name' : null
+    e.contactName = contactName.trim().length === 0 ? t('validation.nameRequired') : null
     e.contactEmail = contactEmail.trim().length === 0
-      ? 'Please enter your email'
+      ? t('validation.emailRequired')
       : !contactEmail.includes('@') || !contactEmail.includes('.')
-        ? 'Please enter a valid email address'
+        ? t('validation.emailInvalid')
         : null
-    e.contactPhone = contactPhone.trim().length === 0 ? 'Please enter your phone number' : null
+    e.contactPhone = contactPhone.trim().length === 0 ? t('validation.phoneRequired') : null
     e.guestCount = guestCount < 1
-      ? 'At least 1 guest required'
+      ? t('validation.guestMin')
       : guestCount > maxGuests
-        ? `Maximum ${maxGuests} guests`
+        ? t('validation.guestMax', { max: maxGuests })
         : null
     return e
   }, [contactName, contactEmail, contactPhone, guestCount, maxGuests])
@@ -147,7 +147,7 @@ export default function BookingDetailsPage() {
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-[15px] text-[#6B6157]">Step 2 of 3</span>
+        <span className="text-[15px] text-[#6B6157]">{t('stepLabel')}</span>
       </div>
 
       {/* Page Title */}
@@ -287,7 +287,7 @@ export default function BookingDetailsPage() {
               </button>
             </div>
             <p className="text-[15px] text-[#6B6157] text-center mt-2">
-              Max {maxGuests} guests per yurt
+              {t('maxGuestsLabel', { max: maxGuests })}
             </p>
           </div>
 

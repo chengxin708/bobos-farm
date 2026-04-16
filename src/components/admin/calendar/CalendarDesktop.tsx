@@ -328,7 +328,7 @@ export default function CalendarDesktop() {
   async function handleApplySuggestion(dateStr: string) {
     const suggestion = optimizationByDate.get(dateStr)
     if (!suggestion || suggestionLoading) return
-    if (!confirm('确定应用此优化建议？将重新分配包房。')) return
+    if (!confirm(t('optimizationConfirm'))) return
     setSuggestionLoading(true)
     try {
       for (const move of suggestion.moves) {
@@ -338,14 +338,14 @@ export default function CalendarDesktop() {
           body: JSON.stringify({ action: 'assign_yurt', yurtId: move.toYurtId }),
         })
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-          alert(err.error || 'Failed to apply optimization')
+          const err = await res.json().catch(() => ({ error: t('unknownError') }))
+          alert(err.error || t('optimizationError'))
           return
         }
       }
       mutateReservations()
     } catch {
-      alert('Network error — could not apply optimization')
+      alert(t('optimizationNetworkError'))
     } finally {
       setSuggestionLoading(false)
     }
@@ -488,10 +488,10 @@ export default function CalendarDesktop() {
     if (sourceRes && targetRes && sourceRes.yurt && targetRes.yurt) {
       const warnings: string[] = []
       if (sourceRes.guestCount > targetRes.yurt.capacity) {
-        warnings.push(`${sourceRes.user?.name || sourceRes.user?.email} (${sourceRes.guestCount}人) → ${targetRes.yurt.name}${targetRes.yurt.alias ? ` (${targetRes.yurt.alias})` : ''} (容量${targetRes.yurt.capacity})`)
+        warnings.push(t('swapWarningLine', { guest: sourceRes.user?.name || sourceRes.user?.email, count: sourceRes.guestCount, room: `${targetRes.yurt.name}${targetRes.yurt.alias ? ` (${targetRes.yurt.alias})` : ''}`, capacity: targetRes.yurt.capacity }))
       }
       if (targetRes.guestCount > sourceRes.yurt.capacity) {
-        warnings.push(`${targetRes.user?.name || targetRes.user?.email} (${targetRes.guestCount}人) → ${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''} (容量${sourceRes.yurt.capacity})`)
+        warnings.push(t('swapWarningLine', { guest: targetRes.user?.name || targetRes.user?.email, count: targetRes.guestCount, room: `${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''}`, capacity: sourceRes.yurt.capacity }))
       }
       if (warnings.length > 0 && !confirm(`⚠️ ${t('swapCapacityWarning')}:\n${warnings.join('\n')}\n\n${t('swapCapacityConfirm')}`)) {
         return
@@ -506,8 +506,8 @@ export default function CalendarDesktop() {
         body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
       })
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Unknown error' }))
-        alert(err.error || 'Swap failed')
+        const err = await resp.json().catch(() => ({ error: t('unknownError') }))
+        alert(err.error || t('swapError'))
         return
       }
       mutateReservations()
@@ -515,7 +515,7 @@ export default function CalendarDesktop() {
       setSwapSuccess(true)
       setTimeout(() => setSwapSuccess(false), 2000)
     } catch {
-      alert('Network error — could not complete swap')
+      alert(t('swapNetworkError'))
     } finally {
       setSwapLoading(false)
     }

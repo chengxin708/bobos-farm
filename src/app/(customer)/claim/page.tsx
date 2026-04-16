@@ -129,15 +129,14 @@ function ClaimPage() {
   }
 
   const statusLabel = (status: string) => {
-    const map: Record<string, string> = {
-      PENDING_PAYMENT: "待付款",
-      PAYMENT_SUBMITTED: "付款已提交",
-      CONFIRMED: "已确认",
-      COMPLETED: "已完成",
-      CANCELLED: "已取消",
-      EXPIRED: "已过期",
+    const knownStatuses = [
+      'PENDING_PAYMENT', 'PAYMENT_SUBMITTED', 'CONFIRMED',
+      'COMPLETED', 'CANCELLED', 'EXPIRED',
+    ]
+    if (knownStatuses.includes(status)) {
+      return t(`statusLabels.${status}`)
     }
-    return map[status] ?? status
+    return status
   }
 
   const isOwnReservation = reservation && session?.user?.id === reservation.userId

@@ -229,7 +229,17 @@
       "eventTime": "活动时间：下午 2:00 - 6:00",
       "eventTimeNote": "如需调整时间，请在备注中说明或致电确认。",
       "specialRequests": "特殊要求 / 过敏信息",
-      "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求..."
+      "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求...",
+      "stepLabel": "第 2 步，共 3 步",
+      "maxGuestsLabel": "每间包房最多 {max} 人",
+      "validation": {
+        "nameRequired": "请输入您的姓名",
+        "emailRequired": "请输入您的邮箱",
+        "emailInvalid": "请输入有效的邮箱地址",
+        "phoneRequired": "请输入您的电话号码",
+        "guestMin": "至少需要 1 位客人",
+        "guestMax": "最多 {max} 位客人"
+      }
     },
     "confirm": {
       "summaryTitle": "预订摘要",
@@ -1004,7 +1014,14 @@
       "optimizationAvailable": "发现更优分配方案",
       "applySuggestion": "应用建议",
       "currentWaste": "当前空余",
-      "suggestedWaste": "建议空余"
+      "suggestedWaste": "建议空余",
+      "swapWarningLine": "{guest}（{count} 位客人）→ {room}（容量 {capacity}）",
+      "swapError": "交换失败",
+      "swapNetworkError": "网络错误 — 无法完成交换",
+      "optimizationError": "应用优化失败",
+      "optimizationNetworkError": "网络错误 — 无法应用优化",
+      "optimizationConfirm": "确定应用此优化建议？将重新分配包房。",
+      "unknownError": "未知错误"
     },
     "menu": {
       "title": "菜单管理",
@@ -1470,7 +1487,8 @@
       "capacityWarning": "人数（{guests}人）超过该房间容量（{capacity}人）",
       "yurtOccupied": "该房间在此日期已被预订",
       "noRoomAvailable": "该日期没有可容纳此人数的空闲房间",
-      "holdNoAssign": "暂不分配（Hold）"
+      "holdNoAssign": "暂不分配（Hold）",
+      "emailPlaceholder": "guest@example.com"
     },
     "reports": {
       "title": "数据报告",
@@ -1533,6 +1551,14 @@
     "yurt": "包房",
     "status": "状态",
     "guest": "客人",
-    "back": "返回首页"
+    "back": "返回首页",
+    "statusLabels": {
+      "PENDING_PAYMENT": "待付款",
+      "PAYMENT_SUBMITTED": "付款已提交",
+      "CONFIRMED": "已确认",
+      "COMPLETED": "已完成",
+      "CANCELLED": "已取消",
+      "EXPIRED": "已过期"
+    }
   }
 }

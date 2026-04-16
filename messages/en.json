@@ -229,7 +229,17 @@
       "eventTime": "Event Time: 2:00 PM - 6:00 PM",
       "eventTimeNote": "For custom timing, please add a note or call us to confirm.",
       "specialRequests": "Special Requests / Allergies",
-      "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests..."
+      "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests...",
+      "stepLabel": "Step 2 of 3",
+      "maxGuestsLabel": "Max {max} guests per room",
+      "validation": {
+        "nameRequired": "Please enter your name",
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address",
+        "phoneRequired": "Please enter your phone number",
+        "guestMin": "At least 1 guest required",
+        "guestMax": "Maximum {max} guests"
+      }
     },
     "confirm": {
       "summaryTitle": "Reservation Summary",
@@ -1004,7 +1014,14 @@
       "optimizationAvailable": "Better assignment available",
       "applySuggestion": "Apply suggestion",
       "currentWaste": "Current unused",
-      "suggestedWaste": "Suggested unused"
+      "suggestedWaste": "Suggested unused",
+      "swapWarningLine": "{guest} ({count} guests) -> {room} (capacity {capacity})",
+      "swapError": "Swap failed",
+      "swapNetworkError": "Network error — could not complete swap",
+      "optimizationError": "Failed to apply optimization",
+      "optimizationNetworkError": "Network error — could not apply optimization",
+      "optimizationConfirm": "Apply this optimization? Rooms will be reassigned.",
+      "unknownError": "Unknown error"
     },
     "menu": {
       "title": "Menu Management",
@@ -1470,7 +1487,8 @@
       "capacityWarning": "Guest count ({guests}) exceeds room capacity ({capacity})",
       "yurtOccupied": "This room is already booked on this date",
       "noRoomAvailable": "No available room can accommodate this many guests on this date",
-      "holdNoAssign": "Hold (no auto-assign)"
+      "holdNoAssign": "Hold (no auto-assign)",
+      "emailPlaceholder": "guest@example.com"
     },
     "reports": {
       "title": "Reports & Analytics",
@@ -1533,6 +1551,14 @@
     "yurt": "Yurt",
     "status": "Status",
     "guest": "Guest",
-    "back": "Back to Home"
+    "back": "Back to Home",
+    "statusLabels": {
+      "PENDING_PAYMENT": "Pending Payment",
+      "PAYMENT_SUBMITTED": "Payment Submitted",
+      "CONFIRMED": "Confirmed",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    }
   }
 }
