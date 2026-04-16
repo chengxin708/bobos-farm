@@ -734,7 +734,8 @@
         "CONFIRMED": "已确认",
         "COMPLETED": "已完成",
         "CANCELLED": "已取消",
-        "EXPIRED": "已过期"
+        "EXPIRED": "已过期",
+        "CANCELLED_PENDING_REFUND": "待退款"
       },
       "depositStatus": {
         "UNPAID": "未付",
@@ -793,7 +794,10 @@
         "close": "关闭",
         "editReservation": "编辑预订",
         "confirmDeposit": "确认定金已收",
-        "waiveDeposit": "免定金确认"
+        "waiveDeposit": "免定金确认",
+        "markRefunded": "标记已退款",
+        "cancelAndRefund": "取消并标记已退款",
+        "cancelPendingRefund": "取消预约（待退款）"
       },
       "editEditor": {
         "title": "编辑预订",
@@ -819,7 +823,11 @@
         "completeReservationMsg": "将此预订标记为已完成？表示客人已到访结束。",
         "cancelReservation": "取消预订",
         "cancelReservationMsg": "确定要取消此预订吗？客户会收到取消通知邮件，此操作不可撤销。",
-        "cancelWithDepositMsg": "此预约有 ${amount} 已确认定金尚未退款。取消后请记得在定金区域标记退款。确定要取消吗？"
+        "cancelWithDepositMsg": "此预约有 ${amount} 已确认定金尚未退款。取消后请记得在定金区域标记退款。确定要取消吗？",
+        "cancelWithRefundTitle": "取消预约",
+        "cancelWithRefundMsg": "此预约有 ${amount} 已确认定金。取消后将进入待退款状态。",
+        "cancelAndRefundLabel": "取消并标记已退款",
+        "markRefundedMsg": "确定将 ${amount} 定金标记为已退款？"
       },
       "detail": {
         "title": "预订详情",
@@ -846,20 +854,42 @@
         "reconfirmDeposit": "重新确认",
         "markRefunded": "标记已退款",
         "markConfirmed": "重标已付",
+        "cancellationInfo": "取消信息",
+        "cancelledAt": "取消时间",
+        "cancelReason": "取消原因",
+        "refundAmount": "退款金额",
+        "noReason": "未提供原因",
         "timeline": "活动时间线",
         "created": "创建时间",
         "updated": "最后更新",
         "modifications": "修改记录",
         "tabs": {
           "info": "预订信息",
-          "preOrder": "预点单"
+          "preOrder": "预点单",
+          "notes": "备注"
         },
         "preOrder": "预订单",
         "itemCount": "菜品数量",
         "estimatedTotal": "预计总额",
         "viewFullOrder": "查看完整订单"
       },
+      "notes": {
+        "addPlaceholder": "添加备注...",
+        "add": "添加",
+        "pinned": "已置顶",
+        "editNote": "编辑",
+        "deleteNote": "删除",
+        "deleteConfirm": "确认删除此备注？",
+        "empty": "暂无备注",
+        "by": "{name}",
+        "saving": "保存中...",
+        "pin": "置顶",
+        "unpin": "取消置顶"
+      },
       "pendingDeposits": "{count} 笔定金待确认",
+      "pendingRefunds": "{count} 笔待退款",
+      "refundAmount": "退款 ${amount}",
+      "refundedSuccess": "退款标记成功",
       "heldByAdmin": "{count} 笔锁位待收款",
       "spotHeld": "已锁位",
       "awaitingDeposit": "待收定金",
@@ -874,7 +904,8 @@
         "actionNeeded": "需要处理",
         "confirmed": "已确认",
         "completed": "已完成",
-        "all": "全部"
+        "all": "全部",
+        "pendingRefund": "待退款"
       },
       "history": "历史",
       "historyDateRange": "日期范围",
@@ -1094,6 +1125,7 @@
     },
     "customers": {
       "title": "客户管理",
+      "subtitle": "管理客户信息",
       "noEmail": "未提供邮箱",
       "searchPlaceholder": "搜索客户...",
       "filters": {
@@ -1115,8 +1147,14 @@
         "view": "查看",
         "addTag": "+ 添加标识"
       },
+      "card": {
+        "visits": "{count} 次到访",
+        "lastVisit": "上次 {date}"
+      },
       "detail": {
         "title": "客户详情",
+        "back": "客户详情",
+        "viewReservation": "查看",
         "memberSince": "会员自",
         "stats": {
           "totalVisits": "总到访次数",

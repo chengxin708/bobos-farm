@@ -734,7 +734,8 @@
         "CONFIRMED": "Confirmed",
         "COMPLETED": "Completed",
         "CANCELLED": "Cancelled",
-        "EXPIRED": "Expired"
+        "EXPIRED": "Expired",
+        "CANCELLED_PENDING_REFUND": "Pending Refund"
       },
       "depositStatus": {
         "UNPAID": "Unpaid",
@@ -793,7 +794,10 @@
         "close": "Close",
         "editReservation": "Edit Reservation",
         "confirmDeposit": "Confirm Deposit Received",
-        "waiveDeposit": "Waive Deposit & Confirm"
+        "waiveDeposit": "Waive Deposit & Confirm",
+        "markRefunded": "Mark Refunded",
+        "cancelAndRefund": "Cancel & Mark Refunded",
+        "cancelPendingRefund": "Cancel (Pending Refund)"
       },
       "editEditor": {
         "title": "Edit Reservation",
@@ -819,7 +823,11 @@
         "completeReservationMsg": "Mark this reservation as completed? This indicates the guest visit has concluded.",
         "cancelReservation": "Cancel Reservation",
         "cancelReservationMsg": "Are you sure you want to cancel this reservation? The customer will be notified by email. This cannot be undone.",
-        "cancelWithDepositMsg": "This reservation has a ${amount} confirmed deposit that has not been refunded. Please remember to mark the refund after cancelling. Are you sure?"
+        "cancelWithDepositMsg": "This reservation has a ${amount} confirmed deposit that has not been refunded. Please remember to mark the refund after cancelling. Are you sure?",
+        "cancelWithRefundTitle": "Cancel Reservation",
+        "cancelWithRefundMsg": "This reservation has a ${amount} confirmed deposit. After cancellation, it will enter pending refund status.",
+        "cancelAndRefundLabel": "Cancel & Mark Refunded",
+        "markRefundedMsg": "Are you sure you want to mark this ${amount} deposit as refunded?"
       },
       "detail": {
         "title": "Reservation Details",
@@ -846,20 +854,42 @@
         "reconfirmDeposit": "Re-confirm",
         "markRefunded": "Mark Refunded",
         "markConfirmed": "Mark Paid",
+        "cancellationInfo": "Cancellation Info",
+        "cancelledAt": "Cancelled At",
+        "cancelReason": "Reason",
+        "refundAmount": "Refund Amount",
+        "noReason": "No reason provided",
         "timeline": "Activity Timeline",
         "created": "Created",
         "updated": "Last Updated",
         "modifications": "Modification History",
         "tabs": {
           "info": "Reservation",
-          "preOrder": "Pre-order"
+          "preOrder": "Pre-order",
+          "notes": "Notes"
         },
         "preOrder": "Pre-order",
         "itemCount": "Items",
         "estimatedTotal": "Estimated Total",
         "viewFullOrder": "View full order"
       },
+      "notes": {
+        "addPlaceholder": "Add a note...",
+        "add": "Add",
+        "pinned": "Pinned",
+        "editNote": "Edit",
+        "deleteNote": "Delete",
+        "deleteConfirm": "Delete this note?",
+        "empty": "No notes yet",
+        "by": "by {name}",
+        "saving": "Saving...",
+        "pin": "Pin",
+        "unpin": "Unpin"
+      },
       "pendingDeposits": "{count} deposits pending",
+      "pendingRefunds": "{count} pending refund",
+      "refundAmount": "Refund ${amount}",
+      "refundedSuccess": "Refund marked successfully",
       "heldByAdmin": "{count} spots held pending payment",
       "spotHeld": "Spot Held",
       "awaitingDeposit": "Awaiting Deposit",
@@ -874,7 +904,8 @@
         "actionNeeded": "Action Needed",
         "confirmed": "Confirmed",
         "completed": "Completed",
-        "all": "All"
+        "all": "All",
+        "pendingRefund": "Pending Refund"
       },
       "history": "History",
       "historyDateRange": "Date range",
@@ -1094,6 +1125,7 @@
     },
     "customers": {
       "title": "Customers",
+      "subtitle": "Manage your customer database",
       "noEmail": "No email",
       "searchPlaceholder": "Search customers...",
       "filters": {
@@ -1115,8 +1147,14 @@
         "view": "View",
         "addTag": "+ Add Tag"
       },
+      "card": {
+        "visits": "{count} visits",
+        "lastVisit": "Last {date}"
+      },
       "detail": {
         "title": "Customer Details",
+        "back": "Customer Details",
+        "viewReservation": "View",
         "memberSince": "Member since",
         "stats": {
           "totalVisits": "Total Visits",
