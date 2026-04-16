@@ -535,9 +535,15 @@ export default function ReservationDetail({
               <span className="text-xs text-[#8C8478]">{t('detail.name')}</span>
               <span className="text-sm text-brown font-medium">{reservation.user?.name || t('detail.notProvided')}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.email')}</span>
-              <span className="text-sm text-brown">{reservation.user?.email}</span>
+              {reservation.user?.email && !reservation.user.email.endsWith('@placeholder.local') ? (
+                <span className="text-sm text-brown break-all">{reservation.user.email}</span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F0EEE9] text-[#8C8478]">
+                  {t('detail.notProvided')}
+                </span>
+              )}
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.phone')}</span>
@@ -549,7 +555,9 @@ export default function ReservationDetail({
                   {reservation.user.phone}
                 </a>
               ) : (
-                <span className="text-sm text-brown">{t('detail.notProvided')}</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F0EEE9] text-[#8C8478]">
+                  {t('detail.notProvided')}
+                </span>
               )}
             </div>
             {reservation.user?.wechatId && (

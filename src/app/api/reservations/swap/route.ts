@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Both must have yurtId assigned
-  if (!resA.yurtId || !resB.yurtId) {
+  // At least one must have a yurt — pending↔pending swap is meaningless
+  if (!resA.yurtId && !resB.yurtId) {
     return NextResponse.json(
-      { error: "Both reservations must have a room assigned to swap" },
+      { error: "At least one reservation must have a room assigned" },
       { status: 400 }
     );
   }
@@ -82,22 +82,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Atomic swap
+  // Atomic swap — yurtIds exchange (one side may end up null)
   await prisma.$transaction([
     prisma.reservation.update({
       where: { id: reservationIdA },
       data: {
         yurtId: resB.yurtId,
-        yurtAssignedAt: new Date(),
-        manuallyAssigned: true,
+        yurtAssignedAt: resB.yurtId ? new Date() : null,
+        manuallyAssigned: !!resB.yurtId,
       },
     }),
     prisma.reservation.update({
       where: { id: reservationIdB },
       data: {
         yurtId: resA.yurtId,
-        yurtAssignedAt: new Date(),
-        manuallyAssigned: true,
+        yurtAssignedAt: resA.yurtId ? new Date() : null,
+        manuallyAssigned: !!resA.yurtId,
       },
     }),
   ]);

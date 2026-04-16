@@ -540,15 +540,17 @@ export default function CalendarDesktop() {
   async function handleSwap(targetId: string) {
     if (!swapSourceId || swapLoading) return
 
-    // Capacity warning before swap
+    // Capacity warning before swap (handles asymmetric pending↔yurt cases)
     const sourceRes = reservations?.find(r => r.id === swapSourceId)
     const targetRes = reservations?.find(r => r.id === targetId)
-    if (sourceRes && targetRes && sourceRes.yurt && targetRes.yurt) {
+    if (sourceRes && targetRes) {
       const warnings: string[] = []
-      if (sourceRes.guestCount > targetRes.yurt.capacity) {
+      // After swap, sourceRes occupies targetRes's yurt (if any)
+      if (targetRes.yurt && sourceRes.guestCount > targetRes.yurt.capacity) {
         warnings.push(t('swapWarningLine', { guest: sourceRes.user?.name || sourceRes.user?.email, count: sourceRes.guestCount, room: `${targetRes.yurt.name}${targetRes.yurt.alias ? ` (${targetRes.yurt.alias})` : ''}`, capacity: targetRes.yurt.capacity }))
       }
-      if (targetRes.guestCount > sourceRes.yurt.capacity) {
+      // After swap, targetRes occupies sourceRes's yurt (if any)
+      if (sourceRes.yurt && targetRes.guestCount > sourceRes.yurt.capacity) {
         warnings.push(t('swapWarningLine', { guest: targetRes.user?.name || targetRes.user?.email, count: targetRes.guestCount, room: `${sourceRes.yurt.name}${sourceRes.yurt.alias ? ` (${sourceRes.yurt.alias})` : ''}`, capacity: sourceRes.yurt.capacity }))
       }
       if (warnings.length > 0) {
@@ -643,7 +645,10 @@ export default function CalendarDesktop() {
     const initials = getInitials(res.user?.name ?? null, res.user?.email ?? '')
     const isSwapSource = swapSourceId === res.id
     const resDate = res.date.split('T')[0]
-    const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.yurtId && res.status !== 'CANCELLED' && resDate === swapSourceDate
+    const swapSource = swapSourceId ? reservations?.find(r => r.id === swapSourceId) : null
+    const sourceHasYurt = !!swapSource?.yurtId
+    // Target is selectable when same date + active + not self + at least one side has a yurt
+    const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.status !== 'CANCELLED' && resDate === swapSourceDate && (sourceHasYurt || !!res.yurtId)
 
     return (
       <button
@@ -676,11 +681,11 @@ export default function CalendarDesktop() {
           <div className={`text-[11px] font-semibold ${colors.text} truncate flex-1`}>
             {getDisplayName(res.user)}
           </div>
-          {res.yurtId && !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(res.status) && !swapSourceId && activeYurts.length >= 2 && (
+          {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(res.status) && !swapSourceId && activeYurts.length >= (res.yurtId ? 2 : 1) && (
             <button
               onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
               className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
-              title={t('swapRoom')}
+              title={res.yurtId ? t('swapRoom') : t('assignToRoom')}
             >
               <ArrowLeftRight size={14} />
             </button>
@@ -714,20 +719,26 @@ export default function CalendarDesktop() {
   function renderWeekView() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
-        {swapSourceId && (
-          <div className="flex items-center justify-between px-4 py-3 bg-[#FFF8E1] border-b-2 border-[#E8B730]">
-            <div className="flex items-center gap-2">
-              <ArrowLeftRight size={16} className="text-[#92400E]" />
-              <span className="text-sm font-medium text-[#92400E]">{t('swapSelect')}</span>
+        {swapSourceId && (() => {
+          const src = reservations?.find(r => r.id === swapSourceId)
+          const isAssigning = src && !src.yurtId
+          return (
+            <div className="flex items-center justify-between px-4 py-3 bg-[#FFF8E1] border-b-2 border-[#E8B730]">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight size={16} className="text-[#92400E]" />
+                <span className="text-sm font-medium text-[#92400E]">
+                  {isAssigning ? t('assignSelect') : t('swapSelect')}
+                </span>
+              </div>
+              <button
+                onClick={() => setSwapSourceId(null)}
+                className="px-3 py-1.5 text-sm font-medium text-[#92400E] bg-[#92400E]/10 hover:bg-[#92400E]/20 rounded-lg transition-colors"
+              >
+                {t('swapCancel')}
+              </button>
             </div>
-            <button
-              onClick={() => setSwapSourceId(null)}
-              className="px-3 py-1.5 text-sm font-medium text-[#92400E] bg-[#92400E]/10 hover:bg-[#92400E]/20 rounded-lg transition-colors"
-            >
-              {t('swapCancel')}
-            </button>
-          </div>
-        )}
+          )
+        })()}
         {swapSuccess && (
           <div className="flex items-center justify-center px-4 py-2 bg-[#5B8C3E]/10 border-b border-[#5B8C3E]/30 text-[12px] text-[#5B8C3E]">
             ✓ {t('swapSuccess')}

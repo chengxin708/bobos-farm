@@ -1083,6 +1083,8 @@
       "orderPaid": "Paid",
       "swapRoom": "Swap Room",
       "swapSelect": "Select reservation to swap with",
+      "assignToRoom": "Assign to Room",
+      "assignSelect": "Select an empty slot or another reservation to assign",
       "swapCancel": "Cancel swap",
       "swapSuccess": "Room swap successful",
       "swapCapacityWarning": "Guest count exceeds room capacity after swap",

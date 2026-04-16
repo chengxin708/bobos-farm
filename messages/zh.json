@@ -1083,6 +1083,8 @@
       "orderPaid": "已结账",
       "swapRoom": "互换包房",
       "swapSelect": "选择要互换的预约",
+      "assignToRoom": "分配到包房",
+      "assignSelect": "选择空位或其他预约进行分配",
       "swapCancel": "取消互换",
       "swapSuccess": "包房互换成功",
       "swapCapacityWarning": "互换后人数超过房间容量",

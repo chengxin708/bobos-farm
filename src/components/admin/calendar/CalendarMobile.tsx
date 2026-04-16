@@ -817,21 +817,51 @@ export default function CalendarMobile() {
               <div className="bg-[#FFF8E1]/30 rounded-b-xl border border-[#E8ECE4] border-t-0 px-3 py-3 space-y-2">
                 {selectedDayUnassigned.map(res => {
                   const isHeld = res.holdByAdmin && res.status === 'PENDING_PAYMENT'
+                  const isSwapSource = swapSourceId === res.id
+                  const swapSource = swapSourceId ? reservations?.find(r => r.id === swapSourceId) : null
+                  const sourceHasYurt = !!swapSource?.yurtId
+                  // Pending card can be a swap target only when source has yurt (avoids pending↔pending)
+                  const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.status !== 'CANCELLED' && sourceHasYurt
+                  const isInactive = ['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(res.status)
                   return (
                     <button
                       key={res.id}
-                      onClick={() => setSelectedResId(res.id)}
-                      className="w-full text-left bg-white rounded-lg border border-[#E8ECE4] p-3 cursor-pointer hover:border-[#E8B730]/60 transition-colors"
+                      disabled={swapLoading && !!isSwapTarget}
+                      onClick={() => {
+                        if (isSwapSource) {
+                          setSwapSourceId(null)
+                        } else if (isSwapTarget && !swapLoading) {
+                          handleSwap(res.id)
+                        } else if (!swapSourceId) {
+                          setSelectedResId(res.id)
+                        }
+                      }}
+                      className={`w-full text-left bg-white rounded-lg border p-3 cursor-pointer transition-colors ${
+                        isSwapSource ? 'border-[#8B6914] ring-2 ring-[#8B6914]'
+                        : isSwapTarget ? 'border-[#5B8C3E] ring-2 ring-dashed ring-[#5B8C3E]'
+                        : 'border-[#E8ECE4] hover:border-[#E8B730]/60'
+                      }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[15px] font-semibold text-[#2C2416]">
                           {getDisplayName(res.user)}
                         </span>
-                        <StatusBadge
-                          type="reservation"
-                          status={res.status}
-                          label={isHeld ? t('status.held') : statusLabel(res.status, t)}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          {!isInactive && !swapSourceId && activeYurts.length >= 1 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
+                              className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
+                              title={t('assignToRoom')}
+                            >
+                              <ArrowLeftRight size={14} />
+                            </button>
+                          )}
+                          <StatusBadge
+                            type="reservation"
+                            status={res.status}
+                            label={isHeld ? t('status.held') : statusLabel(res.status, t)}
+                          />
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 text-[#8A7E6B]">
                         <Users size={13} />
@@ -908,7 +938,9 @@ export default function CalendarMobile() {
             // Booked yurt card
             if (res) {
               const isSwapSource = swapSourceId === res.id
+              // Yurt-card target is always valid (target has yurt = res.yurtId set)
               const isSwapTarget = swapSourceId && swapSourceId !== res.id && res.status !== 'CANCELLED'
+              // Also enable swap-source button on this yurt card (existing behavior — no change)
               return (
                 <button
                   key={yurt.id}
@@ -934,6 +966,7 @@ export default function CalendarMobile() {
                         onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
                         className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
                         title={t('swapRoom')}
+                        type="button"
                       >
                         <ArrowLeftRight size={14} />
                       </button>
