@@ -80,6 +80,18 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    // Check master kill-switch first — give a clear error if disabled
+    const enabledSetting = await prisma.systemSetting.findUnique({
+      where: { key: "emails_enabled" },
+    });
+    if (enabledSetting?.value === "false") {
+      return NextResponse.json(
+        { error: "Email sending is disabled in settings", reason: "emails_disabled" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
     const parsed = sendEmailSchema.safeParse(body);
     if (!parsed.success) {

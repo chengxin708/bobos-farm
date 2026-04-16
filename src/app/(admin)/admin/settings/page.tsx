@@ -75,6 +75,7 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   email_booking_confirmation: 6,
   email_payment_reminder: 6,
   email_admin_new_booking: 6,
+  emails_enabled: 6,
 }
 
 // ── Push Permission Button ─────────────────────────────────────────
@@ -795,6 +796,34 @@ export default function Settings() {
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
         <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('notifications.title')}</h2>
         <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('notifications.subtitle')}</p>
+
+        {/* Master switch: Emails Enabled */}
+        <div className="mb-8 p-4 rounded-lg border-2 border-[#E8ECE4] bg-[#FAFAF7]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-bold text-[#1A1208]">{t('notifications.emailsEnabled')}</p>
+              <p className="text-xs text-[#8C8478] mt-1">{t('notifications.emailsEnabledHelp')}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleField('emails_enabled')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0 ${
+                isEnabled('emails_enabled') ? 'bg-[#5B8C3E]' : 'bg-[#DC3545]'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  isEnabled('emails_enabled') ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {!isEnabled('emails_enabled') && (
+            <p className="mt-3 text-xs font-semibold text-[#DC3545] bg-[#DC3545]/10 px-3 py-2 rounded">
+              {t('notifications.emailsDisabledNote')}
+            </p>
+          )}
+        </div>
 
         {/* Resend API Key */}
         <div className="mb-8">

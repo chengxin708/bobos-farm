@@ -1357,6 +1357,9 @@
       "notifications": {
         "title": "Notification Settings",
         "subtitle": "Configure email notification preferences.",
+        "emailsEnabled": "Email Sending",
+        "emailsEnabledHelp": "Master switch. When OFF, no emails are sent — neither automatic nor manual. Per-type toggles below have no effect while this is off.",
+        "emailsDisabledNote": "Email sending is currently OFF. Turn the master switch above on to enable.",
         "resendApiKey": "Resend API Key",
         "resendApiKeyHelp": "Get your API Key from <link>resend.com</link>. Email notifications will work after saving.",
         "adminEmail": "Admin Notification Email",

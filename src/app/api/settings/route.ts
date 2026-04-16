@@ -30,6 +30,7 @@ const ALLOWED_SETTING_KEYS = [
   "email_booking_confirmation",
   "email_payment_reminder",
   "email_admin_new_booking",
+  "emails_enabled",
   "resend_api_key",
   // Web Push VAPID keys (backup, primary config via env vars)
   "vapid_public_key",

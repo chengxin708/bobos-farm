@@ -1357,6 +1357,9 @@
       "notifications": {
         "title": "通知设置",
         "subtitle": "配置邮件通知首选项。",
+        "emailsEnabled": "邮件发送总开关",
+        "emailsEnabledHelp": "总控开关。关闭后所有邮件都不发送（自动和手动都不发）。下方各分项开关在此关闭时无效。",
+        "emailsDisabledNote": "邮件发送当前已关闭。开启上方总开关即可恢复。",
         "resendApiKey": "Resend API Key",
         "resendApiKeyHelp": "从 <link>resend.com</link> 获取 API Key。保存后邮件通知即可生效。",
         "adminEmail": "管理员通知邮箱",

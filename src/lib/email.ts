@@ -18,9 +18,18 @@ let _resend: Resend | null = null;
 let _apiKeyChecked = false;
 
 async function getResend(): Promise<Resend | null> {
+  // Master kill-switch: emails_enabled setting (default 'true' when missing)
+  const enabledSetting = await prisma.systemSetting.findUnique({
+    where: { key: "emails_enabled" },
+  }).catch(() => null);
+  if (enabledSetting?.value === "false") {
+    console.log("[Email] emails_enabled=false — skipping send");
+    return null;
+  }
+
   if (_resend) return _resend;
 
-  // Try DB first
+  // Try DB first for API key
   const dbSetting = await prisma.systemSetting.findUnique({
     where: { key: "resend_api_key" },
   }).catch(() => null);
