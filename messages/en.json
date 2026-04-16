@@ -620,6 +620,8 @@
         "title": "Recent Activity",
         "viewAll": "View All \u2192"
       },
+      "pendingRefunds": "{count} deposits awaiting refund",
+      "processRefund": "Process",
       "pendingItems": "Action Required",
       "todayBookings": "Today's Bookings",
       "recentActivity": "Recent Activity",
@@ -816,7 +818,8 @@
         "completeReservation": "Complete Reservation",
         "completeReservationMsg": "Mark this reservation as completed? This indicates the guest visit has concluded.",
         "cancelReservation": "Cancel Reservation",
-        "cancelReservationMsg": "Are you sure you want to cancel this reservation? The customer will be notified by email. This cannot be undone."
+        "cancelReservationMsg": "Are you sure you want to cancel this reservation? The customer will be notified by email. This cannot be undone.",
+        "cancelWithDepositMsg": "This reservation has a ${amount} confirmed deposit that has not been refunded. Please remember to mark the refund after cancelling. Are you sure?"
       },
       "detail": {
         "title": "Reservation Details",

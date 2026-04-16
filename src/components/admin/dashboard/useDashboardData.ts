@@ -259,6 +259,19 @@ export function useDashboardData() {
     '/api/reservations?status=PENDING_PAYMENT',
     fetcher, swrOpts
   )
+  // Cancelled reservations with unrefunded deposits
+  const { data: allReservations } = useSWR<Reservation[]>(
+    '/api/reservations',
+    fetcher, swrOpts
+  )
+  const pendingRefunds = useMemo(() => {
+    if (!allReservations) return []
+    return allReservations.filter(r =>
+      r.status === 'CANCELLED' && r.depositStatus === 'CONFIRMED' && r.depositAmount > 0
+    )
+  }, [allReservations])
+  const pendingRefundCount = pendingRefunds.length
+
   const { data: weekRes, error: weekErr, mutate: mutateWeekRes } = useSWR<Reservation[]>(
     `/api/reservations?startDate=${week.start}&endDate=${week.end}`,
     fetcher, swrOpts
@@ -416,6 +429,8 @@ export function useDashboardData() {
     todayCount,
     pendingDeposits,
     pendingDepositCount,
+    pendingRefunds,
+    pendingRefundCount,
     submittedOrderCount,
     monthRevenue,
     expiringSoon,

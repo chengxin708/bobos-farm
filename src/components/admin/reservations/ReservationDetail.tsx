@@ -151,7 +151,14 @@ export default function ReservationDetail({
     deposit: { title: t('dialog.confirmDeposit'), message: t('dialog.confirmDepositMsg'), variant: 'success' as const, confirmLabel: t('actions.confirm') },
     waiveDeposit: { title: t('dialog.waiveDeposit'), message: t('dialog.waiveDepositMsg'), variant: 'confirm' as const, confirmLabel: t('dialog.waiveDepositConfirm') },
     complete: { title: t('dialog.completeReservation'), message: t('dialog.completeReservationMsg'), variant: 'confirm' as const, confirmLabel: t('actions.complete') },
-    cancel: { title: t('dialog.cancelReservation'), message: t('dialog.cancelReservationMsg'), variant: 'danger' as const, confirmLabel: t('actions.cancel') },
+    cancel: {
+      title: t('dialog.cancelReservation'),
+      message: reservation.depositStatus === 'CONFIRMED'
+        ? t('dialog.cancelWithDepositMsg', { amount: reservation.depositAmount })
+        : t('dialog.cancelReservationMsg'),
+      variant: 'danger' as const,
+      confirmLabel: t('actions.cancel'),
+    },
   }
 
   // Fetch full order details (with items) when order exists

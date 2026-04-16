@@ -37,6 +37,8 @@ export default function DashboardMobile() {
     activities,
     statCards,
     expiringSoon,
+    pendingRefunds,
+    pendingRefundCount,
     remindingSoon,
     showCreateModal,
     setShowCreateModal,
@@ -292,6 +294,33 @@ export default function DashboardMobile() {
             </div>
           )}
         </section>
+
+        {/* ─── Pending Refunds ─── */}
+        {pendingRefundCount > 0 && (
+          <section className="mb-5">
+            <div className="rounded-xl p-4 bg-white border border-[#E8ECE4]">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full bg-[#DC3545] animate-pulse" />
+                <span className="text-sm font-bold text-[#DC3545]">
+                  {t('pendingRefunds', { count: pendingRefundCount })}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {pendingRefunds.map(r => (
+                  <div key={r.id} className="flex items-center justify-between text-sm px-3 py-2 bg-[#FDE8E8]/50 rounded-lg">
+                    <span className="text-[#2C2416]">{r.user?.name || r.user?.email} — ${r.depositAmount}</span>
+                    <button
+                      onClick={() => window.location.href = '/admin/reservations'}
+                      className="text-xs font-semibold text-[#DC3545] hover:underline cursor-pointer bg-transparent border-none"
+                    >
+                      {t('processRefund')}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ─── Upcoming Assignments ─── */}
         <section className="mb-5">
