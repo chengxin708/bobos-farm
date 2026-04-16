@@ -928,7 +928,9 @@
         "copied": "Copied!",
         "copyMessage": "Copy Message",
         "sms": "SMS",
-        "smsBody": "Hi {name}, your reservation at Bobo's Farm ({date}) has been created. Code: {code}\n\nManage your reservation: {url}"
+        "smsBody": "Hi {name}, your reservation at Bobo's Farm ({date}) has been created. Code: {code}\n\nManage your reservation: {url}",
+        "langPickerTitle": "Customer language?",
+        "langPickerHint": "The message will be formatted in this language."
       },
       "pendingOrders": "{count} orders pending",
       "filters": {

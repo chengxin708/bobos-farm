@@ -55,6 +55,35 @@ interface YurtOption {
   status: string
 }
 
+// ── Bilingual share-link templates (independent of admin's UI locale) ──
+// Hardcoded for both languages so admin can pick the customer's preferred
+// language at send time, regardless of what locale the admin UI is in.
+const SHARE_TEMPLATES = {
+  en: {
+    smsBody: "Hi {name}, your reservation at Bobo's Farm ({date}) has been created. Code: {code}\n\nManage your reservation: {url}",
+  },
+  zh: {
+    smsBody: "Hi {name}，您在 Bobo's Farm 的预约（{date}）已创建。确认码：{code}\n\n点击链接管理预约：{url}",
+  },
+} as const
+
+function formatShareDate(dateStr: string, lang: 'en' | 'zh'): string {
+  const d = new Date(dateStr)
+  const localeStr = lang === 'zh' ? 'zh-CN' : 'en-US'
+  return d.toLocaleDateString(localeStr, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatShareMessage(
+  lang: 'en' | 'zh',
+  vars: { name: string; date: string; code: string; url: string }
+): string {
+  return SHARE_TEMPLATES[lang].smsBody
+    .replaceAll('{name}', vars.name)
+    .replaceAll('{date}', vars.date)
+    .replaceAll('{code}', vars.code)
+    .replaceAll('{url}', vars.url)
+}
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function ReservationDetail({
@@ -87,6 +116,7 @@ export default function ReservationDetail({
   const [showEmailMenu, setShowEmailMenu] = useState(false)
   const [emailSending, setEmailSending] = useState<string | null>(null)
   const [emailToast, setEmailToast] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [langPickerFor, setLangPickerFor] = useState<'copy' | 'sms' | null>(null)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
@@ -404,18 +434,7 @@ export default function ReservationDetail({
               </button>
               {/* Copy full message — for WeChat / WhatsApp paste */}
               <button
-                onClick={() => {
-                  const code = reservation.confirmationCode!
-                  const message = t('shareLink.smsBody', {
-                    name: reservation.user?.name || '',
-                    date: formatDateDisplay(reservation.date),
-                    code,
-                    url: `https://bobos.farm/claim?code=${code}`,
-                  })
-                  navigator.clipboard.writeText(message)
-                  setCopiedMessage(true)
-                  setTimeout(() => setCopiedMessage(false), 2000)
-                }}
+                onClick={() => setLangPickerFor('copy')}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] transition-colors"
                 title={t('shareLink.copyMessage')}
               >
@@ -423,20 +442,13 @@ export default function ReservationDetail({
                 {copiedMessage ? t('shareLink.copied') : t('shareLink.copyMessage')}
               </button>
               {/* SMS button — mobile only */}
-              <a
-                href={`sms:${reservation.user?.phone || ''}?body=${encodeURIComponent(
-                  t('shareLink.smsBody', {
-                    name: reservation.user?.name || '',
-                    date: formatDateDisplay(reservation.date),
-                    code: reservation.confirmationCode,
-                    url: `https://bobos.farm/claim?code=${reservation.confirmationCode}`,
-                  })
-                )}`}
+              <button
+                onClick={() => setLangPickerFor('sms')}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#6B7F5E]/10 text-[#6B7F5E] hover:bg-[#6B7F5E]/20 transition-colors md:hidden"
               >
                 <MessageCircle size={10} />
                 {t('shareLink.sms')}
-              </a>
+              </button>
               {/* Email dropdown — only for real-email customers, admin only */}
               {isAdmin && reservation.user?.email && !reservation.user.email.endsWith('@placeholder.local') && (
                 <EmailDropdown
@@ -1295,6 +1307,60 @@ export default function ReservationDetail({
           onCancel={() => setConfirmAction(null)}
         />
       )}
+
+      {/* Language picker for share-message buttons */}
+      {langPickerFor && reservation.confirmationCode && (() => {
+        const code = reservation.confirmationCode!
+        const url = `https://bobos.farm/claim?code=${code}`
+        const name = reservation.user?.name || ''
+        const phone = reservation.user?.phone || ''
+        const action = (lang: 'en' | 'zh') => {
+          const date = formatShareDate(reservation.date, lang)
+          const message = formatShareMessage(lang, { name, date, code, url })
+          if (langPickerFor === 'copy') {
+            navigator.clipboard.writeText(message)
+            setCopiedMessage(true)
+            setTimeout(() => setCopiedMessage(false), 2000)
+          } else {
+            window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`
+          }
+          setLangPickerFor(null)
+        }
+        return (
+          <div
+            className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4"
+            onClick={() => setLangPickerFor(null)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-base font-bold text-brown text-center mb-1">{t('shareLink.langPickerTitle')}</h3>
+              <p className="text-xs text-[#8C8478] text-center mb-4">{t('shareLink.langPickerHint')}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => action('zh')}
+                  className="flex-1 py-3 rounded-lg bg-[#6B7F5E] text-white text-sm font-semibold hover:bg-[#5B7C4E] transition-colors"
+                >
+                  中文
+                </button>
+                <button
+                  onClick={() => action('en')}
+                  className="flex-1 py-3 rounded-lg bg-[#8B6914] text-white text-sm font-semibold hover:bg-[#6B5210] transition-colors"
+                >
+                  English
+                </button>
+              </div>
+              <button
+                onClick={() => setLangPickerFor(null)}
+                className="w-full mt-3 py-2 text-sm text-[#8C8478] hover:text-brown transition-colors"
+              >
+                {t('actions.cancel')}
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Delete-note Confirm Dialog */}
       {pendingDeleteNoteId && (

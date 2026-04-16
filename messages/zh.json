@@ -928,7 +928,9 @@
         "copied": "已复制",
         "copyMessage": "复制完整文本",
         "sms": "短信分享",
-        "smsBody": "Hi {name}，您在 Bobo's Farm 的预约（{date}）已创建。确认码：{code}\n\n点击链接管理预约：{url}"
+        "smsBody": "Hi {name}，您在 Bobo's Farm 的预约（{date}）已创建。确认码：{code}\n\n点击链接管理预约：{url}",
+        "langPickerTitle": "客户使用什么语言？",
+        "langPickerHint": "信息将按选中的语言生成。"
       },
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {
