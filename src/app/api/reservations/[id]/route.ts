@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
-import { sendAdminDepositSubmitted, sendDepositConfirmed, sendDepositRefunded, sendReservationCancelled, sendReservationModified, sendYurtAssigned, shouldSkipEmail } from "@/lib/email";
+import { sendAdminDepositSubmitted, sendDepositConfirmed, sendDepositRefunded, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 
@@ -607,27 +607,13 @@ export async function PATCH(
         },
       });
 
-      // Notification timing: send now only if within T-2
-      const assignResDate = new Date(reservation.date);
-      assignResDate.setHours(0, 0, 0, 0);
-      const assignNow = new Date();
-      assignNow.setHours(0, 0, 0, 0);
-      const assignDiffDays = Math.round(
-        (assignResDate.getTime() - assignNow.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
-      if (assignDiffDays <= 2 && updated.user.email) {
-        // T-2 or closer: send immediately
-        void sendYurtAssigned(updated.user.email, {
-          date: updated.date,
-          yurtName: targetYurt.name,
-          yurtDescription: targetYurt.description || undefined,
-          guestCount: updated.guestCount,
-          reservationId: id,
-        });
+      // Delayed email for yurt assignment (admin may swap rooms multiple times)
+      {
+        const pendingAt = new Date();
+        pendingAt.setMinutes(pendingAt.getMinutes() + 5);
         await prisma.reservation.update({
           where: { id },
-          data: { yurtNotifiedAt: new Date() },
+          data: { emailPendingAt: pendingAt, emailPendingType: "yurt_assigned" },
         });
       }
       // Otherwise: T-2 10AM cron will handle notification
@@ -768,21 +754,14 @@ export async function PATCH(
         },
       });
 
-      // Fire-and-forget: send email notification to guest
+      // Delayed email: admin edits may happen in succession
       if (updated.user.email && Object.keys(changes).length > 0) {
-        sendReservationModified(updated.user.email, {
-          date: updated.date,
-          yurtName: updated.yurt?.name ?? "Pending assignment",
-          guestCount: updated.guestCount,
-          changes: changes as {
-            date?: { from: string; to: string };
-            yurt?: { from: string; to: string };
-            guestCount?: { from: number; to: number };
-          },
-          reservationId: id,
-        }).catch((err) =>
-          console.error("[email] reservation modified notification failed:", err)
-        );
+        const pendingAt = new Date();
+        pendingAt.setMinutes(pendingAt.getMinutes() + 5);
+        await prisma.reservation.update({
+          where: { id },
+          data: { emailPendingAt: pendingAt, emailPendingType: "modified" },
+        });
       }
 
       // Trigger deterministic assignment for affected dates
@@ -848,24 +827,6 @@ export async function PATCH(
         });
       }
 
-      // Fire-and-forget: email when deposit is refunded (with debounce)
-      if (
-        parsedAdmin.data.depositStatus === "REFUNDED" &&
-        reservation.depositStatus !== "REFUNDED" &&
-        updated.user.email
-      ) {
-        const refundEmail = updated.user.email;
-        shouldSkipEmail(id, "deposit_refunded").then(skip => {
-          if (skip) return;
-          sendDepositRefunded(refundEmail, {
-            date: updated.date,
-            yurtName: updated.yurt?.name ?? "N/A",
-            guestCount: updated.guestCount,
-            depositAmount: reservation.depositAmount,
-          }).catch(err => console.error('[email] deposit refunded notification failed:', err));
-        });
-      }
-
       // Log status changes
       if (parsedAdmin.data.status && parsedAdmin.data.status !== reservation.status) {
         await prisma.activityLog.create({
@@ -882,27 +843,31 @@ export async function PATCH(
         });
       }
 
-      // Fire-and-forget: email + push notification when deposit is confirmed
-      // Uses debounce to prevent duplicate emails within 2 minutes
+      // Delayed email: set pending flag, cron sends based on final state after 5 min
+      // Determine what type of notification is needed
+      let pendingType: string | null = null;
+      if (parsedAdmin.data.depositStatus === "CONFIRMED" && reservation.depositStatus !== "CONFIRMED") {
+        pendingType = "deposit_confirmed";
+      } else if (parsedAdmin.data.depositStatus === "REFUNDED" && reservation.depositStatus !== "REFUNDED") {
+        pendingType = "deposit_refunded";
+      } else if (parsedAdmin.data.status && parsedAdmin.data.status !== reservation.status) {
+        pendingType = "status_changed";
+      }
+
+      if (pendingType) {
+        const pendingAt = new Date();
+        pendingAt.setMinutes(pendingAt.getMinutes() + 5);
+        await prisma.reservation.update({
+          where: { id },
+          data: { emailPendingAt: pendingAt, emailPendingType: pendingType },
+        });
+      }
+
+      // Push notification (still immediate — lightweight, no spam concern)
       if (
         parsedAdmin.data.depositStatus === "CONFIRMED" &&
         reservation.depositStatus !== "CONFIRMED"
       ) {
-        // Send confirmation email to customer (with debounce)
-        if (updated.user.email) {
-          const userEmail = updated.user.email;
-          shouldSkipEmail(id, "deposit_confirmed").then(skip => {
-            if (skip) return;
-            sendDepositConfirmed(userEmail, {
-              date: updated.date,
-              yurtName: updated.yurt?.name ?? "Pending assignment",
-              guestCount: updated.guestCount,
-              reservationId: id,
-            }).catch(err => console.error('[email] deposit confirmed notification failed:', err));
-          });
-        }
-
-        // Push notification
         sendPushToUser(updated.userId, {
           title: "Deposit Confirmed",
           body: "Your reservation is confirmed! You can now pre-order menu items.",

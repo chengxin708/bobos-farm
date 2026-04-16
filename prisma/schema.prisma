@@ -185,6 +185,8 @@ model Reservation {
   yurtAssignedAt         DateTime?
   yurtNotifiedAt         DateTime?
   manuallyAssigned       Boolean           @default(false)
+  emailPendingAt         DateTime?
+  emailPendingType       String?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 

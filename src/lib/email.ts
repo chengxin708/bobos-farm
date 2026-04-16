@@ -61,45 +61,6 @@ async function getUserLang(email: string): Promise<Lang> {
   return user?.preferredLanguage === "ZH" ? "zh" : "en";
 }
 
-// ── Debounce — prevent duplicate emails within cooldown ────────────
-
-const EMAIL_COOLDOWN_MS = 120_000; // 2 minutes
-
-/**
- * Check if an email was recently sent for this reservation.
- * Returns true if we should skip (still in cooldown).
- * If not in cooldown, marks the timestamp so future calls within
- * the window will be skipped.
- */
-export async function shouldSkipEmail(reservationId: string, emailType: string): Promise<boolean> {
-  const key = `email_cooldown_${emailType}`;
-  const log = await prisma.activityLog.findFirst({
-    where: {
-      targetId: reservationId,
-      targetType: "Reservation",
-      action: key,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  if (log && Date.now() - new Date(log.createdAt).getTime() < EMAIL_COOLDOWN_MS) {
-    return true; // Still in cooldown
-  }
-
-  // Mark this email as sent
-  await prisma.activityLog.create({
-    data: {
-      userId: null,
-      action: key,
-      targetType: "Reservation",
-      targetId: reservationId,
-      details: { emailType, sentAt: new Date().toISOString() },
-    },
-  });
-
-  return false;
-}
-
 // ── Return type ─────────────────────────────────────────────────────
 
 interface EmailResult {
