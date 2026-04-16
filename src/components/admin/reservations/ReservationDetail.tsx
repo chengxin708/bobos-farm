@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy, Mail, ChevronDown } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -84,6 +84,9 @@ export default function ReservationDetail({
   const [copiedMessage, setCopiedMessage] = useState(false)
   const [copiedWechat, setCopiedWechat] = useState(false)
   const [editingGuest, setEditingGuest] = useState(false)
+  const [showEmailMenu, setShowEmailMenu] = useState(false)
+  const [emailSending, setEmailSending] = useState<string | null>(null)
+  const [emailToast, setEmailToast] = useState<{ ok: boolean; msg: string } | null>(null)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
@@ -434,9 +437,51 @@ export default function ReservationDetail({
                 <MessageCircle size={10} />
                 {t('shareLink.sms')}
               </a>
+              {/* Email dropdown — only for real-email customers, admin only */}
+              {isAdmin && reservation.user?.email && !reservation.user.email.endsWith('@placeholder.local') && (
+                <EmailDropdown
+                  reservation={reservation}
+                  activityLogs={activityLogs}
+                  open={showEmailMenu}
+                  onToggle={() => setShowEmailMenu(v => !v)}
+                  onClose={() => setShowEmailMenu(false)}
+                  sending={emailSending}
+                  onSend={async (type) => {
+                    setEmailSending(type)
+                    try {
+                      const res = await fetch(`/api/reservations/${reservation.id}/email`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type }),
+                      })
+                      if (!res.ok) {
+                        const data = await res.json()
+                        setEmailToast({ ok: false, msg: data.error || t('detail.emailSendFailed') })
+                      } else {
+                        setEmailToast({ ok: true, msg: t('detail.emailSendSuccess') })
+                        onOrderChanged?.() // refresh activity logs to show new EMAIL_SENT entry
+                      }
+                    } catch {
+                      setEmailToast({ ok: false, msg: t('detail.emailSendFailed') })
+                    } finally {
+                      setEmailSending(null)
+                      setShowEmailMenu(false)
+                      setTimeout(() => setEmailToast(null), 3000)
+                    }
+                  }}
+                  t={t}
+                />
+              )}
             </div>
           )}
         </div>
+        {emailToast && (
+          <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-lg text-sm font-medium shadow-lg ${
+            emailToast.ok ? 'bg-[#5B8C3E] text-white' : 'bg-[#DC3545] text-white'
+          }`}>
+            {emailToast.msg}
+          </div>
+        )}
 
         {/* Reservation Info */}
         <div className="space-y-3">
@@ -1443,6 +1488,110 @@ function EditGuestModal({ reservationId, initial, onClose, onSaved, t }: EditGue
           }}
           onCancel={() => setTransferTarget(null)}
         />
+      )}
+    </div>
+  )
+}
+
+// ── Email Dropdown ────────────────────────────────────────────────
+
+type EmailType = 'reservation_created' | 'pre_order' | 'claim_invitation' | 'yurt_assigned'
+
+interface EmailDropdownProps {
+  reservation: Reservation
+  activityLogs: ActivityLog[]
+  open: boolean
+  onToggle: () => void
+  onClose: () => void
+  sending: string | null
+  onSend: (type: EmailType) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: Record<string, any>) => string
+}
+
+function EmailDropdown({ reservation, activityLogs, open, onToggle, onClose, sending, onSend, t }: EmailDropdownProps) {
+  // Compute applicable types based on reservation state
+  const applicable = useMemo<EmailType[]>(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const isPast = new Date(reservation.date) < today
+    const isInactive = ['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED'].includes(reservation.status)
+    const types: EmailType[] = []
+
+    if (!isInactive) types.push('reservation_created')
+    if (reservation.status === 'CONFIRMED' && !isPast) types.push('pre_order')
+    if (!isInactive) types.push('claim_invitation')
+    if (reservation.status === 'CONFIRMED' && reservation.yurtId) types.push('yurt_assigned')
+
+    return types
+  }, [reservation.status, reservation.date, reservation.yurtId])
+
+  // Build last-sent map from activity logs
+  const lastSent = useMemo(() => {
+    const map = new Map<EmailType, { date: string; actor: string }>()
+    for (const log of activityLogs) {
+      if (log.action !== 'EMAIL_SENT') continue
+      const details = log.details as { type?: string; sentAt?: string } | null
+      const type = details?.type as EmailType | undefined
+      if (!type) continue
+      // Keep newest only; logs assumed desc-sorted by createdAt
+      if (!map.has(type)) {
+        map.set(type, {
+          date: new Date(details?.sentAt || log.createdAt).toLocaleDateString(),
+          actor: log.user?.name || log.user?.email || 'admin',
+        })
+      }
+    }
+    return map
+  }, [activityLogs])
+
+  if (applicable.length === 0) return null
+
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        disabled={sending !== null}
+        className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#6B7F5E]/10 text-[#6B7F5E] hover:bg-[#6B7F5E]/20 transition-colors disabled:opacity-50"
+      >
+        <Mail size={10} />
+        Email
+        <ChevronDown size={10} />
+      </button>
+      {open && (
+        <>
+          {/* backdrop */}
+          <div className="fixed inset-0 z-40" onClick={onClose} />
+          {/* menu */}
+          <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-white rounded-lg shadow-xl border border-[#E8ECE4] py-1">
+            {applicable.map((type: EmailType) => {
+              const last = lastSent.get(type)
+              const isSending = sending === type
+              return (
+                <button
+                  key={type}
+                  onClick={() => onSend(type)}
+                  disabled={isSending}
+                  className="w-full px-3 py-2 text-left hover:bg-[#F8F7F4] disabled:opacity-50 transition-colors flex items-start justify-between gap-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium text-[#1A1208]">{t(`detail.emailType.${type}`)}</div>
+                    <div className="text-[10px] text-[#8C8478] mt-0.5">
+                      {isSending
+                        ? t('detail.emailSending')
+                        : last
+                          ? t('detail.emailLastSent', { date: last.date, name: last.actor })
+                          : t('detail.emailNeverSent')}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-[#6B7F5E] font-semibold shrink-0 mt-0.5">
+                    {last ? t('detail.emailResend') : t('detail.emailSend')}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

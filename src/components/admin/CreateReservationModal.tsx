@@ -188,6 +188,17 @@ export default function CreateReservationModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 md:px-6 pb-6">
           <div className="flex flex-col gap-4 mt-4">
+            {/* Past-date warning banner */}
+            {date && date < new Date().toISOString().slice(0, 10) && (
+              <div className="rounded-lg border border-[#E8B730]/40 bg-[#FFF8E1] px-3 py-2.5 flex items-start gap-2">
+                <span className="text-base">⚠️</span>
+                <div className="flex-1">
+                  <p className="text-[13px] font-semibold text-[#8B6914]">{t('pastDateBanner')}</p>
+                  <p className="text-[12px] text-[#8B6914]/85 mt-0.5">{t('pastDateBannerHint')}</p>
+                </div>
+              </div>
+            )}
+
             {/* Guest Name */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>

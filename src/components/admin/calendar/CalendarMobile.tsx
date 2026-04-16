@@ -1019,7 +1019,8 @@ export default function CalendarMobile() {
                 </button>
               )
             }
-            // Normal: create reservation
+            // Normal: create reservation (greyed if past)
+            const isPastSlot = selectedDateStr < todayStr
             return (
               <button
                 key={yurt.id}
@@ -1027,15 +1028,23 @@ export default function CalendarMobile() {
                   setCreateYurtId(yurt.id)
                   setShowCreateModal(true)
                 }}
-                className="w-full text-left bg-white rounded-xl border border-[#E8ECE4] mb-3 overflow-hidden hover:border-[#6B7F5E]/40 hover:bg-[#6B7F5E]/[0.02] transition-colors cursor-pointer"
+                className={`w-full text-left rounded-xl border mb-3 overflow-hidden transition-colors cursor-pointer ${
+                  isPastSlot
+                    ? 'bg-[#F5F4F0]/40 border-[#E8E5DE] hover:border-[#A8A096]/60'
+                    : 'bg-white border-[#E8ECE4] hover:border-[#6B7F5E]/40 hover:bg-[#6B7F5E]/[0.02]'
+                }`}
               >
-                <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
-                  <span className="text-[13px] font-semibold text-[#6B7F5E]">
+                <div className={`flex items-center justify-between px-4 py-2 border-b border-[#E8ECE4] ${
+                  isPastSlot ? 'bg-[#F0EEE9]/60' : 'bg-[#FAFAF7]'
+                }`}>
+                  <span className={`text-[13px] font-semibold ${isPastSlot ? 'text-[#A8A096]' : 'text-[#6B7F5E]'}`}>
                     {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                   </span>
                 </div>
                 <div className="px-4 py-3">
-                  <span className="text-[13px] text-[#5B8C3E]">{t('available')} — {t('clickToBook')}</span>
+                  <span className={`text-[13px] ${isPastSlot ? 'text-[#A8A096]' : 'text-[#5B8C3E]'}`}>
+                    {isPastSlot ? t('pastSlotLabel') : `${t('available')} — ${t('clickToBook')}`}
+                  </span>
                 </div>
               </button>
             )

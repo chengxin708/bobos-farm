@@ -832,6 +832,7 @@ export default function CalendarDesktop() {
                       )
                     }
                     // Normal available cell — click to create reservation with date + yurt prefill
+                    const isPastSlot = dateStr < todayStr
                     return (
                       <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
                         <button
@@ -840,10 +841,18 @@ export default function CalendarDesktop() {
                             setCreateModalYurtId(yurt.id)
                             setShowCreateModal(true)
                           }}
-                          className="w-full p-3 rounded-lg bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/10 transition-colors cursor-pointer text-left group/avail"
-                          title={t('createReservation')}
+                          className={`w-full p-3 rounded-lg transition-colors cursor-pointer text-left group/avail ${
+                            isPastSlot
+                              ? 'bg-[#F0EEE9]/40 hover:bg-[#F0EEE9]/70'
+                              : 'bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/10'
+                          }`}
+                          title={isPastSlot ? t('pastDateRetroactive') : t('createReservation')}
                         >
-                          <div className="text-[11px] text-[#5B8C3E] font-medium opacity-0 group-hover/avail:opacity-100 transition-opacity">{t('status.available')}</div>
+                          <div className={`text-[11px] font-medium opacity-0 group-hover/avail:opacity-100 transition-opacity ${
+                            isPastSlot ? 'text-[#A8A096]' : 'text-[#5B8C3E]'
+                          }`}>
+                            {isPastSlot ? t('pastSlotLabel') : t('status.available')}
+                          </div>
                         </button>
                       </td>
                     )
@@ -868,7 +877,9 @@ export default function CalendarDesktop() {
                   return (
                     <td
                       key={i}
-                      className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFBEB]' : 'bg-[#FFF8E1]/30'}`}
+                      className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${
+                        isToday ? 'bg-[#FFFBEB]' : dateStr < todayStr ? 'bg-[#F5F4F0]/40' : 'bg-[#FFF8E1]/30'
+                      }`}
                     >
                       {pending.length > 0 ? (
                         <div className="flex flex-col gap-1.5">
@@ -881,10 +892,14 @@ export default function CalendarDesktop() {
                             setCreateModalYurtId(undefined)
                             setShowCreateModal(true)
                           }}
-                          className="w-full p-2 rounded-lg hover:bg-[#E8B730]/10 transition-colors cursor-pointer text-center"
-                          title={t('createReservation')}
+                          className={`w-full p-2 rounded-lg transition-colors cursor-pointer text-center ${
+                            dateStr < todayStr ? 'hover:bg-[#A8A096]/10' : 'hover:bg-[#E8B730]/10'
+                          }`}
+                          title={dateStr < todayStr ? t('pastDateRetroactive') : t('createReservation')}
                         >
-                          <span className="text-[11px] text-[#E8B730]/40 opacity-0 hover:opacity-100 transition-opacity">+</span>
+                          <span className={`text-[11px] opacity-0 hover:opacity-100 transition-opacity ${
+                            dateStr < todayStr ? 'text-[#A8A096]/60' : 'text-[#E8B730]/40'
+                          }`}>+</span>
                         </button>
                       )}
                     </td>

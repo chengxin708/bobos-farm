@@ -203,6 +203,25 @@ const preOrderReminder = {
   },
 } as const;
 
+const claimInvitation = {
+  en: {
+    subject: "You have a reservation at Bobo's Farm",
+    title: "We've reserved your spot",
+    body: "Our team set up a reservation for you. Click below to view details and manage your booking online.",
+    info: "Use the confirmation code below to claim this reservation in your account.",
+    button: "View My Reservation",
+    footer: "If you didn't request this, please reply to this email.",
+  },
+  zh: {
+    subject: "Bobo's Farm 已为您预留位置",
+    title: "已为您预订",
+    body: "我们的团队已为您建立预约，请点击下方按钮查看详情并在线管理您的预订。",
+    info: "使用下方的确认码在您的账户中认领此预约。",
+    button: "查看我的预约",
+    footer: "如非本人申请，请回复此邮件。",
+  },
+} as const;
+
 export const emailStrings = {
   labels,
   reservationCreated,
@@ -213,6 +232,7 @@ export const emailStrings = {
   reservationCancelled,
   depositRefunded,
   preOrderReminder,
+  claimInvitation,
 } as const;
 
 export type { Lang };

@@ -246,9 +246,16 @@ export async function POST(req: NextRequest) {
       const depositAmount = parsed.data.customDeposit ?? systemDepositAmount;
       const skipPayment = depositAmount === 0;
 
-      // Admin-created reservations: holdByAdmin=true
-      // If deposit is $0, skip payment and go straight to CONFIRMED
-      // If deposit > 0, PENDING_PAYMENT with holdByAdmin=true (holds spot but awaits payment)
+      // Past-date check: admin can retroactively log historical visits.
+      // Reservation is treated as already-completed: status=COMPLETED, deposit=CONFIRMED.
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      const isPastDate = reservationDate < todayMidnight;
+
+      // Admin-created reservations: holdByAdmin=true (unless past — then it's a historical record)
+      // - Past date: status=COMPLETED, deposit=CONFIRMED (already happened)
+      // - Future $0 deposit: skip payment → CONFIRMED
+      // - Future > $0 deposit: PENDING_PAYMENT with holdByAdmin (holds spot, awaits payment)
       const confirmationCode = await generateConfirmationCode();
       const reservation = await prisma.reservation.create({
         data: {
@@ -258,11 +265,11 @@ export async function POST(req: NextRequest) {
           date: reservationDate,
           guestCount,
           specialRequests: specialRequests || null,
-          holdByAdmin: true,
+          holdByAdmin: !isPastDate,
           depositAmount,
-          status: skipPayment ? "CONFIRMED" : "PENDING_PAYMENT",
-          depositStatus: skipPayment ? "CONFIRMED" : "UNPAID",
-          depositConfirmedAt: skipPayment ? new Date() : null,
+          status: isPastDate ? "COMPLETED" : (skipPayment ? "CONFIRMED" : "PENDING_PAYMENT"),
+          depositStatus: (isPastDate || skipPayment) ? "CONFIRMED" : "UNPAID",
+          depositConfirmedAt: (isPastDate || skipPayment) ? new Date() : null,
           ...(yurtId ? { yurtAssignedAt: new Date() } : {}),
           // No paymentDeadline for admin holds — they don't auto-expire
         },

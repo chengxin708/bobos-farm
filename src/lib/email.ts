@@ -734,6 +734,58 @@ export async function sendPreOrderReminder(
   }
 }
 
+// ── Claim Invitation ───────────────────────────────────────────────
+
+interface ClaimInvitationData {
+  date: string | Date;
+  yurtName: string;
+  guestCount: number;
+  confirmationCode: string;
+  siteUrl?: string;
+}
+
+export async function sendClaimInvitation(
+  to: string,
+  data: ClaimInvitationData
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.claimInvitation[lang];
+  const l = emailStrings.labels[lang];
+
+  try {
+    // Customer-facing claim link must point to the public domain, not admin subdomain.
+    const claimUrl = `https://bobos.farm/claim?code=${encodeURIComponent(data.confirmationCode)}`;
+    const siteUrl = data.siteUrl || "https://bobos.farm";
+
+    const html = emailWrapper(`
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
+
+      ${infoTable(
+        infoRow(l.date, formatDate(data.date, lang)) +
+        infoRow(l.yurt, data.yurtName) +
+        infoRow(l.guests, l.guestUnit(data.guestCount)) +
+        infoRow("Code", data.confirmationCode)
+      )}
+
+      <p style="margin:20px 0 8px;font-size:13px;color:#8A7E6B;">${s.info}</p>
+
+      ${primaryButton(s.button, claimUrl)}
+
+      <p style="margin:24px 0 0;font-size:12px;color:#A8A096;">${s.footer}</p>
+    `, { lang, type: "transactional", siteUrl });
+
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendClaimInvitation failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 // ── Marketing Email Helper ─────────────────────────────────────────
 
 /**
