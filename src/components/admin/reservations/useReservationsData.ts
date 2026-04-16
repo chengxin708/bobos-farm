@@ -268,7 +268,7 @@ export function useReservationsData() {
   )
 
   const { data: activityLogs, mutate: mutateActivityLogs } = useSWR<ActivityLog[]>(
-    selectedRes ? `/api/activity-logs?targetId=${selectedRes.id}&targetType=RESERVATION` : null,
+    selectedRes ? `/api/activity-logs?targetId=${selectedRes.id}&targetType=Reservation` : null,
     fetcher,
     { revalidateOnFocus: false }
   )

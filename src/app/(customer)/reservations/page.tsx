@@ -557,7 +557,7 @@ export default function ReservationsPage() {
                         className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#6B7F5E] text-white rounded-full text-sm font-medium mt-1 no-underline hover:bg-[#5A6E4F] transition-colors"
                       >
                         <UtensilsCrossed size={16} />
-                        预点菜品
+                        {t('actions.preOrderMenu')}
                       </Link>
                     </>
                   )}

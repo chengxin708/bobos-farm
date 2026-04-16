@@ -157,7 +157,7 @@ export default function CalendarMobile() {
     { revalidateOnFocus: false }
   )
   const { data: selectedResLogs, mutate: mutateSelectedResLogs } = useSWR(
-    selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=RESERVATION` : null,
+    selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=Reservation` : null,
     fetcher,
     { revalidateOnFocus: false }
   )
