@@ -311,7 +311,7 @@ export default function ReservationDetail({
             <div className="flex items-center gap-1 ml-auto">
               <button
                 onClick={() => {
-                  const url = `${window.location.origin}/claim?code=${reservation.confirmationCode}`
+                  const url = `https://bobos.farm/claim?code=${reservation.confirmationCode}`
                   navigator.clipboard.writeText(url)
                   setCopiedLink(true)
                   setTimeout(() => setCopiedLink(false), 2000)
@@ -329,7 +329,7 @@ export default function ReservationDetail({
                     name: reservation.user?.name || '',
                     date: formatDateDisplay(reservation.date),
                     code: reservation.confirmationCode,
-                    url: `${window.location.origin}/claim?code=${reservation.confirmationCode}`,
+                    url: `https://bobos.farm/claim?code=${reservation.confirmationCode}`,
                   })
                 )}`}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#6B7F5E]/10 text-[#6B7F5E] hover:bg-[#6B7F5E]/20 transition-colors md:hidden"
