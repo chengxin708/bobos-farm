@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { ArrowLeft, Search, CheckCircle2, XCircle, Loader2 } from "lucide-react"
 
 interface ReservationInfo {
@@ -31,6 +31,7 @@ export default function ClaimPageWrapper() {
 
 function ClaimPage() {
   const t = useTranslations("claim")
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status: sessionStatus } = useSession()
@@ -120,7 +121,7 @@ function ClaimPage() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString("zh-CN", {
+    return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -161,28 +162,30 @@ function ClaimPage() {
         <p className="text-[#6B6157] text-sm mb-6">{t("subtitle")}</p>
 
         {/* Code Input */}
-        <div className="flex gap-3 mb-6">
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
-            placeholder={t("codePlaceholder")}
-            maxLength={6}
-            className="flex-1 h-[52px] px-4 rounded-xl border border-[#E8ECE4] bg-white
-                       text-[#2C2416] font-mono text-lg tracking-widest text-center
-                       placeholder:text-[#6B6157]/40 placeholder:font-sans placeholder:text-sm placeholder:tracking-normal
-                       focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/30 focus:border-[#6B7F5E]
-                       transition-all"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && code.length > 0) handleLookup(code)
-            }}
-          />
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+              placeholder={t("codePlaceholder")}
+              maxLength={6}
+              className="w-full h-14 px-4 rounded-2xl border border-[#E8ECE4] bg-white
+                         text-[#2C2416] font-mono text-2xl tracking-[0.3em] text-center
+                         placeholder:text-[#6B6157]/30 placeholder:font-sans placeholder:text-sm placeholder:tracking-normal
+                         focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]
+                         transition-all"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && code.length > 0) handleLookup(code)
+              }}
+            />
+          </div>
           <button
             onClick={() => handleLookup(code)}
             disabled={loading || code.length === 0}
-            className="h-[52px] px-6 rounded-full bg-[#6B7F5E] text-white font-medium
-                       hover:bg-[#5A6E4E] disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-all flex items-center gap-2"
+            className="w-full h-12 rounded-full bg-[#6B7F5E] text-white text-sm font-semibold
+                       hover:bg-[#5A6E4E] disabled:opacity-40 disabled:cursor-not-allowed
+                       transition-all flex items-center justify-center gap-2"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
