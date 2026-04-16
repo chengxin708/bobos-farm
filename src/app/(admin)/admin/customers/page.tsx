@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import { Search, X, Save } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -135,165 +135,13 @@ function CustomerCard({
   )
 }
 
-function CustomerDetailMobile({
-  customer,
-  notes,
-  noteSaving,
-  noteSaved,
-  onNoteChange,
-  onSaveNote,
-  onClose,
-  onViewReservation,
-  t,
-  STATUS_COLORS,
-}: {
-  customer: CustomerData
-  notes: Record<string, string>
-  noteSaving: boolean
-  noteSaved: boolean
-  onNoteChange: (value: string) => void
-  onSaveNote: () => void
-  onClose: () => void
-  onViewReservation: () => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: (key: string, values?: any) => string
-  STATUS_COLORS: Record<string, string>
-}) {
-  return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E8ECE4]">
-        <button onClick={onClose} className="p-1 hover:bg-[#F8F7F4] rounded-lg">
-          <X size={20} className="text-[#8C8478]" />
-        </button>
-        <h3 className="text-base font-bold text-[#1A1208]">{t('detail.back')}</h3>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
-        {/* Profile */}
-        <div className="flex flex-col items-center gap-2">
-          <div className={`w-14 h-14 ${customer.initialsColor} rounded-full flex items-center justify-center text-white text-xl font-bold`}>
-            {customer.initials}
-          </div>
-          <span className="text-base font-bold text-[#1A1208]">{customer.name}</span>
-          {customer.email.endsWith('@placeholder.local') ? (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F4A623]/15 text-[#F4A623]">{t('noEmail')}</span>
-          ) : (
-            <span className="text-xs text-[#8C8478]">{customer.email}</span>
-          )}
-          <span className="text-xs text-[#8C8478]">{customer.phone}</span>
-          <span className="text-xs text-[#8C8478]">{t('detail.memberSince')} {customer.memberSince}</span>
-          {customer.tag && (
-            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${customer.tagColor}`}>
-              {customer.tag}
-            </span>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-2 text-center">
-          {[
-            { value: String(customer.totalVisits), label: t('detail.stats.totalVisits') },
-            { value: `$${customer.totalSpent.toLocaleString()}`, label: t('detail.stats.totalSpent') },
-            { value: `${customer.cancelRate}%`, label: t('detail.stats.cancelRate') },
-            { value: String(customer.cancelCount), label: t('detail.stats.noShows') },
-          ].map((s) => (
-            <div key={s.label} className="bg-[#F8F7F4] rounded-lg p-2">
-              <div className="text-base font-bold text-[#1A1208]">{s.value}</div>
-              <div className="text-[10px] text-[#8C8478]">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Reservation History — full list */}
-        <div>
-          <span className="text-xs font-bold text-[#1A1208]">{t('detail.reservationHistory')}</span>
-          <div className="mt-2 flex flex-col gap-1">
-            {customer.reservations.length === 0 ? (
-              <p className="text-xs text-[#8C8478] py-2">No reservations</p>
-            ) : (
-              customer.reservations.map((r, i) => (
-                <div
-                  key={i}
-                  onClick={onViewReservation}
-                  className="flex items-center justify-between text-xs py-2 px-2 rounded-lg hover:bg-[#F8F7F4] active:bg-[#F8F7F4] cursor-pointer"
-                >
-                  <span className="text-[#1A1208]">{r.date}</span>
-                  <span className="text-[#8C8478]">{r.yurtName}</span>
-                  <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Admin Notes */}
-        <div>
-          <span className="text-xs font-bold text-[#1A1208]">{t('detail.adminNotes')}</span>
-          <textarea
-            className="w-full border border-[#E8ECE4] rounded-lg p-2 text-xs h-20 resize-none mt-2 text-[#1A1208] placeholder:text-[#8C8478] focus:outline-none focus:border-[#6B7F5E]"
-            value={notes[customer.id] ?? ''}
-            onChange={e => onNoteChange(e.target.value)}
-            placeholder="Add notes about this customer..."
-          />
-          <button
-            onClick={onSaveNote}
-            disabled={noteSaving}
-            className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-lg mt-2 transition-colors ${noteSaving ? 'bg-[#6B7F5E]/60 cursor-not-allowed' : 'bg-[#6B7F5E] hover:bg-[#5A6E4F]'}`}
-          >
-            <Save size={12} /> {noteSaved ? 'Saved!' : noteSaving ? 'Saving...' : t('detail.saveNote')}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Customers() {
   const t = useTranslations('admin.customers')
   const tc = useTranslations('admin.common')
   const isMobile = useIsMobile()
   const router = useRouter()
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
-  const [notes, setNotes] = useState<Record<string, string>>({})
-  const [noteSaving, setNoteSaving] = useState(false)
-  const [noteSaved, setNoteSaved] = useState(false)
-
-  // Load note when a customer is selected
-  const loadNote = useCallback(async (customerId: string) => {
-    // Skip if we already have a cached note (including empty string — only skip if key exists)
-    if (customerId in notes) return
-    try {
-      const res = await fetch(`/api/customers/${customerId}/notes`)
-      if (res.ok) {
-        const data = await res.json()
-        setNotes(prev => ({ ...prev, [customerId]: data.note ?? '' }))
-      }
-    } catch {
-      // ignore fetch errors for notes
-    }
-  }, [notes])
-
-  const handleSaveNote = useCallback(async (customerId: string) => {
-    setNoteSaving(true)
-    try {
-      const res = await fetch(`/api/customers/${customerId}/notes`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note: notes[customerId] ?? '' }),
-      })
-      if (res.ok) {
-        setNoteSaved(true)
-        setTimeout(() => setNoteSaved(false), 2000)
-      }
-    } catch {
-      // ignore save errors silently
-    } finally {
-      setNoteSaving(false)
-    }
-  }, [notes])
 
   const { data: allReservations, isLoading } = useSWR<Reservation[]>('/api/reservations', fetcher)
 
@@ -390,16 +238,9 @@ export default function Customers() {
     return list
   }, [customers, activeFilter, searchQuery])
 
-  const selectedCustomer = useMemo(
-    () => customers.find(c => c.id === selectedId) || null,
-    [customers, selectedId]
-  )
-
   const handleRowClick = useCallback((id: string) => {
-    setSelectedId(id)
-    setDetailOpen(true)
-    loadNote(id)
-  }, [loadNote])
+    router.push(`/admin/customers/${id}`)
+  }, [router])
 
   const filterKeys: { key: FilterType; label: string }[] = [
     { key: 'all', label: t('filters.all') },
@@ -407,15 +248,6 @@ export default function Customers() {
     { key: 'regular', label: t('filters.regular') },
     { key: 'blocked', label: t('filters.blocked') },
   ]
-
-  const STATUS_COLORS: Record<string, string> = {
-    Confirmed: 'text-[#6B7F5E]',
-    Completed: 'text-[#1A1208]',
-    Cancelled: 'text-[#DC3545]',
-    'Pending Refund': 'text-[#DC3545]',
-    Pending: 'text-[#C47D52]',
-    Submitted: 'text-[#C47D52]',
-  }
 
   return (
     <>
@@ -503,9 +335,7 @@ export default function Customers() {
                     {filtered.map((c) => (
                       <tr
                         key={c.id}
-                        className={`border-b border-[#E8ECE4] last:border-b-0 hover:bg-[#F8F7F4] cursor-pointer transition-colors ${
-                          selectedId === c.id && detailOpen ? 'bg-[#EBF0E8]' : ''
-                        }`}
+                        className="border-b border-[#E8ECE4] last:border-b-0 hover:bg-[#F8F7F4] cursor-pointer transition-colors"
                         onClick={() => handleRowClick(c.id)}
                       >
                         <td className="px-4 py-3">
@@ -543,106 +373,7 @@ export default function Customers() {
           )}
         </div>
 
-        {/* Right - Customer Detail (desktop only) */}
-        {!isMobile && detailOpen && selectedCustomer && (
-          <div className="w-[380px] bg-white border-l border-[#E8ECE4] p-5 flex flex-col gap-4 overflow-auto shrink-0">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-[#1A1208]">{t('detail.title')}</span>
-              <button onClick={() => setDetailOpen(false)} className="p-1 rounded-lg hover:bg-[#F8F7F4] transition-colors">
-                <X size={16} className="text-[#8C8478]" />
-              </button>
-            </div>
-
-            <div className="flex flex-col items-center gap-2">
-              <div className={`w-14 h-14 ${selectedCustomer.initialsColor} rounded-full flex items-center justify-center text-white text-xl font-bold`}>
-                {selectedCustomer.initials}
-              </div>
-              <span className="text-base font-bold text-[#1A1208]">{selectedCustomer.name}</span>
-              {selectedCustomer.email.endsWith('@placeholder.local') ? (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F4A623]/15 text-[#F4A623]">{t('noEmail')}</span>
-              ) : (
-                <span className="text-xs text-[#8C8478]">{selectedCustomer.email}</span>
-              )}
-              <span className="text-xs text-[#8C8478]">{selectedCustomer.phone}</span>
-              <span className="text-xs text-[#8C8478]">{t('detail.memberSince')} {selectedCustomer.memberSince}</span>
-            </div>
-
-            {selectedCustomer.tag && (
-              <div className="flex gap-1 justify-center">
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${selectedCustomer.tagColor}`}>
-                  {selectedCustomer.tag}
-                </span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-4 gap-2 text-center">
-              {[
-                { value: String(selectedCustomer.totalVisits), label: t('detail.stats.totalVisits') },
-                { value: `$${selectedCustomer.totalSpent.toLocaleString()}`, label: t('detail.stats.totalSpent') },
-                { value: `${selectedCustomer.cancelRate}%`, label: t('detail.stats.cancelRate') },
-                { value: String(selectedCustomer.cancelCount), label: t('detail.stats.noShows') },
-              ].map((s) => (
-                <div key={s.label} className="bg-[#F8F7F4] rounded-lg p-2">
-                  <div className="text-base font-bold text-[#1A1208]">{s.value}</div>
-                  <div className="text-[10px] text-[#8C8478]">{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <span className="text-xs font-bold text-[#1A1208]">{t('detail.reservationHistory')}</span>
-              <div className="mt-2 max-h-48 overflow-y-auto">
-                <div className="flex flex-col gap-2">
-                  {selectedCustomer.reservations.map((r, i) => (
-                    <div
-                      key={i}
-                      onClick={() => router.push('/admin/reservations')}
-                      className="flex items-center justify-between text-xs cursor-pointer hover:bg-[#F8F7F4] rounded-lg py-1.5 px-1.5 -mx-1.5"
-                    >
-                      <span className="text-[#1A1208]">{r.date}</span>
-                      <span className="text-[#8C8478]">{r.yurtName}</span>
-                      <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-xs font-bold text-[#1A1208]">{t('detail.adminNotes')}</span>
-              <textarea
-                className="w-full border border-[#E8ECE4] rounded-lg p-2 text-xs h-20 resize-none mt-2 text-[#1A1208] placeholder:text-[#8C8478] focus:outline-none focus:border-[#6B7F5E] transition-colors"
-                value={notes[selectedCustomer.id] ?? ''}
-                onChange={e => setNotes(prev => ({ ...prev, [selectedCustomer.id]: e.target.value }))}
-                placeholder="Add notes about this customer..."
-              />
-              <button
-                onClick={() => handleSaveNote(selectedCustomer.id)}
-                disabled={noteSaving}
-                className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-lg mt-2 transition-colors ${noteSaving ? 'bg-[#6B7F5E]/60 cursor-not-allowed' : 'bg-[#6B7F5E] hover:bg-[#5A6E4F]'}`}
-              >
-                <Save size={12} /> {noteSaved ? 'Saved!' : noteSaving ? 'Saving...' : t('detail.saveNote')}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-
-      {/* Mobile full-screen detail overlay */}
-      {isMobile && detailOpen && selectedCustomer && (
-        <CustomerDetailMobile
-          customer={selectedCustomer}
-          notes={notes}
-          noteSaving={noteSaving}
-          noteSaved={noteSaved}
-          onNoteChange={(value) => setNotes(prev => ({ ...prev, [selectedCustomer.id]: value }))}
-          onSaveNote={() => handleSaveNote(selectedCustomer.id)}
-          onClose={() => setDetailOpen(false)}
-          onViewReservation={() => router.push('/admin/reservations')}
-          t={t}
-          STATUS_COLORS={STATUS_COLORS}
-        />
-      )}
     </>
   )
 }
