@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -29,7 +30,7 @@ interface Reservation {
   yurtId: string | null
   date: string
   guestCount: number
-  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+  status: 'PENDING_PAYMENT' | 'PAYMENT_SUBMITTED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_PENDING_REFUND' | 'EXPIRED'
   depositAmount: number
   depositStatus: 'UNPAID' | 'PENDING' | 'CONFIRMED' | 'REFUNDED'
   createdAt: string
@@ -96,10 +97,162 @@ type FilterType = 'all' | 'vip' | 'regular' | 'blocked'
 
 // ── Component ──────────────────────────────────────────────────────
 
+function CustomerCard({
+  customer,
+  onClick,
+  t,
+}: {
+  customer: CustomerData
+  onClick: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: any) => string
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex items-center gap-3 active:bg-[#F8F7F4]/80 cursor-pointer"
+    >
+      <div className={`w-10 h-10 ${customer.initialsColor} rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0`}>
+        {customer.initials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-[#1A1208] truncate">{customer.name}</span>
+          {customer.tag && (
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${customer.tagColor} shrink-0 ml-2`}>
+              {customer.tag}
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-[#8C8478] truncate">
+          {customer.email.endsWith('@placeholder.local') ? t('noEmail') : customer.email}
+        </div>
+        <div className="text-xs text-[#8C8478] mt-0.5">
+          {t('card.visits', { count: customer.totalVisits })} · {customer.lastVisit !== '--' ? t('card.lastVisit', { date: customer.lastVisit }) : '--'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CustomerDetailMobile({
+  customer,
+  notes,
+  noteSaving,
+  noteSaved,
+  onNoteChange,
+  onSaveNote,
+  onClose,
+  onViewReservation,
+  t,
+  STATUS_COLORS,
+}: {
+  customer: CustomerData
+  notes: Record<string, string>
+  noteSaving: boolean
+  noteSaved: boolean
+  onNoteChange: (value: string) => void
+  onSaveNote: () => void
+  onClose: () => void
+  onViewReservation: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: any) => string
+  STATUS_COLORS: Record<string, string>
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E8ECE4]">
+        <button onClick={onClose} className="p-1 hover:bg-[#F8F7F4] rounded-lg">
+          <X size={20} className="text-[#8C8478]" />
+        </button>
+        <h3 className="text-base font-bold text-[#1A1208]">{t('detail.back')}</h3>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+        {/* Profile */}
+        <div className="flex flex-col items-center gap-2">
+          <div className={`w-14 h-14 ${customer.initialsColor} rounded-full flex items-center justify-center text-white text-xl font-bold`}>
+            {customer.initials}
+          </div>
+          <span className="text-base font-bold text-[#1A1208]">{customer.name}</span>
+          {customer.email.endsWith('@placeholder.local') ? (
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F4A623]/15 text-[#F4A623]">{t('noEmail')}</span>
+          ) : (
+            <span className="text-xs text-[#8C8478]">{customer.email}</span>
+          )}
+          <span className="text-xs text-[#8C8478]">{customer.phone}</span>
+          <span className="text-xs text-[#8C8478]">{t('detail.memberSince')} {customer.memberSince}</span>
+          {customer.tag && (
+            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${customer.tagColor}`}>
+              {customer.tag}
+            </span>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-2 text-center">
+          {[
+            { value: String(customer.totalVisits), label: t('detail.stats.totalVisits') },
+            { value: `$${customer.totalSpent.toLocaleString()}`, label: t('detail.stats.totalSpent') },
+            { value: `${customer.cancelRate}%`, label: t('detail.stats.cancelRate') },
+            { value: String(customer.cancelCount), label: t('detail.stats.noShows') },
+          ].map((s) => (
+            <div key={s.label} className="bg-[#F8F7F4] rounded-lg p-2">
+              <div className="text-base font-bold text-[#1A1208]">{s.value}</div>
+              <div className="text-[10px] text-[#8C8478]">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Reservation History — full list */}
+        <div>
+          <span className="text-xs font-bold text-[#1A1208]">{t('detail.reservationHistory')}</span>
+          <div className="mt-2 flex flex-col gap-1">
+            {customer.reservations.length === 0 ? (
+              <p className="text-xs text-[#8C8478] py-2">No reservations</p>
+            ) : (
+              customer.reservations.map((r, i) => (
+                <div
+                  key={i}
+                  onClick={onViewReservation}
+                  className="flex items-center justify-between text-xs py-2 px-2 rounded-lg hover:bg-[#F8F7F4] active:bg-[#F8F7F4] cursor-pointer"
+                >
+                  <span className="text-[#1A1208]">{r.date}</span>
+                  <span className="text-[#8C8478]">{r.yurtName}</span>
+                  <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Admin Notes */}
+        <div>
+          <span className="text-xs font-bold text-[#1A1208]">{t('detail.adminNotes')}</span>
+          <textarea
+            className="w-full border border-[#E8ECE4] rounded-lg p-2 text-xs h-20 resize-none mt-2 text-[#1A1208] placeholder:text-[#8C8478] focus:outline-none focus:border-[#6B7F5E]"
+            value={notes[customer.id] ?? ''}
+            onChange={e => onNoteChange(e.target.value)}
+            placeholder="Add notes about this customer..."
+          />
+          <button
+            onClick={onSaveNote}
+            disabled={noteSaving}
+            className={`flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-1.5 rounded-lg mt-2 transition-colors ${noteSaving ? 'bg-[#6B7F5E]/60 cursor-not-allowed' : 'bg-[#6B7F5E] hover:bg-[#5A6E4F]'}`}
+          >
+            <Save size={12} /> {noteSaved ? 'Saved!' : noteSaving ? 'Saving...' : t('detail.saveNote')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Customers() {
   const t = useTranslations('admin.customers')
   const tc = useTranslations('admin.common')
   const isMobile = useIsMobile()
+  const router = useRouter()
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -204,11 +357,12 @@ export default function Customers() {
         tag,
         tagColor,
         memberSince: earliest ? formatDateShort(earliest.createdAt) : '--',
-        reservations: sorted.slice(0, 10).map(r => ({
+        reservations: sorted.map(r => ({
           date: formatDateShort(r.date),
           status: r.status === 'CONFIRMED' ? 'Confirmed'
             : r.status === 'COMPLETED' ? 'Completed'
             : r.status === 'CANCELLED' ? 'Cancelled'
+            : r.status === 'CANCELLED_PENDING_REFUND' ? 'Pending Refund'
             : r.status === 'PENDING_PAYMENT' ? 'Pending'
             : r.status === 'PAYMENT_SUBMITTED' ? 'Submitted'
             : r.status,
@@ -258,6 +412,7 @@ export default function Customers() {
     Confirmed: 'text-[#6B7F5E]',
     Completed: 'text-[#1A1208]',
     Cancelled: 'text-[#DC3545]',
+    'Pending Refund': 'text-[#DC3545]',
     Pending: 'text-[#C47D52]',
     Submitted: 'text-[#C47D52]',
   }
@@ -302,10 +457,25 @@ export default function Customers() {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Content: Cards on mobile, Table on desktop */}
           {isLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-sm text-[#8C8478]">{tc('loadingCustomers')}</div>
+            </div>
+          ) : isMobile ? (
+            <div className="flex flex-col gap-2">
+              {filtered.length === 0 ? (
+                <div className="text-center text-sm text-[#8C8478] py-8">No customers found</div>
+              ) : (
+                filtered.map((c) => (
+                  <CustomerCard
+                    key={c.id}
+                    customer={c}
+                    onClick={() => handleRowClick(c.id)}
+                    t={t}
+                  />
+                ))
+              )}
             </div>
           ) : (
             <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
@@ -373,8 +543,8 @@ export default function Customers() {
           )}
         </div>
 
-        {/* Right - Customer Detail */}
-        {detailOpen && selectedCustomer && (
+        {/* Right - Customer Detail (desktop only) */}
+        {!isMobile && detailOpen && selectedCustomer && (
           <div className="w-[380px] bg-white border-l border-[#E8ECE4] p-5 flex flex-col gap-4 overflow-auto shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-[#1A1208]">{t('detail.title')}</span>
@@ -421,19 +591,20 @@ export default function Customers() {
 
             <div>
               <span className="text-xs font-bold text-[#1A1208]">{t('detail.reservationHistory')}</span>
-              <div className="mt-2 flex flex-col gap-2">
-                {selectedCustomer.reservations.slice(0, 5).map((r, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-[#1A1208]">{r.date}</span>
-                    <span className="text-[#8C8478]">{r.yurtName}</span>
-                    <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
-                  </div>
-                ))}
-                {selectedCustomer.reservations.length > 5 && (
-                  <button className="text-xs text-[#6B7F5E] font-semibold mt-1 hover:underline">
-                    {t('detail.showMore', { count: selectedCustomer.reservations.length - 5 })}
-                  </button>
-                )}
+              <div className="mt-2 max-h-48 overflow-y-auto">
+                <div className="flex flex-col gap-2">
+                  {selectedCustomer.reservations.map((r, i) => (
+                    <div
+                      key={i}
+                      onClick={() => router.push('/admin/reservations')}
+                      className="flex items-center justify-between text-xs cursor-pointer hover:bg-[#F8F7F4] rounded-lg py-1.5 px-1.5 -mx-1.5"
+                    >
+                      <span className="text-[#1A1208]">{r.date}</span>
+                      <span className="text-[#8C8478]">{r.yurtName}</span>
+                      <span className={`font-semibold ${STATUS_COLORS[r.status] || 'text-[#8C8478]'}`}>{r.status}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -456,6 +627,22 @@ export default function Customers() {
           </div>
         )}
       </div>
+
+      {/* Mobile full-screen detail overlay */}
+      {isMobile && detailOpen && selectedCustomer && (
+        <CustomerDetailMobile
+          customer={selectedCustomer}
+          notes={notes}
+          noteSaving={noteSaving}
+          noteSaved={noteSaved}
+          onNoteChange={(value) => setNotes(prev => ({ ...prev, [selectedCustomer.id]: value }))}
+          onSaveNote={() => handleSaveNote(selectedCustomer.id)}
+          onClose={() => setDetailOpen(false)}
+          onViewReservation={() => router.push('/admin/reservations')}
+          t={t}
+          STATUS_COLORS={STATUS_COLORS}
+        />
+      )}
     </>
   )
 }
