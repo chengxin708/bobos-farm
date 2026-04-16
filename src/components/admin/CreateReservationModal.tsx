@@ -41,6 +41,7 @@ export default function CreateReservationModal({
   const [guestName, setGuestName] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+  const [guestWechatId, setGuestWechatId] = useState('')
   const [date, setDate] = useState(defaultDate || '')
   const [yurtId, setYurtId] = useState(defaultYurtId || '')
   const [guestCount, setGuestCount] = useState(1)
@@ -83,6 +84,7 @@ export default function CreateReservationModal({
       setGuestName('')
       setGuestEmail('')
       setGuestPhone('')
+      setGuestWechatId('')
       setDate(defaultDate || '')
       setYurtId(defaultYurtId || '')
       setGuestCount(1)
@@ -104,6 +106,14 @@ export default function CreateReservationModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    // At-least-one contact validation (matches API zod refine)
+    const hasContact = guestEmail.trim() || guestPhone.trim() || guestWechatId.trim()
+    if (!hasContact) {
+      setError(t('atLeastOneContactRequired'))
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -114,6 +124,7 @@ export default function CreateReservationModal({
           guestName,
           guestEmail,
           guestPhone,
+          guestWechatId: guestWechatId || undefined,
           date,
           yurtId: yurtId === '__hold__' ? undefined : (yurtId || undefined),
           holdAssignment: yurtId === '__hold__' ? true : undefined,
@@ -232,11 +243,10 @@ export default function CreateReservationModal({
             {/* Guest Phone */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
-                {t('guestPhone')} <span className="text-red-500">*</span>
+                {t('guestPhone')}
               </label>
               <input
                 type="tel"
-                required
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(formatPhoneUS(e.target.value))}
                 placeholder={t('phonePlaceholder')}
@@ -251,6 +261,30 @@ export default function CreateReservationModal({
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               />
+            </div>
+
+            {/* Guest WeChat ID */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
+                {t('guestWechat')}
+              </label>
+              <input
+                type="text"
+                value={guestWechatId}
+                onChange={(e) => setGuestWechatId(e.target.value)}
+                placeholder={t('wechatPlaceholder')}
+                className="h-11 px-3 rounded-lg border outline-none transition-all duration-150"
+                style={{ borderColor: '#E8E2D9', color: '#2C2416' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#6B7F5E'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#E8E2D9'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              />
+              <p className="text-[11px] text-[#8C8478]">{t('contactHint')}</p>
             </div>
 
             {/* Date */}

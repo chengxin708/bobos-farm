@@ -55,6 +55,7 @@ model User {
   email             String        @unique
   name              String?
   phone             String?
+  wechatId          String?
   passwordHash      String?
   role              Role          @default(CUSTOMER)
   preferredLanguage Language      @default(EN)
@@ -70,8 +71,25 @@ model User {
   activityLogs      ActivityLog[]
   pushSubscriptions PushSubscription[]
   reservationNotes  ReservationNote[]
+  contactEntries    UserContactEntry[]
 
   @@map("users")
+}
+
+model UserContactEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  type         String   // 'phone' | 'email' | 'wechat'
+  value        String
+  source       String   // 'self' | 'admin'
+  recordedById String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, value])
+  @@index([userId, type])
+  @@map("user_contact_entries")
 }
 
 model Account {

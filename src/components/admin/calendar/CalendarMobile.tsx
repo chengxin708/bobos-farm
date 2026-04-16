@@ -232,7 +232,9 @@ export default function CalendarMobile() {
   const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
     setActionUpdating(true)
     try {
-      const body = action === 'cancel' ? { action: 'cancel' } : { ...data }
+      const body = (action === 'cancel' || action === 'cancel_and_refund')
+        ? { action }
+        : { ...data }
       const res = await fetch(`/api/reservations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -250,7 +252,7 @@ export default function CalendarMobile() {
     handleResAction(id, 'cancel')
   }, [handleResAction])
   const cancelAndRefund = useCallback((id: string) => {
-    handleResAction(id, 'cancel', { cancelAndRefund: true })
+    handleResAction(id, 'cancel_and_refund')
   }, [handleResAction])
   const markRefunded = useCallback((id: string) => {
     handleResAction(id, 'admin', { status: 'CANCELLED', depositStatus: 'REFUNDED' })

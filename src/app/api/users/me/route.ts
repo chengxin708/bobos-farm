@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
+import { recordContactEntry } from "@/lib/contact-history";
 
 const profileUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
@@ -76,6 +77,17 @@ export async function PATCH(req: NextRequest) {
         updatedAt: true,
       },
     });
+
+    // Track phone changes (self-edit on settings page).
+    if (parsed.data.phone) {
+      await recordContactEntry(prisma, {
+        userId: user.id,
+        type: "phone",
+        value: parsed.data.phone,
+        source: "self",
+        recordedById: user.id,
+      });
+    }
 
     return NextResponse.json(user);
   } catch (error) {

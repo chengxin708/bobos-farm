@@ -54,24 +54,26 @@ export async function POST(
       );
     }
 
-    const reservation = await prisma.reservation.findUnique({ where: { id } });
-    if (!reservation) {
-      return NextResponse.json(
-        { error: "Reservation not found" },
-        { status: 404 }
-      );
+    try {
+      const note = await prisma.reservationNote.create({
+        data: {
+          reservationId: id,
+          userId: session.user.id,
+          content: parsed.data.content,
+        },
+        include: { user: { select: { id: true, name: true } } },
+      });
+      return NextResponse.json(note, { status: 201 });
+    } catch (err) {
+      // P2003: FK constraint failed → reservation does not exist
+      if ((err as { code?: string }).code === "P2003") {
+        return NextResponse.json(
+          { error: "Reservation not found" },
+          { status: 404 }
+        );
+      }
+      throw err;
     }
-
-    const note = await prisma.reservationNote.create({
-      data: {
-        reservationId: id,
-        userId: session.user.id,
-        content: parsed.data.content,
-      },
-      include: { user: { select: { id: true, name: true } } },
-    });
-
-    return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error("Failed to create reservation note:", error);
     return NextResponse.json(

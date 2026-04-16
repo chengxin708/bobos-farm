@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2 } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -20,6 +20,7 @@ import {
 import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
 import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
 import EditReservationEditor from '@/components/admin/reservations/EditReservationEditor'
+import { formatPhoneUS } from '@/lib/phone-mask'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -77,8 +78,12 @@ export default function ReservationDetail({
   const [showCheckout, setShowCheckout] = useState(false)
   const [showEditEditor, setShowEditEditor] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'deposit' | 'waiveDeposit' | 'complete' | 'cancel' | 'cancelAndRefund' | 'markRefunded' | null>(null)
+  const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
   const [editingDeposit, setEditingDeposit] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [copiedMessage, setCopiedMessage] = useState(false)
+  const [copiedWechat, setCopiedWechat] = useState(false)
+  const [editingGuest, setEditingGuest] = useState(false)
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
@@ -394,6 +399,26 @@ export default function ReservationDetail({
                 {copiedLink ? <Check size={10} /> : <Copy size={10} />}
                 {copiedLink ? t('shareLink.copied') : t('shareLink.copy')}
               </button>
+              {/* Copy full message — for WeChat / WhatsApp paste */}
+              <button
+                onClick={() => {
+                  const code = reservation.confirmationCode!
+                  const message = t('shareLink.smsBody', {
+                    name: reservation.user?.name || '',
+                    date: formatDateDisplay(reservation.date),
+                    code,
+                    url: `https://bobos.farm/claim?code=${code}`,
+                  })
+                  navigator.clipboard.writeText(message)
+                  setCopiedMessage(true)
+                  setTimeout(() => setCopiedMessage(false), 2000)
+                }}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] transition-colors"
+                title={t('shareLink.copyMessage')}
+              >
+                {copiedMessage ? <Check size={10} /> : <ClipboardCopy size={10} />}
+                {copiedMessage ? t('shareLink.copied') : t('shareLink.copyMessage')}
+              </button>
               {/* SMS button — mobile only */}
               <a
                 href={`sms:${reservation.user?.phone || ''}?body=${encodeURIComponent(
@@ -447,7 +472,19 @@ export default function ReservationDetail({
 
         {/* Guest Info */}
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-brown">{t('detail.guestInfo')}</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-brown">{t('detail.guestInfo')}</h4>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setEditingGuest(true)}
+                className="flex items-center gap-1 text-xs text-[#6B7F5E] hover:text-[#5B7C4E] font-medium"
+              >
+                <Pencil size={12} />
+                {t('detail.editGuest')}
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-xs text-[#8C8478]">{t('detail.name')}</span>
@@ -457,10 +494,37 @@ export default function ReservationDetail({
               <span className="text-xs text-[#8C8478]">{t('detail.email')}</span>
               <span className="text-sm text-brown">{reservation.user?.email}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-xs text-[#8C8478]">{t('detail.phone')}</span>
-              <span className="text-sm text-brown">{reservation.user?.phone || t('detail.notProvided')}</span>
+              {reservation.user?.phone ? (
+                <a
+                  href={`tel:${reservation.user.phone.replace(/[^\d+]/g, '')}`}
+                  className="text-sm text-[#6B7F5E] underline-offset-2 hover:underline font-medium"
+                >
+                  {reservation.user.phone}
+                </a>
+              ) : (
+                <span className="text-sm text-brown">{t('detail.notProvided')}</span>
+              )}
             </div>
+            {reservation.user?.wechatId && (
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-[#8C8478]">{t('detail.wechat')}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(reservation.user!.wechatId!)
+                    setCopiedWechat(true)
+                    setTimeout(() => setCopiedWechat(false), 2000)
+                  }}
+                  className="flex items-center gap-1.5 text-sm text-brown hover:text-[#6B7F5E] transition-colors"
+                  title={t('detail.copyWechat')}
+                >
+                  <span className="font-medium">{reservation.user.wechatId}</span>
+                  {copiedWechat ? <Check size={12} className="text-[#6B7F5E]" /> : <Copy size={12} className="text-[#8C8478]" />}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -895,7 +959,7 @@ export default function ReservationDetail({
                             <Pencil size={12} />
                           </button>
                           <button
-                            onClick={() => { if (confirm(t('notes.deleteConfirm'))) handleDeleteNote(note.id) }}
+                            onClick={() => setPendingDeleteNoteId(note.id)}
                             className="p-1 rounded hover:bg-[#DC3545]/10 text-[#8C8478] hover:text-[#DC3545]"
                           >
                             <Trash2 size={12} />
@@ -1176,6 +1240,208 @@ export default function ReservationDetail({
           loading={isUpdating}
           onConfirm={handleConfirmAction}
           onCancel={() => setConfirmAction(null)}
+        />
+      )}
+
+      {/* Delete-note Confirm Dialog */}
+      {pendingDeleteNoteId && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('notes.deleteNote')}
+          message={t('notes.deleteConfirm')}
+          variant="danger"
+          confirmLabel={t('notes.deleteNote')}
+          onConfirm={() => {
+            handleDeleteNote(pendingDeleteNoteId)
+            setPendingDeleteNoteId(null)
+          }}
+          onCancel={() => setPendingDeleteNoteId(null)}
+        />
+      )}
+
+      {/* Edit Guest Contact Modal */}
+      {editingGuest && reservation.user && (
+        <EditGuestModal
+          reservationId={reservation.id}
+          initial={{
+            name: reservation.user.name ?? '',
+            email: reservation.user.email.endsWith('@placeholder.local') ? '' : reservation.user.email,
+            phone: reservation.user.phone ?? '',
+            wechatId: reservation.user.wechatId ?? '',
+          }}
+          onClose={() => setEditingGuest(false)}
+          onSaved={() => {
+            setEditingGuest(false)
+            onOrderChanged?.()
+          }}
+          t={t}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Edit Guest Modal ──────────────────────────────────────────────
+
+interface EditGuestModalProps {
+  reservationId: string
+  initial: { name: string; email: string; phone: string; wechatId: string }
+  onClose: () => void
+  onSaved: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: string, values?: Record<string, any>) => string
+}
+
+function EditGuestModal({ reservationId, initial, onClose, onSaved, t }: EditGuestModalProps) {
+  const [name, setName] = useState(initial.name)
+  const [email, setEmail] = useState(initial.email)
+  const [phone, setPhone] = useState(initial.phone)
+  const [wechatId, setWechatId] = useState(initial.wechatId)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [transferTarget, setTransferTarget] = useState<{ name: string | null; email: string } | null>(null)
+
+  const submit = useCallback(async (confirmTransfer: boolean) => {
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/reservations/${reservationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reassign_guest',
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          wechatId: wechatId.trim() || undefined,
+          confirmTransfer: confirmTransfer || undefined,
+        }),
+      })
+      if (res.status === 409) {
+        const data = await res.json()
+        if (data.requiresConfirmation) {
+          setTransferTarget(data.existingCustomer)
+          setSaving(false)
+          return
+        }
+      }
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || t('detail.saveFailed'))
+        setSaving(false)
+        return
+      }
+      onSaved()
+    } catch {
+      setError(t('detail.saveFailed'))
+      setSaving(false)
+    }
+  }, [reservationId, name, email, phone, wechatId, onSaved, t])
+
+  const hasContact = email.trim() || phone.trim() || wechatId.trim()
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8ECE4]">
+          <h3 className="text-base font-bold text-brown">{t('detail.editGuestTitle')}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-[#E8ECE4]/30 rounded">
+            <X size={18} className="text-[#8C8478]" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-3 overflow-y-auto">
+          <p className="text-xs text-[#8C8478]">{t('detail.editGuestHint')}</p>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-semibold text-[#2C2416]">{t('detail.name')}</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-10 px-3 rounded-lg border border-[#E8E2D9] outline-none focus:border-[#6B7F5E]"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-semibold text-[#2C2416]">{t('detail.email')}</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="guest@example.com"
+              className="h-10 px-3 rounded-lg border border-[#E8E2D9] outline-none focus:border-[#6B7F5E]"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-semibold text-[#2C2416]">{t('detail.phone')}</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneUS(e.target.value))}
+              placeholder="(555) 000-0000"
+              className="h-10 px-3 rounded-lg border border-[#E8E2D9] outline-none focus:border-[#6B7F5E]"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-semibold text-[#2C2416]">{t('detail.wechat')}</label>
+            <input
+              type="text"
+              value={wechatId}
+              onChange={(e) => setWechatId(e.target.value)}
+              className="h-10 px-3 rounded-lg border border-[#E8E2D9] outline-none focus:border-[#6B7F5E]"
+            />
+          </div>
+
+          {!hasContact && (
+            <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+              {t('detail.atLeastOneContactRequired')}
+            </p>
+          )}
+          {error && (
+            <p className="text-xs text-red-700 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#E8ECE4]">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="px-4 py-2 text-sm font-semibold rounded-lg text-[#8C8478] hover:bg-[#E8ECE4]/30 disabled:opacity-50"
+          >
+            {t('actions.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => submit(false)}
+            disabled={saving || !hasContact || !name.trim()}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#6B7F5E] text-white hover:bg-[#5B7C4E] disabled:opacity-50"
+          >
+            {saving ? t('actions.saving') : t('actions.save')}
+          </button>
+        </div>
+      </div>
+
+      {/* Transfer confirmation overlay */}
+      {transferTarget && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('detail.transferConfirmTitle')}
+          message={t('detail.transferConfirmMsg', { name: transferTarget.name || '—', email: transferTarget.email })}
+          variant="confirm"
+          confirmLabel={t('detail.transferConfirmCta')}
+          loading={saving}
+          onConfirm={() => {
+            setTransferTarget(null)
+            submit(true)
+          }}
+          onCancel={() => setTransferTarget(null)}
         />
       )}
     </div>

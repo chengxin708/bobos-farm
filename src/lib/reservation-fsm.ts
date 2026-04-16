@@ -1,5 +1,11 @@
 import { ReservationStatus } from "@prisma/client";
 
+export const INACTIVE_RESERVATION_STATUSES: ReservationStatus[] = [
+  "CANCELLED",
+  "CANCELLED_PENDING_REFUND",
+  "EXPIRED",
+];
+
 export type Transition = {
   from: ReservationStatus;
   to: ReservationStatus;

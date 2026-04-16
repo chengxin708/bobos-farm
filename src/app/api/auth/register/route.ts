@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
+import { recordContactsFromUser } from "@/lib/contact-history";
 
 // TODO: [SECURITY] Add rate limiting to prevent brute-force account creation
 // Consider using upstash/ratelimit or similar per-IP rate limiter
@@ -47,6 +48,9 @@ export async function POST(req: NextRequest) {
         unsubscribeToken: crypto.randomUUID(),
       },
     });
+
+    // Seed initial contact entries (self-registered)
+    await recordContactsFromUser(prisma, user, "self", user.id);
 
     return NextResponse.json(
       {

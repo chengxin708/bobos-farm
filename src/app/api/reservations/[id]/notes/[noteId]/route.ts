@@ -18,7 +18,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const { id, noteId } = await params;
     const body = await req.json();
     const parsed = updateNoteSchema.safeParse(body);
     if (!parsed.success) {
@@ -28,20 +28,23 @@ export async function PATCH(
       );
     }
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.data.content !== undefined) updateData.content = parsed.data.content;
-    if (parsed.data.pinned !== undefined) updateData.pinned = parsed.data.pinned;
-
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(parsed.data).length === 0) {
       return NextResponse.json(
         { error: "No fields to update" },
         { status: 400 }
       );
     }
 
-    const note = await prisma.reservationNote.update({
+    const result = await prisma.reservationNote.updateMany({
+      where: { id: noteId, reservationId: id },
+      data: parsed.data,
+    });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    const note = await prisma.reservationNote.findUnique({
       where: { id: noteId },
-      data: updateData,
       include: { user: { select: { id: true, name: true } } },
     });
 
@@ -65,8 +68,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { noteId } = await params;
-    await prisma.reservationNote.delete({ where: { id: noteId } });
+    const { id, noteId } = await params;
+    const result = await prisma.reservationNote.deleteMany({
+      where: { id: noteId, reservationId: id },
+    });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete reservation note:", error);

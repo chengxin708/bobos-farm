@@ -13,6 +13,7 @@ export interface ReservationUser {
   name: string | null
   email: string
   phone: string | null
+  wechatId: string | null
 }
 
 export interface ReservationYurt {

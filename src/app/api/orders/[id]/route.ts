@@ -39,7 +39,7 @@ const orderIncludeAll = {
       guestCount: true,
       yurt: { select: { id: true, name: true } },
       user: {
-        select: { id: true, name: true, email: true, phone: true },
+        select: { id: true, name: true, email: true, phone: true, wechatId: true },
       },
     },
   },
@@ -82,7 +82,7 @@ export async function GET(
             date: true,
             guestCount: true,
             yurt: { select: { id: true, name: true } },
-            user: { select: { id: true, name: true, email: true, phone: true } },
+            user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           },
         },
       },

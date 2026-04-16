@@ -58,7 +58,7 @@ export async function PATCH(
         },
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -103,7 +103,7 @@ export async function PATCH(
         },
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -141,7 +141,7 @@ export async function PATCH(
         },
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },

@@ -14,23 +14,24 @@ export async function GET(
 
     const { id } = await params;
 
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: { id: true, name: true, email: true, phone: true, createdAt: true },
-    });
+    const [user, reservations] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id },
+        select: { id: true, name: true, email: true, phone: true, wechatId: true, createdAt: true },
+      }),
+      prisma.reservation.findMany({
+        where: { userId: id },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+          yurt: { select: { id: true, name: true, alias: true, capacity: true } },
+          order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
+        },
+        orderBy: { date: "desc" },
+      }),
+    ]);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    const reservations = await prisma.reservation.findMany({
-      where: { userId: id },
-      include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        yurt: { select: { id: true, name: true, alias: true, capacity: true } },
-        order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
-      },
-      orderBy: { date: "desc" },
-    });
 
     return NextResponse.json({ user, reservations });
   } catch (error) {

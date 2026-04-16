@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
             date: true,
             guestCount: true,
             yurt: { select: { id: true, name: true } },
-            user: { select: { id: true, name: true, email: true, phone: true } },
+            user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           },
         },
         _count: { select: { items: true } },

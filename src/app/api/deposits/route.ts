@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const reservations = await prisma.reservation.findMany({
       where,
       include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
+        user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
       },
       orderBy: { createdAt: "desc" },

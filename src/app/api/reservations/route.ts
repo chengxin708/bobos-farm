@@ -8,8 +8,13 @@ import {
 } from "@/lib/email";
 import { sendPushToAdmins } from "@/lib/push";
 import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
+import { recordContactsFromUser } from "@/lib/contact-history";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
+function randomCuid(): string {
+  return `${Date.now().toString(36)}${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+}
+
 async function generateConfirmationCode(): Promise<string> {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -44,10 +49,19 @@ const adminCreateReservationSchema = z.object({
   specialRequests: z.string().max(2000).optional(),
   guestName: z.string().min(1, "guestName is required"),
   guestEmail: z.union([z.string().email("Invalid email"), z.literal("")]).optional(),
-  guestPhone: z.string().min(1, "guestPhone is required"),
+  guestPhone: z.string().optional(),
+  guestWechatId: z.string().max(100).optional(),
   customDeposit: z.number().min(0).optional(),
   holdAssignment: z.boolean().optional(),
-});
+}).refine(
+  (data) => {
+    const hasEmail = !!data.guestEmail && data.guestEmail.trim().length > 0;
+    const hasPhone = !!data.guestPhone && data.guestPhone.trim().length > 0;
+    const hasWechat = !!data.guestWechatId && data.guestWechatId.trim().length > 0;
+    return hasEmail || hasPhone || hasWechat;
+  },
+  { message: "At least one contact method (email, phone, or WeChat) is required", path: ["guestEmail"] }
+);
 
 export async function GET(req: NextRequest) {
   try {
@@ -93,7 +107,7 @@ export async function GET(req: NextRequest) {
     const reservations = await prisma.reservation.findMany({
       where,
       include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
+        user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
         order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
       },
@@ -122,9 +136,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // ── Admin branch: create reservation on behalf of a customer ──
-    // Only use admin branch when admin-specific fields are provided (guestName + guestPhone)
-    // Email is optional — phone-only customers are supported
-    if (isAdmin && body.guestName && body.guestPhone) {
+    // Admin branch when guestName provided (other contact methods validated by schema refine)
+    if (isAdmin && body.guestName) {
       const parsed = adminCreateReservationSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
@@ -132,8 +145,10 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { yurtId, date, guestCount, specialRequests, guestName, guestPhone, holdAssignment } = parsed.data;
-      const guestEmail = parsed.data.guestEmail || '';
+      const { yurtId, date, guestCount, specialRequests, guestName, holdAssignment } = parsed.data;
+      const guestEmail = (parsed.data.guestEmail || '').trim();
+      const guestPhone = (parsed.data.guestPhone || '').trim();
+      const guestWechatId = (parsed.data.guestWechatId || '').trim();
       const reservationDate = new Date(date);
 
       // Validate yurt if specified
@@ -172,21 +187,56 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Look up or create customer by email (if provided) or phone
+      // Customer matching:
+      //   - Email is the only true account identifier; if provided, look up by email (may match real or placeholder)
+      //   - If no email, soft-match against existing PLACEHOLDER users by phone or wechat to avoid
+      //     creating duplicate placeholders for the same proxy-booked person. Never match against
+      //     real (non-placeholder) accounts via phone/wechat.
+      //   - Otherwise create a new placeholder with a random temp- email (decoupled from contact info).
       let customer = guestEmail
         ? await prisma.user.findUnique({ where: { email: guestEmail } })
-        : await prisma.user.findFirst({ where: { phone: guestPhone, role: "CUSTOMER" } });
+        : null;
+
+      if (!customer && (guestPhone || guestWechatId)) {
+        customer = await prisma.user.findFirst({
+          where: {
+            role: "CUSTOMER",
+            email: { endsWith: "@placeholder.local" },
+            OR: [
+              ...(guestPhone ? [{ phone: guestPhone }] : []),
+              ...(guestWechatId ? [{ wechatId: guestWechatId }] : []),
+            ],
+          },
+        });
+      }
 
       if (!customer) {
         customer = await prisma.user.create({
           data: {
-            email: guestEmail || `phone-${guestPhone.replace(/\D/g, '')}@placeholder.local`,
+            email: guestEmail || `temp-${randomCuid()}@placeholder.local`,
             name: guestName,
-            phone: guestPhone,
+            phone: guestPhone || null,
+            wechatId: guestWechatId || null,
             role: "CUSTOMER",
           },
         });
+      } else {
+        // Backfill missing contact fields on the matched placeholder
+        const updates: { phone?: string; wechatId?: string } = {};
+        if (!customer.phone && guestPhone) updates.phone = guestPhone;
+        if (!customer.wechatId && guestWechatId) updates.wechatId = guestWechatId;
+        if (Object.keys(updates).length > 0) {
+          customer = await prisma.user.update({ where: { id: customer.id }, data: updates });
+        }
       }
+
+      // Record admin-entered contact values into history
+      await recordContactsFromUser(
+        prisma,
+        { id: customer.id, email: guestEmail || null, phone: guestPhone || null, wechatId: guestWechatId || null },
+        "admin",
+        session.user.id
+      );
 
       // Get deposit amount from settings
       const depositSetting = await prisma.systemSetting.findUnique({
@@ -217,7 +267,7 @@ export async function POST(req: NextRequest) {
           // No paymentDeadline for admin holds — they don't auto-expire
         },
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
@@ -271,7 +321,7 @@ export async function POST(req: NextRequest) {
         ? await prisma.reservation.findUnique({
             where: { id: reservation.id },
             include: {
-              user: { select: { id: true, name: true, email: true, phone: true } },
+              user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
               yurt: { select: { id: true, name: true, capacity: true } },
             },
           })
@@ -299,6 +349,15 @@ export async function POST(req: NextRequest) {
           ...(contactPhone && { phone: contactPhone }),
         },
       }).catch(() => {}); // non-critical, don't block reservation
+
+      if (contactPhone) {
+        await recordContactsFromUser(
+          prisma,
+          { id: session.user.id!, phone: contactPhone },
+          "self",
+          session.user.id!
+        ).catch(() => {});
+      }
     }
 
     const reservationDate = new Date(date);
@@ -408,7 +467,7 @@ export async function POST(req: NextRequest) {
         ...(requestedYurtId ? { yurtAssignedAt: new Date() } : {}),
       },
       include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
+        user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
       },
     });
@@ -420,7 +479,7 @@ export async function POST(req: NextRequest) {
       const updated = await prisma.reservation.findUnique({
         where: { id: reservation.id },
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });

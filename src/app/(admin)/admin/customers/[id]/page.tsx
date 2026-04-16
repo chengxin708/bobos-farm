@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
-import { ArrowLeft, ChevronDown, ChevronUp, Save, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
@@ -13,6 +13,7 @@ import type {
   Reservation as FullReservation,
   ActivityLog,
 } from '@/components/admin/reservations/useReservationsData'
+import { INACTIVE_RESERVATION_STATUSES } from '@/lib/reservation-fsm'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -137,6 +138,26 @@ export default function CustomerDetailPage() {
     }
   )
 
+  // Contact history (email/phone/wechat with sources + timestamps)
+  interface ContactEntry {
+    id: string
+    type: 'email' | 'phone' | 'wechat'
+    value: string
+    source: 'self' | 'admin'
+    createdAt: string
+    isPrimary: boolean
+    recordedBy: { id: string; name: string | null; email: string; role: string } | null
+  }
+  interface ContactHistoryResponse {
+    primary: { email: string | null; phone: string | null; wechat: string | null }
+    history: { email: ContactEntry[]; phone: ContactEntry[]; wechat: ContactEntry[] }
+  }
+  const { data: contactHistory } = useSWR<ContactHistoryResponse>(
+    `/api/customers/${id}/contact-history`,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+
   // Fetch full reservation detail for panel
   const { data: detailRes, mutate: mutateDetail } = useSWR<FullReservation>(
     selectedRes ? `/api/reservations/${selectedRes.id}` : null,
@@ -181,13 +202,13 @@ export default function CustomerDetailPage() {
   const { upcoming, history } = useMemo(() => {
     if (!data?.reservations) return { upcoming: [], history: [] }
     const todayStr = new Date().toISOString().slice(0, 10)
-    const INACTIVE = ['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED']
+    const inactive: string[] = INACTIVE_RESERVATION_STATUSES
     return {
       upcoming: data.reservations
-        .filter(r => r.date.slice(0, 10) >= todayStr && !INACTIVE.includes(r.status))
+        .filter(r => r.date.slice(0, 10) >= todayStr && !inactive.includes(r.status))
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
       history: data.reservations
-        .filter(r => r.date.slice(0, 10) < todayStr || INACTIVE.includes(r.status))
+        .filter(r => r.date.slice(0, 10) < todayStr || inactive.includes(r.status))
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
     }
   }, [data?.reservations])
@@ -330,6 +351,52 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
+      {/* Contact methods + history */}
+      {contactHistory && (
+        <div className="bg-white rounded-xl border border-[#E8ECE4] p-4 space-y-3">
+          <span className="text-xs font-bold text-[#1A1208] uppercase">{t('detailPage.contactSection')}</span>
+
+          {(['email', 'phone', 'wechat'] as const).map(type => {
+            const primary = contactHistory.primary[type]
+            const allEntries = contactHistory.history[type]
+            const others = allEntries.filter(e => !e.isPrimary)
+            const label = type === 'email' ? t('detail.email') : type === 'phone' ? t('detail.phone') : t('detailPage.contactSection')
+            const wechatLabel = type === 'wechat' ? '微信' : label
+            const displayLabel = type === 'wechat' ? wechatLabel : label
+
+            return (
+              <div key={type} className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[11px] font-semibold text-[#8C8478] uppercase w-14 shrink-0">{displayLabel}</span>
+                  {primary ? (
+                    <span className="text-sm font-bold text-[#1A1208]">{primary}</span>
+                  ) : (
+                    <span className="text-sm text-[#8C8478] italic">
+                      {type === 'email' ? t('detailPage.contactPendingClaim') : t('detailPage.contactNotSet')}
+                    </span>
+                  )}
+                  {primary && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#6B7F5E]/15 text-[#6B7F5E]">{t('detailPage.contactPrimary')}</span>}
+                </div>
+                {others.length > 0 && (
+                  <div className="pl-16 space-y-0.5">
+                    {others.map(e => (
+                      <div key={e.id} className="text-xs text-[#8C8478] flex items-center gap-2">
+                        <span className="text-[#1A1208]">{e.value}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${e.source === 'self' ? 'bg-[#5B8C3E]/15 text-[#5B8C3E]' : 'bg-[#8C8478]/15 text-[#8C8478]'}`}>
+                          {e.source === 'self' ? t('detailPage.sourceSelf') : t('detailPage.sourceAdmin')}
+                        </span>
+                        {e.recordedBy?.name && <span className="text-[10px]">{t('detailPage.recordedBy', { name: e.recordedBy.name })}</span>}
+                        <span className="text-[10px]">{t('detailPage.recordedOn', { date: new Date(e.createdAt).toLocaleDateString() })}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-2 text-center">
         {[
@@ -443,22 +510,14 @@ export default function CustomerDetailPage() {
       {/* Full-screen overlay for reservation detail on mobile */}
       {selectedRes && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E8ECE4] shrink-0">
-            <button onClick={() => setSelectedRes(null)} className="p-1 hover:bg-[#F8F7F4] rounded-lg">
-              <X size={20} className="text-[#8C8478]" />
-            </button>
-            <h3 className="text-base font-bold text-[#1A1208]">{tRes('detail.title')}</h3>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <ReservationDetail
-              reservation={(detailRes || selectedRes) as FullReservation}
-              activityLogs={activityLogs || []}
-              onClose={() => setSelectedRes(null)}
-              onAction={{ confirmDeposit, cancelReservation, cancelAndRefund, markRefunded, completeReservation }}
-              isUpdating={updating}
-              onOrderChanged={handleOrderChanged}
-            />
-          </div>
+          <ReservationDetail
+            reservation={(detailRes || selectedRes) as FullReservation}
+            activityLogs={activityLogs || []}
+            onClose={() => setSelectedRes(null)}
+            onAction={{ confirmDeposit, cancelReservation, cancelAndRefund, markRefunded, completeReservation }}
+            isUpdating={updating}
+            onOrderChanged={handleOrderChanged}
+          />
         </div>
       )}
     </>

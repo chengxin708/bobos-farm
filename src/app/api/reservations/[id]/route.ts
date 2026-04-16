@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sendAdminDepositSubmitted, sendDepositConfirmed, sendDepositRefunded, sendReservationCancelled, sendReservationModified, sendYurtAssigned } from "@/lib/email";
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
+import { recordContactsFromUser } from "@/lib/contact-history";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -52,6 +53,23 @@ const editActionSchema = z.object({
   depositAmount: z.number().min(0).optional(),
 });
 
+const reassignGuestSchema = z.object({
+  action: z.literal("reassign_guest"),
+  name: z.string().min(1).max(200),
+  email: z.union([z.string().email(), z.literal("")]).optional(),
+  phone: z.string().max(50).optional(),
+  wechatId: z.string().max(100).optional(),
+  confirmTransfer: z.boolean().optional(),
+}).refine(
+  (data) => {
+    const hasEmail = !!data.email && data.email.trim().length > 0;
+    const hasPhone = !!data.phone && data.phone.trim().length > 0;
+    const hasWechat = !!data.wechatId && data.wechatId.trim().length > 0;
+    return hasEmail || hasPhone || hasWechat;
+  },
+  { message: "At least one contact method (email, phone, or WeChat) is required" }
+);
+
 const adminUpdateSchema = z.object({
   status: z.enum(["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED", "COMPLETED"]).optional(),
   guestCount: z.number().int().positive().optional(),
@@ -82,7 +100,7 @@ export async function GET(
     const reservation = await prisma.reservation.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
+        user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: true,
         order: { include: { items: { include: { menuItem: true } } } },
         rescheduleHistory: { orderBy: { rescheduledAt: "desc" } },
@@ -218,7 +236,7 @@ export async function PATCH(
         },
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -301,7 +319,7 @@ export async function PATCH(
           depositStatus: "REFUNDED",
         },
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
@@ -383,7 +401,7 @@ export async function PATCH(
         },
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -536,7 +554,7 @@ export async function PATCH(
           },
           include: {
             user: {
-              select: { id: true, name: true, email: true, phone: true },
+              select: { id: true, name: true, email: true, phone: true, wechatId: true },
             },
             yurt: { select: { id: true, name: true, capacity: true } },
           },
@@ -617,7 +635,7 @@ export async function PATCH(
         data: updateData,
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -684,7 +702,7 @@ export async function PATCH(
           manuallyAssigned: true,
         },
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
@@ -719,6 +737,184 @@ export async function PATCH(
       }
       // Otherwise: T-2 10AM cron will handle notification
 
+      return NextResponse.json(updated);
+    }
+
+    // ---------- REASSIGN GUEST (admin: fix typo or move reservation to a different customer) ----------
+    if (action === "reassign_guest") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Admin only" }, { status: 403 });
+      }
+
+      const parsedReassign = reassignGuestSchema.safeParse(body);
+      if (!parsedReassign.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedReassign.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      const newName = parsedReassign.data.name.trim();
+      const newEmailRaw = (parsedReassign.data.email ?? "").trim();
+      const newEmail = newEmailRaw.toLowerCase();
+      const newPhone = (parsedReassign.data.phone ?? "").trim();
+      const newWechat = (parsedReassign.data.wechatId ?? "").trim();
+      const confirmTransfer = parsedReassign.data.confirmTransfer === true;
+
+      const currentUser = await prisma.user.findUnique({
+        where: { id: reservation.userId },
+        select: { id: true, name: true, email: true, phone: true, wechatId: true },
+      });
+      if (!currentUser) {
+        return NextResponse.json({ error: "Current customer not found" }, { status: 404 });
+      }
+
+      const currentEmailLower = currentUser.email.toLowerCase();
+      const currentIsPlaceholder = currentEmailLower.endsWith("@placeholder.local");
+      const emailChanged = newEmail !== "" && newEmail !== currentEmailLower;
+      const downgradingToPlaceholder = newEmail === "" && !currentIsPlaceholder;
+
+      if (downgradingToPlaceholder) {
+        return NextResponse.json(
+          { error: "Cannot clear email for a real account. Edit on the customer profile instead." },
+          { status: 400 }
+        );
+      }
+
+      const snapshot = {
+        userId: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        wechatId: currentUser.wechatId,
+      };
+
+      // Case 1 & 2: email changed (or new email provided to a placeholder)
+      if (emailChanged) {
+        const existing = newEmail
+          ? await prisma.user.findUnique({
+              where: { email: newEmail },
+              select: { id: true, name: true, email: true, phone: true, wechatId: true },
+            })
+          : null;
+
+        if (existing && existing.id !== currentUser.id) {
+          // Existing different user — require confirmation
+          if (!confirmTransfer) {
+            return NextResponse.json(
+              {
+                requiresConfirmation: true,
+                existingCustomer: { id: existing.id, name: existing.name, email: existing.email },
+              },
+              { status: 409 }
+            );
+          }
+
+          const updated = await prisma.reservation.update({
+            where: { id },
+            data: { userId: existing.id },
+            include: {
+              user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+              yurt: { select: { id: true, name: true, capacity: true } },
+            },
+          });
+          await prisma.activityLog.create({
+            data: {
+              userId: session.user.id,
+              action: "RESERVATION_GUEST_REASSIGNED",
+              targetType: "Reservation",
+              targetId: id,
+              details: { mode: "transferred-to-existing", from: snapshot, toUserId: existing.id },
+            },
+          });
+          // Track admin-entered values into contact history of the target user
+          await recordContactsFromUser(
+            prisma,
+            { id: existing.id, email: newEmail, phone: newPhone || null, wechatId: newWechat || null },
+            "admin",
+            session.user.id
+          );
+          return NextResponse.json(updated);
+        }
+
+        // No existing user with this email → create new one and transfer
+        const created = await prisma.user.create({
+          data: {
+            email: newEmail,
+            name: newName,
+            phone: newPhone || null,
+            wechatId: newWechat || null,
+            role: "CUSTOMER",
+          },
+        });
+        const updated = await prisma.reservation.update({
+          where: { id },
+          data: { userId: created.id },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+            yurt: { select: { id: true, name: true, capacity: true } },
+          },
+        });
+        await prisma.activityLog.create({
+          data: {
+            userId: session.user.id,
+            action: "RESERVATION_GUEST_REASSIGNED",
+            targetType: "Reservation",
+            targetId: id,
+            details: { mode: "transferred-to-new", from: snapshot, toUserId: created.id, toEmail: created.email },
+          },
+        });
+        await recordContactsFromUser(
+          prisma,
+          { id: created.id, email: newEmail, phone: newPhone || null, wechatId: newWechat || null },
+          "admin",
+          session.user.id
+        );
+        return NextResponse.json(updated);
+      }
+
+      // Case 3 & 4: email unchanged — only name/phone/wechat differ
+      if (!currentIsPlaceholder) {
+        return NextResponse.json(
+          {
+            error: "Cannot edit contact details on a real customer account from a reservation. Edit on the customer profile page instead.",
+            realAccountEditBlocked: true,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Placeholder user — safe to mutate in place
+      await prisma.user.update({
+        where: { id: currentUser.id },
+        data: {
+          name: newName,
+          phone: newPhone || null,
+          wechatId: newWechat || null,
+        },
+      });
+      const updated = await prisma.reservation.findUnique({
+        where: { id },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "RESERVATION_GUEST_REASSIGNED",
+          targetType: "Reservation",
+          targetId: id,
+          details: { mode: "in-place-placeholder-update", from: snapshot, to: { name: newName, phone: newPhone || null, wechatId: newWechat || null } },
+        },
+      });
+      await recordContactsFromUser(
+        prisma,
+        { id: currentUser.id, phone: newPhone || null, wechatId: newWechat || null },
+        "admin",
+        session.user.id
+      );
       return NextResponse.json(updated);
     }
 
@@ -827,7 +1023,7 @@ export async function PATCH(
         where: { id },
         data: updateData,
         include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
@@ -905,7 +1101,7 @@ export async function PATCH(
         data: updateData,
         include: {
           user: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, wechatId: true },
           },
           yurt: { select: { id: true, name: true, capacity: true } },
         },
@@ -951,7 +1147,7 @@ export async function PATCH(
         const refetched = await prisma.reservation.findUnique({
           where: { id },
           include: {
-            user: { select: { id: true, name: true, email: true, phone: true } },
+            user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
             yurt: { select: { id: true, name: true, capacity: true } },
           },
         });
