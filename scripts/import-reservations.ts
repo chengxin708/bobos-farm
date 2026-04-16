@@ -21,6 +21,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { prisma } from "../src/lib/prisma";
 import { recordContactsFromUser } from "../src/lib/contact-history";
+import { tryDeterministicAssignment } from "../src/lib/yurt-assignment";
 
 const SOURCE_TAG = "excel-import-2026-04-16";
 const ADMIN_EMAIL = "chengxin708@gmail.com";
@@ -200,6 +201,24 @@ async function main() {
         reason: err instanceof Error ? err.message : String(err),
       });
     }
+  }
+
+  // ── Auto-assignment pass per unique date ──
+  if (!dryRun && created > 0) {
+    console.log("\n── Running deterministic assignment ──");
+    const dates = Array.from(new Set(staged.records.map((r) => r.date))).sort();
+    let totalAssigned = 0;
+    let totalPending = 0;
+    let totalAnomalies = 0;
+    for (const dateStr of dates) {
+      const result = await tryDeterministicAssignment(new Date(`${dateStr}T00:00:00.000Z`));
+      totalAssigned += result.assignments.length;
+      totalPending += result.pending.length;
+      totalAnomalies += result.anomalies.length;
+    }
+    console.log(`  Yurt assignments produced: ${totalAssigned}`);
+    console.log(`  Pending (couldn't fit):    ${totalPending}`);
+    console.log(`  Date anomalies:            ${totalAnomalies}`);
   }
 
   console.log("");
