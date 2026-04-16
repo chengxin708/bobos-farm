@@ -131,12 +131,28 @@ export function activityLogText(log: ActivityLog, t: (key: string, values?: any)
       return t('activityLog.cancelled', { actor })
     case 'PAYMENT_SUBMITTED':
       return t('activityLog.paymentSubmitted', { actor })
+    case 'RESERVATION_CREATED':
+      return t('activityLog.created', { actor })
+    case 'RESERVATION_EXPIRED':
+      return t('activityLog.expired')
     case 'DEPOSIT_CONFIRMED':
       return t('activityLog.depositConfirmed', { actor })
     case 'DEPOSIT_STATUS_CHANGED':
       return t('activityLog.depositStatusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
+    case 'DEPOSIT_RELEASED':
+      return t('activityLog.depositReleased', { actor })
+    case 'DEPOSIT_REFUNDED':
+      return t('activityLog.depositRefunded', { actor })
     case 'STATUS_CHANGED':
       return t('activityLog.statusChanged', { actor, from: details?.from as string || '?', to: details?.to as string || '?' })
+    case 'YURT_ASSIGNED':
+      return t('activityLog.yurtAssigned', { actor, yurt: (details?.yurtName as string) || '?' })
+    case 'YURT_SWAPPED':
+      return t('activityLog.yurtSwapped', { actor })
+    case 'RESERVATION_CLAIMED':
+      return t('activityLog.claimed', { actor })
+    case 'PAYMENT_REMINDER_SENT':
+      return t('activityLog.reminderSent')
     case 'ORDER_SUBMITTED':
       return t('activityLog.orderSubmitted', { actor })
     case 'ORDER_UPDATED':
