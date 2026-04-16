@@ -1068,7 +1068,8 @@
       "optimizationTitle": "Apply Optimization",
       "optimizationApply": "Apply",
       "optimizationConfirm": "Apply this optimization? Rooms will be reassigned.",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "moveHere": "Move here"
     },
     "menu": {
       "title": "Menu Management",

@@ -171,7 +171,7 @@ export default function CalendarDesktop() {
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
   const [swapSuccess, setSwapSuccess] = useState(false)
-  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[] } | null>(null)
+  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[]; isMove?: boolean } | null>(null)
   const [pendingOptimization, setPendingOptimization] = useState<string | null>(null)
 
   // Fetch full detail + activity logs for selected reservation
@@ -582,6 +582,43 @@ export default function CalendarDesktop() {
     }
   }
 
+  async function handleMoveToYurt(yurtId: string, yurtCapacity: number) {
+    if (!swapSourceId || swapLoading) return
+    const sourceRes = reservations?.find(r => r.id === swapSourceId)
+    if (sourceRes && sourceRes.guestCount > yurtCapacity) {
+      const yurt = activeYurts.find(y => y.id === yurtId)
+      const yurtLabel = yurt ? `${yurt.name}${yurt.alias ? ` (${yurt.alias})` : ''}` : ''
+      const guestName = sourceRes.user?.name || sourceRes.user?.email
+      setPendingSwap({ targetId: yurtId, warnings: [t('swapWarningLine', { guest: guestName, count: sourceRes.guestCount, room: yurtLabel, capacity: yurtCapacity })], isMove: true })
+      return
+    }
+    executeMoveToYurt(yurtId)
+  }
+
+  async function executeMoveToYurt(yurtId: string) {
+    setSwapLoading(true)
+    try {
+      const resp = await fetch(`/api/reservations/${swapSourceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_yurt', yurtId }),
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: t('unknownError') }))
+        alert(err.error || t('swapError'))
+        return
+      }
+      mutateReservations()
+      setSwapSourceId(null)
+      setSwapSuccess(true)
+      setTimeout(() => setSwapSuccess(false), 2000)
+    } catch {
+      alert(t('swapNetworkError'))
+    } finally {
+      setSwapLoading(false)
+    }
+  }
+
   /** Count of assigned (non-cancelled) reservations per date */
   const assignedCountByDate = useMemo(() => {
     const map = new Map<string, number>()
@@ -627,6 +664,7 @@ export default function CalendarDesktop() {
           ${res.status === 'CANCELLED' ? 'line-through opacity-60' : ''}
           ${isSwapSource ? 'ring-2 ring-[#8B6914]' : ''}
           ${isSwapTarget ? 'ring-2 ring-dashed ring-[#5B8C3E] hover:ring-[#5B8C3E]' : ''}
+          ${swapSourceId && !isSwapSource && !isSwapTarget ? 'opacity-40 !cursor-default' : ''}
         `}
       >
         <div className="flex items-center gap-1.5 mb-1">
@@ -636,7 +674,7 @@ export default function CalendarDesktop() {
           <div className={`text-[11px] font-semibold ${colors.text} truncate flex-1`}>
             {getDisplayName(res.user)}
           </div>
-          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && (assignedCountByDate.get(resDate) ?? 0) >= 2 && (
+          {res.yurtId && res.status !== 'CANCELLED' && !swapSourceId && activeYurts.length >= 2 && (
             <button
               onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
               className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
@@ -675,11 +713,14 @@ export default function CalendarDesktop() {
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
         {swapSourceId && (
-          <div className="flex items-center justify-between px-4 py-2 bg-[#FFF8E1] border-b border-[#E8B730]/30">
-            <span className="text-[12px] text-[#92400E]">{t('swapSelect')}</span>
+          <div className="flex items-center justify-between px-4 py-3 bg-[#FFF8E1] border-b-2 border-[#E8B730]">
+            <div className="flex items-center gap-2">
+              <ArrowLeftRight size={16} className="text-[#92400E]" />
+              <span className="text-sm font-medium text-[#92400E]">{t('swapSelect')}</span>
+            </div>
             <button
               onClick={() => setSwapSourceId(null)}
-              className="text-[11px] text-[#92400E] hover:text-[#78350F] underline cursor-pointer"
+              className="px-3 py-1.5 text-sm font-medium text-[#92400E] bg-[#92400E]/10 hover:bg-[#92400E]/20 rounded-lg transition-colors"
             >
               {t('swapCancel')}
             </button>
@@ -766,7 +807,29 @@ export default function CalendarDesktop() {
                       )
                     }
 
-                    // Available cell — click to create reservation with date + yurt prefill
+                    // Available cell
+                    const isSameDate = dateStr === swapSourceDate
+                    if (swapSourceId && isSameDate) {
+                      return (
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                          <button
+                            onClick={() => handleMoveToYurt(yurt.id, yurt.capacity)}
+                            disabled={swapLoading}
+                            className="w-full p-3 rounded-lg border-2 border-dashed border-[#5B8C3E] bg-[#5B8C3E]/5 hover:bg-[#5B8C3E]/15 transition-colors cursor-pointer text-left"
+                          >
+                            <div className="text-[11px] text-[#5B8C3E] font-medium">{t('moveHere')}</div>
+                          </button>
+                        </td>
+                      )
+                    }
+                    if (swapSourceId && !isSameDate) {
+                      return (
+                        <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
+                          <div className="w-full p-3 rounded-lg bg-gray-50/50 opacity-30" />
+                        </td>
+                      )
+                    }
+                    // Normal available cell — click to create reservation with date + yurt prefill
                     return (
                       <td key={i} className={`px-2 py-2 border-r border-[#E8ECE4] last:border-r-0 align-top ${isToday ? 'bg-[#FFFDF5]' : ''}`}>
                         <button
@@ -1204,7 +1267,7 @@ export default function CalendarDesktop() {
           message={pendingSwap.warnings.join('\n')}
           variant="danger"
           confirmLabel={t('swapCapacityConfirmBtn')}
-          onConfirm={() => { const tid = pendingSwap.targetId; setPendingSwap(null); executeSwap(tid) }}
+          onConfirm={() => { const tid = pendingSwap.targetId; const isMove = pendingSwap.isMove; setPendingSwap(null); if (isMove) executeMoveToYurt(tid); else executeSwap(tid) }}
           onCancel={() => setPendingSwap(null)}
         />
       )}

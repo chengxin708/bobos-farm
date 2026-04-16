@@ -1068,7 +1068,8 @@
       "optimizationTitle": "应用优化",
       "optimizationApply": "应用",
       "optimizationConfirm": "确定应用此优化建议？将重新分配包房。",
-      "unknownError": "未知错误"
+      "unknownError": "未知错误",
+      "moveHere": "移入此房间"
     },
     "menu": {
       "title": "菜单管理",

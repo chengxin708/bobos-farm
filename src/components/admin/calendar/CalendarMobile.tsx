@@ -150,7 +150,7 @@ export default function CalendarMobile() {
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
   const [swapSuccess, setSwapSuccess] = useState(false)
-  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[] } | null>(null)
+  const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[]; isMove?: boolean } | null>(null)
   const [pendingOptimization, setPendingOptimization] = useState(false)
 
   // Fetch full detail for selected reservation
@@ -290,6 +290,43 @@ export default function CalendarMobile() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reservationIdA: swapSourceId, reservationIdB: targetId }),
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: t('unknownError') }))
+        alert(err.error || t('swapError'))
+        return
+      }
+      mutateReservations()
+      setSwapSourceId(null)
+      setSwapSuccess(true)
+      setTimeout(() => setSwapSuccess(false), 2000)
+    } catch {
+      alert(t('swapNetworkError'))
+    } finally {
+      setSwapLoading(false)
+    }
+  }
+
+  async function handleMoveToYurt(yurtId: string, yurtCapacity: number) {
+    if (!swapSourceId || swapLoading) return
+    const sourceRes = Array.from(selectedDayReservations.values()).find(r => r.id === swapSourceId)
+    if (sourceRes && sourceRes.guestCount > yurtCapacity) {
+      const yurt = activeYurts.find(y => y.id === yurtId)
+      const yurtLabel = yurt ? `${yurt.name}${yurt.alias ? ` (${yurt.alias})` : ''}` : ''
+      const guestName = getDisplayName(sourceRes.user)
+      setPendingSwap({ targetId: yurtId, warnings: [t('swapWarningLine', { guest: guestName, count: sourceRes.guestCount, room: yurtLabel, capacity: yurtCapacity })], isMove: true })
+      return
+    }
+    executeMoveToYurt(yurtId)
+  }
+
+  async function executeMoveToYurt(yurtId: string) {
+    setSwapLoading(true)
+    try {
+      const resp = await fetch(`/api/reservations/${swapSourceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'assign_yurt', yurtId }),
       })
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: t('unknownError') }))
@@ -887,7 +924,7 @@ export default function CalendarMobile() {
                     <span className="text-[13px] font-semibold text-[#6B7F5E]">
                       {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
                     </span>
-                    {res.status !== 'CANCELLED' && !swapSourceId && Array.from(selectedDayReservations.values()).filter(r => r.status !== 'CANCELLED' && r.status !== 'CANCELLED_PENDING_REFUND' && r.status !== 'EXPIRED').length >= 2 && (
+                    {res.status !== 'CANCELLED' && !swapSourceId && activeYurts.length >= 2 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setSwapSourceId(res.id) }}
                         className="p-1 rounded hover:bg-black/5 text-[#8A7E6B] hover:text-[#8B6914]"
@@ -956,7 +993,28 @@ export default function CalendarMobile() {
               )
             }
 
-            // Available yurt card — tap to create reservation with date + yurt prefill
+            // Available yurt card
+            if (swapSourceId) {
+              // In swap mode: show as move target
+              return (
+                <button
+                  key={yurt.id}
+                  onClick={() => handleMoveToYurt(yurt.id, yurt.capacity)}
+                  disabled={swapLoading}
+                  className="w-full text-left bg-white rounded-xl border border-[#5B8C3E] ring-2 ring-dashed ring-[#5B8C3E] mb-3 overflow-hidden cursor-pointer"
+                >
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#FAFAF7] border-b border-[#E8ECE4]">
+                    <span className="text-[13px] font-semibold text-[#6B7F5E]">
+                      {yurt.name}{yurt.alias ? ` (${yurt.alias})` : ''} ({yurt.capacity})
+                    </span>
+                  </div>
+                  <div className="px-4 py-3">
+                    <span className="text-[13px] text-[#5B8C3E] font-medium">{t('moveHere')}</span>
+                  </div>
+                </button>
+              )
+            }
+            // Normal: create reservation
             return (
               <button
                 key={yurt.id}
@@ -1031,7 +1089,7 @@ export default function CalendarMobile() {
           message={pendingSwap.warnings.join('\n')}
           variant="danger"
           confirmLabel={t('swapCapacityConfirmBtn')}
-          onConfirm={() => { const tid = pendingSwap.targetId; setPendingSwap(null); executeSwap(tid) }}
+          onConfirm={() => { const tid = pendingSwap.targetId; const isMove = pendingSwap.isMove; setPendingSwap(null); if (isMove) executeMoveToYurt(tid); else executeSwap(tid) }}
           onCancel={() => setPendingSwap(null)}
         />
       )}
