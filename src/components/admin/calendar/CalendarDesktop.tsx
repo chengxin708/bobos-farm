@@ -177,7 +177,7 @@ export default function CalendarDesktop() {
     fetcher,
     { revalidateOnFocus: false }
   )
-  const { data: selectedResLogs } = useSWR(
+  const { data: selectedResLogs, mutate: mutateSelectedResLogs } = useSWR(
     selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=RESERVATION` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -364,10 +364,11 @@ export default function CalendarDesktop() {
       if (res.ok) {
         mutateReservations()
         mutateSelectedRes()
+        mutateSelectedResLogs()
       }
     } catch { /* ignore */ }
     finally { setActionUpdating(false) }
-  }, [mutateReservations, mutateSelectedRes])
+  }, [mutateReservations, mutateSelectedRes, mutateSelectedResLogs])
 
   const confirmDeposit = useCallback((id: string) => {
     handleResAction(id, 'admin', { status: 'CONFIRMED', depositStatus: 'CONFIRMED', depositConfirmedAt: new Date().toISOString() })
@@ -1114,7 +1115,7 @@ export default function CalendarDesktop() {
             onClose={() => setSelectedResId(null)}
             onAction={{ confirmDeposit, cancelReservation, completeReservation }}
             isUpdating={actionUpdating}
-            onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); }}
+            onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); mutateSelectedResLogs(); }}
           />
         </div>
       )}

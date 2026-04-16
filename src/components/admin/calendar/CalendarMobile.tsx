@@ -156,7 +156,7 @@ export default function CalendarMobile() {
     fetcher,
     { revalidateOnFocus: false }
   )
-  const { data: selectedResLogs } = useSWR(
+  const { data: selectedResLogs, mutate: mutateSelectedResLogs } = useSWR(
     selectedResId ? `/api/activity-logs?targetId=${selectedResId}&targetType=RESERVATION` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -235,7 +235,7 @@ export default function CalendarMobile() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (res.ok) { mutateReservations(); mutateSelectedRes() }
+      if (res.ok) { mutateReservations(); mutateSelectedRes(); mutateSelectedResLogs() }
     } catch { /* ignore */ }
     finally { setActionUpdating(false) }
   }, [mutateReservations, mutateSelectedRes])
@@ -942,7 +942,7 @@ export default function CalendarMobile() {
               onClose={() => setSelectedResId(null)}
               onAction={{ confirmDeposit, cancelReservation, completeReservation }}
               isUpdating={actionUpdating}
-              onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); }}
+              onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); mutateSelectedResLogs(); }}
             />
           </div>
         </div>

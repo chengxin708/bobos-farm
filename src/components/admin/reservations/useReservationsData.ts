@@ -532,6 +532,7 @@ export function useReservationsData() {
     // Mutators
     mutateReservations,
     mutateDetail,
+    mutateActivityLogs,
     // Success message
     successMsg,
     setSuccessMsg,
