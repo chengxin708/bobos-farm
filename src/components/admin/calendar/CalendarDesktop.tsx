@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -398,6 +398,46 @@ export default function CalendarDesktop() {
     setCurrentMonth(now.getMonth())
     setWeekBase(now)
   }, [])
+
+  // Find next available date
+  const [findingNext, setFindingNext] = useState(false)
+  const lastFoundDateRef = useRef<string | null>(null)
+
+  const findNextAvailable = useCallback(async () => {
+    const activeCount = activeYurts.length
+    if (activeCount === 0 || findingNext) return
+    setFindingNext(true)
+
+    try {
+      // Search from day after last found (or today)
+      const searchFrom = new Date()
+      if (lastFoundDateRef.current) {
+        const last = new Date(lastFoundDateRef.current)
+        last.setDate(last.getDate() + 1)
+        if (last > searchFrom) searchFrom.setTime(last.getTime())
+      }
+      const searchEnd = new Date(searchFrom)
+      searchEnd.setDate(searchEnd.getDate() + 180)
+
+      const res = await fetch(`/api/availability/slots?startDate=${formatDate(searchFrom)}&endDate=${formatDate(searchEnd)}`)
+      if (!res.ok) return
+      const slots: Record<string, { available: number }> = await res.json()
+
+      // Find first date with available > 0
+      const sortedDates = Object.keys(slots).sort()
+      for (const dateStr of sortedDates) {
+        if (slots[dateStr].available > 0) {
+          const d = new Date(dateStr + 'T12:00:00')
+          lastFoundDateRef.current = dateStr
+          setCurrentYear(d.getFullYear())
+          setCurrentMonth(d.getMonth())
+          setWeekBase(d)
+          break
+        }
+      }
+    } catch { /* ignore */ }
+    finally { setFindingNext(false) }
+  }, [activeYurts, findingNext])
 
   const prevMonth = useCallback(() => {
     setCurrentMonth(prev => {
@@ -1068,6 +1108,14 @@ export default function CalendarDesktop() {
               className="text-sm font-semibold text-[#6B7F5E] hover:underline transition-colors"
             >
               {t('today')}
+            </button>
+            <button
+              onClick={findNextAvailable}
+              disabled={findingNext}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              <ChevronRight size={14} />
+              {t('nextAvailable')}
             </button>
             <button
               onClick={() => { setCreateModalDate(undefined); setCreateModalYurtId(undefined); setShowCreateModal(true) }}

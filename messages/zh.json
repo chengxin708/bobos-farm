@@ -935,6 +935,7 @@
         "week": "周视图"
       },
       "today": "今天",
+      "nextAvailable": "下一个可用",
       "legend": {
         "available": "可预订",
         "pending": "待付款",

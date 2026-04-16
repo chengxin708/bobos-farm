@@ -935,6 +935,7 @@
         "week": "Week"
       },
       "today": "Today",
+      "nextAvailable": "Next Available",
       "legend": {
         "available": "Available",
         "pending": "Pending",
