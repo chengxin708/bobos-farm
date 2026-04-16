@@ -12,6 +12,11 @@ const cancelActionSchema = z.object({
   reason: z.string().max(1000).optional(),
 });
 
+const cancelAndRefundActionSchema = z.object({
+  action: z.literal("cancel_and_refund"),
+  reason: z.string().max(1000).optional(),
+});
+
 const submitPaymentActionSchema = z.object({
   action: z.literal("submit_payment"),
   paymentScreenshotUrl: z.string().url().max(2048).optional(),
@@ -48,7 +53,7 @@ const editActionSchema = z.object({
 });
 
 const adminUpdateSchema = z.object({
-  status: z.enum(["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "EXPIRED", "COMPLETED"]).optional(),
+  status: z.enum(["PENDING_PAYMENT", "PAYMENT_SUBMITTED", "CONFIRMED", "CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED", "COMPLETED"]).optional(),
   guestCount: z.number().int().positive().optional(),
   specialRequests: z.string().max(2000).optional(),
   depositStatus: z.enum(["UNPAID", "PENDING", "CONFIRMED", "REFUNDED"]).optional(),
@@ -164,6 +169,7 @@ export async function PATCH(
       }
       if (
         reservation.status === "CANCELLED" ||
+        reservation.status === "CANCELLED_PENDING_REFUND" ||
         reservation.status === "EXPIRED"
       ) {
         return NextResponse.json(
@@ -194,14 +200,21 @@ export async function PATCH(
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
       const refundEligible = diffDays >= cancelWindowDays;
 
+      // Determine target status:
+      // If deposit was confirmed and refund is eligible → CANCELLED_PENDING_REFUND
+      // Otherwise → CANCELLED
+      const hasConfirmedDeposit = reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0
+      const targetStatus = hasConfirmedDeposit && refundEligible
+        ? 'CANCELLED_PENDING_REFUND'
+        : 'CANCELLED'
+
       const updated = await prisma.reservation.update({
         where: { id },
         data: {
-          status: "CANCELLED",
+          status: targetStatus,
           cancelledAt: now,
           cancelReason: parsedCancel.data.reason || null,
           refundEligible,
-          // Keep deposit status unchanged — admin must manually mark refund
         },
         include: {
           user: {
@@ -240,6 +253,96 @@ export async function PATCH(
       // Reassign rooms after cancellation
       void tryDeterministicAssignment(new Date(reservation.date));
 
+      return NextResponse.json(updated);
+    }
+
+    // ---------- CANCEL AND REFUND (one-step) ----------
+    if (action === "cancel_and_refund") {
+      const parsedCancel = cancelAndRefundActionSchema.safeParse(body);
+      if (!parsedCancel.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedCancel.error.flatten() },
+          { status: 400 }
+        );
+      }
+      if (
+        reservation.status === "CANCELLED" ||
+        reservation.status === "CANCELLED_PENDING_REFUND" ||
+        reservation.status === "EXPIRED"
+      ) {
+        return NextResponse.json(
+          { error: "Reservation is already cancelled or expired" },
+          { status: 400 }
+        );
+      }
+
+      const cancelNow = new Date();
+      cancelNow.setHours(0, 0, 0, 0);
+      const cancelResDate = new Date(reservation.date);
+      cancelResDate.setHours(0, 0, 0, 0);
+      const cancelDiffDays = Math.round(
+        (cancelResDate.getTime() - cancelNow.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (cancelDiffDays < cancelWindowDays && !isAdmin) {
+        return NextResponse.json(
+          { error: `Reservations cannot be cancelled within ${cancelWindowDays} days of the event` },
+          { status: 400 }
+        );
+      }
+
+      const now = new Date();
+      const updated = await prisma.reservation.update({
+        where: { id },
+        data: {
+          status: "CANCELLED",
+          cancelledAt: now,
+          cancelReason: parsedCancel.data.reason || null,
+          refundEligible: true,
+          depositStatus: "REFUNDED",
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "RESERVATION_CANCELLED",
+          targetType: "Reservation",
+          targetId: id,
+          details: {
+            reason: parsedCancel.data.reason,
+            refundEligible: true,
+            refundedImmediately: true,
+            date: reservation.date,
+          },
+        },
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "DEPOSIT_REFUNDED",
+          targetType: "Reservation",
+          targetId: id,
+          details: { depositAmount: reservation.depositAmount },
+        },
+      });
+
+      if (updated.user.email) {
+        sendReservationCancelled(updated.user.email, {
+          date: updated.date,
+          yurtName: updated.yurt?.name ?? "Pending assignment",
+          guestCount: updated.guestCount,
+          cancelReason: parsedCancel.data.reason || undefined,
+          depositAmount: reservation.depositAmount,
+          depositStatus: "REFUNDED",
+        }).catch(err => console.error('[email] cancel+refund notification failed:', err));
+      }
+
+      void tryDeterministicAssignment(new Date(reservation.date));
       return NextResponse.json(updated);
     }
 
@@ -822,6 +925,36 @@ export async function PATCH(
             },
           },
         });
+      }
+
+      // Auto-transition: when admin marks deposit as REFUNDED on a CANCELLED_PENDING_REFUND reservation,
+      // move it to final CANCELLED state
+      if (
+        parsedAdmin.data.depositStatus === "REFUNDED" &&
+        reservation.status === "CANCELLED_PENDING_REFUND"
+      ) {
+        await prisma.reservation.update({
+          where: { id },
+          data: { status: "CANCELLED" },
+        });
+        await prisma.activityLog.create({
+          data: {
+            userId: session.user.id,
+            action: "DEPOSIT_REFUNDED",
+            targetType: "Reservation",
+            targetId: id,
+            details: { depositAmount: reservation.depositAmount },
+          },
+        });
+        // Re-fetch with updated status for response
+        const refetched = await prisma.reservation.findUnique({
+          where: { id },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true } },
+            yurt: { select: { id: true, name: true, capacity: true } },
+          },
+        });
+        return NextResponse.json(refetched);
       }
 
       // Log status changes
