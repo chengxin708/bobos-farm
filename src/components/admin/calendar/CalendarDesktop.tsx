@@ -141,7 +141,10 @@ function getInitials(name: string | null, email: string): string {
 
 /** Get display name, truncated */
 function getDisplayName(user: ReservationUser): string {
-  return user.name || user.email?.split('@')[0] || '?'
+  if (user.name) return user.name
+  if (user.email && !user.email.endsWith('@placeholder.local')) return user.email.split('@')[0]
+  if (user.phone) return user.phone
+  return '(unnamed)'
 }
 
 // ── Closed-cell diagonal stripe pattern as CSS background ──────

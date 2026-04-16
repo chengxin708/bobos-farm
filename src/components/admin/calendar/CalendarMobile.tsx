@@ -120,7 +120,10 @@ function statusLabel(status: string, t: ReturnType<typeof useTranslations>): str
 
 /** Get display name */
 function getDisplayName(user: ReservationUser): string {
-  return user.name || user.email?.split('@')[0] || '?'
+  if (user.name) return user.name
+  if (user.email && !user.email.endsWith('@placeholder.local')) return user.email.split('@')[0]
+  if (user.phone) return user.phone
+  return '(unnamed)'
 }
 
 /** Closed-cell diagonal stripe pattern */
@@ -745,17 +748,36 @@ export default function CalendarMobile() {
 
         {/* ── Week Pending Summary Banner ─────────────────── */}
         {!loadingRes && weekPendingTotal > 0 && (
-          <div className="mx-4 mt-3 flex items-center gap-2 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl px-4 py-2.5">
+          <div className="mx-4 mt-3 flex items-center gap-2 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl px-4 py-2.5 flex-wrap">
             <ClipboardList size={15} className="text-[#E8B730] shrink-0" />
             <span className="text-[13px] font-semibold text-[#92400E]">
               {t('weekPendingTotal', { count: weekPendingTotal })}
             </span>
-            <span className="text-[11px] text-[#8A7E6B] ml-auto">
+            <div className="flex items-center gap-1 ml-auto flex-wrap">
               {Array.from(unassignedByDate.entries()).map(([dateKey, list]) => {
                 const d = new Date(dateKey + 'T00:00:00')
-                return `${d.getMonth() + 1}/${d.getDate()}(${list.length})`
-              }).join(' · ')}
-            </span>
+                const isSelected = dateKey === selectedDateStr
+                return (
+                  <button
+                    key={dateKey}
+                    onClick={() => {
+                      setSelectedDate(new Date(d))
+                      const pill = pillRefs.current[dateKey]
+                      if (pill && dateStripRef.current) {
+                        dateStripRef.current.scrollTo({ left: pill.offsetLeft - 16, behavior: 'smooth' })
+                      }
+                    }}
+                    className={`text-[11px] px-2 py-0.5 rounded-md font-medium transition-colors ${
+                      isSelected
+                        ? 'bg-[#E8B730] text-white'
+                        : 'bg-white/70 text-[#8A7E6B] hover:bg-white hover:text-[#92400E]'
+                    }`}
+                  >
+                    {d.getMonth() + 1}/{d.getDate()}({list.length})
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
 

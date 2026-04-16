@@ -85,8 +85,11 @@ function ReservationCard({
             <span className="text-xs text-[#8C8478]">{r.yurt?.name}{r.yurt?.alias ? ` (${r.yurt.alias})` : ''}</span>
             <span className="text-xs text-[#8C8478]">{r.guestCount}{t('guestsSuffix', { count: r.guestCount }).replace(String(r.guestCount), '').trim()}</span>
           </div>
-          {r.user?.email && (
+          {r.user?.email && !r.user.email.endsWith('@placeholder.local') && (
             <div className="text-xs text-[#8C8478] mt-0.5 truncate">{r.user.email}</div>
+          )}
+          {r.user?.email?.endsWith('@placeholder.local') && r.user?.phone && (
+            <div className="text-xs text-[#8C8478] mt-0.5 truncate">{r.user.phone}</div>
           )}
         </div>
         <StatusBadge

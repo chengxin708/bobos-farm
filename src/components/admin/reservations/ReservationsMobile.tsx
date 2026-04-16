@@ -210,7 +210,7 @@ export default function ReservationsMobile() {
         )}
 
         {/* Search + History toggle */}
-        <div className="flex items-center gap-2">
+        <div className="shrink-0 flex items-center gap-2">
           {showSearch ? (
             <div className="flex-1 flex items-center bg-white border border-[#E8ECE4] rounded-lg px-3 py-2 gap-2">
               <Search size={16} className="text-[#8C8478] shrink-0" />
@@ -247,7 +247,7 @@ export default function ReservationsMobile() {
 
         {/* History filters */}
         {showHistory && (
-          <div className="flex flex-col gap-2">
+          <div className="shrink-0 flex flex-col gap-2">
             {/* Status chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               {['all', 'COMPLETED', 'CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED'].map(s => (
@@ -289,7 +289,7 @@ export default function ReservationsMobile() {
 
         {/* Action alerts — only when not in history mode */}
         {!showHistory && (pendingDepositCount > 0 || heldByAdminCount > 0 || pendingOrderCount > 0 || pendingRefundCount > 0) && (
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <div className="shrink-0 flex items-center gap-2 overflow-x-auto scrollbar-none">
             {pendingDepositCount > 0 && (
               <button
                 onClick={() => { setFilter('action-needed'); setShowHistory(false) }}
@@ -331,7 +331,7 @@ export default function ReservationsMobile() {
 
         {/* Filter chips */}
         {!showHistory && (
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+          <div className="shrink-0 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
             <FilterChip
               label={t('filters.actionNeeded')}
               count={actionNeededCount}
