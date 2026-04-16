@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Search, X, History, AlertCircle, ShoppingBag, Lock, RefreshCcw } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import ReservationDetail from './ReservationDetail'
 import {
   useReservationsData,
@@ -128,6 +129,7 @@ function ReservationCard({
 export default function ReservationsMobile() {
   const data = useReservationsData()
   const [showSearch, setShowSearch] = useState(false)
+  const [refundConfirmId, setRefundConfirmId] = useState<string | null>(null)
 
   const {
     sessionStatus,
@@ -388,7 +390,7 @@ export default function ReservationsMobile() {
                       onClick={() => setSelectedRes(r)}
                       onConfirmDeposit={confirmDeposit}
                       onRejectDeposit={cancelReservation}
-                      onMarkRefunded={markRefunded}
+                      onMarkRefunded={(id) => setRefundConfirmId(id)}
                       isUpdating={updating}
                       t={t}
                     />
@@ -399,6 +401,20 @@ export default function ReservationsMobile() {
           </div>
         )}
       </div>
+
+      {/* Refund confirmation dialog */}
+      {refundConfirmId && (
+        <ConfirmDialog
+          isOpen={true}
+          title={t('dialog.markRefundedTitle')}
+          message={t('dialog.markRefundedMsg', { amount: groupedReservations.flatMap(g => g.reservations).find(r => r.id === refundConfirmId)?.depositAmount ?? 0 })}
+          variant="success"
+          confirmLabel={t('actions.markRefunded')}
+          loading={updating}
+          onConfirm={() => { markRefunded(refundConfirmId); setRefundConfirmId(null) }}
+          onCancel={() => setRefundConfirmId(null)}
+        />
+      )}
     </>
   )
 }

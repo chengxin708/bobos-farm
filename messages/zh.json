@@ -827,7 +827,8 @@
         "cancelWithRefundTitle": "取消预约",
         "cancelWithRefundMsg": "此预约有 ${amount} 已确认定金。取消后将进入待退款状态。",
         "cancelAndRefundLabel": "取消并标记已退款",
-        "markRefundedMsg": "确定将 ${amount} 定金标记为已退款？"
+        "markRefundedMsg": "确定将 ${amount} 定金标记为已退款？",
+        "markRefundedTitle": "标记已退款"
       },
       "detail": {
         "title": "预订详情",

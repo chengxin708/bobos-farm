@@ -827,7 +827,8 @@
         "cancelWithRefundTitle": "Cancel Reservation",
         "cancelWithRefundMsg": "This reservation has a ${amount} confirmed deposit. After cancellation, it will enter pending refund status.",
         "cancelAndRefundLabel": "Cancel & Mark Refunded",
-        "markRefundedMsg": "Are you sure you want to mark this ${amount} deposit as refunded?"
+        "markRefundedMsg": "Are you sure you want to mark this ${amount} deposit as refunded?",
+        "markRefundedTitle": "Mark Refunded"
       },
       "detail": {
         "title": "Reservation Details",
