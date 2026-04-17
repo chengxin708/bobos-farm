@@ -128,8 +128,9 @@ model Yurt {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  availability YurtAvailability[]
-  reservations Reservation[]
+  availability     YurtAvailability[]
+  reservations     Reservation[]
+  reservationYurts ReservationYurt[]
 
   @@map("yurts")
 }
@@ -224,8 +225,24 @@ model Reservation {
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
   reactivatedBy     User?               @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id], onDelete: SetNull)
+  yurtAssignments   ReservationYurt[]
 
   @@map("reservations")
+}
+
+model ReservationYurt {
+  id            String   @id @default(cuid())
+  reservationId String
+  yurtId        String
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  yurt        Yurt        @relation(fields: [yurtId], references: [id])
+
+  @@unique([reservationId, yurtId])
+  @@index([yurtId])
+  @@map("reservation_yurts")
 }
 
 model ReservationNote {
