@@ -42,6 +42,21 @@ const ALLOWED_SETTING_KEYS = [
   "payment_memo_format",
   "order_deadline_days",
   "paymentMethods",
+  // M1.5 — Booking redesign settings (seeded by prisma/seed-settings-v2.ts)
+  "admin_deposit_deadline_hours",
+  "reactivation_deadline_hours",
+  "menu_deadline_days",
+  "menu_reminder_days_early",
+  "menu_reminder_days_last",
+  "menu_reminder_days_visit",
+  "inquiry_big_order_threshold",
+  "inquiry_full_booking_threshold",
+  "inquiry_urgent_days",
+  "inquiry_vip_confirmed_count",
+  "inquiry_timeout_warn_hours",
+  "inquiry_timeout_escalate_hours",
+  "inquiry_auto_expire_days",
+  "require_email_verification",
 ] as const;
 
 // Accept any string keys, but only process allowed ones

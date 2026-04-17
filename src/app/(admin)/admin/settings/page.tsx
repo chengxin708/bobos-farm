@@ -23,6 +23,7 @@ import {
   Pencil,
   Check,
   X,
+  Inbox,
 } from 'lucide-react'
 import { MenuManagementContent } from '@/app/(admin)/admin/menu/page'
 
@@ -35,7 +36,7 @@ interface SystemSetting {
   description: string | null
 }
 
-type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+type TabIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 interface TagItem {
   id: string
@@ -64,8 +65,15 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   payment_timeout_hours: 1,
   max_advance_booking_days: 1,
   min_advance_booking_days: 1,
+  admin_deposit_deadline_hours: 1,
+  reactivation_deadline_hours: 1,
+  require_email_verification: 1,
   cancellation_window_days: 7,
   preorder_deadline_days: 3,
+  menu_deadline_days: 3,
+  menu_reminder_days_early: 3,
+  menu_reminder_days_last: 3,
+  menu_reminder_days_visit: 3,
   guest_warning_threshold: 4,
   zelle_recipient: 5,
   zelle_recipient_name: 5,
@@ -76,6 +84,13 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   email_payment_reminder: 6,
   email_admin_new_booking: 6,
   emails_enabled: 6,
+  inquiry_big_order_threshold: 9,
+  inquiry_full_booking_threshold: 9,
+  inquiry_urgent_days: 9,
+  inquiry_vip_confirmed_count: 9,
+  inquiry_timeout_warn_hours: 9,
+  inquiry_timeout_escalate_hours: 9,
+  inquiry_auto_expire_days: 9,
 }
 
 // ── Push Permission Button ─────────────────────────────────────────
@@ -468,6 +483,7 @@ export default function Settings() {
     { icon: Bell, label: t('tabs.notifications') },
     { icon: UtensilsCrossed, label: t('tabs.menu') },
     { icon: TagIcon, label: t('tabs.tags') },
+    { icon: Inbox, label: t('tabs.inquiry') },
   ]
 
   // ── Shared input style helper ──────────────────────────────────
@@ -608,6 +624,12 @@ export default function Settings() {
   }
 
   function renderBookingTab() {
+    const toggleField = (key: string) => {
+      const current = formValues[key] ?? 'true'
+      updateField(key, current === 'true' ? 'false' : 'true')
+    }
+    const isEnabled = (key: string) => (formValues[key] ?? 'true') === 'true'
+
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
         <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('booking.title')}</h2>
@@ -643,6 +665,36 @@ export default function Settings() {
           <p className="text-xs text-[#8C8478]">{t('booking.paymentTimeoutHelp')}</p>
         </div>
 
+        {/* Admin Deposit Deadline */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.adminDepositDeadline')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.admin_deposit_deadline_hours ?? ''}
+              onChange={e => updateField('admin_deposit_deadline_hours', e.target.value)}
+              className={smallInputClass('admin_deposit_deadline_hours')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.adminDepositDeadlineUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('booking.adminDepositDeadlineHelp')}</p>
+        </div>
+
+        {/* Reactivation Deadline */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.reactivationDeadline')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.reactivation_deadline_hours ?? ''}
+              onChange={e => updateField('reactivation_deadline_hours', e.target.value)}
+              className={smallInputClass('reactivation_deadline_hours')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.reactivationDeadlineUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('booking.reactivationDeadlineHelp')}</p>
+        </div>
+
         {/* Max Advance Booking */}
         <div className="mb-8">
           <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('booking.maxAdvanceBooking')}</label>
@@ -671,6 +723,27 @@ export default function Settings() {
             <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('booking.minAdvanceBookingUnit')}</span>
           </div>
           <p className="text-xs text-[#8C8478]">{t('booking.minAdvanceBookingHelp')}</p>
+        </div>
+
+        {/* Require email verification toggle */}
+        <div className="mb-2 flex items-center justify-between max-w-sm">
+          <div>
+            <p className="text-sm font-semibold text-[#1A1208]">{t('booking.requireEmailVerification')}</p>
+            <p className="text-xs text-[#8C8478] mt-0.5">{t('booking.requireEmailVerificationHelp')}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleField('require_email_verification')}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0 ${
+              isEnabled('require_email_verification') ? 'bg-[#6B7F5E]' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                isEnabled('require_email_verification') ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
       </div>
     )
@@ -718,6 +791,66 @@ export default function Settings() {
             <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.deadlineUnit')}</span>
           </div>
           <p className="text-xs text-[#8C8478]">{t('ordering.deadlineHelp')}</p>
+        </div>
+
+        {/* Menu Deadline Days */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.menuDeadlineDays')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.menu_deadline_days ?? ''}
+              onChange={e => updateField('menu_deadline_days', e.target.value)}
+              className={smallInputClass('menu_deadline_days')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.menuDeadlineDaysUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('ordering.menuDeadlineDaysHelp')}</p>
+        </div>
+
+        {/* Early Menu Reminder */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.menuReminderEarly')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.menu_reminder_days_early ?? ''}
+              onChange={e => updateField('menu_reminder_days_early', e.target.value)}
+              className={smallInputClass('menu_reminder_days_early')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.menuReminderEarlyUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('ordering.menuReminderEarlyHelp')}</p>
+        </div>
+
+        {/* Last Menu Reminder */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.menuReminderLast')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.menu_reminder_days_last ?? ''}
+              onChange={e => updateField('menu_reminder_days_last', e.target.value)}
+              className={smallInputClass('menu_reminder_days_last')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.menuReminderLastUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('ordering.menuReminderLastHelp')}</p>
+        </div>
+
+        {/* Visit-day Menu Reminder */}
+        <div className="mb-2">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('ordering.menuReminderVisit')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.menu_reminder_days_visit ?? ''}
+              onChange={e => updateField('menu_reminder_days_visit', e.target.value)}
+              className={smallInputClass('menu_reminder_days_visit')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('ordering.menuReminderVisitUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('ordering.menuReminderVisitHelp')}</p>
         </div>
 
       </div>
@@ -1169,6 +1302,120 @@ export default function Settings() {
     )
   }
 
+  function renderInquiryTab() {
+    return (
+      <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
+        <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('inquiry.title')}</h2>
+        <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('inquiry.subtitle')}</p>
+
+        {/* Big order threshold */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.bigOrderThreshold')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_big_order_threshold ?? ''}
+              onChange={e => updateField('inquiry_big_order_threshold', e.target.value)}
+              className={smallInputClass('inquiry_big_order_threshold')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.bigOrderThresholdUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.bigOrderThresholdHelp')}</p>
+        </div>
+
+        {/* Full booking threshold */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.fullBookingThreshold')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_full_booking_threshold ?? ''}
+              onChange={e => updateField('inquiry_full_booking_threshold', e.target.value)}
+              className={smallInputClass('inquiry_full_booking_threshold')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.fullBookingThresholdUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.fullBookingThresholdHelp')}</p>
+        </div>
+
+        {/* Urgent days */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.urgentDays')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_urgent_days ?? ''}
+              onChange={e => updateField('inquiry_urgent_days', e.target.value)}
+              className={smallInputClass('inquiry_urgent_days')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.urgentDaysUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.urgentDaysHelp')}</p>
+        </div>
+
+        {/* VIP confirmed count */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.vipConfirmedCount')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_vip_confirmed_count ?? ''}
+              onChange={e => updateField('inquiry_vip_confirmed_count', e.target.value)}
+              className={smallInputClass('inquiry_vip_confirmed_count')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.vipConfirmedCountUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.vipConfirmedCountHelp')}</p>
+        </div>
+
+        {/* Timeout warn hours */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.timeoutWarnHours')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_timeout_warn_hours ?? ''}
+              onChange={e => updateField('inquiry_timeout_warn_hours', e.target.value)}
+              className={smallInputClass('inquiry_timeout_warn_hours')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.timeoutWarnHoursUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.timeoutWarnHoursHelp')}</p>
+        </div>
+
+        {/* Timeout escalate hours */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.timeoutEscalateHours')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_timeout_escalate_hours ?? ''}
+              onChange={e => updateField('inquiry_timeout_escalate_hours', e.target.value)}
+              className={smallInputClass('inquiry_timeout_escalate_hours')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.timeoutEscalateHoursUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.timeoutEscalateHoursHelp')}</p>
+        </div>
+
+        {/* Auto-expire days */}
+        <div className="mb-2">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('inquiry.autoExpireDays')}</label>
+          <div className="flex items-center gap-2 mb-1">
+            <input
+              type="number"
+              value={formValues.inquiry_auto_expire_days ?? ''}
+              onChange={e => updateField('inquiry_auto_expire_days', e.target.value)}
+              className={smallInputClass('inquiry_auto_expire_days')}
+            />
+            <span className="text-xs font-semibold text-[#1A1208] bg-[#F8F7F4] px-3 py-2 rounded-lg">{t('inquiry.autoExpireDaysUnit')}</span>
+          </div>
+          <p className="text-xs text-[#8C8478]">{t('inquiry.autoExpireDaysHelp')}</p>
+        </div>
+      </div>
+    )
+  }
+
   const TAB_RENDERERS = [
     renderGeneralTab,
     renderBookingTab,
@@ -1179,6 +1426,7 @@ export default function Settings() {
     renderNotificationsTab,
     renderMenuTab,
     renderTagsTab,
+    renderInquiryTab,
   ]
 
   return (
