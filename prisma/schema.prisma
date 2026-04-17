@@ -72,6 +72,9 @@ model User {
   pushSubscriptions PushSubscription[]
   reservationNotes  ReservationNote[]
   contactEntries    UserContactEntry[]
+  ownedInquiries    Inquiry[]        @relation("InquiryOwner")
+  assignedInquiries Inquiry[]        @relation("InquiryAssignee")
+  inquiryComments   InquiryComment[]
 
   @@map("users")
 }
@@ -215,6 +218,7 @@ model Reservation {
   order Order?
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
+  inquiry           Inquiry?
 
   @@map("reservations")
 }
@@ -335,4 +339,74 @@ model Tag {
   updatedAt DateTime @updatedAt
 
   @@map("tags")
+}
+
+// ============ INQUIRIES ============
+
+enum InquiryStatus {
+  PENDING
+  IN_PROGRESS
+  AWAITING_CUSTOMER
+  CONVERTED
+  CLOSED
+  EXPIRED
+}
+
+enum Priority {
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum InquiryCommentType {
+  INTERNAL_NOTE
+  PHONE_LOG
+  EMAIL_LOG
+  WECHAT_LOG
+  SYSTEM
+}
+
+model Inquiry {
+  id                String        @id @default(cuid())
+  userId            String
+  preferredDate     DateTime      @db.Date
+  guestCountMin     Int
+  guestCountMax     Int
+  packageHint       Int?
+  note              String?       @db.Text
+  priority          Priority      @default(NORMAL)
+  tags              String[]      @default([])
+  status            InquiryStatus @default(PENDING)
+  closedReason      String?
+  assignedAdminId   String?
+  reservationId     String?       @unique
+  createdAt         DateTime      @default(now())
+  firstContactedAt  DateTime?
+  convertedAt       DateTime?
+  closedAt          DateTime?
+
+  user          User             @relation("InquiryOwner", fields: [userId], references: [id])
+  assignedAdmin User?            @relation("InquiryAssignee", fields: [assignedAdminId], references: [id])
+  reservation   Reservation?     @relation(fields: [reservationId], references: [id])
+  comments      InquiryComment[]
+
+  @@index([status, createdAt])
+  @@index([assignedAdminId])
+  @@index([preferredDate])
+  @@map("inquiries")
+}
+
+model InquiryComment {
+  id        String             @id @default(cuid())
+  inquiryId String
+  authorId  String
+  content   String             @db.Text
+  type      InquiryCommentType
+  createdAt DateTime           @default(now())
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@index([inquiryId, createdAt])
+  @@map("inquiry_comments")
 }
