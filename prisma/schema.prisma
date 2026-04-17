@@ -51,20 +51,20 @@ enum OrderStatus {
 // ============ USERS ============
 
 model User {
-  id                String        @id @default(cuid())
-  email             String        @unique
+  id                String    @id @default(cuid())
+  email             String    @unique
   name              String?
   phone             String?
   wechatId          String?
   passwordHash      String?
-  role              Role          @default(CUSTOMER)
-  preferredLanguage Language      @default(EN)
+  role              Role      @default(CUSTOMER)
+  preferredLanguage Language  @default(EN)
   emailVerified     DateTime?
   image             String?
-  marketingOptIn    Boolean       @default(true)
-  unsubscribeToken  String?       @unique
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  marketingOptIn    Boolean   @default(true)
+  unsubscribeToken  String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   accounts          Account[]
   reservations      Reservation[]
@@ -72,8 +72,8 @@ model User {
   pushSubscriptions PushSubscription[]
   reservationNotes  ReservationNote[]
   contactEntries    UserContactEntry[]
-  ownedInquiries    Inquiry[]        @relation("InquiryOwner")
-  assignedInquiries Inquiry[]        @relation("InquiryAssignee")
+  ownedInquiries    Inquiry[]          @relation("InquiryOwner")
+  assignedInquiries Inquiry[]          @relation("InquiryAssignee")
   inquiryComments   InquiryComment[]
 
   @@map("users")
@@ -82,9 +82,9 @@ model User {
 model UserContactEntry {
   id           String   @id @default(cuid())
   userId       String
-  type         String   // 'phone' | 'email' | 'wechat'
+  type         String // 'phone' | 'email' | 'wechat'
   value        String
-  source       String   // 'self' | 'admin'
+  source       String // 'self' | 'admin'
   recordedById String?
   createdAt    DateTime @default(now())
 
@@ -98,8 +98,8 @@ model UserContactEntry {
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  provider          String  // e.g. "google"
-  providerAccountId String  // Google's sub / account ID
+  provider          String // e.g. "google"
+  providerAccountId String // Google's sub / account ID
   type              String  @default("oauth")
   accessToken       String?
   refreshToken      String?
@@ -134,7 +134,7 @@ model Yurt {
 }
 
 model YurtAvailability {
-  id     String  @id @default(cuid())
+  id     String   @id @default(cuid())
   yurtId String
   date   DateTime @db.Date
   isOpen Boolean  @default(true)
@@ -186,36 +186,36 @@ model MenuItem {
 // ============ RESERVATIONS ============
 
 model Reservation {
-  id                     String            @id @default(cuid())
-  confirmationCode       String            @unique
-  userId                 String
-  yurtId                 String?
-  date                   DateTime          @db.Date
-  guestCount             Int
-  specialRequests        String?
-  status                 ReservationStatus @default(PENDING_PAYMENT)
-  depositAmount          Float             @default(300)
-  depositStatus          DepositStatus     @default(UNPAID)
-  depositConfirmedAt     DateTime?
-  paymentReference       String?
-  paymentScreenshotUrl   String?
-  paymentDeadline        DateTime?
-  cancelledAt            DateTime?
-  cancelReason           String?
-  refundEligible         Boolean           @default(false)
-  holdByAdmin            Boolean           @default(false)
-  rescheduledFrom        String?
-  yurtAssignedAt         DateTime?
-  yurtNotifiedAt         DateTime?
-  manuallyAssigned       Boolean           @default(false)
-  emailPendingAt         DateTime?
-  emailPendingType       String?
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
+  id                   String            @id @default(cuid())
+  confirmationCode     String            @unique
+  userId               String
+  yurtId               String?
+  date                 DateTime          @db.Date
+  guestCount           Int
+  specialRequests      String?
+  status               ReservationStatus @default(PENDING_PAYMENT)
+  depositAmount        Float             @default(300)
+  depositStatus        DepositStatus     @default(UNPAID)
+  depositConfirmedAt   DateTime?
+  paymentReference     String?
+  paymentScreenshotUrl String?
+  paymentDeadline      DateTime?
+  cancelledAt          DateTime?
+  cancelReason         String?
+  refundEligible       Boolean           @default(false)
+  holdByAdmin          Boolean           @default(false)
+  rescheduledFrom      String?
+  yurtAssignedAt       DateTime?
+  yurtNotifiedAt       DateTime?
+  manuallyAssigned     Boolean           @default(false)
+  emailPendingAt       DateTime?
+  emailPendingType     String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
-  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  yurt  Yurt? @relation(fields: [yurtId], references: [id], onDelete: Cascade)
-  order Order?
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yurt              Yurt?               @relation(fields: [yurtId], references: [id], onDelete: Cascade)
+  order             Order?
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
@@ -224,13 +224,13 @@ model Reservation {
 }
 
 model ReservationNote {
-  id            String      @id @default(cuid())
+  id            String   @id @default(cuid())
   reservationId String
   userId        String
   content       String
-  pinned        Boolean     @default(false)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  pinned        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -277,8 +277,8 @@ model OrderItem {
 // ============ SYSTEM ============
 
 model SystemSetting {
-  id          String @id @default(cuid())
-  key         String @unique
+  id          String   @id @default(cuid())
+  key         String   @unique
   value       String
   description String?
   updatedAt   DateTime @updatedAt
@@ -314,13 +314,13 @@ model PushSubscription {
 }
 
 model RescheduleHistory {
-  id             String   @id @default(cuid())
-  reservationId  String
-  oldDate        DateTime @db.Date
-  oldYurtId      String
-  newDate        DateTime @db.Date
-  newYurtId      String
-  rescheduledAt  DateTime @default(now())
+  id            String   @id @default(cuid())
+  reservationId String
+  oldDate       DateTime @db.Date
+  oldYurtId     String
+  newDate       DateTime @db.Date
+  newYurtId     String
+  rescheduledAt DateTime @default(now())
 
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 
@@ -332,7 +332,7 @@ model Tag {
   key       String   @unique
   nameEn    String
   nameZh    String?
-  color     String?  // Tailwind color class e.g. "bg-[#E8ECE4] text-[#6B7F5E]"
+  color     String? // Tailwind color class e.g. "bg-[#E8ECE4] text-[#6B7F5E]"
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -352,7 +352,7 @@ enum InquiryStatus {
   EXPIRED
 }
 
-enum Priority {
+enum InquiryPriority {
   NORMAL
   HIGH
   URGENT
@@ -367,23 +367,24 @@ enum InquiryCommentType {
 }
 
 model Inquiry {
-  id                String        @id @default(cuid())
-  userId            String
-  preferredDate     DateTime      @db.Date
-  guestCountMin     Int
-  guestCountMax     Int
-  packageHint       Int?
-  note              String?       @db.Text
-  priority          Priority      @default(NORMAL)
-  tags              String[]      @default([])
-  status            InquiryStatus @default(PENDING)
-  closedReason      String?
-  assignedAdminId   String?
-  reservationId     String?       @unique
-  createdAt         DateTime      @default(now())
-  firstContactedAt  DateTime?
-  convertedAt       DateTime?
-  closedAt          DateTime?
+  id               String          @id @default(cuid())
+  userId           String
+  preferredDate    DateTime        @db.Date
+  guestCountMin    Int
+  guestCountMax    Int
+  packageHint      Int?
+  note             String?         @db.Text
+  priority         InquiryPriority @default(NORMAL)
+  tags             String[]        @default([])
+  status           InquiryStatus   @default(PENDING)
+  closedReason     String?
+  assignedAdminId  String?
+  reservationId    String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  firstContactedAt DateTime?
+  convertedAt      DateTime?
+  closedAt         DateTime?
 
   user          User             @relation("InquiryOwner", fields: [userId], references: [id])
   assignedAdmin User?            @relation("InquiryAssignee", fields: [assignedAdminId], references: [id])
