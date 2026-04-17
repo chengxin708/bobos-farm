@@ -66,15 +66,16 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  accounts          Account[]
-  reservations      Reservation[]
-  activityLogs      ActivityLog[]
-  pushSubscriptions PushSubscription[]
-  reservationNotes  ReservationNote[]
-  contactEntries    UserContactEntry[]
-  ownedInquiries    Inquiry[]          @relation("InquiryOwner")
-  assignedInquiries Inquiry[]          @relation("InquiryAssignee")
-  inquiryComments   InquiryComment[]
+  accounts                Account[]
+  reservations            Reservation[]
+  reactivatedReservations Reservation[]      @relation("ReservationReactivator")
+  activityLogs            ActivityLog[]
+  pushSubscriptions       PushSubscription[]
+  reservationNotes        ReservationNote[]
+  contactEntries          UserContactEntry[]
+  ownedInquiries          Inquiry[]          @relation("InquiryOwner")
+  assignedInquiries       Inquiry[]          @relation("InquiryAssignee")
+  inquiryComments         InquiryComment[]
 
   @@map("users")
 }
@@ -210,6 +211,9 @@ model Reservation {
   manuallyAssigned     Boolean           @default(false)
   emailPendingAt       DateTime?
   emailPendingType     String?
+  packageCount         Int?
+  reactivatedAt        DateTime?
+  reactivatedByUserId  String?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -219,6 +223,7 @@ model Reservation {
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
+  reactivatedBy     User?               @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id])
 
   @@map("reservations")
 }
