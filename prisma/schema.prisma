@@ -238,7 +238,7 @@ model ReservationYurt {
   createdAt     DateTime @default(now())
 
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  yurt        Yurt        @relation(fields: [yurtId], references: [id])
+  yurt        Yurt        @relation(fields: [yurtId], references: [id], onDelete: Restrict)
 
   @@unique([reservationId, yurtId])
   @@index([yurtId])
