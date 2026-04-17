@@ -223,7 +223,7 @@ model Reservation {
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
-  reactivatedBy     User?               @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id])
+  reactivatedBy     User?               @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id], onDelete: SetNull)
 
   @@map("reservations")
 }
@@ -392,7 +392,7 @@ model Inquiry {
   closedAt         DateTime?
 
   user          User             @relation("InquiryOwner", fields: [userId], references: [id])
-  assignedAdmin User?            @relation("InquiryAssignee", fields: [assignedAdminId], references: [id])
+  assignedAdmin User?            @relation("InquiryAssignee", fields: [assignedAdminId], references: [id], onDelete: SetNull)
   reservation   Reservation?     @relation(fields: [reservationId], references: [id])
   comments      InquiryComment[]
 
