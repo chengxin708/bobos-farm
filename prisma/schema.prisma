@@ -219,7 +219,7 @@ model Reservation {
   updatedAt            DateTime          @updatedAt
 
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  yurt              Yurt?               @relation(fields: [yurtId], references: [id], onDelete: Cascade)
+  yurt              Yurt?               @relation(fields: [yurtId], references: [id], onDelete: Restrict)
   order             Order?
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
