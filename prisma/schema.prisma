@@ -218,16 +218,33 @@ model Reservation {
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  yurt              Yurt?               @relation(fields: [yurtId], references: [id], onDelete: Restrict)
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yurt              Yurt?                   @relation(fields: [yurtId], references: [id], onDelete: Restrict)
   order             Order?
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
-  reactivatedBy     User?               @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id], onDelete: SetNull)
+  reactivatedBy     User?                   @relation("ReservationReactivator", fields: [reactivatedByUserId], references: [id], onDelete: SetNull)
   yurtAssignments   ReservationYurt[]
+  claimTokens       ReservationClaimToken[]
 
   @@map("reservations")
+}
+
+model ReservationClaimToken {
+  id               String    @id @default(cuid())
+  reservationId    String
+  token            String    @unique
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime?
+  consumedAt       DateTime?
+  consumedByUserId String?
+  revokedAt        DateTime?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@map("reservation_claim_tokens")
 }
 
 model ReservationYurt {
