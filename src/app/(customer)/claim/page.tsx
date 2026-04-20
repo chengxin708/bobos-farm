@@ -37,13 +37,14 @@ function ClaimPage() {
   const { data: session, status: sessionStatus } = useSession()
 
   const [code, setCode] = useState("")
+  const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [error, setError] = useState("")
   const [reservation, setReservation] = useState<ReservationInfo | null>(null)
   const [claimSuccess, setClaimSuccess] = useState(false)
 
-  const handleLookup = useCallback(async (lookupCode: string) => {
+  const handleLookup = useCallback(async (lookupCode: string, lookupToken: string | null) => {
     const trimmed = lookupCode.trim().toUpperCase()
     if (!trimmed) return
 
@@ -52,8 +53,11 @@ function ClaimPage() {
     setReservation(null)
     setClaimSuccess(false)
 
+    const qs = new URLSearchParams({ code: trimmed })
+    if (lookupToken) qs.set("t", lookupToken)
+
     try {
-      const res = await fetch(`/api/reservations/lookup?code=${encodeURIComponent(trimmed)}`)
+      const res = await fetch(`/api/reservations/lookup?${qs.toString()}`)
       if (res.status === 404) {
         setError(t("notFound"))
         return
@@ -71,13 +75,15 @@ function ClaimPage() {
     }
   }, [t])
 
-  // Handle ?code=XXX from URL
+  // Handle ?code=XXX&t=YYY from URL
   useEffect(() => {
     const urlCode = searchParams.get("code")
+    const urlToken = searchParams.get("t")
     if (urlCode) {
       const upper = urlCode.trim().toUpperCase()
       setCode(upper)
-      handleLookup(upper)
+      setToken(urlToken?.trim() || null)
+      handleLookup(upper, urlToken?.trim() || null)
     }
   }, [searchParams, handleLookup])
 
@@ -91,7 +97,10 @@ function ClaimPage() {
       const res = await fetch("/api/reservations/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: reservation.confirmationCode }),
+        body: JSON.stringify({
+          code: reservation.confirmationCode,
+          ...(token ? { token } : {}),
+        }),
       })
 
       if (res.status === 409) {
@@ -176,12 +185,12 @@ function ClaimPage() {
                          focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]
                          transition-all"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && code.length > 0) handleLookup(code)
+                if (e.key === "Enter" && code.length > 0) handleLookup(code, token)
               }}
             />
           </div>
           <button
-            onClick={() => handleLookup(code)}
+            onClick={() => handleLookup(code, token)}
             disabled={loading || code.length === 0}
             className="w-full h-12 rounded-full bg-[#6B7F5E] text-white text-sm font-semibold
                        hover:bg-[#5A6E4E] disabled:opacity-40 disabled:cursor-not-allowed
@@ -252,7 +261,9 @@ function ClaimPage() {
               {!reservation.claimed && sessionStatus !== "loading" && !session?.user && (
                 <button
                   onClick={() => {
-                    const callbackUrl = `/claim?code=${reservation.confirmationCode}`
+                    const qs = new URLSearchParams({ code: reservation.confirmationCode })
+                    if (token) qs.set("t", token)
+                    const callbackUrl = `/claim?${qs.toString()}`
                     router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`)
                   }}
                   className="w-full h-[48px] rounded-full bg-[#6B7F5E] text-white font-medium

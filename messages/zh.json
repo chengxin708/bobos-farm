@@ -930,7 +930,11 @@
         "sms": "短信分享",
         "smsBody": "Hi {name}，您在 Bobo's Farm 的预约（{date}）已创建。确认码：{code}\n\n点击链接管理预约：{url}",
         "langPickerTitle": "客户使用什么语言？",
-        "langPickerHint": "信息将按选中的语言生成。"
+        "langPickerHint": "信息将按选中的语言生成。",
+        "generate": "生成认领链接",
+        "regenerate": "重新生成",
+        "tokenRotated": "已生成新链接，旧链接失效",
+        "tokenRotateFailed": "生成认领链接失败"
       },
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {

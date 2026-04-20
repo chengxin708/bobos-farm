@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（6/40 commit）
+**Status:** 进行中（7/40 commit — Phase 1 complete）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 1 commit 1.7 (`feat(booking-redesign): admin copy-link generates tokenized URL`)
+**下一步**: Phase 1 收尾（本地 + 生产 migrate deploy、跑 `npm run db:backfill-tokens`、admin UI 手动验证 claim 链接），然后 Phase 2 commit 2.1 (`feat(booking-redesign): wire admin_deposit_deadline_hours for proxy bookings`)
 
 ---
 
@@ -26,7 +26,7 @@
 - [x] 1.4 `feat(booking-redesign): prevent concurrent yurt+date double-hold`
 - [x] 1.5 `feat(booking-redesign): claim token util and historical backfill`
 - [x] 1.6 `feat(booking-redesign): claim API with token validation + account merge`
-- [ ] 1.7 `feat(booking-redesign): admin copy-link generates tokenized URL`
+- [x] 1.7 `feat(booking-redesign): admin copy-link generates tokenized URL`
 
 **Phase 1 完成后必做**：
 - [ ] 本地 + 生产 migrate deploy 成功

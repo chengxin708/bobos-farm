@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy, Mail, ChevronDown } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy, Mail, ChevronDown, RefreshCw } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -84,6 +84,11 @@ function formatShareMessage(
     .replaceAll('{url}', vars.url)
 }
 
+function buildClaimUrl(code: string, token: string | null): string {
+  const base = `https://bobos.farm/claim?code=${code}`
+  return token ? `${base}&t=${encodeURIComponent(token)}` : base
+}
+
 // ── Component ──────────────────────────────────────────────────────
 
 export default function ReservationDetail({
@@ -120,6 +125,41 @@ export default function ReservationDetail({
   const [depositInput, setDepositInput] = useState('')
   const [savingDeposit, setSavingDeposit] = useState(false)
   const [unlockingDeposit, setUnlockingDeposit] = useState(false)
+  const [regeneratingToken, setRegeneratingToken] = useState(false)
+
+  // Claim token (admin-held reservations use a tokenized share URL so
+  // the claim API can bind the link to one reservation). The GET is
+  // admin-only and cheap; null = no token issued yet.
+  const { data: tokenData, mutate: mutateToken } = useSWR<{
+    token: string | null
+    expiresAt: string | null
+  }>(
+    isAdmin && reservation.id ? `/api/reservations/${reservation.id}/claim-token` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
+  const claimToken = tokenData?.token ?? null
+
+  const regenerateClaimToken = useCallback(async () => {
+    setRegeneratingToken(true)
+    try {
+      const res = await fetch(`/api/reservations/${reservation.id}/claim-token`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        await mutateToken(data, { revalidate: false })
+        setEmailToast({ ok: true, msg: t('shareLink.tokenRotated') })
+      } else {
+        setEmailToast({ ok: false, msg: t('shareLink.tokenRotateFailed') })
+      }
+    } catch {
+      setEmailToast({ ok: false, msg: t('shareLink.tokenRotateFailed') })
+    } finally {
+      setRegeneratingToken(false)
+      setTimeout(() => setEmailToast(null), 3000)
+    }
+  }, [reservation.id, mutateToken, t])
 
   // Notes
   const { data: notesList, mutate: mutateNotes } = useSWR<Array<{
@@ -421,7 +461,7 @@ export default function ReservationDetail({
             <div className="flex items-center gap-1 ml-auto">
               <button
                 onClick={() => {
-                  const url = `https://bobos.farm/claim?code=${reservation.confirmationCode}`
+                  const url = buildClaimUrl(reservation.confirmationCode!, claimToken)
                   navigator.clipboard.writeText(url)
                   setCopiedLink(true)
                   setTimeout(() => setCopiedLink(false), 2000)
@@ -432,6 +472,17 @@ export default function ReservationDetail({
                 {copiedLink ? <Check size={10} /> : <Copy size={10} />}
                 {copiedLink ? t('shareLink.copied') : t('shareLink.copy')}
               </button>
+              {isAdmin && reservation.holdByAdmin && (
+                <button
+                  onClick={regenerateClaimToken}
+                  disabled={regeneratingToken}
+                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#F4E8D8] text-[#8B6914] hover:bg-[#E8D8B8] disabled:opacity-50 transition-colors"
+                  title={claimToken ? t('shareLink.regenerate') : t('shareLink.generate')}
+                >
+                  <RefreshCw size={10} className={regeneratingToken ? 'animate-spin' : ''} />
+                  {claimToken ? t('shareLink.regenerate') : t('shareLink.generate')}
+                </button>
+              )}
               {/* Copy full message — for WeChat / WhatsApp paste */}
               <button
                 onClick={() => setLangPickerFor('copy')}
@@ -1311,7 +1362,7 @@ export default function ReservationDetail({
       {/* Language picker for share-message buttons */}
       {langPickerFor && reservation.confirmationCode && (() => {
         const code = reservation.confirmationCode!
-        const url = `https://bobos.farm/claim?code=${code}`
+        const url = buildClaimUrl(code, claimToken)
         const name = reservation.user?.name || ''
         const phone = reservation.user?.phone || ''
         const action = (lang: 'en' | 'zh') => {

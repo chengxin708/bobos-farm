@@ -930,7 +930,11 @@
         "sms": "SMS",
         "smsBody": "Hi {name}, your reservation at Bobo's Farm ({date}) has been created. Code: {code}\n\nManage your reservation: {url}",
         "langPickerTitle": "Customer language?",
-        "langPickerHint": "The message will be formatted in this language."
+        "langPickerHint": "The message will be formatted in this language.",
+        "generate": "Generate Link",
+        "regenerate": "New Link",
+        "tokenRotated": "New claim link generated — old link invalidated",
+        "tokenRotateFailed": "Failed to generate claim link"
       },
       "pendingOrders": "{count} orders pending",
       "filters": {
