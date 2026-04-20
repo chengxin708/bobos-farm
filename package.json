@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && npx tsx prisma/seed-settings-v2.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed-settings": "npx tsx prisma/seed-settings-v2.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
@@ -49,6 +50,7 @@
     "jest": "^30.3.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
