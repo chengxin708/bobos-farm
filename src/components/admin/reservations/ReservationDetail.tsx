@@ -20,6 +20,7 @@ import {
 import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
 import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
 import EditReservationEditor from '@/components/admin/reservations/EditReservationEditor'
+import ExtendHoldButton from '@/components/admin/reservations/ExtendHoldButton'
 import { formatPhoneUS } from '@/lib/phone-mask'
 import { formatDeadline } from '@/lib/format-deadline'
 import { AlertTriangle, Clock } from 'lucide-react'
@@ -1207,6 +1208,20 @@ export default function ReservationDetail({
               </button>
             )
           })()
+        )}
+
+        {/* Extend hold — admin-only, holdByAdmin + PENDING_PAYMENT */}
+        {isAdmin && reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' && (
+          <ExtendHoldButton
+            reservationId={reservation.id}
+            extendCount={(activityLogs || []).filter(l => l.action === 'HOLD_EXTENDED').length}
+            disabled={isUpdating}
+            onExtended={() => onOrderChanged?.()}
+            onToast={msg => {
+              setEmailToast(msg)
+              setTimeout(() => setEmailToast(null), 3000)
+            }}
+          />
         )}
 
         {/* Cancel — non-terminal states */}

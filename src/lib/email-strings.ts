@@ -222,11 +222,31 @@ const claimInvitation = {
   },
 } as const;
 
+const paymentDeadlineExtended = {
+  en: {
+    subject: "Bobo's Farm — Payment Deadline Extended",
+    title: "We've extended your payment deadline",
+    body: "Thanks for letting us know you need a little more time. Your reservation is still held for you.",
+    newDeadline: "New deadline",
+    button: "View Reservation",
+    footer: "Please complete payment by the new deadline to confirm your reservation.",
+  },
+  zh: {
+    subject: "Bobo's Farm — 付款截止已延长",
+    title: "我们已为您延长付款截止",
+    body: "感谢您告知还需要更多时间。您的预约仍为您保留。",
+    newDeadline: "新截止时间",
+    button: "查看预约",
+    footer: "请在新截止时间之前完成付款以确认预约。",
+  },
+} as const;
+
 export const emailStrings = {
   labels,
   reservationCreated,
   depositConfirmed,
   paymentReminder,
+  paymentDeadlineExtended,
   yurtAssigned,
   reservationModified,
   reservationCancelled,

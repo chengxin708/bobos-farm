@@ -799,7 +799,12 @@
         "waiveDeposit": "Waive Deposit & Confirm",
         "markRefunded": "Mark Refunded",
         "cancelAndRefund": "Cancel & Mark Refunded",
-        "cancelPendingRefund": "Cancel (Pending Refund)"
+        "cancelPendingRefund": "Cancel (Pending Refund)",
+        "extendHold": "Extend Hold (+24h)",
+        "extendHoldCount": "Extended {count}x",
+        "extendHoldWarn3": "Extended 3+ times — consider releasing",
+        "extendHoldSuccess": "Hold extended by 24 hours",
+        "extendHoldFailed": "Failed to extend hold"
       },
       "editEditor": {
         "title": "Edit Reservation",

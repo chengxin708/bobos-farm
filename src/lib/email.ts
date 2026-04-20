@@ -275,6 +275,57 @@ export async function sendPaymentReminder(
   }
 }
 
+// ── 3b. Payment Deadline Extended ──────────────────────────────────
+
+interface PaymentDeadlineExtendedData {
+  reservationId: string;
+  date: string | Date;
+  yurtName: string;
+  newDeadline: string | Date;
+  siteUrl?: string;
+}
+
+export async function sendPaymentDeadlineExtended(
+  to: string,
+  data: PaymentDeadlineExtendedData,
+): Promise<EmailResult> {
+  const client = await getResend();
+  if (!client) return { success: false, error: "API key not configured" };
+  const emailFrom = await getEmailFrom();
+  const lang = await getUserLang(to);
+  const s = emailStrings.paymentDeadlineExtended[lang];
+  const l = emailStrings.labels[lang];
+
+  try {
+    const siteUrl = data.siteUrl || process.env.NEXTAUTH_URL || "https://bobos.farm";
+    const newDeadlineStr = formatDate(data.newDeadline, lang);
+
+    const html = emailWrapper(
+      `
+      <h2 style="margin:0 0 6px;font-size:22px;color:#2C2416;font-family:Georgia,'Times New Roman',serif;font-weight:700;">${s.title}</h2>
+      <p style="margin:0 0 20px;font-size:15px;color:#6B6157;line-height:1.6;">${s.body}</p>
+
+      ${infoTable(
+        infoRow(l.date, formatDate(data.date, lang)) +
+          infoRow(l.yurt, data.yurtName) +
+          infoRow(s.newDeadline, newDeadlineStr),
+      )}
+
+      ${primaryButton(s.button, `${siteUrl}/reservations/${data.reservationId}`)}
+
+      <p style="font-size:12px;color:#6B6157;margin:20px 0 0;text-align:center;">${s.footer}</p>
+    `,
+      { lang, type: "transactional", siteUrl },
+    );
+
+    await client.emails.send({ from: emailFrom, to, subject: s.subject, html });
+    return { success: true };
+  } catch (error) {
+    console.error("[email] sendPaymentDeadlineExtended failed:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 // ── 4. Admin — New Reservation ──────────────────────────────────────
 
 interface AdminNewReservationData {
