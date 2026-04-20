@@ -6,6 +6,7 @@ import { sendAdminDepositSubmitted, sendDepositConfirmed, sendDepositRefunded, s
 import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 import { recordContactsFromUser } from "@/lib/contact-history";
+import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -102,7 +103,7 @@ export async function GET(
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: true,
-        order: { include: { items: { include: { menuItem: true } } } },
+        orders: { include: { items: { include: { menuItem: true } } } },
         rescheduleHistory: { orderBy: { rescheduledAt: "desc" } },
       },
     });
@@ -543,7 +544,7 @@ export async function PATCH(
           },
         });
 
-        return tx.reservation.update({
+        const res = await tx.reservation.update({
           where: { id },
           data: {
             date: targetDate,
@@ -559,6 +560,9 @@ export async function PATCH(
             yurt: { select: { id: true, name: true, capacity: true } },
           },
         });
+
+        await syncReservationYurt(tx, id, targetYurtId ?? null);
+        return res;
       });
 
       await prisma.activityLog.create({
@@ -706,6 +710,8 @@ export async function PATCH(
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
+
+      await syncReservationYurt(prisma, id, newYurtId);
 
       // Cascade: reassign other reservations on this date
       void tryDeterministicAssignment(new Date(reservation.date));

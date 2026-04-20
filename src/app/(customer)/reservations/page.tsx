@@ -61,7 +61,7 @@ interface Reservation {
   updatedAt: string
   user: ReservationUser
   yurt: ReservationYurt | null
-  order?: { id: string; status: string; items: { id: string }[] } | null
+  orders?: Array<{ id: string; status: string; items: { id: string }[] }>
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -492,7 +492,7 @@ export default function ReservationsPage() {
               const isCancelling = cancelling === r.id
               const canModify = isConfirmed || isPaymentSubmitted
               const canPreOrder = isConfirmed
-              const preOrderCount = r.order?.items?.length || 0
+              const preOrderCount = r.orders?.[0]?.items?.length || 0
 
               return (
                 <div

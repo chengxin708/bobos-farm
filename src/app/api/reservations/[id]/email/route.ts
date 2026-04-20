@@ -107,7 +107,7 @@ export async function POST(
       include: {
         user: { select: { id: true, name: true, email: true } },
         yurt: { select: { id: true, name: true, description: true } },
-        order: {
+        orders: {
           include: {
             items: {
               include: {
@@ -129,11 +129,12 @@ export async function POST(
       );
     }
 
+    const primaryOrder = reservation.orders[0] ?? null;
     const allowed = isAllowed(type, {
       status: reservation.status,
       date: reservation.date,
       yurtId: reservation.yurtId,
-      order: reservation.order ? { status: reservation.order.status } : null,
+      order: primaryOrder ? { status: primaryOrder.status } : null,
     });
     if (!allowed.ok) {
       return NextResponse.json({ error: allowed.reason, reason: "not_applicable" }, { status: 400 });
@@ -155,7 +156,7 @@ export async function POST(
         break;
       }
       case "pre_order": {
-        const items = (reservation.order?.items ?? []) as OrderItemRow[];
+        const items = (primaryOrder?.items ?? []) as OrderItemRow[];
         const orderItems = items.map((it) => ({
           name: it.menuItem.nameZh || it.menuItem.nameEn,
           quantity: it.quantity,
@@ -163,7 +164,7 @@ export async function POST(
         }));
         const estimatedTotal = orderItems.reduce((sum, it) => sum + it.quantity * it.price, 0);
         const orderStatus: "NONE" | "DRAFT" | "SUBMITTED" =
-          !reservation.order ? "NONE" : reservation.order.status === "SUBMITTED" ? "SUBMITTED" : "DRAFT";
+          !primaryOrder ? "NONE" : primaryOrder.status === "SUBMITTED" ? "SUBMITTED" : "DRAFT";
 
         result = await sendPreOrderReminder(to, {
           reservationId: reservation.id,

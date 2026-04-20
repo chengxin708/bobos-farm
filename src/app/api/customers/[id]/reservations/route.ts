@@ -24,7 +24,7 @@ export async function GET(
         include: {
           user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
           yurt: { select: { id: true, name: true, alias: true, capacity: true } },
-          order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
+          orders: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
         },
         orderBy: { date: "desc" },
       }),

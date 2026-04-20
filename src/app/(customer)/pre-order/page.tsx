@@ -82,7 +82,7 @@ interface Reservation {
   guestCount: number
   status: string
   yurt: ReservationYurt
-  order: Order | null
+  orders: Order[]
   user?: { name: string | null; email: string }
 }
 
@@ -198,8 +198,8 @@ function PreOrderPage() {
     { revalidateOnFocus: false }
   )
 
-  // Detect edit mode
-  const existingOrder = reservation?.order ?? null
+  // Detect edit mode — single-package for now (first order is "the" order)
+  const existingOrder = reservation?.orders?.[0] ?? null
   const isEditMode = !!existingOrder
 
   // Pre-fill quantities and notes from existing order (once)

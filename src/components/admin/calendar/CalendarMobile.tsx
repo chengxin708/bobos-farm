@@ -52,7 +52,7 @@ interface Reservation {
   holdByAdmin?: boolean
   user: ReservationUser
   yurt: ReservationYurt | null
-  order?: { status: string; estimatedTotal: number | null; finalTotal: number | null } | null
+  orders?: Array<{ status: string; estimatedTotal: number | null; finalTotal: number | null }>
 }
 
 interface AvailabilityEntry {
@@ -889,17 +889,20 @@ export default function CalendarMobile() {
                         <Users size={13} />
                         <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                       </div>
-                      {res.order && (
-                        <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
-                          {res.order.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : res.order.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
-                          {' '}
-                          {res.order.finalTotal != null
-                            ? `$${fmtMoney(res.order.finalTotal)}`
-                            : res.order.estimatedTotal != null
-                              ? `~$${fmtMoney(res.order.estimatedTotal)}`
-                              : t('orderDraft')}
-                        </div>
-                      )}
+                      {res.orders?.[0] && (() => {
+                        const primaryOrder = res.orders[0]
+                        return (
+                          <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: primaryOrder.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                            {primaryOrder.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : primaryOrder.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
+                            {' '}
+                            {primaryOrder.finalTotal != null
+                              ? `$${fmtMoney(primaryOrder.finalTotal)}`
+                              : primaryOrder.estimatedTotal != null
+                                ? `~$${fmtMoney(primaryOrder.estimatedTotal)}`
+                                : t('orderDraft')}
+                          </div>
+                        )
+                      })()}
                       {res.specialRequests && (
                         <p className="text-[12px] text-[#8A7E6B] mt-1.5 line-clamp-2">
                           {res.specialRequests}
@@ -1010,17 +1013,20 @@ export default function CalendarMobile() {
                       <Users size={13} />
                       <span className="text-[13px]">{t('guests', { count: res.guestCount })}</span>
                     </div>
-                    {res.order && (
-                      <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: res.order.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
-                        {res.order.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : res.order.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
-                        {' '}
-                        {res.order.finalTotal != null
-                          ? `$${fmtMoney(res.order.finalTotal)}`
-                          : res.order.estimatedTotal != null
-                            ? `~$${fmtMoney(res.order.estimatedTotal)}`
-                            : t('orderDraft')}
-                      </div>
-                    )}
+                    {res.orders?.[0] && (() => {
+                      const primaryOrder = res.orders[0]
+                      return (
+                        <div className="flex items-center gap-0.5 text-[12px] mt-0.5" style={{ color: primaryOrder.status === 'PAID' ? '#5B8C3E' : '#E67E22' }}>
+                          {primaryOrder.status === 'DRAFT' ? <FileText size={10} className="inline shrink-0" /> : primaryOrder.status === 'PAID' ? <CheckCircle size={10} className="inline shrink-0" /> : <UtensilsCrossed size={10} className="inline shrink-0" />}
+                          {' '}
+                          {primaryOrder.finalTotal != null
+                            ? `$${fmtMoney(primaryOrder.finalTotal)}`
+                            : primaryOrder.estimatedTotal != null
+                              ? `~$${fmtMoney(primaryOrder.estimatedTotal)}`
+                              : t('orderDraft')}
+                        </div>
+                      )
+                    })()}
                     {res.specialRequests && (
                       <p className="text-[12px] text-[#8A7E6B] mt-2 line-clamp-2">
                         {res.specialRequests}

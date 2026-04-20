@@ -223,7 +223,7 @@ model Reservation {
 
   user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   yurt              Yurt?                   @relation(fields: [yurtId], references: [id], onDelete: Restrict)
-  order             Order?
+  orders            Order[]
   rescheduleHistory RescheduleHistory[]
   adminNotes        ReservationNote[]
   inquiry           Inquiry?
@@ -259,6 +259,7 @@ model ReservationYurt {
 
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   yurt        Yurt        @relation(fields: [yurtId], references: [id], onDelete: Restrict)
+  order       Order?
 
   @@unique([reservationId, yurtId])
   @@index([yurtId])
@@ -283,24 +284,27 @@ model ReservationNote {
 // ============ ORDERS ============
 
 model Order {
-  id             String      @id @default(cuid())
-  reservationId  String      @unique
-  status         OrderStatus @default(DRAFT)
-  notes          String?
-  estimatedTotal Float?
-  finalTotal     Decimal?
-  discount       Decimal?    @default(0)
-  paymentMethod  String?
-  paidAt         DateTime?
-  submittedAt    DateTime?
-  lockedAt       DateTime?
-  menuDeadlineAt DateTime? // 菜单修改截止(= Reservation.date - 7 days)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  reservationId     String
+  reservationYurtId String      @unique
+  status            OrderStatus @default(DRAFT)
+  notes             String?
+  estimatedTotal    Float?
+  finalTotal        Decimal?
+  discount          Decimal?    @default(0)
+  paymentMethod     String?
+  paidAt            DateTime?
+  submittedAt       DateTime?
+  lockedAt          DateTime?
+  menuDeadlineAt    DateTime? // 菜单修改截止(= Reservation.date - 7 days)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  items       OrderItem[]
+  reservation     Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservationYurt ReservationYurt @relation(fields: [reservationYurtId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
 
+  @@index([reservationId])
   @@map("orders")
 }
 

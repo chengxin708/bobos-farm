@@ -9,6 +9,7 @@ import {
 import { sendPushToAdmins } from "@/lib/push";
 import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 import { recordContactsFromUser } from "@/lib/contact-history";
+import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
-        order: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
+        orders: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
       },
       orderBy: { date: "desc" },
     });
@@ -278,6 +279,8 @@ export async function POST(req: NextRequest) {
           yurt: { select: { id: true, name: true, capacity: true } },
         },
       });
+
+      if (yurtId) await syncReservationYurt(prisma, reservation.id, yurtId);
 
       // Log activity
       await prisma.activityLog.create({
@@ -479,6 +482,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (requestedYurtId) await syncReservationYurt(prisma, reservation.id, requestedYurtId);
+
     // Run deterministic assignment for this date
     if (!requestedYurtId) {
       await tryDeterministicAssignment(reservationDate);
@@ -492,6 +497,7 @@ export async function POST(req: NextRequest) {
       });
       if (updated) {
         Object.assign(reservation, updated);
+        if (updated.yurtId) await syncReservationYurt(prisma, reservation.id, updated.yurtId);
       }
     }
 

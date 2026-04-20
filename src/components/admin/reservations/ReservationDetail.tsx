@@ -100,7 +100,7 @@ export default function ReservationDetail({
   const locale = useLocale()
   const { data: session } = useSession()
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
-  const panelOrder = reservation.order || null
+  const panelOrder = reservation.orders?.[0] ?? null
 
   const [detailTab, setDetailTab] = useState<'info' | 'order' | 'notes'>('info')
   const [showOrderEditor, setShowOrderEditor] = useState(false)

@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { email: true, name: true, preferredLanguage: true } },
         yurt: { select: { name: true } },
-        order: {
+        orders: {
           include: {
             items: {
               include: {
@@ -55,17 +55,21 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Filter: no order, or order is DRAFT (not yet submitted)
-    const needsReminder = reservations.filter(
-      (r) => !r.order || r.order.status === "DRAFT"
-    );
+    // Filter: no order, or order is DRAFT (not yet submitted).
+    // Reservations have at most one order today (phase 2 adds multi-package),
+    // so "primary order" = orders[0].
+    const needsReminder = reservations.filter((r) => {
+      const primary = r.orders[0];
+      return !primary || primary.status === "DRAFT";
+    });
 
     let sent = 0;
     for (const r of needsReminder) {
       if (!r.user.email) continue;
 
       const lang: Lang = r.user.preferredLanguage === "ZH" ? "zh" : "en";
-      const orderItems = r.order?.items.map((item) => ({
+      const primary = r.orders[0];
+      const orderItems = primary?.items.map((item) => ({
         name: lang === "zh" && item.menuItem.nameZh ? item.menuItem.nameZh : item.menuItem.nameEn,
         quantity: item.quantity,
         price: item.menuItem.price,
@@ -76,9 +80,9 @@ export async function GET(req: NextRequest) {
         yurtName: r.yurt?.name || "TBD",
         guestCount: r.guestCount,
         reservationId: r.id,
-        orderStatus: !r.order ? "NONE" : "DRAFT",
+        orderStatus: !primary ? "NONE" : "DRAFT",
         orderItems,
-        estimatedTotal: r.order?.estimatedTotal || 0,
+        estimatedTotal: primary?.estimatedTotal || 0,
       });
       sent++;
     }

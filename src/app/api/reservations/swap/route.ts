@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { tryDeterministicAssignment } from "@/lib/yurt-assignment";
+import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 
 const swapSchema = z.object({
   reservationIdA: z.string().min(1),
@@ -83,24 +84,26 @@ export async function POST(req: NextRequest) {
   }
 
   // Atomic swap — yurtIds exchange (one side may end up null)
-  await prisma.$transaction([
-    prisma.reservation.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({
       where: { id: reservationIdA },
       data: {
         yurtId: resB.yurtId,
         yurtAssignedAt: resB.yurtId ? new Date() : null,
         manuallyAssigned: !!resB.yurtId,
       },
-    }),
-    prisma.reservation.update({
+    });
+    await tx.reservation.update({
       where: { id: reservationIdB },
       data: {
         yurtId: resA.yurtId,
         yurtAssignedAt: resA.yurtId ? new Date() : null,
         manuallyAssigned: !!resA.yurtId,
       },
-    }),
-  ]);
+    });
+    await syncReservationYurt(tx, reservationIdA, resB.yurtId);
+    await syncReservationYurt(tx, reservationIdB, resA.yurtId);
+  });
 
   // Log activity
   await prisma.activityLog.create({

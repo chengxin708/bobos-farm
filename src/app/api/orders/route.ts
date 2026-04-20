@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
+import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 
 const orderCreateSchema = z.object({
   reservationId: z.string().min(1, "Reservation ID is required"),
@@ -99,7 +100,13 @@ export async function POST(req: NextRequest) {
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      select: { id: true, userId: true, status: true },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        yurtId: true,
+        yurtAssignments: { select: { id: true, yurtId: true }, orderBy: { sortOrder: "asc" } },
+      },
     });
 
     if (!reservation) {
@@ -125,6 +132,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!reservation.yurtId) {
+      return NextResponse.json(
+        { error: "Reservation has no yurt assigned yet" },
+        { status: 400 }
+      );
+    }
+
+    // Resolve the ReservationYurt row this Order will attach to. For now
+    // every reservation is single-yurt so we pick the first assignment; if
+    // the link row is missing (reservation created before sync wired up),
+    // create it on the fly.
+    let reservationYurtId: string | null = reservation.yurtAssignments[0]?.id ?? null;
+    if (!reservationYurtId) {
+      await syncReservationYurt(prisma, reservation.id, reservation.yurtId);
+      const created = await prisma.reservationYurt.findFirst({
+        where: { reservationId: reservation.id },
+        select: { id: true },
+      });
+      reservationYurtId = created?.id ?? null;
+    }
+    if (!reservationYurtId) {
+      return NextResponse.json(
+        { error: "Unable to link order to a yurt" },
+        { status: 500 }
+      );
+    }
+    const finalReservationYurtId: string = reservationYurtId;
+
     // Calculate estimated total
     const menuItemIds = items.map((i) => i.menuItemId);
     const menuItems = await prisma.menuItem.findMany({
@@ -141,6 +176,7 @@ export async function POST(req: NextRequest) {
     const order = await prisma.order.create({
       data: {
         reservationId,
+        reservationYurtId: finalReservationYurtId,
         notes,
         estimatedTotal,
         status: draft ? "DRAFT" : "SUBMITTED",

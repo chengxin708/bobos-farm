@@ -33,7 +33,7 @@ export type {
 export type ReservationWithRelations = Reservation & {
   user: Pick<User, "id" | "name" | "email" | "phone">;
   yurt: Pick<Yurt, "id" | "name" | "capacity">;
-  order?: Order & { items: (OrderItem & { menuItem: MenuItem })[] };
+  orders?: Array<Order & { items: (OrderItem & { menuItem: MenuItem })[] }>;
 };
 
 export type MenuItemWithCategory = MenuItem & {

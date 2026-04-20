@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushToAdmins } from "@/lib/push";
+import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import {
   computeBestFitDecreasing,
   computeDeterministicAssignment,
@@ -148,20 +149,20 @@ export async function tryDeterministicAssignment(
     reservations.filter((r) => !r.yurtId).map((r) => r.id)
   );
 
-  const updates = result.assignments
-    .filter((a) => previouslyUnassigned.has(a.reservationId))
-    .map((a) =>
-      prisma.reservation.update({
-        where: { id: a.reservationId },
-        data: {
-          yurtId: a.yurtId,
-          yurtAssignedAt: new Date(),
-        },
-      })
-    );
+  const newlyAssigned = result.assignments.filter((a) =>
+    previouslyUnassigned.has(a.reservationId)
+  );
 
-  if (updates.length > 0) {
-    await prisma.$transaction(updates);
+  if (newlyAssigned.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      for (const a of newlyAssigned) {
+        await tx.reservation.update({
+          where: { id: a.reservationId },
+          data: { yurtId: a.yurtId, yurtAssignedAt: new Date() },
+        });
+        await syncReservationYurt(tx, a.reservationId, a.yurtId);
+      }
+    });
   }
 
   // Notify admins of anomalies
@@ -217,20 +218,20 @@ export async function assignYurtsForDate(
   const alreadyAssignedIds = new Set(existingReservations.map((r) => r.id));
 
   // Update newly assigned reservations
-  const updates = plan.assignments
-    .filter((a) => !alreadyAssignedIds.has(a.reservationId))
-    .map((a) =>
-      prisma.reservation.update({
-        where: { id: a.reservationId },
-        data: {
-          yurtId: a.yurtId,
-          yurtAssignedAt: new Date(),
-        },
-      })
-    );
+  const newlyAssigned = plan.assignments.filter(
+    (a) => !alreadyAssignedIds.has(a.reservationId),
+  );
 
-  if (updates.length > 0) {
-    await prisma.$transaction(updates);
+  if (newlyAssigned.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      for (const a of newlyAssigned) {
+        await tx.reservation.update({
+          where: { id: a.reservationId },
+          data: { yurtId: a.yurtId, yurtAssignedAt: new Date() },
+        });
+        await syncReservationYurt(tx, a.reservationId, a.yurtId);
+      }
+    });
   }
 
   // Notify admins of anomalies

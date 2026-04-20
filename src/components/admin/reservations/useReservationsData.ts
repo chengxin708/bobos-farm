@@ -85,7 +85,7 @@ export interface Reservation {
   updatedAt: string
   user: ReservationUser
   yurt: ReservationYurt | null
-  order?: Order | OrderSummary | null
+  orders?: Array<Order | OrderSummary>
 }
 
 export type FilterMode = 'action-needed' | 'pending-refund' | 'confirmed' | 'completed' | 'all'
@@ -293,7 +293,7 @@ export function useReservationsData() {
     [allReservations]
   )
   const pendingOrderCount = useMemo(
-    () => allReservations.filter(r => r.order && r.order.status === 'SUBMITTED').length,
+    () => allReservations.filter(r => (r.orders?.[0]?.status) === 'SUBMITTED').length,
     [allReservations]
   )
   const heldByAdminCount = useMemo(

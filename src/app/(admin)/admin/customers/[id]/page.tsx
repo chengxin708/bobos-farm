@@ -53,7 +53,7 @@ interface Reservation {
   updatedAt?: string
   user: ReservationUser
   yurt: ReservationYurt | null
-  order?: { id: string; status: string; estimatedTotal?: number | null; finalTotal?: number | null } | null
+  orders?: Array<{ id: string; status: string; estimatedTotal?: number | null; finalTotal?: number | null }>
 }
 
 interface CustomerApiResponse {
