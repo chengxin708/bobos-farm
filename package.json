@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:seed-settings": "npx tsx prisma/seed-settings-v2.ts",
+    "db:backfill-tokens": "npx tsx scripts/backfill-claim-tokens.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {

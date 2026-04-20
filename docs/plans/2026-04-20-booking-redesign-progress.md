@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（4/40 commit）
+**Status:** 进行中（5/40 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 1 commit 1.5 (`feat(booking-redesign): claim token util and historical backfill`)
+**下一步**: Phase 1 commit 1.6 (`feat(booking-redesign): claim API with token validation + account merge`)
 
 ---
 
@@ -24,7 +24,7 @@
 - [x] 1.2 `feat(booking-redesign): add User.mergedIntoUserId for soft-merge audit`
 - [x] 1.3 `feat(booking-redesign): Order.reservationYurtId for multi-package orders`
 - [x] 1.4 `feat(booking-redesign): prevent concurrent yurt+date double-hold`
-- [ ] 1.5 `feat(booking-redesign): claim token util and historical backfill`
+- [x] 1.5 `feat(booking-redesign): claim token util and historical backfill`
 - [ ] 1.6 `feat(booking-redesign): claim API with token validation + account merge`
 - [ ] 1.7 `feat(booking-redesign): admin copy-link generates tokenized URL`
 
