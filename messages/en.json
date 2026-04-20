@@ -923,6 +923,15 @@
       "heldByAdmin": "{count} spots held pending payment",
       "spotHeld": "Spot Held",
       "awaitingDeposit": "Awaiting Deposit",
+      "deadline": {
+        "normalHours": "{hours}h left",
+        "dueSoonHours": "{hours}h left",
+        "dueSoonMinutes": "{minutes}m left",
+        "overdueHours": "Overdue by {hours}h",
+        "overdueMinutes": "Overdue by {minutes}m",
+        "overdueBanner": "This admin hold is past its deadline — release the spot or extend the hold.",
+        "noEmailWarning": "Customer has no email on file — share the claim link manually via iMessage or WeChat."
+      },
       "shareLink": {
         "copy": "Copy Link",
         "copied": "Copied!",

@@ -21,6 +21,8 @@ import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
 import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
 import EditReservationEditor from '@/components/admin/reservations/EditReservationEditor'
 import { formatPhoneUS } from '@/lib/phone-mask'
+import { formatDeadline } from '@/lib/format-deadline'
+import { AlertTriangle, Clock } from 'lucide-react'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -538,6 +540,56 @@ export default function ReservationDetail({
             </div>
           )}
         </div>
+
+        {/* Admin-hold deadline countdown + no-email warning */}
+        {reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' && (() => {
+          const d = reservation.paymentDeadline ? formatDeadline(reservation.paymentDeadline) : null
+          const hasRealEmail = !!reservation.user?.email && !reservation.user.email.endsWith('@placeholder.local')
+          const deadlineLabel = d ? (() => {
+            switch (d.status) {
+              case 'overdue':
+                return d.hours >= 1
+                  ? t('deadline.overdueHours', { hours: d.hours })
+                  : t('deadline.overdueMinutes', { minutes: d.minutes })
+              case 'dueSoonMinutes':
+                return t('deadline.dueSoonMinutes', { minutes: d.minutes })
+              case 'dueSoonHours':
+                return t('deadline.dueSoonHours', { hours: d.hours })
+              default:
+                return t('deadline.normalHours', { hours: d.hours })
+            }
+          })() : null
+          const chipClass =
+            d?.status === 'overdue' ? 'bg-[#DC3545]/10 text-[#DC3545]' :
+            d?.status === 'dueSoonMinutes' ? 'bg-[#E67E22]/15 text-[#E67E22]' :
+            d?.status === 'dueSoonHours' ? 'bg-[#F4A623]/15 text-[#8B6914]' :
+            'bg-[#E8ECE4] text-[#6B7F5E]'
+          return (
+            <div className="flex flex-col gap-2">
+              {deadlineLabel && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full ${chipClass}`}>
+                    <Clock size={11} />
+                    {deadlineLabel}
+                  </span>
+                </div>
+              )}
+              {d?.status === 'overdue' && (
+                <div className="flex items-start gap-2 text-[12px] text-[#DC3545] bg-[#DC3545]/10 px-3 py-2 rounded-lg">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <span>{t('deadline.overdueBanner')}</span>
+                </div>
+              )}
+              {!hasRealEmail && (
+                <div className="flex items-start gap-2 text-[12px] text-[#8B6914] bg-[#F4E8D8] px-3 py-2 rounded-lg">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <span>{t('deadline.noEmailWarning')}</span>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
         {emailToast && (
           <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-lg text-sm font-medium shadow-lg ${
             emailToast.ok ? 'bg-[#5B8C3E] text-white' : 'bg-[#DC3545] text-white'

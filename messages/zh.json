@@ -923,6 +923,15 @@
       "heldByAdmin": "{count} 笔锁位待收款",
       "spotHeld": "已锁位",
       "awaitingDeposit": "待收定金",
+      "deadline": {
+        "normalHours": "剩 {hours} 小时",
+        "dueSoonHours": "剩 {hours} 小时",
+        "dueSoonMinutes": "剩 {minutes} 分钟",
+        "overdueHours": "已超期 {hours} 小时",
+        "overdueMinutes": "已超期 {minutes} 分钟",
+        "overdueBanner": "此代客预约已超过付款截止——请释放此位置或延长期限。",
+        "noEmailWarning": "该客户没有邮箱——请用 iMessage 或微信手动分享认领链接。"
+      },
       "shareLink": {
         "copy": "复制链接",
         "copied": "已复制",
