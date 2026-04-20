@@ -63,6 +63,7 @@ model User {
   image             String?
   marketingOptIn    Boolean   @default(true)
   unsubscribeToken  String?   @unique
+  mergedIntoUserId  String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -76,6 +77,8 @@ model User {
   ownedInquiries          Inquiry[]          @relation("InquiryOwner")
   assignedInquiries       Inquiry[]          @relation("InquiryAssignee")
   inquiryComments         InquiryComment[]
+  mergedInto              User?              @relation("UserMerge", fields: [mergedIntoUserId], references: [id], onDelete: SetNull)
+  merges                  User[]             @relation("UserMerge")
 
   @@map("users")
 }
