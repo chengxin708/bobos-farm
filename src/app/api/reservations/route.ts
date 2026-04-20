@@ -11,6 +11,7 @@ import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, try
 import { recordContactsFromUser } from "@/lib/contact-history";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
+import { computeAdminPaymentDeadline, resolveAdminDeadlineHours } from "@/lib/admin-deadline";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -240,13 +241,21 @@ export async function POST(req: NextRequest) {
         session.user.id
       );
 
-      // Get deposit amount from settings
-      const depositSetting = await prisma.systemSetting.findUnique({
-        where: { key: "deposit_amount" },
+      // Get deposit amount + admin hold window from settings
+      const adminSettings = await prisma.systemSetting.findMany({
+        where: { key: { in: ["deposit_amount", "admin_deposit_deadline_hours"] } },
       });
-      const systemDepositAmount = depositSetting ? parseFloat(depositSetting.value) : 300;
+      const adminSettingsMap: Record<string, string> = {};
+      for (const s of adminSettings) adminSettingsMap[s.key] = s.value;
+
+      const systemDepositAmount = adminSettingsMap.deposit_amount
+        ? parseFloat(adminSettingsMap.deposit_amount)
+        : 300;
       const depositAmount = parsed.data.customDeposit ?? systemDepositAmount;
       const skipPayment = depositAmount === 0;
+      const adminDeadlineHours = resolveAdminDeadlineHours(
+        adminSettingsMap.admin_deposit_deadline_hours,
+      );
 
       // Past-date check: admin can retroactively log historical visits.
       // Reservation is treated as already-completed: status=COMPLETED, deposit=CONFIRMED.
@@ -258,6 +267,17 @@ export async function POST(req: NextRequest) {
       // - Past date: status=COMPLETED, deposit=CONFIRMED (already happened)
       // - Future $0 deposit: skip payment → CONFIRMED
       // - Future > $0 deposit: PENDING_PAYMENT with holdByAdmin (holds spot, awaits payment)
+      //
+      // adminDeadlineHours gives the admin a visible countdown in the
+      // detail panel — the hold does NOT auto-expire (cron excludes
+      // holdByAdmin=true), but admins are nudged to release or extend.
+      const adminPaymentDeadline = computeAdminPaymentDeadline({
+        now: new Date(),
+        hours: adminDeadlineHours,
+        isPastDate,
+        skipPayment,
+      });
+
       const confirmationCode = await generateConfirmationCode();
       const reservation = await prisma.reservation.create({
         data: {
@@ -272,8 +292,8 @@ export async function POST(req: NextRequest) {
           status: isPastDate ? "COMPLETED" : (skipPayment ? "CONFIRMED" : "PENDING_PAYMENT"),
           depositStatus: (isPastDate || skipPayment) ? "CONFIRMED" : "UNPAID",
           depositConfirmedAt: (isPastDate || skipPayment) ? new Date() : null,
+          paymentDeadline: adminPaymentDeadline,
           ...(yurtId ? { yurtAssignedAt: new Date() } : {}),
-          // No paymentDeadline for admin holds — they don't auto-expire
         },
         include: {
           user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },

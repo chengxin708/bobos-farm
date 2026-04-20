@@ -30,12 +30,17 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
 
-    // Find all reservations that are PENDING_PAYMENT and past their deadline
+    // Only auto-expire customer self-serve holds. Admin-created proxy
+    // reservations have a deadline too (for the admin's countdown UI)
+    // but are released manually — see 2.4 release-hold action.
+    const autoExpireFilter = {
+      status: "PENDING_PAYMENT" as const,
+      paymentDeadline: { lt: now },
+      holdByAdmin: false,
+    };
+
     const expiredReservations = await prisma.reservation.findMany({
-      where: {
-        status: "PENDING_PAYMENT",
-        paymentDeadline: { lt: now },
-      },
+      where: autoExpireFilter,
       select: { id: true, userId: true, yurtId: true, date: true },
     });
 
@@ -49,10 +54,7 @@ export async function GET(req: NextRequest) {
 
     // Update all expired reservations
     const result = await prisma.reservation.updateMany({
-      where: {
-        status: "PENDING_PAYMENT",
-        paymentDeadline: { lt: now },
-      },
+      where: autoExpireFilter,
       data: {
         status: "EXPIRED",
       },

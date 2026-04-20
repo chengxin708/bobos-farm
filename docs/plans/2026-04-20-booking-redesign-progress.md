@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（7/40 commit — Phase 1 complete）
+**Status:** 进行中（8/40 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 1 收尾（本地 + 生产 migrate deploy、跑 `npm run db:backfill-tokens`、admin UI 手动验证 claim 链接），然后 Phase 2 commit 2.1 (`feat(booking-redesign): wire admin_deposit_deadline_hours for proxy bookings`)
+**下一步**: Phase 2 commit 2.2 (`feat(booking-redesign): admin proxy detail countdown + overdue banner + no-email warning`)
 
 ---
 
@@ -38,7 +38,7 @@
 
 ## Phase 2 — Admin 代客改进 + 多包（0/8）
 
-- [ ] 2.1 `feat(booking-redesign): wire admin_deposit_deadline_hours for proxy bookings`
+- [x] 2.1 `feat(booking-redesign): wire admin_deposit_deadline_hours for proxy bookings`
 - [ ] 2.2 `feat(booking-redesign): admin proxy detail countdown + overdue banner + no-email warning`
 - [ ] 2.3 `feat(booking-redesign): extend-hold button for admin proxy deadlines`
 - [ ] 2.4 `feat(booking-redesign): release-hold action distinct from customer cancel`
