@@ -88,7 +88,7 @@ export interface Reservation {
   orders?: Array<Order | OrderSummary>
 }
 
-export type FilterMode = 'action-needed' | 'pending-refund' | 'confirmed' | 'completed' | 'all'
+export type FilterMode = 'action-needed' | 'overdue-holds' | 'pending-refund' | 'confirmed' | 'completed' | 'all'
 
 export interface DateGroup {
   dateLabel: string
@@ -300,6 +300,15 @@ export function useReservationsData() {
     () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' && r.holdByAdmin).length,
     [allReservations]
   )
+  const overdueHoldsCount = useMemo(() => {
+    const nowMs = Date.now()
+    return allReservations.filter(r =>
+      r.status === 'PENDING_PAYMENT' &&
+      r.holdByAdmin &&
+      !!r.paymentDeadline &&
+      new Date(r.paymentDeadline).getTime() < nowMs
+    ).length
+  }, [allReservations])
   const actionNeededCount = useMemo(
     () => allReservations.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED' || r.status === 'CANCELLED_PENDING_REFUND').length,
     [allReservations]
@@ -360,6 +369,14 @@ export function useReservationsData() {
     if (!showHistory) {
       if (filter === 'action-needed') {
         list = list.filter(r => r.status === 'PENDING_PAYMENT' || r.status === 'PAYMENT_SUBMITTED' || r.status === 'CANCELLED_PENDING_REFUND')
+      } else if (filter === 'overdue-holds') {
+        const nowMs = Date.now()
+        list = list.filter(r =>
+          r.status === 'PENDING_PAYMENT' &&
+          r.holdByAdmin &&
+          !!r.paymentDeadline &&
+          new Date(r.paymentDeadline).getTime() < nowMs
+        )
       } else if (filter === 'pending-refund') {
         list = list.filter(r => r.status === 'CANCELLED_PENDING_REFUND')
       } else if (filter === 'confirmed') {
@@ -559,6 +576,7 @@ export function useReservationsData() {
     pendingDepositCount,
     pendingOrderCount,
     heldByAdminCount,
+    overdueHoldsCount,
     actionNeededCount,
     pendingRefundCount,
     confirmedCount,

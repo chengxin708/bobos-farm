@@ -957,6 +957,7 @@
       "pendingOrders": "{count} 笔订单待确认",
       "filters": {
         "actionNeeded": "需要处理",
+        "overdueHolds": "超期代客",
         "confirmed": "已确认",
         "completed": "已完成",
         "all": "全部",

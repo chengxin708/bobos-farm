@@ -957,6 +957,7 @@
       "pendingOrders": "{count} orders pending",
       "filters": {
         "actionNeeded": "Action Needed",
+        "overdueHolds": "Overdue Holds",
         "confirmed": "Confirmed",
         "completed": "Completed",
         "all": "All",

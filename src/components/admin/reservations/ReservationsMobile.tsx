@@ -143,6 +143,7 @@ export default function ReservationsMobile() {
     pendingRefundCount,
     pendingOrderCount,
     heldByAdminCount,
+    overdueHoldsCount,
     actionNeededCount,
     confirmedCount,
     completedCount,
@@ -338,6 +339,14 @@ export default function ReservationsMobile() {
               active={filter === 'action-needed'}
               onClick={() => setFilter('action-needed')}
             />
+            {overdueHoldsCount > 0 && (
+              <FilterChip
+                label={t('filters.overdueHolds')}
+                count={overdueHoldsCount}
+                active={filter === 'overdue-holds'}
+                onClick={() => setFilter('overdue-holds')}
+              />
+            )}
             <FilterChip
               label={t('filters.pendingRefund')}
               count={pendingRefundCount}

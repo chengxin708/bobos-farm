@@ -155,6 +155,7 @@ export default function ReservationsDesktop() {
     search, setSearch,
     pendingDepositCount,
     pendingRefundCount,
+    overdueHoldsCount,
     pendingOrderCount,
     heldByAdminCount,
     actionNeededCount,
@@ -348,6 +349,14 @@ export default function ReservationsDesktop() {
               active={filter === 'action-needed'}
               onClick={() => setFilter('action-needed')}
             />
+            {overdueHoldsCount > 0 && (
+              <FilterChip
+                label={t('filters.overdueHolds')}
+                count={overdueHoldsCount}
+                active={filter === 'overdue-holds'}
+                onClick={() => setFilter('overdue-holds')}
+              />
+            )}
             <FilterChip
               label={t('filters.pendingRefund')}
               count={pendingRefundCount}
