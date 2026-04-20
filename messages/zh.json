@@ -804,7 +804,11 @@
         "extendHoldCount": "已延长 {count} 次",
         "extendHoldWarn3": "已延长 3 次以上——建议释放",
         "extendHoldSuccess": "已延长 24 小时",
-        "extendHoldFailed": "延长失败"
+        "extendHoldFailed": "延长失败",
+        "releaseHold": "释放此预约",
+        "releaseHoldConfirm": "释放此代客预约？位置立即可用，不发送取消邮件。",
+        "releaseHoldSuccess": "已释放",
+        "releaseHoldFailed": "释放失败"
       },
       "editEditor": {
         "title": "编辑预订",

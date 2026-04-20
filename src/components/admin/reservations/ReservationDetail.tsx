@@ -21,6 +21,7 @@ import AdminOrderEditor from '@/components/admin/orders/AdminOrderEditor'
 import CheckoutPanel from '@/components/admin/orders/CheckoutPanel'
 import EditReservationEditor from '@/components/admin/reservations/EditReservationEditor'
 import ExtendHoldButton from '@/components/admin/reservations/ExtendHoldButton'
+import ReleaseHoldButton from '@/components/admin/reservations/ReleaseHoldButton'
 import { formatPhoneUS } from '@/lib/phone-mask'
 import { formatDeadline } from '@/lib/format-deadline'
 import { AlertTriangle, Clock } from 'lucide-react'
@@ -1224,8 +1225,30 @@ export default function ReservationDetail({
           />
         )}
 
-        {/* Cancel — non-terminal states */}
-        {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
+        {/* Release hold — replaces Cancel for admin-held unpaid bookings
+            (silent, no customer email). Kept separate so the admin can't
+            accidentally send a cancellation email to placeholder accounts. */}
+        {isAdmin &&
+          reservation.holdByAdmin &&
+          reservation.status === 'PENDING_PAYMENT' &&
+          reservation.depositStatus === 'UNPAID' && (
+            <ReleaseHoldButton
+              reservationId={reservation.id}
+              disabled={isUpdating}
+              onReleased={() => {
+                onOrderChanged?.()
+                onClose()
+              }}
+              onToast={msg => {
+                setEmailToast(msg)
+                setTimeout(() => setEmailToast(null), 3000)
+              }}
+            />
+          )}
+
+        {/* Cancel — non-terminal states (skipped when ReleaseHold already handles the case) */}
+        {!['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) &&
+          !(isAdmin && reservation.holdByAdmin && reservation.status === 'PENDING_PAYMENT' && reservation.depositStatus === 'UNPAID') && (
           <div className="flex flex-col items-center gap-1">
             <button
               onClick={() => setConfirmAction('cancel')}

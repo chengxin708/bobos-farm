@@ -15,6 +15,11 @@ const cancelActionSchema = z.object({
   reason: z.string().max(1000).optional(),
 });
 
+const releaseHoldActionSchema = z.object({
+  action: z.literal("release_hold"),
+  reason: z.string().max(1000).optional(),
+});
+
 const cancelAndRefundActionSchema = z.object({
   action: z.literal("cancel_and_refund"),
   reason: z.string().max(1000).optional(),
@@ -177,6 +182,74 @@ export async function PATCH(
       where: { key: "cancellation_window_days" },
     });
     const cancelWindowDays = cancelWindowSetting?.value ? parseInt(cancelWindowSetting.value, 10) : 7;
+
+    // ---------- RELEASE HOLD (admin-only, silent cancel for unpaid admin holds) ----------
+    if (action === "release_hold") {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Admin only" }, { status: 403 });
+      }
+      const parsedRelease = releaseHoldActionSchema.safeParse(body);
+      if (!parsedRelease.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsedRelease.error.flatten() },
+          { status: 400 }
+        );
+      }
+      if (!reservation.holdByAdmin) {
+        return NextResponse.json(
+          { error: "Only admin holds can be released", reason: "not_hold" },
+          { status: 400 }
+        );
+      }
+      if (reservation.status !== "PENDING_PAYMENT") {
+        return NextResponse.json(
+          { error: "Only pending-payment holds can be released", reason: "wrong_status" },
+          { status: 400 }
+        );
+      }
+      if (reservation.depositStatus !== "UNPAID") {
+        return NextResponse.json(
+          { error: "Deposit-paid holds must go through normal cancel", reason: "deposit_paid" },
+          { status: 400 }
+        );
+      }
+
+      const releaseNow = new Date();
+      const updated = await prisma.reservation.update({
+        where: { id },
+        data: {
+          status: "CANCELLED",
+          cancelledAt: releaseNow,
+          cancelReason: parsedRelease.data.reason ?? "Admin released unpaid hold",
+          refundEligible: false,
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+          yurt: { select: { id: true, name: true, capacity: true } },
+        },
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          action: "RESERVATION_RELEASED",
+          targetType: "Reservation",
+          targetId: id,
+          details: {
+            reason: parsedRelease.data.reason ?? "Admin released unpaid hold",
+            date: reservation.date,
+            yurtId: reservation.yurtId,
+          },
+        },
+      });
+
+      // Intentionally NO customer email — the hold was never paid and
+      // often the placeholder has no real email anyway.
+      // Reassign rooms on this date so the freed slot is reused.
+      void tryDeterministicAssignment(new Date(reservation.date));
+
+      return NextResponse.json(updated);
+    }
 
     // ---------- CANCEL ----------
     if (action === "cancel") {

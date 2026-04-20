@@ -804,7 +804,11 @@
         "extendHoldCount": "Extended {count}x",
         "extendHoldWarn3": "Extended 3+ times — consider releasing",
         "extendHoldSuccess": "Hold extended by 24 hours",
-        "extendHoldFailed": "Failed to extend hold"
+        "extendHoldFailed": "Failed to extend hold",
+        "releaseHold": "Release Hold",
+        "releaseHoldConfirm": "Release this admin hold? The spot will become available immediately. No cancellation email will be sent.",
+        "releaseHoldSuccess": "Hold released",
+        "releaseHoldFailed": "Failed to release hold"
       },
       "editEditor": {
         "title": "Edit Reservation",
