@@ -83,8 +83,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Atomic swap — yurtIds exchange (one side may end up null)
+  // Atomic swap — yurtIds exchange (one side may end up null).
+  // Null both sides first so we don't trip the
+  // reservation_yurt_date_active partial unique index mid-transaction
+  // (Postgres indexes aren't deferrable, so A→B→A order would collide
+  // with B's existing row).
   await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({
+      where: { id: reservationIdA },
+      data: { yurtId: null },
+    });
+    await tx.reservation.update({
+      where: { id: reservationIdB },
+      data: { yurtId: null },
+    });
     await tx.reservation.update({
       where: { id: reservationIdA },
       data: {

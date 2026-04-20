@@ -10,6 +10,7 @@ import { sendPushToAdmins } from "@/lib/push";
 import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 import { recordContactsFromUser } from "@/lib/contact-history";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
+import { isYurtDateConflict } from "@/lib/reservation-errors";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -552,6 +553,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(reservation, { status: 201 });
   } catch (error) {
+    if (isYurtDateConflict(error)) {
+      return NextResponse.json(
+        { error: "This yurt is already booked for this date" },
+        { status: 409 }
+      );
+    }
     console.error("Failed to create reservation:", error);
     return NextResponse.json(
       { error: "Failed to create reservation" },
@@ -559,3 +566,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

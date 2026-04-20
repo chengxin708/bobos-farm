@@ -7,6 +7,7 @@ import { sendPushToAdmins, sendPushToUser } from "@/lib/push";
 import { checkDateAnomalies, assignYurtsForDate, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 import { recordContactsFromUser } from "@/lib/contact-history";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
+import { isYurtDateConflict } from "@/lib/reservation-errors";
 
 // Zod schemas for each action to prevent unvalidated input
 const cancelActionSchema = z.object({
@@ -1214,6 +1215,12 @@ export async function PATCH(
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
+    if (isYurtDateConflict(error)) {
+      return NextResponse.json(
+        { error: "This yurt is already booked for this date" },
+        { status: 409 }
+      );
+    }
     console.error("Failed to update reservation:", error);
     return NextResponse.json(
       { error: "Failed to update reservation" },
