@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import useSWR from "swr"
 import { DatePickerCalendar, type DateStatus } from "@/components/customer/DatePickerCalendar"
-import { GuestRangePicker, type GuestRangeValue } from "@/components/customer/GuestRangePicker"
+import { GuestCountPicker } from "@/components/customer/GuestCountPicker"
 
 const fetcher = (url: string) => fetch(url).then((r) => {
   if (!r.ok) throw new Error("Fetch failed")
@@ -43,16 +43,13 @@ function InquiryNewPage() {
   const [preferredDate, setPreferredDate] = useState<string | null>(
     searchParams.get("date") || null,
   )
-  const [guests, setGuests] = useState<GuestRangeValue | null>(() => {
-    const minParam = parseInt(searchParams.get("guestCountMin") ?? "", 10)
-    const maxParam = parseInt(searchParams.get("guestCountMax") ?? "", 10)
-    if (Number.isFinite(minParam) && Number.isFinite(maxParam) && minParam > 0 && maxParam >= minParam) {
-      return { min: minParam, max: maxParam }
-    }
+  const [guestCount, setGuestCount] = useState<number | null>(() => {
     const single = parseInt(searchParams.get("guestCount") ?? "", 10)
-    if (Number.isFinite(single) && single > 0) {
-      return { min: single, max: single }
-    }
+    if (Number.isFinite(single) && single > 0) return single
+    // Back-compat: legacy redirects passed guestCountMin/Max for range intent.
+    // We no longer collect ranges from customers — just seed with min.
+    const minParam = parseInt(searchParams.get("guestCountMin") ?? "", 10)
+    if (Number.isFinite(minParam) && minParam > 0) return minParam
     return null
   })
   const [note, setNote] = useState(searchParams.get("note") ?? "")
@@ -103,11 +100,11 @@ function InquiryNewPage() {
     return map
   }, [slots])
 
-  const canSubmit = preferredDate != null && guests != null && !busy
+  const canSubmit = preferredDate != null && guestCount != null && !busy
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canSubmit || !preferredDate || !guests) return
+    if (!canSubmit || !preferredDate || guestCount == null) return
     setError("")
     setBusy(true)
     try {
@@ -116,8 +113,8 @@ function InquiryNewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           preferredDate,
-          guestCountMin: guests.min,
-          guestCountMax: guests.max,
+          guestCountMin: guestCount,
+          guestCountMax: guestCount,
           note: note || null,
         }),
       })
@@ -170,7 +167,7 @@ function InquiryNewPage() {
             />
           </div>
 
-          <GuestRangePicker value={guests} onChange={setGuests} />
+          <GuestCountPicker value={guestCount} onChange={setGuestCount} />
 
           <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
             {t("note")}

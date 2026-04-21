@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 import { formatPhoneUS } from '@/lib/phone-mask'
-import { GuestRangePicker, type GuestRangeValue } from '@/components/customer/GuestRangePicker'
+import { GuestCountPicker } from '@/components/customer/GuestCountPicker'
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
@@ -35,6 +35,7 @@ interface ForDateResponse {
 export default function BookingDetailsPage() {
   const t = useTranslations('booking.details')
   const tCommon = useTranslations('common')
+  const tPicker = useTranslations('guestCountPicker')
   const router = useRouter()
   const { data: session } = useSession()
   const booking = useBooking()
@@ -52,8 +53,8 @@ export default function BookingDetailsPage() {
     booking.contactEmail || session?.user?.email || ''
   )
   const [contactPhone, setContactPhone] = useState(booking.contactPhone || '')
-  const [guests, setGuests] = useState<GuestRangeValue | null>(() =>
-    booking.guestCount > 0 ? { min: booking.guestCount, max: booking.guestCount } : null,
+  const [guestCount, setGuestCount] = useState<number | null>(
+    booking.guestCount > 0 ? booking.guestCount : null,
   )
   const [specialRequests, setSpecialRequests] = useState(booking.specialRequests || '')
 
@@ -99,13 +100,10 @@ export default function BookingDetailsPage() {
     return selfServeCap < venueMax
   }, [availability, selfServeCap])
 
-  // Whether the current selection will be routed to the inquiry flow:
-  // any range (min!=max) OR a single value above the self-serve cap.
-  const goingToInquiry = useMemo(() => {
-    if (!guests) return false
-    if (guests.min !== guests.max) return true
-    return guests.max > selfServeCap
-  }, [guests, selfServeCap])
+  // Picking a count above the date-specific cap routes this booking to the
+  // inquiry flow. The stepper stays usable up to hardMax; this flag just
+  // tells the page which path the Next button should take.
+  const goingToInquiry = guestCount != null && guestCount > selfServeCap
 
   const errors = useMemo(() => {
     const e: Record<string, string | null> = {}
@@ -116,9 +114,9 @@ export default function BookingDetailsPage() {
         ? t('validation.emailInvalid')
         : null
     e.contactPhone = contactPhone.trim().length === 0 ? t('validation.phoneRequired') : null
-    e.guests = guests == null ? t('validation.guestsRequired') : null
+    e.guestCount = guestCount == null ? t('validation.guestsRequired') : null
     return e
-  }, [contactName, contactEmail, contactPhone, guests, t])
+  }, [contactName, contactEmail, contactPhone, guestCount, t])
 
   const isValid = useMemo(() => {
     return Object.values(errors).every((e) => e === null)
@@ -129,17 +127,13 @@ export default function BookingDetailsPage() {
   }
 
   function handleNext() {
-    setTouched({ contactName: true, contactEmail: true, contactPhone: true, guests: true })
-    if (!isValid || !guests) return
+    setTouched({ contactName: true, contactEmail: true, contactPhone: true, guestCount: true })
+    if (!isValid || guestCount == null) return
 
     if (goingToInquiry) {
-      // Hand the user off to the inquiry form, pre-filled with what they
-      // already chose. The inquiry form is the right place to double-check
-      // the approximate count before we commit to the inquiry flow.
       const qs = new URLSearchParams()
       if (booking.selectedDate) qs.set('date', booking.selectedDate)
-      qs.set('guestCountMin', String(guests.min))
-      qs.set('guestCountMax', String(guests.max))
+      qs.set('guestCount', String(guestCount))
       if (specialRequests) qs.set('note', specialRequests)
       router.push(`/inquiries/new?${qs.toString()}`)
       return
@@ -150,9 +144,18 @@ export default function BookingDetailsPage() {
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
       specialRequests: specialRequests.trim(),
-      guestCount: guests.min,
+      guestCount,
     })
     router.push('/booking/confirm')
+  }
+
+  function handleInquireEscape() {
+    const qs = new URLSearchParams()
+    if (booking.selectedDate) qs.set('date', booking.selectedDate)
+    if (guestCount != null) qs.set('guestCount', String(guestCount))
+    if (specialRequests) qs.set('note', specialRequests)
+    const tail = qs.toString()
+    router.push(tail ? `/inquiries/new?${tail}` : '/inquiries/new')
   }
 
   if (!booking.hydrated) {
@@ -165,11 +168,8 @@ export default function BookingDetailsPage() {
 
   if (!booking.selectedDate) return null
 
-  const isRange = guests != null && guests.min !== guests.max
-  const isOverCap = guests != null && !isRange && guests.max > selfServeCap
-  const inquiryReasonKey = isRange
-    ? 'inquiryBanner.reasonRange'
-    : isOverCap && largerYurtsBooked
+  const inquiryReasonKey =
+    goingToInquiry && largerYurtsBooked
       ? 'inquiryBanner.reasonOverCapDueToBooked'
       : 'inquiryBanner.reasonOverCap'
 
@@ -270,17 +270,28 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
-          <GuestRangePicker
-            value={guests}
-            onChange={setGuests}
+          <GuestCountPicker
+            value={guestCount}
+            onChange={setGuestCount}
             softThreshold={selfServeCap}
           />
-          {touched.guests && errors.guests && (
+          {touched.guestCount && errors.guestCount && (
             <div className="flex items-center gap-1.5 text-[#C4453A] -mt-3">
               <AlertCircle size={14} className="shrink-0" />
-              <span className="text-sm">{errors.guests}</span>
+              <span className="text-sm">{errors.guestCount}</span>
             </div>
           )}
+
+          <div className="text-center text-xs text-[#1A1208] -mt-2">
+            <span>{tPicker('notSurePrompt')}</span>{' '}
+            <button
+              type="button"
+              onClick={handleInquireEscape}
+              className="font-semibold text-[#6B7F5E] hover:underline border-none bg-transparent cursor-pointer p-0"
+            >
+              {tPicker('notSureCta')} →
+            </button>
+          </div>
 
           {goingToInquiry && (
             <div className="bg-[#FDF5E6] border border-[#E5D8B8] rounded-xl p-3.5 flex items-start gap-2.5">

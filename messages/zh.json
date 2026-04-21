@@ -1885,20 +1885,19 @@
       "SYSTEM": "系统"
     }
   },
-  "guestRangePicker": {
+  "guestCountPicker": {
     "title": "人数",
-    "emptyLabel": "请选择人数",
-    "singleLabel": "{count} 人",
-    "rangeLabel": "{min} – {max} 人",
-    "helpText": "点一个数字选定人数，点两个数字表示范围，50 人以上请点 50+ 手动输入。",
+    "unit": "人",
+    "reset": "重置",
+    "decrement": "减少人数",
+    "increment": "增加人数",
+    "chipAria": "{count} 人",
+    "helpText": "用 + 和 − 微调人数，或点下方快捷选项一键选择常见规模。",
     "helpSingle": "当天到场人数不能超过此数字。",
     "overThresholdHint": "超过 {threshold} 人将以咨询单跟进确认。",
-    "overHardMax": "本场最多接待 {max} 人，请直接联系我们商量方案。",
-    "manualButtonAria": "{min} 到 {max} 人",
-    "manualInputLabel": "准确人数",
-    "manualInputUnit": "人",
-    "reset": "重置",
-    "presetAria": "{count} 人"
+    "atHardMaxHint": "本场最多接待 {max} 人。更大规模请直接联系我们。",
+    "notSurePrompt": "人数还没定？",
+    "notSureCta": "发起咨询"
   },
   "inquiryForm": {
     "title": "告诉我们您的聚会",

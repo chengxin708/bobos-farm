@@ -1885,20 +1885,19 @@
       "SYSTEM": "System"
     }
   },
-  "guestRangePicker": {
+  "guestCountPicker": {
     "title": "Number of guests",
-    "emptyLabel": "Pick a guest count",
-    "singleLabel": "{count} guests",
-    "rangeLabel": "{min} – {max} guests",
-    "helpText": "Tap a number to set your guest count, tap two for a range, or use 50+ for a larger group.",
+    "unit": "guests",
+    "reset": "Reset",
+    "decrement": "Fewer guests",
+    "increment": "More guests",
+    "chipAria": "{count} guests",
+    "helpText": "Tap + and − to set your exact guest count, or tap a chip below for common sizes.",
     "helpSingle": "Actual attendance on the day must be at or below this number.",
     "overThresholdHint": "Groups over {threshold} are handled as an inquiry — we'll follow up to finalize.",
-    "overHardMax": "We can't accommodate more than {max} guests — please reach out directly.",
-    "manualButtonAria": "Groups of {min} to {max}",
-    "manualInputLabel": "Exact count",
-    "manualInputUnit": "guests",
-    "reset": "Reset",
-    "presetAria": "{count} guests"
+    "atHardMaxHint": "{max} is our venue maximum. For bigger events please reach out directly.",
+    "notSurePrompt": "Not sure yet?",
+    "notSureCta": "Send us an inquiry"
   },
   "inquiryForm": {
     "title": "Tell us about your gathering",
