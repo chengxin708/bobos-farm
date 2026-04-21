@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -112,7 +112,17 @@ const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> 
 
 // ── Component ──────────────────────────────────────────────────────
 
-export default function ReservationsPage() {
+export default function ReservationsPageWrapper() {
+  // useSearchParams() in the inner component needs a Suspense boundary
+  // so the static-generation pass doesn't CSR-bail the whole page.
+  return (
+    <Suspense fallback={null}>
+      <ReservationsPage />
+    </Suspense>
+  )
+}
+
+function ReservationsPage() {
   const t = useTranslations('reservations')
   const { status: sessionStatus } = useSession()
   const router = useRouter()
