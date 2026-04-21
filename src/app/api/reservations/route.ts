@@ -113,7 +113,21 @@ export async function GET(req: NextRequest) {
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: { select: { id: true, name: true, capacity: true } },
-        orders: { select: { id: true, status: true, estimatedTotal: true, finalTotal: true } },
+        orders: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            status: true,
+            estimatedTotal: true,
+            finalTotal: true,
+            reservationYurt: {
+              select: {
+                id: true,
+                yurt: { select: { id: true, name: true, alias: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { date: "desc" },
     });

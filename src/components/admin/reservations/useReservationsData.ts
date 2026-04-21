@@ -170,6 +170,31 @@ export function activityLogText(log: ActivityLog, t: (key: string, values?: any)
       return t('activityLog.orderSubmitted', { actor })
     case 'ORDER_UPDATED':
       return t('activityLog.orderUpdated', { actor })
+    case 'HOLD_EXTENDED': {
+      const count = Number(details?.extendCount ?? 0)
+      const hours = Number(details?.extendedByHours ?? 24)
+      return count > 0
+        ? t('activityLog.holdExtended', { actor, hours, count })
+        : t('activityLog.holdExtendedSimple', { actor, hours })
+    }
+    case 'RESERVATION_RELEASED':
+      return t('activityLog.released', { actor })
+    case 'CLAIM_TOKEN_ISSUED':
+      return t('activityLog.claimTokenIssued', { actor })
+    case 'ACCOUNT_MERGED':
+      return t('activityLog.accountMerged', { actor })
+    case 'INQUIRY_SUBMITTED':
+      return t('activityLog.inquirySubmitted', { actor })
+    case 'INQUIRY_UPDATED':
+      return t('activityLog.inquiryUpdated', { actor })
+    case 'INQUIRY_CONVERTED':
+      return t('activityLog.inquiryConverted', { actor })
+    case 'INQUIRY_UNCLAIMED_24H':
+      return t('activityLog.inquiryUnclaimed24h')
+    case 'INQUIRY_UNCLAIMED_48H':
+      return t('activityLog.inquiryUnclaimed48h')
+    case 'INQUIRY_AUTO_EXPIRED':
+      return t('activityLog.inquiryAutoExpired')
     default:
       return t('activityLog.defaultAction', { action: log.action.replace(/_/g, ' ').toLowerCase(), actor })
   }

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
-import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy, Mail, ChevronDown, RefreshCw } from 'lucide-react'
+import { X, ShoppingBag, MessageSquare, History, Lock, Unlock, Pencil, Check, Copy, MessageCircle, Pin, Trash2, ClipboardCopy, Mail, ChevronDown, RefreshCw, Loader2 } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import {
   type Reservation,
@@ -481,20 +481,35 @@ export default function ReservationDetail({
           {reservation.confirmationCode &&
             !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
             <div className="flex items-center gap-1 ml-auto">
-              <button
-                onClick={() => {
-                  const url = buildClaimUrl(reservation.confirmationCode!, claimToken)
-                  navigator.clipboard.writeText(url)
-                  setCopiedLink(true)
-                  setTimeout(() => setCopiedLink(false), 2000)
-                }}
-                disabled={isAdmin && reservation.holdByAdmin && !tokenReady}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] disabled:opacity-50 disabled:cursor-wait transition-colors"
-                title={t('shareLink.copy')}
-              >
-                {copiedLink ? <Check size={10} /> : <Copy size={10} />}
-                {copiedLink ? t('shareLink.copied') : t('shareLink.copy')}
-              </button>
+              {(() => {
+                const tokenLoading = isAdmin && reservation.holdByAdmin && !tokenReady
+                return (
+                  <button
+                    onClick={() => {
+                      const url = buildClaimUrl(reservation.confirmationCode!, claimToken)
+                      navigator.clipboard.writeText(url)
+                      setCopiedLink(true)
+                      setTimeout(() => setCopiedLink(false), 2000)
+                    }}
+                    disabled={tokenLoading}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] disabled:opacity-50 disabled:cursor-wait transition-colors"
+                    title={t('shareLink.copy')}
+                  >
+                    {tokenLoading ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : copiedLink ? (
+                      <Check size={10} />
+                    ) : (
+                      <Copy size={10} />
+                    )}
+                    {tokenLoading
+                      ? t('shareLink.preparing')
+                      : copiedLink
+                        ? t('shareLink.copied')
+                        : t('shareLink.copy')}
+                  </button>
+                )
+              })()}
               {isAdmin && reservation.holdByAdmin && (
                 <button
                   onClick={regenerateClaimToken}

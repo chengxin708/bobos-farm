@@ -49,19 +49,31 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Customers submit once per browse session — 5/hour is room for a
-    // retry or two but not for spam.
+    // Auth + role check FIRST. Admins shouldn't be submitting inquiries,
+    // and rejecting via 429 before 403 would let a rate-limited admin
+    // see the wrong error code.
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, createdAt: true, role: true },
+    });
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (user.role === "ADMIN") {
+      return NextResponse.json({ error: "Admins cannot submit inquiries" }, { status: 403 });
+    }
+
+    // Rate limit AFTER auth so admins / unauthenticated users don't
+    // pollute the customer bucket.
     const rl = rateLimit(`inquiry:${ipFromRequest(req)}`, { limit: 5, windowMs: 60 * 60 * 1000 });
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Too many inquiries", retryAfterSeconds: rl.retryAfterSeconds },
         { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
       );
-    }
-
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
@@ -73,15 +85,6 @@ export async function POST(req: NextRequest) {
       );
     }
     const { preferredDate, guestCountMin, guestCountMax, packageHint, note } = parsed.data;
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, createdAt: true, role: true },
-    });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-    if (user.role === "ADMIN") {
-      return NextResponse.json({ error: "Admins cannot submit inquiries" }, { status: 403 });
-    }
 
     const date = new Date(preferredDate);
     const { tags, priority } = await computeInquiryTags(prisma, {

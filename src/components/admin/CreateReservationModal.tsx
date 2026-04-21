@@ -357,7 +357,13 @@ export default function CreateReservationModal({
                 ))}
               </div>
               {yurtMode === 'specific' && (
-                <div className="flex flex-col gap-1 mt-1 pl-2 border-l-2 border-[#E8E2D9]">
+                <div
+                  className={`flex flex-col gap-1 mt-1 pl-2 border-l-2 transition-colors ${
+                    error === t('selectAtLeastOneYurt')
+                      ? 'border-[#DC3545]'
+                      : 'border-[#E8E2D9]'
+                  }`}
+                >
                   {activeYurts.map(y => {
                     const isOccupied = occupiedYurtIds.has(y.id)
                     const checked = yurtIds.includes(y.id)
