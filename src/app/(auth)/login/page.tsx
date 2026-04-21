@@ -7,12 +7,17 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { safeCallbackUrl } from '@/lib/safe-callback'
 
 function LoginForm() {
   const t = useTranslations('auth.login')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
+  // Narrow an arbitrary ?callbackUrl= to a known-safe path before using it for
+  // redirects. Prevents phishing via off-origin or admin-path redirects.
+  const rawCallback = searchParams.get('callbackUrl')
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://bobos.farm'
+  const callbackUrl = safeCallbackUrl(rawCallback, origin)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,7 +31,7 @@ function LoginForm() {
     setError('')
     setIsLoading(true)
 
-    const target = callbackUrl !== '/' ? callbackUrl : '/'
+    const target = callbackUrl
 
     try {
       const result = await signIn('credentials', {
@@ -153,7 +158,7 @@ function LoginForm() {
       {/* Google OAuth */}
       <button
         type="button"
-        onClick={() => signIn('google', { callbackUrl: callbackUrl || '/' })}
+        onClick={() => signIn('google', { callbackUrl })}
         className="border border-[#E8ECE4] rounded-full py-3 w-full flex items-center justify-center gap-2.5 cursor-pointer bg-white hover:bg-[#F9FAF8] transition-colors"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
