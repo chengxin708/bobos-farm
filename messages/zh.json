@@ -48,7 +48,8 @@
       "orContinueWith": "或者",
       "continueWithGoogle": "使用Google登录",
       "noAccount": "还没有账号？",
-      "signUp": "注册"
+      "signUp": "注册",
+      "oauthCancelled": "Google 登录已取消。您可以在下方用邮箱登录。"
     },
     "register": {
       "title": "创建账号",

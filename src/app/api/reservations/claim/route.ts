@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { claimReservation } from "@/lib/claim-flow";
+import { ipFromRequest, rateLimit } from "@/lib/rate-limit";
 
 const claimBodySchema = z.object({
   code: z.string().min(1, "Confirmation code is required"),
@@ -11,6 +12,17 @@ const claimBodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // 10 claim attempts / IP / hour — plenty for legitimate users
+    // (usually ≤ 2: one failed, one successful) but rate-limits
+    // token-guessing attempts from a single source.
+    const rl = rateLimit(`claim:${ipFromRequest(req)}`, { limit: 10, windowMs: 60 * 60 * 1000 });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Too many claim attempts", retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
+    }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

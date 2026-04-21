@@ -4,11 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { recordContactsFromUser } from "@/lib/contact-history";
 import { claimReservation } from "@/lib/claim-flow";
+import { ipFromRequest, rateLimit } from "@/lib/rate-limit";
 
-// TODO: [SECURITY] Add rate limiting to prevent brute-force account creation
-// Consider using upstash/ratelimit or similar per-IP rate limiter
 export async function POST(req: NextRequest) {
   try {
+    // 5 register attempts / IP / hour. Low because real users only
+    // register once; higher than that smells like enumeration.
+    const rl = rateLimit(`register:${ipFromRequest(req)}`, { limit: 5, windowMs: 60 * 60 * 1000 });
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Too many registration attempts", retryAfterSeconds: rl.retryAfterSeconds },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
+    }
+
     const body = await req.json();
     const result = registerSchema.safeParse(body);
 

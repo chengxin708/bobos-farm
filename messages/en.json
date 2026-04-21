@@ -48,7 +48,8 @@
       "orContinueWith": "or",
       "continueWithGoogle": "Continue with Google",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up"
+      "signUp": "Sign up",
+      "oauthCancelled": "Google sign-in was cancelled. You can sign in with email below."
     },
     "register": {
       "title": "Create Account",

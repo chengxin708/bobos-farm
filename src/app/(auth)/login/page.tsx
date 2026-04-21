@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -25,6 +25,17 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // If the user bailed out of the Google OAuth consent screen, NextAuth
+  // bounces back here with ?error=OAuthCallback or access_denied.
+  // Surface a friendly message instead of a dead-silent form and keep
+  // callbackUrl so they can retry with email/password.
+  useEffect(() => {
+    const err = searchParams.get('error')
+    if (err === 'access_denied' || err === 'OAuthCallback' || err === 'OAuthSignin') {
+      setError(t('oauthCancelled'))
+    }
+  }, [searchParams, t])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
