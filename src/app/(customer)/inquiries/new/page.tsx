@@ -43,12 +43,18 @@ function InquiryNewPage() {
   const [preferredDate, setPreferredDate] = useState<string | null>(
     searchParams.get("date") || null,
   )
-  const prefillCount = parseInt(searchParams.get("guestCount") ?? "", 10)
-  const [guests, setGuests] = useState<GuestRangeValue | null>(() =>
-    Number.isFinite(prefillCount) && prefillCount > 0
-      ? { min: prefillCount, max: prefillCount }
-      : null,
-  )
+  const [guests, setGuests] = useState<GuestRangeValue | null>(() => {
+    const minParam = parseInt(searchParams.get("guestCountMin") ?? "", 10)
+    const maxParam = parseInt(searchParams.get("guestCountMax") ?? "", 10)
+    if (Number.isFinite(minParam) && Number.isFinite(maxParam) && minParam > 0 && maxParam >= minParam) {
+      return { min: minParam, max: maxParam }
+    }
+    const single = parseInt(searchParams.get("guestCount") ?? "", 10)
+    if (Number.isFinite(single) && single > 0) {
+      return { min: single, max: single }
+    }
+    return null
+  })
   const [note, setNote] = useState(searchParams.get("note") ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)

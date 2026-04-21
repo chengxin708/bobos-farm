@@ -246,13 +246,20 @@
       "specialRequestsPlaceholder": "Any dietary restrictions, allergies, or special requests...",
       "stepLabel": "Step 2 of 3",
       "maxGuestsLabel": "Max {max} guests per room",
+      "continueAsInquiry": "Continue as inquiry",
+      "inquiryBanner": {
+        "title": "We'll handle this as an inquiry",
+        "reasonOverCap": "Because your group is over 30 guests, we'll follow up by message within a day to finalize package and pricing.",
+        "reasonRange": "Because your guest count is approximate, we'll follow up by message within a day to confirm the final number before payment."
+      },
       "validation": {
         "nameRequired": "Please enter your name",
         "emailRequired": "Please enter your email",
         "emailInvalid": "Please enter a valid email address",
         "phoneRequired": "Please enter your phone number",
         "guestMin": "At least 1 guest required",
-        "guestMax": "Maximum {max} guests"
+        "guestMax": "Maximum {max} guests",
+        "guestsRequired": "Please pick a guest count"
       }
     },
     "confirm": {

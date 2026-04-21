@@ -246,13 +246,20 @@
       "specialRequestsPlaceholder": "任何饮食限制、过敏信息或特殊要求...",
       "stepLabel": "第 2 步，共 3 步",
       "maxGuestsLabel": "每间包房最多 {max} 人",
+      "continueAsInquiry": "提交为咨询单",
+      "inquiryBanner": {
+        "title": "将作为咨询单处理",
+        "reasonOverCap": "因为您的团队超过 30 人，我们会在一天内发消息确认套餐和价格。",
+        "reasonRange": "因为您的人数是一个范围，我们会在一天内发消息和您确认准确人数后再付款。"
+      },
       "validation": {
         "nameRequired": "请输入您的姓名",
         "emailRequired": "请输入您的邮箱",
         "emailInvalid": "请输入有效的邮箱地址",
         "phoneRequired": "请输入您的电话号码",
         "guestMin": "至少需要 1 位客人",
-        "guestMax": "最多 {max} 位客人"
+        "guestMax": "最多 {max} 位客人",
+        "guestsRequired": "请选择人数"
       }
     },
     "confirm": {

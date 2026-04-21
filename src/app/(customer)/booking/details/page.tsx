@@ -2,17 +2,20 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, User, Mail, Phone, Minus, Plus, AlertCircle, Info, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, User, Mail, Phone, AlertCircle, Info } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 import { formatPhoneUS } from '@/lib/phone-mask'
+import { GuestRangePicker, type GuestRangeValue } from '@/components/customer/GuestRangePicker'
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
   return r.json()
 })
+
+const SELF_SERVE_MAX_GUESTS = 30
 
 export default function BookingDetailsPage() {
   const t = useTranslations('booking.details')
@@ -21,14 +24,12 @@ export default function BookingDetailsPage() {
   const { data: session } = useSession()
   const booking = useBooking()
 
-  // Redirect back if no date selected (only after hydration)
   useEffect(() => {
     if (booking.hydrated && !booking.selectedDate) {
       router.replace('/booking/date')
     }
   }, [booking.hydrated, booking.selectedDate, router])
 
-  // Form state (pre-filled from session and/or booking context)
   const [contactName, setContactName] = useState(
     booking.contactName || session?.user?.name || ''
   )
@@ -36,29 +37,19 @@ export default function BookingDetailsPage() {
     booking.contactEmail || session?.user?.email || ''
   )
   const [contactPhone, setContactPhone] = useState(booking.contactPhone || '')
-  const [guestCount, setGuestCount] = useState(booking.guestCount || 1)
+  const [guests, setGuests] = useState<GuestRangeValue | null>(() =>
+    booking.guestCount > 0 ? { min: booking.guestCount, max: booking.guestCount } : null,
+  )
   const [specialRequests, setSpecialRequests] = useState(booking.specialRequests || '')
 
-  // Track which fields the user has interacted with (for inline validation)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
-  // Dismiss state for the capacity notice
-  const [capacityNoticeDismissed, setCapacityNoticeDismissed] = useState(false)
-
-  // Phase 5.2: >30 gate. Self-serve only handles single-yurt bookings
-  // up to 30 guests; larger groups need admin help, so we stop here and
-  // offer the inquiry path with the collected fields pre-filled.
-  const [showOverGuestModal, setShowOverGuestModal] = useState(false)
-  const OVER_GUEST_THRESHOLD = 30
-
-  // Fetch user profile for phone auto-fill
   const { data: userProfile } = useSWR(
     session?.user ? '/api/users/me' : null,
     fetcher,
     { revalidateOnFocus: false }
   )
 
-  // Update from session + profile when loaded
   useEffect(() => {
     if (session?.user) {
       if (!contactName && session.user.name) setContactName(session.user.name)
@@ -78,20 +69,25 @@ export default function BookingDetailsPage() {
     revalidateOnFocus: false,
   })
 
-  // Fetch yurts to determine guest capacity range
   const { data: yurts } = useSWR('/api/yurts', fetcher, {
     revalidateOnFocus: false,
   })
 
   const activeYurts = Array.isArray(yurts) ? yurts.filter((y: { status: string; capacity: number }) => y.status === 'ACTIVE') : []
-  const maxGuests = settings?.max_guest_count
+  const maxSingleYurt = settings?.max_guest_count
     ? Number(settings.max_guest_count)
     : activeYurts.length > 0
       ? Math.max(...activeYurts.map((y: { capacity: number }) => y.capacity))
       : 15
-  const minRecommendedGuests = settings?.guest_warning_threshold ? Number(settings.guest_warning_threshold) : 6
 
-  // Validation errors
+  // Whether the current selection will be routed to the inquiry flow:
+  // any range (min!=max) OR a single value above the self-serve cap.
+  const goingToInquiry = useMemo(() => {
+    if (!guests) return false
+    if (guests.min !== guests.max) return true
+    return guests.max > SELF_SERVE_MAX_GUESTS
+  }, [guests])
+
   const errors = useMemo(() => {
     const e: Record<string, string | null> = {}
     e.contactName = contactName.trim().length === 0 ? t('validation.nameRequired') : null
@@ -101,13 +97,9 @@ export default function BookingDetailsPage() {
         ? t('validation.emailInvalid')
         : null
     e.contactPhone = contactPhone.trim().length === 0 ? t('validation.phoneRequired') : null
-    e.guestCount = guestCount < 1
-      ? t('validation.guestMin')
-      : guestCount > maxGuests
-        ? t('validation.guestMax', { max: maxGuests })
-        : null
+    e.guests = guests == null ? t('validation.guestsRequired') : null
     return e
-  }, [contactName, contactEmail, contactPhone, guestCount, maxGuests])
+  }, [contactName, contactEmail, contactPhone, guests, t])
 
   const isValid = useMemo(() => {
     return Object.values(errors).every((e) => e === null)
@@ -118,39 +110,32 @@ export default function BookingDetailsPage() {
   }
 
   function handleNext() {
-    // Mark all fields as touched to show any remaining errors
-    setTouched({ contactName: true, contactEmail: true, contactPhone: true, guestCount: true })
-    if (!isValid) return
-    if (guestCount > OVER_GUEST_THRESHOLD) {
-      setShowOverGuestModal(true)
+    setTouched({ contactName: true, contactEmail: true, contactPhone: true, guests: true })
+    if (!isValid || !guests) return
+
+    if (goingToInquiry) {
+      // Hand the user off to the inquiry form, pre-filled with what they
+      // already chose. The inquiry form is the right place to double-check
+      // the approximate count before we commit to the inquiry flow.
+      const qs = new URLSearchParams()
+      if (booking.selectedDate) qs.set('date', booking.selectedDate)
+      qs.set('guestCountMin', String(guests.min))
+      qs.set('guestCountMax', String(guests.max))
+      if (specialRequests) qs.set('note', specialRequests)
+      router.push(`/inquiries/new?${qs.toString()}`)
       return
     }
+
     booking.setDetails({
       contactName: contactName.trim(),
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
       specialRequests: specialRequests.trim(),
-      guestCount,
+      guestCount: guests.min,
     })
     router.push('/booking/confirm')
   }
 
-  function goToInquiry() {
-    // Carry over everything the user already typed so they don't
-    // re-fill the inquiry form. The inquiry page reads these prefill
-    // params where they make sense (guestCount, date).
-    const qs = new URLSearchParams({
-      guestCount: String(guestCount),
-      ...(booking.selectedDate ? { date: booking.selectedDate } : {}),
-      ...(contactName ? { name: contactName } : {}),
-      ...(contactEmail ? { email: contactEmail } : {}),
-      ...(contactPhone ? { phone: contactPhone } : {}),
-      ...(specialRequests ? { note: specialRequests } : {}),
-    })
-    router.push(`/inquiries/new?${qs.toString()}`)
-  }
-
-  // Show spinner while hydrating from sessionStorage
   if (!booking.hydrated) {
     return (
       <div className="flex-1 flex items-center justify-center py-12">
@@ -161,9 +146,13 @@ export default function BookingDetailsPage() {
 
   if (!booking.selectedDate) return null
 
+  const inquiryReasonKey =
+    guests && guests.max > SELF_SERVE_MAX_GUESTS
+      ? 'inquiryBanner.reasonOverCap'
+      : 'inquiryBanner.reasonRange'
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Top Bar */}
       <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push('/booking/date')}
@@ -175,16 +164,13 @@ export default function BookingDetailsPage() {
         <span className="text-[15px] text-[#6B6157]">{t('stepLabel')}</span>
       </div>
 
-      {/* Page Title */}
       <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">{t('title')}</h1>
       </div>
 
-      {/* Form Container — scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
         <div className="max-w-[560px] mx-auto flex flex-col gap-5">
 
-          {/* Event Time Notice */}
           <div className="bg-[#E8ECE4] rounded-xl p-3.5 flex items-start gap-2.5">
             <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
             <div className="text-sm text-[#3D4A35] leading-relaxed">
@@ -193,7 +179,6 @@ export default function BookingDetailsPage() {
             </div>
           </div>
 
-          {/* Contact Name */}
           <div className="flex flex-col gap-1">
             <div className="relative">
               <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
@@ -217,7 +202,6 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
-          {/* Email */}
           <div className="flex flex-col gap-1">
             <div className="relative">
               <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
@@ -241,7 +225,6 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
-          {/* Phone */}
           <div className="flex flex-col gap-1">
             <div className="relative">
               <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6157] pointer-events-none" />
@@ -265,75 +248,29 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
-          {/* Guest Counter */}
-          <div className="rounded-xl border border-[#E8ECE4] p-4">
-            <label className="text-sm font-medium text-[#6B6157]">{t('numberOfGuests')}</label>
-            <div className="flex items-center justify-center gap-3 mt-3">
-              <button
-                onClick={() => setGuestCount(Math.max(1, guestCount - 10))}
-                disabled={guestCount <= 1}
-                aria-label="Decrease guest count by 10"
-                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors text-xs font-semibold ${
-                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
-                }`}
-              >
-                -10
-              </button>
-              <button
-                onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                disabled={guestCount <= 1}
-                aria-label="Decrease guest count"
-                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount <= 1 ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
-                }`}
-              >
-                <Minus size={18} />
-              </button>
-              <span className="text-xl font-medium text-[#1A1208] w-10 text-center">{guestCount}</span>
-              <button
-                onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
-                disabled={guestCount >= maxGuests}
-                aria-label="Increase guest count"
-                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors ${
-                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
-                }`}
-              >
-                <Plus size={18} />
-              </button>
-              <button
-                onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 10))}
-                disabled={guestCount >= maxGuests}
-                aria-label="Increase guest count by 10"
-                className={`w-10 h-10 rounded-full border border-[#E8ECE4] flex items-center justify-center bg-transparent transition-colors text-xs font-semibold ${
-                  guestCount >= maxGuests ? 'cursor-not-allowed text-[#6B6157]/70' : 'cursor-pointer text-[#1A1208] hover:bg-[#E8ECE4]/50'
-                }`}
-              >
-                +10
-              </button>
-            </div>
-            <p className="text-[15px] text-[#6B6157] text-center mt-2">
-              {t('maxGuestsLabel', { max: maxGuests })}
-            </p>
-          </div>
-
-          {/* Capacity Notice - shown when below recommended minimum and not dismissed */}
-          {guestCount < minRecommendedGuests && !capacityNoticeDismissed && (
-            <div className="bg-[#E8ECE4] rounded-xl p-3 flex items-start gap-2.5">
-              <Info size={16} className="text-[#6B7F5E] shrink-0 mt-0.5" />
-              <p className="text-sm text-[#3D4A35] leading-relaxed flex-1">
-                {t('capacityNotice', { min: minRecommendedGuests, max: maxGuests })}
-              </p>
-              <button
-                onClick={() => setCapacityNoticeDismissed(true)}
-                aria-label="Dismiss notice"
-                className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#D4DDD0] transition-colors border-none bg-transparent cursor-pointer"
-              >
-                <X size={14} className="text-[#6B7F5E]" />
-              </button>
+          <GuestRangePicker
+            value={guests}
+            onChange={setGuests}
+            softThreshold={SELF_SERVE_MAX_GUESTS}
+            presets={[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, Math.max(71, maxSingleYurt)]}
+          />
+          {touched.guests && errors.guests && (
+            <div className="flex items-center gap-1.5 text-[#C4453A] -mt-3">
+              <AlertCircle size={14} className="shrink-0" />
+              <span className="text-sm">{errors.guests}</span>
             </div>
           )}
 
-          {/* Special Requests */}
+          {goingToInquiry && (
+            <div className="bg-[#FDF5E6] border border-[#E5D8B8] rounded-xl p-3.5 flex items-start gap-2.5">
+              <Info size={16} className="text-[#8B6914] shrink-0 mt-0.5" />
+              <div className="text-sm text-[#5A4A1A] leading-relaxed">
+                <p className="font-semibold">{t('inquiryBanner.title')}</p>
+                <p className="mt-1">{t(inquiryReasonKey)}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1">
             <textarea
               value={specialRequests}
@@ -347,55 +284,20 @@ export default function BookingDetailsPage() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
       <div className="shrink-0 p-4 pb-6 bg-[#F8F7F4]">
         <div className="max-w-[560px] mx-auto">
           <button
             onClick={handleNext}
             disabled={!isValid}
-            aria-label={!isValid ? 'Please complete required fields' : 'Continue to confirmation'}
+            aria-label={!isValid ? 'Please complete required fields' : goingToInquiry ? t('continueAsInquiry') : 'Continue to confirmation'}
             className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
               isValid
                 ? 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
                 : 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
             }`}
           >
-            {tCommon('next')}
+            {goingToInquiry ? t('continueAsInquiry') : tCommon('next')}
             <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
-
-      {showOverGuestModal && <OverGuestModal onInquiry={goToInquiry} onRevise={() => setShowOverGuestModal(false)} />}
-    </div>
-  )
-}
-
-function OverGuestModal({
-  onInquiry,
-  onRevise,
-}: {
-  onInquiry: () => void
-  onRevise: () => void
-}) {
-  const t = useTranslations('bookingStart.overGuestModal')
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 flex flex-col gap-4">
-        <h2 className="text-lg font-serif font-semibold text-[#2C2416]">{t('title')}</h2>
-        <p className="text-sm text-[#6B6157]">{t('body')}</p>
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={onInquiry}
-            className="h-11 rounded-full bg-[#6B7F5E] text-white font-semibold hover:bg-[#5A6E4E]"
-          >
-            {t('inquire')}
-          </button>
-          <button
-            onClick={onRevise}
-            className="h-11 rounded-full border border-[#E8ECE4] text-[#2C2416] hover:bg-[#F2EDE6]"
-          >
-            {t('revise')}
           </button>
         </div>
       </div>
