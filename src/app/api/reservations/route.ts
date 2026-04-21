@@ -44,6 +44,7 @@ const createReservationBodySchema = z.object({
 
 const adminCreateReservationSchema = z.object({
   yurtId: z.string().min(1).optional(),
+  yurtIds: z.array(z.string().min(1)).min(1).optional(),
   date: z.string().min(1, "date is required").refine(
     (val) => !isNaN(Date.parse(val)),
     { message: "Invalid date format" }
@@ -148,36 +149,68 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { yurtId, date, guestCount, specialRequests, guestName, holdAssignment } = parsed.data;
+      const { date, guestCount, specialRequests, guestName, holdAssignment } = parsed.data;
+      // Normalize single/multi yurt input: yurtIds wins, yurtId is a
+      // single-element shorthand kept for backward compatibility with
+      // pre-phase-2 clients.
+      const rawYurtIds = parsed.data.yurtIds ?? (parsed.data.yurtId ? [parsed.data.yurtId] : []);
+      const yurtIds = Array.from(new Set(rawYurtIds));
       const guestEmail = (parsed.data.guestEmail || '').trim();
       const guestPhone = (parsed.data.guestPhone || '').trim();
       const guestWechatId = (parsed.data.guestWechatId || '').trim();
       const reservationDate = new Date(date);
 
-      // Validate yurt if specified
-      if (yurtId) {
-        const yurt = await prisma.yurt.findUnique({ where: { id: yurtId } });
-        if (!yurt || yurt.status !== "ACTIVE") {
-          return NextResponse.json({ error: "Yurt not available" }, { status: 400 });
+      if (yurtIds.length > 0) {
+        // Multi- (or single-) yurt specific assignment. Validate each
+        // in parallel: exists, ACTIVE, capacity (per-yurt), conflict-
+        // free, not closed on this date.
+        const yurts = await prisma.yurt.findMany({
+          where: { id: { in: yurtIds } },
+          select: { id: true, name: true, capacity: true, status: true },
+        });
+        if (yurts.length !== yurtIds.length) {
+          return NextResponse.json({ error: "One or more yurts not found" }, { status: 400 });
         }
-        if (guestCount > yurt.capacity) {
-          return NextResponse.json({ error: "Guest count exceeds yurt capacity" }, { status: 400 });
+        for (const y of yurts) {
+          if (y.status !== "ACTIVE") {
+            return NextResponse.json({ error: `Yurt ${y.name} is not active` }, { status: 400 });
+          }
         }
-        const existing = await prisma.reservation.findFirst({
+        // Total capacity check — multi-yurt pools capacity across rooms.
+        const totalCapacity = yurts.reduce((sum, y) => sum + y.capacity, 0);
+        if (guestCount > totalCapacity) {
+          return NextResponse.json(
+            { error: "Guest count exceeds combined capacity of selected yurts" },
+            { status: 400 },
+          );
+        }
+        const conflicts = await prisma.reservation.findMany({
           where: {
-            yurtId,
+            yurtId: { in: yurtIds },
             date: reservationDate,
             status: { notIn: ["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"] },
           },
+          select: { yurtId: true },
         });
-        if (existing) {
-          return NextResponse.json({ error: "This yurt is already booked for this date" }, { status: 409 });
+        if (conflicts.length) {
+          return NextResponse.json(
+            { error: "One or more yurts are already booked for this date" },
+            { status: 409 },
+          );
         }
-        const availability = await prisma.yurtAvailability.findUnique({
-          where: { yurtId_date: { yurtId, date: reservationDate } },
+        const closures = await prisma.yurtAvailability.findMany({
+          where: {
+            yurtId: { in: yurtIds },
+            date: reservationDate,
+            isOpen: false,
+          },
+          select: { yurtId: true },
         });
-        if (availability && !availability.isOpen) {
-          return NextResponse.json({ error: "This date is closed for this yurt" }, { status: 400 });
+        if (closures.length) {
+          return NextResponse.json(
+            { error: "One or more yurts are closed on this date" },
+            { status: 400 },
+          );
         }
       } else {
         // No yurt specified — run simulation to check capacity
@@ -251,7 +284,12 @@ export async function POST(req: NextRequest) {
       const systemDepositAmount = adminSettingsMap.deposit_amount
         ? parseFloat(adminSettingsMap.deposit_amount)
         : 300;
-      const depositAmount = parsed.data.customDeposit ?? systemDepositAmount;
+      // Deposit scales with the number of packages (yurts). Single-yurt
+      // and hold-without-assignment both charge the base deposit;
+      // multi-yurt multiplies. customDeposit always overrides.
+      const packageCount = Math.max(yurtIds.length, 1);
+      const depositAmount =
+        parsed.data.customDeposit ?? systemDepositAmount * packageCount;
       const skipPayment = depositAmount === 0;
       const adminDeadlineHours = resolveAdminDeadlineHours(
         adminSettingsMap.admin_deposit_deadline_hours,
@@ -279,29 +317,59 @@ export async function POST(req: NextRequest) {
       });
 
       const confirmationCode = await generateConfirmationCode();
-      const reservation = await prisma.reservation.create({
-        data: {
-          confirmationCode,
-          userId: customer.id,
-          yurtId: yurtId || null,
-          date: reservationDate,
-          guestCount,
-          specialRequests: specialRequests || null,
-          holdByAdmin: !isPastDate,
-          depositAmount,
-          status: isPastDate ? "COMPLETED" : (skipPayment ? "CONFIRMED" : "PENDING_PAYMENT"),
-          depositStatus: (isPastDate || skipPayment) ? "CONFIRMED" : "UNPAID",
-          depositConfirmedAt: (isPastDate || skipPayment) ? new Date() : null,
-          paymentDeadline: adminPaymentDeadline,
-          ...(yurtId ? { yurtAssignedAt: new Date() } : {}),
-        },
-        include: {
-          user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
-          yurt: { select: { id: true, name: true, capacity: true } },
-        },
-      });
+      // The "main" yurt on Reservation.yurtId is the first of the
+      // selected list — old readers that ignore ReservationYurt[] still
+      // see a sensible single-yurt value.
+      const primaryYurtId = yurtIds[0] ?? null;
+      const reservation = await prisma.$transaction(async (tx) => {
+        const created = await tx.reservation.create({
+          data: {
+            confirmationCode,
+            userId: customer.id,
+            yurtId: primaryYurtId,
+            date: reservationDate,
+            guestCount,
+            specialRequests: specialRequests || null,
+            holdByAdmin: !isPastDate,
+            depositAmount,
+            status: isPastDate ? "COMPLETED" : (skipPayment ? "CONFIRMED" : "PENDING_PAYMENT"),
+            depositStatus: (isPastDate || skipPayment) ? "CONFIRMED" : "UNPAID",
+            depositConfirmedAt: (isPastDate || skipPayment) ? new Date() : null,
+            paymentDeadline: adminPaymentDeadline,
+            packageCount: yurtIds.length || null,
+            ...(primaryYurtId ? { yurtAssignedAt: new Date() } : {}),
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
+            yurt: { select: { id: true, name: true, capacity: true } },
+          },
+        });
 
-      if (yurtId) await syncReservationYurt(prisma, reservation.id, yurtId);
+        // One ReservationYurt + one empty DRAFT Order per selected
+        // yurt. Customers see these as "packages" in phase 2.8 and can
+        // pre-order into each tab independently.
+        for (let i = 0; i < yurtIds.length; i++) {
+          const yurtId = yurtIds[i];
+          const ry = await tx.reservationYurt.create({
+            data: {
+              reservationId: created.id,
+              yurtId,
+              sortOrder: i,
+            },
+          });
+          await tx.order.create({
+            data: {
+              reservationId: created.id,
+              reservationYurtId: ry.id,
+              status: "DRAFT",
+              notes: null,
+              estimatedTotal: 0,
+            },
+          });
+        }
+
+        return created;
+      });
 
       // Log activity
       await prisma.activityLog.create({
@@ -343,12 +411,12 @@ export async function POST(req: NextRequest) {
       }
 
       // Auto-assign yurt if not manually specified and not held
-      if (!yurtId && !holdAssignment) {
+      if (yurtIds.length === 0 && !holdAssignment) {
         await tryDeterministicAssignment(reservationDate);
       }
 
       // Re-fetch to include updated yurt assignment
-      const finalReservation = !yurtId && !holdAssignment
+      const finalReservation = yurtIds.length === 0 && !holdAssignment
         ? await prisma.reservation.findUnique({
             where: { id: reservation.id },
             include: {

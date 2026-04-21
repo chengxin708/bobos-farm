@@ -1680,7 +1680,10 @@
       "yurtOccupied": "This room is already booked on this date",
       "noRoomAvailable": "No available room can accommodate this many guests on this date",
       "holdNoAssign": "Hold (no auto-assign)",
-      "emailPlaceholder": "guest@example.com"
+      "emailPlaceholder": "guest@example.com",
+      "specificYurts": "Assign specific yurt(s)",
+      "selectAtLeastOneYurt": "Select at least one yurt, or switch to Auto-assign / Hold.",
+      "multiDepositHint": "Deposit: $300 × {count} = ${total}"
     },
     "reports": {
       "title": "Reports & Analytics",

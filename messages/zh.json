@@ -1680,7 +1680,10 @@
       "yurtOccupied": "该房间在此日期已被预订",
       "noRoomAvailable": "该日期没有可容纳此人数的空闲房间",
       "holdNoAssign": "暂不分配（Hold）",
-      "emailPlaceholder": "guest@example.com"
+      "emailPlaceholder": "guest@example.com",
+      "specificYurts": "指定蒙古包",
+      "selectAtLeastOneYurt": "请至少选择一个蒙古包，或切换到自动分配 / Hold。",
+      "multiDepositHint": "押金：$300 × {count} = ${total}"
     },
     "reports": {
       "title": "数据报告",

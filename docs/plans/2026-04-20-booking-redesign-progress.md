@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（12/40 commit）
+**Status:** 进行中（14/40 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 2 commit 2.6 (`feat(booking-redesign): multi-yurt selector for admin proxy bookings`)
+**下一步**: Phase 2 commit 2.8 (`feat(booking-redesign): reservation detail renders per-package order tabs`)
 
 ---
 
@@ -43,8 +43,8 @@
 - [x] 2.3 `feat(booking-redesign): extend-hold button for admin proxy deadlines`
 - [x] 2.4 `feat(booking-redesign): release-hold action distinct from customer cancel`
 - [x] 2.5 `feat(booking-redesign): overdue admin holds filter in reservations list`
-- [ ] 2.6 `feat(booking-redesign): multi-yurt selector for admin proxy bookings`
-- [ ] 2.7 `feat(booking-redesign): admin multi-yurt reservation creates N orders`
+- [x] 2.6 `feat(booking-redesign): multi-yurt selector for admin proxy bookings`
+- [x] 2.7 `feat(booking-redesign): admin multi-yurt reservation creates N orders`
 - [ ] 2.8 `feat(booking-redesign): reservation detail renders per-package order tabs`
 
 ---

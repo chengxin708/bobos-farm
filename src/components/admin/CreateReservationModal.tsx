@@ -43,7 +43,9 @@ export default function CreateReservationModal({
   const [guestPhone, setGuestPhone] = useState('')
   const [guestWechatId, setGuestWechatId] = useState('')
   const [date, setDate] = useState(defaultDate || '')
-  const [yurtId, setYurtId] = useState(defaultYurtId || '')
+  type YurtMode = 'auto' | 'specific' | 'hold'
+  const [yurtMode, setYurtMode] = useState<YurtMode>(defaultYurtId ? 'specific' : 'auto')
+  const [yurtIds, setYurtIds] = useState<string[]>(defaultYurtId ? [defaultYurtId] : [])
   const [guestCount, setGuestCount] = useState(1)
   const [specialRequests, setSpecialRequests] = useState('')
   const [customDeposit, setCustomDeposit] = useState('')
@@ -72,11 +74,14 @@ export default function CreateReservationModal({
   const availableYurts = activeYurts.filter(y => !occupiedYurtIds.has(y.id))
   const fittingYurts = availableYurts.filter(y => y.capacity >= guestCount)
 
-  // Capacity warnings
-  const selectedYurt = activeYurts.find(y => y.id === yurtId)
-  const capacityExceeded = selectedYurt && guestCount > selectedYurt.capacity
-  const selectedYurtOccupied = selectedYurt && occupiedYurtIds.has(selectedYurt.id)
-  const noRoomAvailable = date && guestCount > 0 && !yurtId && dateReservations && fittingYurts.length === 0
+  // Capacity warnings — pool capacity across all selected yurts
+  const selectedYurts = activeYurts.filter(y => yurtIds.includes(y.id))
+  const combinedCapacity = selectedYurts.reduce((s, y) => s + y.capacity, 0)
+  const capacityExceeded =
+    yurtMode === 'specific' && selectedYurts.length > 0 && guestCount > combinedCapacity
+  const selectedYurtOccupied = selectedYurts.some(y => occupiedYurtIds.has(y.id))
+  const noRoomAvailable =
+    date && guestCount > 0 && yurtMode === 'auto' && dateReservations && fittingYurts.length === 0
 
   // Reset form when opened
   useEffect(() => {
@@ -86,7 +91,8 @@ export default function CreateReservationModal({
       setGuestPhone('')
       setGuestWechatId('')
       setDate(defaultDate || '')
-      setYurtId(defaultYurtId || '')
+      setYurtMode(defaultYurtId ? 'specific' : 'auto')
+      setYurtIds(defaultYurtId ? [defaultYurtId] : [])
       setGuestCount(1)
       setSpecialRequests('')
       setCustomDeposit('')
@@ -113,6 +119,10 @@ export default function CreateReservationModal({
       setError(t('atLeastOneContactRequired'))
       return
     }
+    if (yurtMode === 'specific' && yurtIds.length === 0) {
+      setError(t('selectAtLeastOneYurt'))
+      return
+    }
 
     setSubmitting(true)
 
@@ -126,8 +136,8 @@ export default function CreateReservationModal({
           guestPhone,
           guestWechatId: guestWechatId || undefined,
           date,
-          yurtId: yurtId === '__hold__' ? undefined : (yurtId || undefined),
-          holdAssignment: yurtId === '__hold__' ? true : undefined,
+          ...(yurtMode === 'specific' ? { yurtIds } : {}),
+          holdAssignment: yurtMode === 'hold' ? true : undefined,
           guestCount,
           specialRequests: specialRequests || undefined,
           ...(isAdmin && customDeposit !== '' ? { customDeposit: Number(customDeposit) } : {}),
@@ -321,42 +331,72 @@ export default function CreateReservationModal({
               />
             </div>
 
-            {/* Yurt Select */}
-            <div className="flex flex-col gap-1.5">
+            {/* Yurt assignment — mode radio + checkbox list */}
+            <div className="flex flex-col gap-2">
               <label className="text-[13px] font-semibold" style={{ color: '#2C2416' }}>
                 {t('selectYurt')}
               </label>
-              <select
-                value={yurtId}
-                onChange={(e) => setYurtId(e.target.value)}
-                className="h-11 px-3 rounded-lg border outline-none transition-all duration-150 bg-white"
-                style={{ borderColor: '#E8E2D9', color: yurtId ? '#2C2416' : '#8A7E6B' }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#6B7F5E'
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(107,127,94,0.15)'
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = '#E8E2D9'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                <option value="">{t('autoAssign')}</option>
-                <option value="__hold__">{t('holdNoAssign')}</option>
-                {activeYurts.map(y => {
-                  const isOccupied = occupiedYurtIds.has(y.id)
-                  const tooSmall = guestCount > y.capacity
-                  return (
-                    <option key={y.id} value={y.id} disabled={isOccupied}>
-                      {t('yurtCapacity', { name: `${y.name}${y.alias ? ` (${y.alias})` : ''}`, capacity: y.capacity })}
-                      {isOccupied ? ` — ${t('occupied')}` : ''}
-                      {tooSmall && !isOccupied ? ` — ${t('tooSmall')}` : ''}
-                    </option>
-                  )
-                })}
-              </select>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  { mode: 'auto' as const, label: t('autoAssign') },
+                  { mode: 'specific' as const, label: t('specificYurts') },
+                  { mode: 'hold' as const, label: t('holdNoAssign') },
+                ].map(opt => (
+                  <label key={opt.mode} className="flex items-center gap-2 text-sm text-[#2C2416] cursor-pointer">
+                    <input
+                      type="radio"
+                      name="yurtMode"
+                      checked={yurtMode === opt.mode}
+                      onChange={() => {
+                        setYurtMode(opt.mode)
+                        if (opt.mode !== 'specific') setYurtIds([])
+                      }}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              {yurtMode === 'specific' && (
+                <div className="flex flex-col gap-1 mt-1 pl-2 border-l-2 border-[#E8E2D9]">
+                  {activeYurts.map(y => {
+                    const isOccupied = occupiedYurtIds.has(y.id)
+                    const checked = yurtIds.includes(y.id)
+                    return (
+                      <label
+                        key={y.id}
+                        className={`flex items-center gap-2 text-sm py-1 ${isOccupied ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        style={{ color: '#2C2416' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={isOccupied}
+                          onChange={(e) => {
+                            setYurtIds(prev =>
+                              e.target.checked ? [...prev, y.id] : prev.filter(id => id !== y.id),
+                            )
+                          }}
+                        />
+                        <span className="flex-1">
+                          {t('yurtCapacity', { name: `${y.name}${y.alias ? ` (${y.alias})` : ''}`, capacity: y.capacity })}
+                          {isOccupied ? ` — ${t('occupied')}` : ''}
+                        </span>
+                      </label>
+                    )
+                  })}
+                  {yurtIds.length > 0 && (
+                    <p className="text-xs mt-2 text-[#6B7F5E] font-medium">
+                      {t('multiDepositHint', {
+                        count: yurtIds.length,
+                        total: yurtIds.length * 300,
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
               {capacityExceeded && (
                 <p className="text-xs mt-1" style={{ color: '#DC3545' }}>
-                  ⚠️ {t('capacityWarning', { guests: guestCount, capacity: selectedYurt!.capacity })}
+                  ⚠️ {t('capacityWarning', { guests: guestCount, capacity: combinedCapacity })}
                 </p>
               )}
               {selectedYurtOccupied && (
