@@ -43,11 +43,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const cookieName = request.nextUrl.protocol === "https:"
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
+
   if (pathname.startsWith("/admin")) {
-    // In production (HTTPS), cookie name has __Secure- prefix
-    const cookieName = request.nextUrl.protocol === "https:"
-      ? "__Secure-authjs.session-token"
-      : "authjs.session-token";
     const token = await getToken({
       req: request,
       secret: process.env.AUTH_SECRET,
@@ -62,6 +62,26 @@ export async function middleware(request: NextRequest) {
 
     if (token.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
+  // ── Protect /booking/* routes ── (phase 3.1)
+  // The new booking flow assumes a logged-in customer so that claim,
+  // merge and inquiry routing all work consistently. Anonymous users
+  // get bounced to login with the original destination preserved.
+  if (pathname.startsWith("/booking")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+      cookieName,
+    });
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set(
+        "callbackUrl",
+        pathname + request.nextUrl.search,
+      );
+      return NextResponse.redirect(loginUrl);
     }
   }
 
