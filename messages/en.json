@@ -249,7 +249,8 @@
       "continueAsInquiry": "Continue as inquiry",
       "inquiryBanner": {
         "title": "We'll handle this as an inquiry",
-        "reasonOverCap": "Because your group is over 30 guests, we'll follow up by message within a day to finalize package and pricing.",
+        "reasonOverCap": "Because your group is over {cap} guests, we'll follow up by message within a day to finalize package and pricing.",
+        "reasonOverCapDueToBooked": "Our larger yurts are already booked for this date, so our remaining capacity tops out at {cap}. We'll follow up by message within a day to work out the options for a bigger group.",
         "reasonRange": "Because your guest count is approximate, we'll follow up by message within a day to confirm the final number before payment."
       },
       "validation": {

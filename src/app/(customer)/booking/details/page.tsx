@@ -15,7 +15,22 @@ const fetcher = (url: string) => fetch(url).then(r => {
   return r.json()
 })
 
-const SELF_SERVE_MAX_GUESTS = 30
+// Fallback cap until per-date yurt availability has loaded. Once the
+// /api/availability/for-date call resolves, the real cap replaces this.
+const DEFAULT_SELF_SERVE_CAP = 30
+
+interface YurtAvailability {
+  id: string
+  name: string
+  capacity: number
+  isAvailable: boolean
+}
+
+interface ForDateResponse {
+  date: string
+  yurts: YurtAvailability[]
+  maxAvailableCapacity: number
+}
 
 export default function BookingDetailsPage() {
   const t = useTranslations('booking.details')
@@ -65,13 +80,32 @@ export default function BookingDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile])
 
+  // Pull per-date yurt availability so the guest cap reflects which of
+  // the farm's yurts are still free for the selected date.
+  const { data: availability } = useSWR<ForDateResponse>(
+    booking.selectedDate ? `/api/availability/for-date?date=${booking.selectedDate}` : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  )
+
+  const selfServeCap = availability?.maxAvailableCapacity ?? DEFAULT_SELF_SERVE_CAP
+  // Are any yurts already booked/closed on this date? If so, the cap may
+  // have shrunk from the venue's overall max and the inquiry banner should
+  // explain that the reason is availability, not a policy choice.
+  const largerYurtsBooked = useMemo(() => {
+    if (!availability) return false
+    if (availability.yurts.length === 0) return false
+    const venueMax = availability.yurts.reduce((acc, y) => Math.max(acc, y.capacity), 0)
+    return selfServeCap < venueMax
+  }, [availability, selfServeCap])
+
   // Whether the current selection will be routed to the inquiry flow:
   // any range (min!=max) OR a single value above the self-serve cap.
   const goingToInquiry = useMemo(() => {
     if (!guests) return false
     if (guests.min !== guests.max) return true
-    return guests.max > SELF_SERVE_MAX_GUESTS
-  }, [guests])
+    return guests.max > selfServeCap
+  }, [guests, selfServeCap])
 
   const errors = useMemo(() => {
     const e: Record<string, string | null> = {}
@@ -131,10 +165,13 @@ export default function BookingDetailsPage() {
 
   if (!booking.selectedDate) return null
 
-  const inquiryReasonKey =
-    guests && guests.max > SELF_SERVE_MAX_GUESTS
-      ? 'inquiryBanner.reasonOverCap'
-      : 'inquiryBanner.reasonRange'
+  const isRange = guests != null && guests.min !== guests.max
+  const isOverCap = guests != null && !isRange && guests.max > selfServeCap
+  const inquiryReasonKey = isRange
+    ? 'inquiryBanner.reasonRange'
+    : isOverCap && largerYurtsBooked
+      ? 'inquiryBanner.reasonOverCapDueToBooked'
+      : 'inquiryBanner.reasonOverCap'
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -236,7 +273,7 @@ export default function BookingDetailsPage() {
           <GuestRangePicker
             value={guests}
             onChange={setGuests}
-            softThreshold={SELF_SERVE_MAX_GUESTS}
+            softThreshold={selfServeCap}
           />
           {touched.guests && errors.guests && (
             <div className="flex items-center gap-1.5 text-[#C4453A] -mt-3">
@@ -250,7 +287,7 @@ export default function BookingDetailsPage() {
               <Info size={16} className="text-[#8B6914] shrink-0 mt-0.5" />
               <div className="text-sm text-[#5A4A1A] leading-relaxed">
                 <p className="font-semibold">{t('inquiryBanner.title')}</p>
-                <p className="mt-1">{t(inquiryReasonKey)}</p>
+                <p className="mt-1">{t(inquiryReasonKey, { cap: selfServeCap })}</p>
               </div>
             </div>
           )}

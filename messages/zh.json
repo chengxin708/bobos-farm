@@ -249,7 +249,8 @@
       "continueAsInquiry": "提交为咨询单",
       "inquiryBanner": {
         "title": "将作为咨询单处理",
-        "reasonOverCap": "因为您的团队超过 30 人，我们会在一天内发消息确认套餐和价格。",
+        "reasonOverCap": "因为您的团队超过 {cap} 人，我们会在一天内发消息确认套餐和价格。",
+        "reasonOverCapDueToBooked": "当天的大包已被预定，剩余最大容量为 {cap} 人。我们会在一天内发消息和您商量更大团队的方案。",
         "reasonRange": "因为您的人数是一个范围，我们会在一天内发消息和您确认准确人数后再付款。"
       },
       "validation": {
