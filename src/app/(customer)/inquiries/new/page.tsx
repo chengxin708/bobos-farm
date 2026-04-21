@@ -170,11 +170,7 @@ function InquiryNewPage() {
             />
           </div>
 
-          <GuestRangePicker
-            value={guests}
-            onChange={setGuests}
-            softThreshold={30}
-          />
+          <GuestRangePicker value={guests} onChange={setGuests} />
 
           <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
             {t("note")}

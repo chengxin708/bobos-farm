@@ -1887,10 +1887,10 @@
   "guestRangePicker": {
     "title": "Number of guests",
     "emptyLabel": "Pick a guest count",
-    "singleLabel": "About {count} guests",
+    "singleLabel": "{count} guests",
     "rangeLabel": "{min} – {max} guests",
-    "helpText": "Tap a number for an approximate count, or tap two numbers for a range.",
-    "helpSingle": "Tap another number to pick a range.",
+    "helpText": "Tap a number to set your guest count, or tap two numbers to submit a range as an inquiry.",
+    "helpSingle": "Actual attendance on the day must be at or below this number. Tap another number to submit a range instead.",
     "overThresholdHint": "Groups over {threshold} are handled as an inquiry — we'll follow up to finalize.",
     "reset": "Reset",
     "presetAria": "{count} guests"
