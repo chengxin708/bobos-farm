@@ -1776,5 +1776,42 @@
       "networkError": "Network error — try again",
       "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime."
     }
+  },
+  "inquiryForm": {
+    "title": "Tell us about your gathering",
+    "subtitle": "Groups above 30 or special dates are handled as inquiries — we'll reach out within a day to finalize.",
+    "preferredDate": "Preferred date",
+    "guestCountMin": "Min guests",
+    "guestCountMax": "Max guests",
+    "packageHint": "Package idea (optional)",
+    "packageHintPlaceholder": "e.g. 2",
+    "packageHintHelp": "If you already know how many yurts you'd like, let us know.",
+    "note": "Anything else?",
+    "notePlaceholder": "Occasion, dietary needs, special requests...",
+    "submit": "Submit inquiry",
+    "submitFailed": "Could not submit inquiry",
+    "networkError": "Network error — try again",
+    "submitted": {
+      "title": "Thanks — your inquiry is with us!",
+      "body": "We'll review and get back to you within a day. Check your messages for our follow-up.",
+      "viewMine": "View my inquiries",
+      "backHome": "Back to home"
+    }
+  },
+  "inquiryList": {
+    "title": "My inquiries",
+    "empty": "No inquiries yet.",
+    "newCta": "Start an inquiry",
+    "guests": "{min}–{max} guests",
+    "convertedCta": "→ Confirmation: {code}",
+    "updated": "Updated {date}",
+    "status": {
+      "PENDING": "Pending",
+      "IN_PROGRESS": "In progress",
+      "AWAITING_CUSTOMER": "Waiting on you",
+      "CONVERTED": "Converted",
+      "CLOSED": "Closed",
+      "EXPIRED": "Expired"
+    }
   }
 }

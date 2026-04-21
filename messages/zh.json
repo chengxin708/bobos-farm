@@ -1776,5 +1776,42 @@
       "networkError": "网络错误，请重试",
       "marketingOptIn": "希望收到农场最新动态邮件，可随时取消订阅。"
     }
+  },
+  "inquiryForm": {
+    "title": "告诉我们您的聚会",
+    "subtitle": "超过 30 人或特殊日期通过咨询处理——我们会在一天内联系您确认。",
+    "preferredDate": "期望日期",
+    "guestCountMin": "最少人数",
+    "guestCountMax": "最多人数",
+    "packageHint": "包数量（可选）",
+    "packageHintPlaceholder": "例如 2",
+    "packageHintHelp": "如果您已经知道需要几个蒙古包，请告诉我们。",
+    "note": "其它需求？",
+    "notePlaceholder": "场合、饮食、特殊要求...",
+    "submit": "提交咨询",
+    "submitFailed": "提交咨询失败",
+    "networkError": "网络错误，请重试",
+    "submitted": {
+      "title": "谢谢——已收到您的咨询！",
+      "body": "我们会在一天内处理并联系您，请留意消息。",
+      "viewMine": "查看我的咨询",
+      "backHome": "返回首页"
+    }
+  },
+  "inquiryList": {
+    "title": "我的咨询",
+    "empty": "暂无咨询。",
+    "newCta": "发起咨询",
+    "guests": "{min}–{max} 人",
+    "convertedCta": "→ 确认码：{code}",
+    "updated": "更新于 {date}",
+    "status": {
+      "PENDING": "待处理",
+      "IN_PROGRESS": "处理中",
+      "AWAITING_CUSTOMER": "等待您回复",
+      "CONVERTED": "已转预约",
+      "CLOSED": "已关闭",
+      "EXPIRED": "已过期"
+    }
   }
 }
