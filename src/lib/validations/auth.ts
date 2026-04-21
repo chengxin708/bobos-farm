@@ -18,6 +18,11 @@ export const registerSchema = z
     confirmPassword: z.string(),
     preferredLanguage: z.enum(["EN", "ZH"]).default("EN"),
     marketingOptIn: z.boolean().default(true),
+    // Optional inline-claim parameters. When both are present, the API
+    // will register the user and attempt to claim the named reservation
+    // in the same request so the user lands on a ready-to-use account.
+    claimCode: z.string().min(1).optional(),
+    claimToken: z.string().min(1).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

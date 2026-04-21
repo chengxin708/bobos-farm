@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（17/40 commit）
+**Status:** 进行中（18/40 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 3 commit 3.3 (`feat(booking-redesign): inline login/register on /claim with full registration fields`)
+**下一步**: Phase 3 commit 3.4 (`feat(booking-redesign): oauth cancel fallback + rate limits on auth endpoints`)
 
 ---
 
@@ -53,7 +53,7 @@
 
 - [x] 3.1 `feat(booking-redesign): require auth for /booking/* routes`
 - [x] 3.2 `fix(booking-redesign): validate callbackUrl to prevent open redirect`
-- [ ] 3.3 `feat(booking-redesign): inline login/register on /claim with full registration fields`
+- [x] 3.3 `feat(booking-redesign): inline login/register on /claim with full registration fields`
 - [ ] 3.4 `feat(booking-redesign): oauth cancel fallback + rate limits on auth endpoints`
 
 ---

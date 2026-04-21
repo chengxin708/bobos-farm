@@ -1755,6 +1755,25 @@
       "COMPLETED": "已完成",
       "CANCELLED": "已取消",
       "EXPIRED": "已过期"
+    },
+    "inlineAuth": {
+      "loginTab": "登录",
+      "registerTab": "注册账户",
+      "emailPlaceholder": "邮箱",
+      "passwordPlaceholder": "密码",
+      "confirmPasswordPlaceholder": "确认密码",
+      "namePlaceholder": "姓名",
+      "phonePlaceholder": "电话",
+      "loginCta": "登录并认领",
+      "registerCta": "注册并认领",
+      "googleCta": "使用 Google 登录",
+      "invalidCredentials": "邮箱或密码错误",
+      "passwordsMismatch": "两次密码不一致",
+      "claimFailed": "无法认领此预约",
+      "registerFailed": "注册失败",
+      "signInAfterRegisterFailed": "账户已创建，请登录继续",
+      "networkError": "网络错误，请重试",
+      "marketingOptIn": "希望收到农场最新动态邮件，可随时取消订阅。"
     }
   }
 }

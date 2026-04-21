@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useTranslations, useLocale } from "next-intl"
 import { ArrowLeft, Search, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import InlineAuthTabs from "@/components/customer/InlineAuthTabs"
 
 interface ReservationInfo {
   confirmationCode: string
@@ -257,20 +258,13 @@ function ClaimPage() {
                 </div>
               )}
 
-              {/* Not logged in */}
+              {/* Not logged in — inline login + register tabs */}
               {!reservation.claimed && sessionStatus !== "loading" && !session?.user && (
-                <button
-                  onClick={() => {
-                    const qs = new URLSearchParams({ code: reservation.confirmationCode })
-                    if (token) qs.set("t", token)
-                    const callbackUrl = `/claim?${qs.toString()}`
-                    router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`)
-                  }}
-                  className="w-full h-[48px] rounded-full bg-[#6B7F5E] text-white font-medium
-                             hover:bg-[#5A6E4E] transition-all"
-                >
-                  {t("loginToClaim")}
-                </button>
+                <InlineAuthTabs
+                  claimCode={reservation.confirmationCode}
+                  claimToken={token}
+                  onSuccess={(dest) => router.push(dest)}
+                />
               )}
 
               {/* Can claim */}

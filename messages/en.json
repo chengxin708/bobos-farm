@@ -1755,6 +1755,25 @@
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled",
       "EXPIRED": "Expired"
+    },
+    "inlineAuth": {
+      "loginTab": "Log in",
+      "registerTab": "Create account",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "namePlaceholder": "Full name",
+      "phonePlaceholder": "Phone number",
+      "loginCta": "Log in & claim",
+      "registerCta": "Create account & claim",
+      "googleCta": "Continue with Google",
+      "invalidCredentials": "Wrong email or password",
+      "passwordsMismatch": "Passwords do not match",
+      "claimFailed": "Could not claim this reservation",
+      "registerFailed": "Could not create account",
+      "signInAfterRegisterFailed": "Account created, please log in to continue",
+      "networkError": "Network error — try again",
+      "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime."
     }
   }
 }
