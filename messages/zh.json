@@ -338,7 +338,8 @@
     },
     "emptyTitle": "暂无预订",
     "emptySubtitle": "预订您的第一次农场体验",
-    "bookFirst": "预订餐桌"
+    "bookFirst": "预订餐桌",
+    "mergedBanner": "已将 {count} 条原有预约关联到您的账户。"
   },
   "preOrder": {
     "title": "预订菜品",
@@ -1774,7 +1775,11 @@
       "registerFailed": "注册失败",
       "signInAfterRegisterFailed": "账户已创建，请登录继续",
       "networkError": "网络错误，请重试",
-      "marketingOptIn": "希望收到农场最新动态邮件，可随时取消订阅。"
+      "marketingOptIn": "希望收到农场最新动态邮件，可随时取消订阅。",
+      "claimInvalidToken": "此认领链接无效或已过期，请向农场索取新链接。",
+      "claimTokenRequired": "需要专属认领链接，请联系农场获取。",
+      "claimNotClaimable": "该预约已无法认领（已完成、已取消或已过期）。",
+      "claimAdminBlocked": "当前账户无法认领客户预约，请用客户账户登录。"
     }
   },
   "bookingStart": {

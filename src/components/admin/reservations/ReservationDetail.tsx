@@ -135,7 +135,8 @@ export default function ReservationDetail({
 
   // Claim token (admin-held reservations use a tokenized share URL so
   // the claim API can bind the link to one reservation). The GET is
-  // admin-only and cheap; null = no token issued yet.
+  // admin-only and cheap; `tokenData === undefined` during SWR load
+  // so we can tell "not loaded yet" apart from "no token issued".
   const { data: tokenData, mutate: mutateToken } = useSWR<{
     token: string | null
     expiresAt: string | null
@@ -145,6 +146,7 @@ export default function ReservationDetail({
     { revalidateOnFocus: false }
   )
   const claimToken = tokenData?.token ?? null
+  const tokenReady = tokenData !== undefined
 
   const regenerateClaimToken = useCallback(async () => {
     setRegeneratingToken(true)
@@ -472,7 +474,8 @@ export default function ReservationDetail({
                   setCopiedLink(true)
                   setTimeout(() => setCopiedLink(false), 2000)
                 }}
-                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] transition-colors"
+                disabled={isAdmin && reservation.holdByAdmin && !tokenReady}
+                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-full bg-[#E8ECE4] text-[#6B7F5E] hover:bg-[#D4DDD0] disabled:opacity-50 disabled:cursor-wait transition-colors"
                 title={t('shareLink.copy')}
               >
                 {copiedLink ? <Check size={10} /> : <Copy size={10} />}

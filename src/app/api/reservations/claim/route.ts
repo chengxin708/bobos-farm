@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
         case "NOT_FOUND":
           return NextResponse.json({ error: "Reservation not found" }, { status: 404 });
         case "ADMIN_CANNOT_CLAIM":
+          // Generic wording — we deliberately don't tell the caller the
+          // session is an admin (no info leak, and the user flow
+          // shouldn't involve an admin clicking a claim link anyway).
           return NextResponse.json(
-            { error: "Admin accounts cannot claim customer reservations", reason: "admin_cannot_claim" },
+            { error: "This account cannot claim reservations. Sign in with a customer account.", reason: "admin_cannot_claim" },
             { status: 403 }
           );
         case "ALREADY_CLAIMED":

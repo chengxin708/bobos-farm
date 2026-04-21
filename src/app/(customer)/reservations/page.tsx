@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
@@ -116,6 +116,24 @@ export default function ReservationsPage() {
   const t = useTranslations('reservations')
   const { status: sessionStatus } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // One-shot banner after an account merge (multiple placeholder
+  // reservations linked to this account via /claim). Auto-dismisses
+  // after 8s; clicking the × clears it immediately. We strip the query
+  // param on first render so a refresh doesn't keep showing it.
+  const [mergedBanner, setMergedBanner] = useState<number | null>(null)
+  useEffect(() => {
+    const raw = searchParams.get('mergedCount')
+    if (!raw) return
+    const n = parseInt(raw, 10)
+    if (Number.isFinite(n) && n > 1) setMergedBanner(n)
+    const url = new URL(window.location.href)
+    url.searchParams.delete('mergedCount')
+    window.history.replaceState({}, '', url.toString())
+    const timer = setTimeout(() => setMergedBanner(null), 8000)
+    return () => clearTimeout(timer)
+  }, [searchParams])
 
   // Cancel state
   const [cancelling, setCancelling] = useState<string | null>(null)
@@ -437,6 +455,23 @@ export default function ReservationsPage() {
       </div>
 
       <div className="px-4 flex flex-col gap-6 mt-2">
+        {mergedBanner && (
+          <div className="bg-[#E8ECE4] border border-[#6B7F5E]/30 rounded-xl px-4 py-3 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Check size={16} className="text-[#6B7F5E] mt-0.5 shrink-0" />
+              <p className="text-sm text-[#2C2416]">
+                {t('mergedBanner', { count: mergedBanner })}
+              </p>
+            </div>
+            <button
+              onClick={() => setMergedBanner(null)}
+              className="text-[#8C8478] hover:text-[#2C2416] p-0.5"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
         {/* Loading skeleton */}
         {(isLoading || sessionStatus === 'loading') && (
           <div className="flex flex-col gap-4">

@@ -338,7 +338,8 @@
     },
     "emptyTitle": "No reservations yet",
     "emptySubtitle": "Book your first farm experience",
-    "bookFirst": "Book a Table"
+    "bookFirst": "Book a Table",
+    "mergedBanner": "{count} existing reservations have been linked to your account."
   },
   "preOrder": {
     "title": "Pre-order Menu",
@@ -1774,7 +1775,11 @@
       "registerFailed": "Could not create account",
       "signInAfterRegisterFailed": "Account created, please log in to continue",
       "networkError": "Network error — try again",
-      "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime."
+      "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime.",
+      "claimInvalidToken": "This claim link is invalid or has expired. Ask the farm for a fresh link.",
+      "claimTokenRequired": "A personal claim link is needed. Ask the farm to send yours.",
+      "claimNotClaimable": "This reservation is no longer claimable (it's completed, cancelled, or expired).",
+      "claimAdminBlocked": "This account cannot claim reservations. Sign in with a customer account."
     }
   },
   "bookingStart": {
