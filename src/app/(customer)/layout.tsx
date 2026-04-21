@@ -7,9 +7,11 @@ import BottomTabs from '@/components/customer/BottomTabs'
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isBooking = pathname.startsWith('/booking')
+  // Focused full-screen flows: no global navbar/footer so the page can
+  // own its own top bar (with its own language toggle) and bottom CTA.
+  const isFocusedFlow = pathname.startsWith('/booking') || pathname === '/inquiries/new'
 
-  if (isBooking) {
+  if (isFocusedFlow) {
     return (
       <div className="fixed inset-0 flex flex-col bg-[#F8F7F4]">
         {children}

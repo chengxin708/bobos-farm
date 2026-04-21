@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 import { DatePickerCalendar, type DateStatus } from '@/components/customer/DatePickerCalendar'
+import { LanguageToggle } from '@/components/customer/LanguageToggle'
 
 const fetcher = (url: string) => fetch(url).then((r) => {
   if (!r.ok) throw new Error('Fetch failed')
@@ -88,15 +89,18 @@ export default function BookingDatePage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 grid grid-cols-3 items-center">
         <button
           onClick={() => router.push('/')}
-          className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
+          className="justify-self-start flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
           aria-label={tCommon('back')}
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-[15px] text-[#6B6157]">Step 1 of 3</span>
+        <div className="justify-self-center">
+          <LanguageToggle />
+        </div>
+        <span className="justify-self-end text-[15px] text-[#6B6157]">Step 1 of 3</span>
       </div>
 
       <div className="shrink-0 text-center mt-4 mb-6 px-4">

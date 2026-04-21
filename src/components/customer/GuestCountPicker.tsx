@@ -17,6 +17,11 @@ interface Props {
    * If omitted, the hint is suppressed.
    */
   softThreshold?: number
+  /**
+   * Counts below this surface a gentle "small party" hint — admin-configured
+   * via the `guest_warning_threshold` setting. Does NOT block selection.
+   */
+  minRecommended?: number
 }
 
 const DEFAULT_MIN = 1
@@ -45,6 +50,7 @@ export function GuestCountPicker({
   min = DEFAULT_MIN,
   hardMax = DEFAULT_HARD_MAX,
   softThreshold,
+  minRecommended,
 }: Props) {
   const t = useTranslations('guestCountPicker')
 
@@ -60,6 +66,8 @@ export function GuestCountPicker({
 
   const overSoft = softThreshold != null && value != null && value > softThreshold
   const atHardMax = value != null && value >= hardMax
+  const belowMin =
+    minRecommended != null && value != null && value < minRecommended && !overSoft && !atHardMax
 
   function commit(n: number) {
     const clamped = Math.max(min, Math.min(hardMax, n))
@@ -147,8 +155,14 @@ export function GuestCountPicker({
       {value == null && (
         <p className="mt-3 text-center text-xs text-[#1A1208]">{t('helpText')}</p>
       )}
-      {value != null && !overSoft && !atHardMax && (
+      {value != null && !overSoft && !atHardMax && !belowMin && (
         <p className="mt-3 text-center text-xs text-[#1A1208]">{t('helpSingle')}</p>
+      )}
+
+      {belowMin && (
+        <p className="mt-3 text-center text-xs font-semibold text-[#8B6914]">
+          {t('belowMinHint', { min: minRecommended! })}
+        </p>
       )}
 
       {overSoft && !atHardMax && (

@@ -1894,6 +1894,7 @@
     "chipAria": "{count} 人",
     "helpText": "用 + 和 − 微调人数，或点下方快捷选项一键选择常见规模。",
     "helpSingle": "当天到场人数不能超过此数字。",
+    "belowMinHint": "我们的菜品配置更适合 {min} 人以上的聚餐，人数偏少部分菜式可能不太合适。",
     "overThresholdHint": "超过 {threshold} 人将以咨询单跟进确认。",
     "atHardMaxHint": "本场最多接待 {max} 人。更大规模请直接联系我们。",
     "notSurePrompt": "人数还没定？",
@@ -1902,6 +1903,7 @@
   "inquiryForm": {
     "title": "告诉我们您的聚会",
     "subtitle": "超过 30 人或特殊日期通过咨询处理——我们会在一天内联系您确认。",
+    "stepLabel": "咨询单",
     "preferredDate": "期望日期",
     "note": "其它需求？",
     "notePlaceholder": "场合、饮食、特殊要求...",

@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, User, Mail, Phone, AlertCircle, Info } from 'lucide-react'
+import { ChevronLeft, ChevronRight, User, Mail, Phone, AlertCircle, Info, MessageCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 import { formatPhoneUS } from '@/lib/phone-mask'
 import { GuestCountPicker } from '@/components/customer/GuestCountPicker'
+import { LanguageToggle } from '@/components/customer/LanguageToggle'
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
@@ -80,6 +81,13 @@ export default function BookingDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile])
+
+  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
+    revalidateOnFocus: false,
+  })
+  const minRecommended = settings?.guest_warning_threshold
+    ? Number(settings.guest_warning_threshold)
+    : undefined
 
   // Pull per-date yurt availability so the guest cap reflects which of
   // the farm's yurts are still free for the selected date.
@@ -175,15 +183,18 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
+      <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 grid grid-cols-3 items-center">
         <button
           onClick={() => router.push('/booking/date')}
-          className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
+          className="justify-self-start flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-[#E8ECE4] transition-colors border-none bg-transparent cursor-pointer"
           aria-label={tCommon('back')}
         >
           <ChevronLeft size={22} className="text-[#1A1208]" />
         </button>
-        <span className="text-[15px] text-[#6B6157]">{t('stepLabel')}</span>
+        <div className="justify-self-center">
+          <LanguageToggle />
+        </div>
+        <span className="justify-self-end text-[15px] text-[#6B6157]">{t('stepLabel')}</span>
       </div>
 
       <div className="shrink-0 text-center mt-4 mb-6 px-4">
@@ -274,6 +285,7 @@ export default function BookingDetailsPage() {
             value={guestCount}
             onChange={setGuestCount}
             softThreshold={selfServeCap}
+            minRecommended={minRecommended}
           />
           {touched.guestCount && errors.guestCount && (
             <div className="flex items-center gap-1.5 text-[#C4453A] -mt-3">
@@ -282,16 +294,17 @@ export default function BookingDetailsPage() {
             </div>
           )}
 
-          <div className="text-center text-xs text-[#1A1208] -mt-2">
-            <span>{tPicker('notSurePrompt')}</span>{' '}
-            <button
-              type="button"
-              onClick={handleInquireEscape}
-              className="font-semibold text-[#6B7F5E] hover:underline border-none bg-transparent cursor-pointer p-0"
-            >
-              {tPicker('notSureCta')} →
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleInquireEscape}
+            className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-dashed border-[#C4A45C] bg-[#FEFBF4] hover:bg-[#FDF5E6] transition-colors cursor-pointer text-left"
+          >
+            <MessageCircle size={20} className="text-[#8B6914] shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[#2C2416]">{tPicker('notSurePrompt')}</p>
+              <p className="text-xs text-[#6B6157] mt-0.5">{tPicker('notSureCta')} →</p>
+            </div>
+          </button>
 
           {goingToInquiry && (
             <div className="bg-[#FDF5E6] border border-[#E5D8B8] rounded-xl p-3.5 flex items-start gap-2.5">
