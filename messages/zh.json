@@ -1898,6 +1898,17 @@
       "SYSTEM": "系统"
     }
   },
+  "guestRangePicker": {
+    "title": "人数",
+    "emptyLabel": "请选择人数",
+    "singleLabel": "约 {count} 人",
+    "rangeLabel": "{min} – {max} 人",
+    "helpText": "点一个数字表示大约人数，或点两个数字表示范围。",
+    "helpSingle": "再点一个数字可以选成范围。",
+    "overThresholdHint": "超过 {threshold} 人将以咨询单跟进确认。",
+    "reset": "重置",
+    "presetAria": "{count} 人"
+  },
   "inquiryForm": {
     "title": "告诉我们您的聚会",
     "subtitle": "超过 30 人或特殊日期通过咨询处理——我们会在一天内联系您确认。",

@@ -1898,6 +1898,17 @@
       "SYSTEM": "System"
     }
   },
+  "guestRangePicker": {
+    "title": "Number of guests",
+    "emptyLabel": "Pick a guest count",
+    "singleLabel": "About {count} guests",
+    "rangeLabel": "{min} – {max} guests",
+    "helpText": "Tap a number for an approximate count, or tap two numbers for a range.",
+    "helpSingle": "Tap another number to pick a range.",
+    "overThresholdHint": "Groups over {threshold} are handled as an inquiry — we'll follow up to finalize.",
+    "reset": "Reset",
+    "presetAria": "{count} guests"
+  },
   "inquiryForm": {
     "title": "Tell us about your gathering",
     "subtitle": "Groups above 30 or special dates are handled as inquiries — we'll reach out within a day to finalize.",
