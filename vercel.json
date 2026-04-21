@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/expire-reservations",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/inquiry-timeouts",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/inquiry-auto-expire",
+      "schedule": "0 0 * * *"
     }
   ]
 }
