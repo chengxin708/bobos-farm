@@ -136,9 +136,16 @@ export default function BookingDetailsPage() {
   }
 
   function goToInquiry() {
+    // Carry over everything the user already typed so they don't
+    // re-fill the inquiry form. The inquiry page reads these prefill
+    // params where they make sense (guestCount, date).
     const qs = new URLSearchParams({
       guestCount: String(guestCount),
       ...(booking.selectedDate ? { date: booking.selectedDate } : {}),
+      ...(contactName ? { name: contactName } : {}),
+      ...(contactEmail ? { email: contactEmail } : {}),
+      ...(contactPhone ? { phone: contactPhone } : {}),
+      ...(specialRequests ? { note: specialRequests } : {}),
     })
     router.push(`/inquiries/new?${qs.toString()}`)
   }

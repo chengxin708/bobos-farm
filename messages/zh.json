@@ -1245,7 +1245,8 @@
         "reservationHistory": "预订历史",
         "showMore": "显示更多 {count} 条 →",
         "adminNotes": "管理备注",
-        "saveNote": "保存备注"
+        "saveNote": "保存备注",
+        "viewInquiries": "查看咨询 →"
       },
       "detailPage": {
         "title": "客户详情",
@@ -1850,8 +1851,23 @@
     "markClosed": "关闭",
     "convertCta": "转为预约",
     "converting": "转换中...",
-    "convertYurtIdsPrompt": "请输入逗号分隔的 yurt ID：",
     "convertFailed": "转换失败",
+    "viewReservationCta": "打开预约 {code}",
+    "convertModal": {
+      "title": "将咨询转为预约",
+      "date": "预约日期",
+      "guestCount": "最终人数",
+      "selectYurts": "分配蒙古包",
+      "capacityUnit": " 人",
+      "occupied": "该日期已被预订",
+      "depositPreview": "押金：$300 × {count} = ${total}",
+      "selectAtLeastOne": "请至少选择一个蒙古包。",
+      "capacityExceeded": "人数（{guests}）超过总容量（{capacity}）。",
+      "cancel": "取消",
+      "convert": "创建预约",
+      "failed": "转换失败",
+      "networkError": "网络错误，请重试"
+    },
     "commentsTitle": "记录与备注",
     "noComments": "暂无记录。",
     "commentPlaceholder": "记录电话、备注或内部评论",

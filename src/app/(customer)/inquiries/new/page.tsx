@@ -33,7 +33,7 @@ function InquiryNewPage() {
     Number.isFinite(prefillCount) && prefillCount > 0 ? prefillCount : 60,
   )
   const [packageHint, setPackageHint] = useState<number | null>(null)
-  const [note, setNote] = useState("")
+  const [note, setNote] = useState(searchParams.get("note") ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 

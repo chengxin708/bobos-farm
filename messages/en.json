@@ -1245,7 +1245,8 @@
         "reservationHistory": "RESERVATION HISTORY",
         "showMore": "Show {count} More \u2192",
         "adminNotes": "ADMIN NOTES",
-        "saveNote": "Save Note"
+        "saveNote": "Save Note",
+        "viewInquiries": "View inquiries →"
       },
       "detailPage": {
         "title": "Customer Details",
@@ -1850,8 +1851,23 @@
     "markClosed": "Close",
     "convertCta": "Convert to reservation",
     "converting": "Converting...",
-    "convertYurtIdsPrompt": "Comma-separated yurt IDs to assign:",
     "convertFailed": "Conversion failed",
+    "viewReservationCta": "Open reservation {code}",
+    "convertModal": {
+      "title": "Convert inquiry to reservation",
+      "date": "Reservation date",
+      "guestCount": "Final guest count",
+      "selectYurts": "Assign yurts",
+      "capacityUnit": " guests",
+      "occupied": "booked on this date",
+      "depositPreview": "Deposit: $300 × {count} = ${total}",
+      "selectAtLeastOne": "Select at least one yurt.",
+      "capacityExceeded": "Guest count ({guests}) exceeds combined capacity ({capacity}).",
+      "cancel": "Cancel",
+      "convert": "Create reservation",
+      "failed": "Conversion failed",
+      "networkError": "Network error — try again"
+    },
     "commentsTitle": "Activity & comments",
     "noComments": "No activity yet.",
     "commentPlaceholder": "Log a call, note, or internal comment",

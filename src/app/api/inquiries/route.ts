@@ -31,10 +31,12 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
   const priority = searchParams.get("priority");
   const tag = searchParams.get("tag");
+  const userId = searchParams.get("userId");
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (priority) where.priority = priority;
   if (tag) where.tags = { has: tag };
+  if (userId) where.userId = userId;
 
   const inquiries = await prisma.inquiry.findMany({
     where,

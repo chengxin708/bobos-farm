@@ -5,7 +5,8 @@ import useSWR from "swr"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, ExternalLink } from "lucide-react"
+import ConvertInquiryModal from "@/components/admin/inquiries/ConvertInquiryModal"
 
 interface InquiryComment {
   id: string
@@ -52,8 +53,7 @@ export default function AdminInquiryDetailPage({
   const [commentText, setCommentText] = useState("")
   const [commentType, setCommentType] = useState<InquiryComment["type"]>("INTERNAL_NOTE")
   const [posting, setPosting] = useState(false)
-  const [convertBusy, setConvertBusy] = useState(false)
-  const [convertError, setConvertError] = useState("")
+  const [showConvertModal, setShowConvertModal] = useState(false)
 
   if (isLoading || !data) {
     return (
@@ -86,33 +86,6 @@ export default function AdminInquiryDetailPage({
     await mutate()
   }
 
-  const convert = async () => {
-    const yurtIdsStr = prompt(t("convertYurtIdsPrompt"))
-    if (!yurtIdsStr) return
-    const yurtIds = yurtIdsStr.split(",").map((s) => s.trim()).filter(Boolean)
-    setConvertBusy(true)
-    setConvertError("")
-    try {
-      const res = await fetch(`/api/inquiries/${id}/convert`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          yurtIds,
-          guestCount: data.guestCountMax,
-          date: data.preferredDate,
-        }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setConvertError(body.error || t("convertFailed"))
-      } else {
-        const body = await res.json()
-        router.push(`/admin/reservations?highlight=${body.reservation.id}`)
-      }
-    } finally {
-      setConvertBusy(false)
-    }
-  }
 
   return (
     <div className="p-6 flex flex-col gap-5 max-w-3xl">
@@ -161,13 +134,33 @@ export default function AdminInquiryDetailPage({
             <button onClick={() => patchStatus("IN_PROGRESS")} className="px-3 py-1.5 text-sm rounded-full border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5">{t("markInProgress")}</button>
             <button onClick={() => patchStatus("AWAITING_CUSTOMER")} className="px-3 py-1.5 text-sm rounded-full border border-[#8B6914] text-[#8B6914] hover:bg-[#8B6914]/5">{t("markWaiting")}</button>
             <button onClick={() => patchStatus("CLOSED")} className="px-3 py-1.5 text-sm rounded-full border border-[#8C8478] text-[#8C8478] hover:bg-[#8C8478]/5">{t("markClosed")}</button>
-            <button onClick={convert} disabled={convertBusy} className="px-3 py-1.5 text-sm rounded-full bg-[#6B7F5E] text-white hover:bg-[#5A6E4F] disabled:opacity-50">
-              {convertBusy ? t("converting") : t("convertCta")}
+            <button onClick={() => setShowConvertModal(true)} className="px-3 py-1.5 text-sm rounded-full bg-[#6B7F5E] text-white hover:bg-[#5A6E4F]">
+              {t("convertCta")}
             </button>
           </>
         )}
+        {data.reservation && (
+          <Link
+            href={`/admin/reservations?highlight=${data.reservation.id}`}
+            className="px-3 py-1.5 text-sm rounded-full border border-[#6B7F5E] text-[#6B7F5E] hover:bg-[#6B7F5E]/5 flex items-center gap-1"
+          >
+            <ExternalLink size={12} />
+            {t("viewReservationCta", { code: data.reservation.confirmationCode })}
+          </Link>
+        )}
       </section>
-      {convertError && <p className="text-sm text-[#DC3545]">{convertError}</p>}
+      {showConvertModal && (
+        <ConvertInquiryModal
+          inquiryId={id}
+          defaultDate={data.preferredDate}
+          defaultGuestCount={data.guestCountMax}
+          onCancel={() => setShowConvertModal(false)}
+          onConverted={(rid) => {
+            setShowConvertModal(false)
+            router.push(`/admin/reservations?highlight=${rid}`)
+          }}
+        />
+      )}
 
       <section className="bg-white rounded-xl border border-[#E8ECE4] p-4">
         <h2 className="text-sm font-semibold text-[#2C2416] mb-3">{t("commentsTitle")}</h2>

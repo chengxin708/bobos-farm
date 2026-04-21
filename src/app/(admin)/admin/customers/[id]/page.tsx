@@ -183,6 +183,7 @@ export default function CustomerDetailPage() {
     const cancelRate = reservations.length > 0 ? Math.round((cancelled.length / reservations.length) * 100) : 0
     const { tag, tagColor } = computeTag(totalVisits)
     return {
+      id: user.id,
       name: user.name || user.email.split('@')[0],
       initials: getInitials(user.name, user.email),
       initialsColor: getAvatarColor(user.id),
@@ -396,6 +397,17 @@ export default function CustomerDetailPage() {
           })}
         </div>
       )}
+
+      {/* Quick cross-links — lets admin jump to this customer's inquiry
+          thread without scrolling through the global list. */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => router.push(`/admin/inquiries?userId=${customerProfile.id}`)}
+          className="text-xs px-3 py-1.5 rounded-full border border-[#E8ECE4] text-[#6B7F5E] hover:bg-[#6B7F5E]/5 font-medium"
+        >
+          {t('detail.viewInquiries')}
+        </button>
+      </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-2 text-center">
