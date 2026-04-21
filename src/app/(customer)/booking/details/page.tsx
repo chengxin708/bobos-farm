@@ -45,6 +45,12 @@ export default function BookingDetailsPage() {
   // Dismiss state for the capacity notice
   const [capacityNoticeDismissed, setCapacityNoticeDismissed] = useState(false)
 
+  // Phase 5.2: >30 gate. Self-serve only handles single-yurt bookings
+  // up to 30 guests; larger groups need admin help, so we stop here and
+  // offer the inquiry path with the collected fields pre-filled.
+  const [showOverGuestModal, setShowOverGuestModal] = useState(false)
+  const OVER_GUEST_THRESHOLD = 30
+
   // Fetch user profile for phone auto-fill
   const { data: userProfile } = useSWR(
     session?.user ? '/api/users/me' : null,
@@ -115,6 +121,10 @@ export default function BookingDetailsPage() {
     // Mark all fields as touched to show any remaining errors
     setTouched({ contactName: true, contactEmail: true, contactPhone: true, guestCount: true })
     if (!isValid) return
+    if (guestCount > OVER_GUEST_THRESHOLD) {
+      setShowOverGuestModal(true)
+      return
+    }
     booking.setDetails({
       contactName: contactName.trim(),
       contactEmail: contactEmail.trim(),
@@ -123,6 +133,14 @@ export default function BookingDetailsPage() {
       guestCount,
     })
     router.push('/booking/confirm')
+  }
+
+  function goToInquiry() {
+    const qs = new URLSearchParams({
+      guestCount: String(guestCount),
+      ...(booking.selectedDate ? { date: booking.selectedDate } : {}),
+    })
+    router.push(`/inquiries/new?${qs.toString()}`)
   }
 
   // Show spinner while hydrating from sessionStorage
@@ -337,6 +355,40 @@ export default function BookingDetailsPage() {
           >
             {tCommon('next')}
             <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
+
+      {showOverGuestModal && <OverGuestModal onInquiry={goToInquiry} onRevise={() => setShowOverGuestModal(false)} />}
+    </div>
+  )
+}
+
+function OverGuestModal({
+  onInquiry,
+  onRevise,
+}: {
+  onInquiry: () => void
+  onRevise: () => void
+}) {
+  const t = useTranslations('bookingStart.overGuestModal')
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 flex flex-col gap-4">
+        <h2 className="text-lg font-serif font-semibold text-[#2C2416]">{t('title')}</h2>
+        <p className="text-sm text-[#6B6157]">{t('body')}</p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onInquiry}
+            className="h-11 rounded-full bg-[#6B7F5E] text-white font-semibold hover:bg-[#5A6E4E]"
+          >
+            {t('inquire')}
+          </button>
+          <button
+            onClick={onRevise}
+            className="h-11 rounded-full border border-[#E8ECE4] text-[#2C2416] hover:bg-[#F2EDE6]"
+          >
+            {t('revise')}
           </button>
         </div>
       </div>
