@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（28/40 commit — Phase 5 complete）
+**Status:** 完成（29/40 commit — 合并后仍剩部分可选增强；见下方 "未覆盖" 节）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 6 commit 6.1 (`feat(booking-redesign): admin data deletion script (GDPR)`)
+**下一步**: 运维上线步骤（见下方 Phase 1 完成后必做），然后生产验证。所有 6 Phase 的代码已合并到 main。
 
 ---
 
@@ -79,7 +79,7 @@
 
 ## Phase 6 — GDPR 数据删除脚本（0/1）
 
-- [ ] 6.1 `feat(booking-redesign): admin data deletion script (GDPR)`
+- [x] 6.1 `feat(booking-redesign): admin data deletion script (GDPR)`
 
 ---
 
