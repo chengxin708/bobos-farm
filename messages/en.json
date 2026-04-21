@@ -1777,6 +1777,27 @@
       "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime."
     }
   },
+  "bookingStart": {
+    "title": "How would you like to book?",
+    "subtitle": "Small gatherings can self-serve. Larger groups and flexible dates are best handled as an inquiry.",
+    "or": "or",
+    "decided": {
+      "title": "I know what I want",
+      "body": "≤ 30 guests, specific date. Pick yurt, pay the deposit, done.",
+      "cta": "Start booking"
+    },
+    "unsure": {
+      "title": "I'd like to discuss",
+      "body": "Bigger party, flexible date, or want to chat with the farm first? Send us an inquiry.",
+      "cta": "Start inquiry"
+    },
+    "overGuestModal": {
+      "title": "Groups above 30 go through inquiry",
+      "body": "For groups of more than 30 guests we coordinate rooms and catering directly — it's a quick conversation, usually within a day.",
+      "inquire": "Convert to inquiry",
+      "revise": "Edit guest count"
+    }
+  },
   "adminInquiries": {
     "title": "Inquiries",
     "allStatuses": "All statuses",
