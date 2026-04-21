@@ -1332,7 +1332,7 @@ export default function ReservationDetail({
               </button>
             )}
             {isAdmin && (
-              <span className="text-[11px] text-[#8A7E6B]">管理员可随时取消，不受 7 天限制</span>
+              <span className="text-[11px] text-[#8A7E6B]">{t('actions.adminCancelNoLimit')}</span>
             )}
           </div>
         )}

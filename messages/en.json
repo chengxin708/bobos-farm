@@ -49,7 +49,9 @@
       "continueWithGoogle": "Continue with Google",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
-      "oauthCancelled": "Google sign-in was cancelled. You can sign in with email below."
+      "oauthCancelled": "Google sign-in was cancelled. You can sign in with email below.",
+      "invalidCredentials": "Invalid email or password.",
+      "networkError": "Something went wrong. Please try again."
     },
     "register": {
       "title": "Create Account",
@@ -81,6 +83,17 @@
         "medium": "Medium",
         "good": "Good",
         "strong": "Strong"
+      },
+      "errors": {
+        "nameRequired": "Name is required",
+        "emailRequired": "Email is required",
+        "phoneRequired": "Phone number is required",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "passwordsMismatch": "Passwords do not match",
+        "emailExists": "An account with this email already exists",
+        "validationFailed": "Please check the form for errors",
+        "registrationFailed": "Registration failed. Please try again.",
+        "networkError": "Something went wrong. Please try again."
       }
     }
   },
@@ -822,7 +835,8 @@
         "releaseHoldSilentNotice": "SILENT RELEASE — no cancellation email will be sent to the customer.",
         "releaseHoldConfirm": "Release this admin hold? The spot will become available immediately.",
         "releaseHoldSuccess": "Hold released",
-        "releaseHoldFailed": "Failed to release hold"
+        "releaseHoldFailed": "Failed to release hold",
+        "adminCancelNoLimit": "Admin can cancel at any time — not subject to the 7-day window"
       },
       "editEditor": {
         "title": "Edit Reservation",
@@ -1236,6 +1250,9 @@
         "back": "Customer Details",
         "viewReservation": "View",
         "memberSince": "Member since",
+        "email": "EMAIL",
+        "phone": "PHONE",
+        "wechat": "WECHAT",
         "stats": {
           "totalVisits": "Total Visits",
           "totalSpent": "Total Spent",

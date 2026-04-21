@@ -52,13 +52,13 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        setError(t('invalidCredentials'))
         setIsLoading(false)
       } else {
         window.location.assign(target)
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('networkError'))
       setIsLoading(false)
     }
   }

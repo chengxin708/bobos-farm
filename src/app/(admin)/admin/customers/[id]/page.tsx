@@ -361,9 +361,11 @@ export default function CustomerDetailPage() {
             const primary = contactHistory.primary[type]
             const allEntries = contactHistory.history[type]
             const others = allEntries.filter(e => !e.isPrimary)
-            const label = type === 'email' ? t('detail.email') : type === 'phone' ? t('detail.phone') : t('detailPage.contactSection')
-            const wechatLabel = type === 'wechat' ? '微信' : label
-            const displayLabel = type === 'wechat' ? wechatLabel : label
+            const displayLabel = type === 'email'
+              ? t('detail.email')
+              : type === 'phone'
+                ? t('detail.phone')
+                : t('detail.wechat')
 
             return (
               <div key={type} className="space-y-1">

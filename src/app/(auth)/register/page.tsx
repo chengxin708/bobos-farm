@@ -48,23 +48,23 @@ export default function RegisterPage() {
 
     // Client-side validation
     if (!name.trim()) {
-      setError('Name is required')
+      setError(t('errors.nameRequired'))
       return
     }
     if (!email.trim()) {
-      setError('Email is required')
+      setError(t('errors.emailRequired'))
       return
     }
     if (!phone.trim()) {
-      setError('Phone number is required')
+      setError(t('errors.phoneRequired'))
       return
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t('errors.passwordTooShort'))
       return
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('errors.passwordsMismatch'))
       return
     }
 
@@ -80,17 +80,17 @@ export default function RegisterPage() {
       const data = await res.json()
 
       if (res.status === 409) {
-        setError('An account with this email already exists')
+        setError(t('errors.emailExists'))
         return
       }
       if (res.status === 400) {
         const details = data.details?.fieldErrors
         const firstError = details ? Object.values(details).flat()[0] as string : data.error
-        setError(firstError || 'Validation failed')
+        setError(firstError || t('errors.validationFailed'))
         return
       }
       if (!res.ok) {
-        setError(data.error || 'Registration failed. Please try again.')
+        setError(data.error || t('errors.registrationFailed'))
         return
       }
 
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         window.location.href = '/login'
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('errors.networkError'))
     } finally {
       setIsLoading(false)
     }
