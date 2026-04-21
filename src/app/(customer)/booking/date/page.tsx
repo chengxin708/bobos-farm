@@ -1,20 +1,18 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
-
-type DateStatus = 'available' | 'limited' | 'full' | 'closed'
+import { DatePickerCalendar, type DateStatus } from '@/components/customer/DatePickerCalendar'
 
 const fetcher = (url: string) => fetch(url).then((r) => {
   if (!r.ok) throw new Error('Fetch failed')
   return r.json()
 })
 
-/** Format date as YYYY-MM-DD in local time */
 function toLocalDateStr(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -22,165 +20,20 @@ function toLocalDateStr(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-/** Get days in month (1-indexed month param) */
-function daysInMonth(year: number, month: number): number {
-  return new Date(year, month, 0).getDate()
-}
-
-/** Get day-of-week for first of month (0=Sun) */
-function firstDayOfMonth(year: number, month: number): number {
-  return new Date(year, month - 1, 1).getDay()
-}
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DayCell({ day, status, selected, disabled, today, onClick, monthName, t }: {
-  day: number; status: DateStatus | 'past'; selected: boolean; disabled: boolean; today: boolean;
-  onClick: () => void; monthName: string; t: (key: string) => string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        relative flex flex-col items-center justify-center w-12 h-12 rounded-full
-        border-none transition-all text-[17px] font-semibold
-        ${selected
-          ? 'bg-[#6B7F5E] text-white scale-105 shadow-sm'
-          : status === 'full'
-            ? 'text-[#6B6157]/50 cursor-not-allowed bg-[#F2EDE6]/60 line-through'
-            : status === 'limited'
-              ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
-              : disabled
-                ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
-                : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
-        }
-        ${today && !selected ? 'ring-2 ring-[#6B7F5E]/40' : ''}
-      `}
-      aria-label={`${monthName} ${day}`}
-    >
-      {day}
-      {status === 'available' && !selected && !disabled && (
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#6B7F5E]" />
-      )}
-      {status === 'limited' && !selected && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#C47D52] leading-none">{t('legend.limitedShort')}</span>
-      )}
-      {status === 'full' && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-[#6B6157]/60 leading-none">{t('legend.fullShort')}</span>
-      )}
-    </button>
-  )
-}
-
 export default function BookingDatePage() {
-  const t = useTranslations('booking.date')
   const tCommon = useTranslations('common')
   const locale = useLocale()
   const router = useRouter()
   const { selectedDate, setSelectedDate, hydrated } = useBooking()
 
   const [today] = useState(() => new Date())
-  const todayStr = toLocalDateStr(today)
 
-  // Current displayed month (1-indexed)
-  const [viewYear, setViewYear] = useState(() => {
-    if (selectedDate) return parseInt(selectedDate.slice(0, 4), 10)
-    return today.getFullYear()
-  })
-  const [viewMonth, setViewMonth] = useState(() => {
-    if (selectedDate) return parseInt(selectedDate.slice(5, 7), 10)
-    return today.getMonth() + 1
-  })
-
-  // Month transition animation state
-  const [monthFading, setMonthFading] = useState(false)
-
-  const startDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-01`
-  const endDate = `${viewYear}-${String(viewMonth).padStart(2, '0')}-${daysInMonth(viewYear, viewMonth)}`
-
-  // Fetch settings for advance booking limits
   const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
     revalidateOnFocus: false,
   })
   const minAdvanceDays = settings?.min_advance_booking_days ? Number(settings.min_advance_booking_days) : 1
   const maxAdvanceDays = settings?.max_advance_booking_days ? Number(settings.max_advance_booking_days) : 90
 
-  // Fetch availability slots for the month (dynamic yurt count + reservation occupancy)
-  const { data: slots, isLoading: loadingAvail } = useSWR<Record<string, { total: number; occupied: number; available: number }>>(
-    `/api/availability/slots?startDate=${startDate}&endDate=${endDate}`,
-    fetcher,
-    { revalidateOnFocus: false }
-  )
-
-  // Build date->status map from slots API
-  const dateStatusMap = useMemo<Record<string, DateStatus>>(() => {
-    if (!slots || typeof slots !== 'object') return {}
-    const map: Record<string, DateStatus> = {}
-
-    for (const [dateKey, info] of Object.entries(slots)) {
-      if (info.available === 0) {
-        map[dateKey] = 'full'
-      } else if (info.available === 1) {
-        map[dateKey] = 'limited'
-      } else {
-        map[dateKey] = 'available'
-      }
-    }
-
-    return map
-  }, [slots])
-
-  // Get available count for selected date
-  const selectedDateSlot = selectedDate && slots ? slots[selectedDate] : null
-
-  const numDays = daysInMonth(viewYear, viewMonth)
-  const startDay = firstDayOfMonth(viewYear, viewMonth)
-
-  // Build calendar cells, starting from Monday (shift Sunday to end)
-  const cells: (number | null)[] = useMemo(() => {
-    const arr: (number | null)[] = []
-    // Convert startDay from Sun=0 to Mon=0 layout: Mon=0, Tue=1, ..., Sun=6
-    const mondayStart = startDay === 0 ? 6 : startDay - 1
-    for (let i = 0; i < mondayStart; i++) arr.push(null)
-    for (let d = 1; d <= numDays; d++) arr.push(d)
-    while (arr.length % 7 !== 0) arr.push(null)
-    return arr
-  }, [startDay, numDays])
-
-  const navigateMonth = useCallback((delta: number) => {
-    setMonthFading(true)
-    setTimeout(() => {
-      setViewMonth((m) => {
-        let newMonth = m + delta
-        if (newMonth < 1) { newMonth = 12; setViewYear(y => y - 1) }
-        if (newMonth > 12) { newMonth = 1; setViewYear(y => y + 1) }
-        return newMonth
-      })
-      setMonthFading(false)
-    }, 150)
-  }, [])
-
-  const canGoBack = useMemo(() => {
-    return viewYear > today.getFullYear() ||
-      (viewYear === today.getFullYear() && viewMonth > today.getMonth() + 1)
-  }, [viewYear, viewMonth, today])
-
-  // Mo Tu We Th Fr Sa Su headers
-  const dayHeaders = [
-    t('days.mon'), t('days.tue'), t('days.wed'),
-    t('days.thu'), t('days.fri'), t('days.sat'), t('days.sun'),
-  ]
-
-  function getDateKey(day: number): string {
-    return `${viewYear}-${String(viewMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  }
-
-  // Compute earliest and latest bookable dates from settings
   const earliestBookableStr = useMemo(() => {
     const d = new Date(today)
     d.setDate(d.getDate() + minAdvanceDays)
@@ -193,46 +46,38 @@ export default function BookingDatePage() {
     return toLocalDateStr(d)
   }, [today, maxAdvanceDays])
 
-  function isPast(day: number): boolean {
-    const dateKey = getDateKey(day)
-    return dateKey < todayStr
-  }
+  // Fetch slots for a wide-enough window so month-hopping stays responsive.
+  // The calendar internally restricts picks to minDate..maxDate; slot fetching
+  // covers the same window.
+  const { data: slots, isLoading: loadingAvail } = useSWR<Record<string, { total: number; occupied: number; available: number }>>(
+    `/api/availability/slots?startDate=${earliestBookableStr}&endDate=${latestBookableStr}`,
+    fetcher,
+    { revalidateOnFocus: false }
+  )
 
-  function isToday(day: number): boolean {
-    return getDateKey(day) === todayStr
-  }
+  const dateStatusMap = useMemo<Record<string, DateStatus>>(() => {
+    if (!slots || typeof slots !== 'object') return {}
+    const map: Record<string, DateStatus> = {}
+    for (const [dateKey, info] of Object.entries(slots)) {
+      if (info.available === 0) map[dateKey] = 'full'
+      else if (info.available === 1) map[dateKey] = 'limited'
+      else map[dateKey] = 'available'
+    }
+    return map
+  }, [slots])
 
-  function isOutsideBookingWindow(day: number): boolean {
-    const dateKey = getDateKey(day)
-    return dateKey < earliestBookableStr || dateKey > latestBookableStr
-  }
+  const selectedDateSlot = selectedDate && slots ? slots[selectedDate] : null
 
-  function getStatus(day: number): DateStatus | 'past' {
-    if (isPast(day)) return 'past'
-    if (isOutsideBookingWindow(day)) return 'closed'
-    const dateKey = getDateKey(day)
-    return dateStatusMap[dateKey] || 'available'
-  }
+  const selectedDateFormatted = useMemo(() => {
+    if (!selectedDate) return null
+    try {
+      const d = new Date(`${selectedDate}T00:00:00`)
+      return new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' }).format(d)
+    } catch {
+      return selectedDate
+    }
+  }, [selectedDate, locale])
 
-  function isSelected(day: number): boolean {
-    return selectedDate === getDateKey(day)
-  }
-
-  function handleDayClick(day: number) {
-    const status = getStatus(day)
-    if (status === 'past' || status === 'closed' || status === 'full') return
-    const dateKey = getDateKey(day)
-    setSelectedDate(isSelected(day) ? null : dateKey)
-  }
-
-  function isDisabled(day: number): boolean {
-    const status = getStatus(day)
-    return status === 'past' || status === 'closed' || status === 'full'
-  }
-
-  const monthLabel = `${MONTH_NAMES[viewMonth - 1]} ${viewYear}`
-
-  // Don't render until hydrated to prevent flash
   if (!hydrated) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -243,7 +88,6 @@ export default function BookingDatePage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Top Bar */}
       <div className="shrink-0 bg-[#F8F7F4] px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => router.push('/')}
@@ -255,7 +99,6 @@ export default function BookingDatePage() {
         <span className="text-[15px] text-[#6B6157]">Step 1 of 3</span>
       </div>
 
-      {/* Page Title */}
       <div className="shrink-0 text-center mt-4 mb-6 px-4">
         <h1 className="text-2xl font-serif text-[#1A1208]">Select a Date</h1>
         {locale === 'zh' && (
@@ -263,98 +106,25 @@ export default function BookingDatePage() {
         )}
       </div>
 
-      {/* Calendar Card — scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
-        <div className="max-w-lg mx-auto bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => canGoBack && navigateMonth(-1)}
-              className={`flex items-center justify-center w-9 h-9 rounded-full border-none transition-colors ${
-                canGoBack
-                  ? 'bg-transparent hover:bg-[#E8ECE4] cursor-pointer text-[#1A1208]'
-                  : 'bg-transparent cursor-not-allowed text-[#6B6157]/70'
-              }`}
-              disabled={!canGoBack}
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <h2 className="font-serif text-lg text-[#1A1208]">{monthLabel}</h2>
-            <button
-              onClick={() => navigateMonth(1)}
-              className="flex items-center justify-center w-9 h-9 rounded-full border-none bg-transparent hover:bg-[#E8ECE4] cursor-pointer text-[#1A1208] transition-colors"
-              aria-label="Next month"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-
-          {/* Day Headers — Mo Tu We Th Fr Sa Su */}
-          <div className="grid grid-cols-7 mb-1">
-            {dayHeaders.map((d) => (
-              <div key={d} className="py-2 text-center text-[15px] font-semibold uppercase tracking-wider text-[#6B6157]">
-                {d.slice(0, 2)}
-              </div>
-            ))}
-          </div>
-
-          {/* Date Grid */}
-          <div
-            className={`transition-opacity duration-150 ${monthFading ? 'opacity-0' : 'opacity-100'}`}
-          >
-            {loadingAvail ? (
-              <div className="grid grid-cols-7 gap-y-1">
-                {Array.from({ length: 35 }).map((_, idx) => (
-                  <div key={idx} className="flex items-center justify-center py-0.5">
-                    <div className="w-11 h-11 rounded-full bg-[#E8ECE4]/40 animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-7 gap-y-1">
-                {cells.map((day, idx) => (
-                  <div key={idx} className="flex items-center justify-center py-0.5">
-                    {day !== null ? (
-                      <DayCell
-                        day={day}
-                        status={getStatus(day)}
-                        selected={isSelected(day)}
-                        disabled={isDisabled(day)}
-                        today={isToday(day)}
-                        onClick={() => handleDayClick(day)}
-                        monthName={MONTH_NAMES[viewMonth - 1]}
-                        t={t}
-                      />
-                    ) : (
-                      <div className="w-12 h-12" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6 pt-4 mt-2 border-t border-[#F2EDE6]">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#6B7F5E]" />
-              <span className="text-[14px] font-medium text-[#1A1208]">{t('legend.available')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#C47D52]" />
-              <span className="text-[14px] font-medium text-[#C47D52]">{t('legend.limited')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#6B6157]/30" />
-              <span className="text-[14px] font-medium text-[#6B6157]">{t('legend.full')}</span>
-            </div>
-          </div>
-        </div>
+        <DatePickerCalendar
+          value={selectedDate ?? null}
+          onChange={setSelectedDate}
+          minDate={earliestBookableStr}
+          maxDate={latestBookableStr}
+          dateStatus={dateStatusMap}
+          allowFullDates={false}
+          showLegend
+          loading={loadingAvail}
+        />
       </div>
 
-      {/* Bottom Bar */}
       <div className="shrink-0 p-4 pb-6 bg-[#F8F7F4]">
+        {selectedDate && selectedDateFormatted && (
+          <p className="text-center text-sm text-[#6B6157] mb-2">
+            {selectedDateFormatted}
+          </p>
+        )}
         {selectedDate && selectedDateSlot && selectedDateSlot.available > 0 && (
           <p className="text-center text-sm text-[#6B7F5E] mb-2 font-medium">
             {selectedDateSlot.available} {selectedDateSlot.available === 1 ? 'spot' : 'spots'} available
