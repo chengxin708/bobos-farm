@@ -9,13 +9,13 @@ export type GuestRangeValue = { min: number; max: number }
 interface Props {
   value: GuestRangeValue | null
   onChange: (val: GuestRangeValue | null) => void
-  /** Preset values shown in the grid. Defaults cover the farm's 10–71 capacity at 5-guest steps. */
+  /** Preset values shown in the grid. Defaults to every integer from 5 to 71 (full farm capacity). */
   presets?: number[]
   /** Counts above this trigger a soft "will become an inquiry" hint below the grid. */
   softThreshold?: number
 }
 
-const DEFAULT_PRESETS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 71]
+const DEFAULT_PRESETS = Array.from({ length: 71 - 5 + 1 }, (_, i) => 5 + i)
 
 export function GuestRangePicker({
   value,
@@ -72,12 +72,12 @@ export function GuestRangePicker({
   return (
     <div className="rounded-xl border border-[#E8ECE4] p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-[#6B6157]">{t('title')}</span>
+        <span className="text-sm font-semibold text-[#1A1208]">{t('title')}</span>
         {value && (
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-1 text-xs text-[#6B6157] hover:text-[#2C2416] transition-colors border-none bg-transparent cursor-pointer"
+            className="flex items-center gap-1 text-xs font-semibold text-[#1A1208] hover:underline transition-colors border-none bg-transparent cursor-pointer"
             aria-label={t('reset')}
           >
             <X size={12} />
@@ -86,17 +86,15 @@ export function GuestRangePicker({
         )}
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-10 gap-1">
         {presets.map((n) => {
           const state = presetState(n)
           const buttonClass =
             state === 'anchor'
               ? 'bg-[#6B7F5E] text-white shadow-sm'
               : state === 'inside'
-                ? 'bg-[#6B7F5E]/20 text-[#3D4A35]'
-                : state === 'outside'
-                  ? 'bg-transparent text-[#8C8478]/50'
-                  : 'bg-transparent text-[#1A1208] hover:bg-[#E8ECE4]'
+                ? 'bg-[#6B7F5E]/25 text-[#1A1208]'
+                : 'bg-transparent text-[#1A1208] hover:bg-[#E8ECE4]'
           return (
             <button
               key={n}
@@ -104,7 +102,7 @@ export function GuestRangePicker({
               onClick={() => handleClick(n)}
               aria-pressed={state === 'anchor' || state === 'inside'}
               aria-label={t('presetAria', { count: n })}
-              className={`h-10 rounded-full border-none transition-colors text-sm font-semibold cursor-pointer ${buttonClass}`}
+              className={`h-9 rounded-full border-none transition-colors text-[13px] font-semibold cursor-pointer ${buttonClass}`}
             >
               {n}
             </button>
@@ -112,18 +110,18 @@ export function GuestRangePicker({
         })}
       </div>
 
-      <p className="mt-3 text-center text-sm font-medium text-[#3D4A35] min-h-[20px]">
+      <p className="mt-3 text-center text-base font-semibold text-[#1A1208] min-h-[22px]">
         {label}
       </p>
 
       {mode === 'empty' && (
-        <p className="mt-1 text-center text-xs text-[#8C8478]">{t('helpText')}</p>
+        <p className="mt-1 text-center text-xs text-[#1A1208]">{t('helpText')}</p>
       )}
       {mode === 'single' && (
-        <p className="mt-1 text-center text-xs text-[#8C8478]">{t('helpSingle')}</p>
+        <p className="mt-1 text-center text-xs text-[#1A1208]">{t('helpSingle')}</p>
       )}
       {overThreshold && (
-        <p className="mt-2 text-center text-xs text-[#8B6914] font-medium">
+        <p className="mt-2 text-center text-xs text-[#8B6914] font-semibold">
           {t('overThresholdHint', { threshold: softThreshold! })}
         </p>
       )}

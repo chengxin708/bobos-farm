@@ -65,21 +65,6 @@ export default function BookingDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile])
 
-  const { data: settings } = useSWR<Record<string, string>>('/api/settings/public', fetcher, {
-    revalidateOnFocus: false,
-  })
-
-  const { data: yurts } = useSWR('/api/yurts', fetcher, {
-    revalidateOnFocus: false,
-  })
-
-  const activeYurts = Array.isArray(yurts) ? yurts.filter((y: { status: string; capacity: number }) => y.status === 'ACTIVE') : []
-  const maxSingleYurt = settings?.max_guest_count
-    ? Number(settings.max_guest_count)
-    : activeYurts.length > 0
-      ? Math.max(...activeYurts.map((y: { capacity: number }) => y.capacity))
-      : 15
-
   // Whether the current selection will be routed to the inquiry flow:
   // any range (min!=max) OR a single value above the self-serve cap.
   const goingToInquiry = useMemo(() => {
@@ -252,7 +237,6 @@ export default function BookingDetailsPage() {
             value={guests}
             onChange={setGuests}
             softThreshold={SELF_SERVE_MAX_GUESTS}
-            presets={[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, Math.max(71, maxSingleYurt)]}
           />
           {touched.guests && errors.guests && (
             <div className="flex items-center gap-1.5 text-[#C4453A] -mt-3">
