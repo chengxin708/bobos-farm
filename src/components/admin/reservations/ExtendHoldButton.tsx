@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Clock, Loader2 } from 'lucide-react'
 
@@ -21,7 +21,16 @@ export default function ExtendHoldButton({
 }: ExtendHoldButtonProps) {
   const t = useTranslations('admin.reservations.actions')
   const [pending, setPending] = useState(false)
-  const warnMany = extendCount >= 3
+  // Shadow the prop so the label updates immediately from the API
+  // response without waiting for the parent to re-fetch activity logs.
+  // The effect keeps it monotonically caught up when the parent
+  // eventually does refresh with a higher count.
+  const [localCount, setLocalCount] = useState(extendCount)
+  useEffect(() => {
+    setLocalCount((n) => (extendCount > n ? extendCount : n))
+  }, [extendCount])
+  const displayCount = localCount
+  const warnMany = displayCount >= 3
 
   const handleClick = async () => {
     setPending(true)
@@ -30,6 +39,8 @@ export default function ExtendHoldButton({
         method: 'POST',
       })
       if (res.ok) {
+        const body = await res.json().catch(() => ({}))
+        if (typeof body.extendCount === 'number') setLocalCount(body.extendCount)
         onExtended()
         onToast({ ok: true, msg: t('extendHoldSuccess') })
       } else {
@@ -53,11 +64,11 @@ export default function ExtendHoldButton({
         {pending ? <Loader2 size={14} className="animate-spin" /> : <Clock size={14} />}
         {t('extendHold')}
       </button>
-      {extendCount > 0 && (
+      {displayCount > 0 && (
         <span className={`text-[11px] ${warnMany ? 'text-[#E67E22]' : 'text-[#8A7E6B]'}`}>
           {warnMany
             ? t('extendHoldWarn3')
-            : t('extendHoldCount', { count: extendCount })}
+            : t('extendHoldCount', { count: displayCount })}
         </span>
       )}
     </div>

@@ -59,7 +59,11 @@ export default function ReleaseHoldButton({
         <ConfirmDialog
           isOpen
           title={t('releaseHold')}
-          message={t('releaseHoldConfirm')}
+          // Prefix the body with a clearly flagged "no email will be
+          // sent" line so admins understand this is silent — the
+          // placeholder-email case is the common one and the usual
+          // Cancel email is wrong for them.
+          message={`⚠ ${t('releaseHoldSilentNotice')}\n\n${t('releaseHoldConfirm')}`}
           variant="danger"
           confirmLabel={t('releaseHold')}
           loading={pending}

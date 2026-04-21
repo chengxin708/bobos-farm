@@ -384,14 +384,23 @@ export default function CreateReservationModal({
                       </label>
                     )
                   })}
-                  {yurtIds.length > 0 && (
-                    <p className="text-xs mt-2 text-[#6B7F5E] font-medium">
-                      {t('multiDepositHint', {
-                        count: yurtIds.length,
-                        total: yurtIds.length * 300,
-                      })}
-                    </p>
-                  )}
+                  {yurtIds.length > 0 && (() => {
+                    // Preview matches what the API will actually
+                    // charge: custom override wins, otherwise
+                    // $300 × N. Keeps the admin's mental model in
+                    // sync with the real deposit the customer sees.
+                    const override = customDeposit !== '' ? Number(customDeposit) : null
+                    const total = override !== null && Number.isFinite(override)
+                      ? override
+                      : yurtIds.length * 300
+                    return (
+                      <p className="text-xs mt-2 text-[#6B7F5E] font-medium">
+                        {override !== null
+                          ? t('multiDepositHintCustom', { total })
+                          : t('multiDepositHint', { count: yurtIds.length, total })}
+                      </p>
+                    )
+                  })()}
                 </div>
               )}
               {capacityExceeded && (

@@ -92,7 +92,7 @@ export default function ConfirmDialog({
 
         {/* Body */}
         <div className="px-5 py-4">
-          <p className="text-sm text-[#8C8478] leading-relaxed">{message}</p>
+          <p className="text-sm text-[#8C8478] leading-relaxed whitespace-pre-line">{message}</p>
         </div>
 
         {/* Actions */}

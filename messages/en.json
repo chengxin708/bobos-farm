@@ -808,7 +808,8 @@
         "extendHoldSuccess": "Hold extended by 24 hours",
         "extendHoldFailed": "Failed to extend hold",
         "releaseHold": "Release Hold",
-        "releaseHoldConfirm": "Release this admin hold? The spot will become available immediately. No cancellation email will be sent.",
+        "releaseHoldSilentNotice": "SILENT RELEASE — no cancellation email will be sent to the customer.",
+        "releaseHoldConfirm": "Release this admin hold? The spot will become available immediately.",
         "releaseHoldSuccess": "Hold released",
         "releaseHoldFailed": "Failed to release hold"
       },
@@ -1686,7 +1687,8 @@
       "emailPlaceholder": "guest@example.com",
       "specificYurts": "Assign specific yurt(s)",
       "selectAtLeastOneYurt": "Select at least one yurt, or switch to Auto-assign / Hold.",
-      "multiDepositHint": "Deposit: $300 × {count} = ${total}"
+      "multiDepositHint": "Deposit: $300 × {count} = ${total}",
+      "multiDepositHintCustom": "Deposit (custom): ${total}"
     },
     "reports": {
       "title": "Reports & Analytics",

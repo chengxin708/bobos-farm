@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
@@ -109,6 +109,17 @@ export default function ReservationDetail({
   const locale = useLocale()
   const { data: session } = useSession()
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
+
+  // Tick a clock state every minute so the deadline countdown chip
+  // refreshes without requiring a page reload. 60s matches the chip's
+  // minute-granularity so we don't churn renders.
+  const [clockTick, setClockTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setClockTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  void clockTick // used to force re-render
+
   const [selectedOrderIndex, setSelectedOrderIndex] = useState(0)
   const panelOrder = reservation.orders?.[selectedOrderIndex] ?? reservation.orders?.[0] ?? null
   const hasMultiplePackages = (reservation.orders?.length ?? 0) > 1
@@ -464,8 +475,11 @@ export default function ReservationDetail({
             </span>
           )}
           <span className="text-xs font-mono text-[#8C8478]">{reservation.confirmationCode || reservation.id.slice(-8)}</span>
-          {/* Share buttons */}
-          {reservation.confirmationCode && (
+          {/* Share buttons — hidden on terminal states since the link
+              would lead to a reservation the customer can't claim
+              anymore (CANCELLED / EXPIRED / already past). */}
+          {reservation.confirmationCode &&
+            !['CANCELLED', 'CANCELLED_PENDING_REFUND', 'EXPIRED', 'COMPLETED'].includes(reservation.status) && (
             <div className="flex items-center gap-1 ml-auto">
               <button
                 onClick={() => {

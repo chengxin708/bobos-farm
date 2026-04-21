@@ -808,7 +808,8 @@
         "extendHoldSuccess": "已延长 24 小时",
         "extendHoldFailed": "延长失败",
         "releaseHold": "释放此预约",
-        "releaseHoldConfirm": "释放此代客预约？位置立即可用，不发送取消邮件。",
+        "releaseHoldSilentNotice": "静默释放——不会向客户发送取消邮件。",
+        "releaseHoldConfirm": "释放此代客预约？位置立即可用。",
         "releaseHoldSuccess": "已释放",
         "releaseHoldFailed": "释放失败"
       },
@@ -1686,7 +1687,8 @@
       "emailPlaceholder": "guest@example.com",
       "specificYurts": "指定蒙古包",
       "selectAtLeastOneYurt": "请至少选择一个蒙古包，或切换到自动分配 / Hold。",
-      "multiDepositHint": "押金：$300 × {count} = ${total}"
+      "multiDepositHint": "押金：$300 × {count} = ${total}",
+      "multiDepositHintCustom": "押金（自定义）：${total}"
     },
     "reports": {
       "title": "数据报告",
