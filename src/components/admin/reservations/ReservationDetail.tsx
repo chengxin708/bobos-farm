@@ -919,22 +919,33 @@ export default function ReservationDetail({
     return (
       <div className="flex-1 overflow-y-auto flex flex-col">
         {/* Package tabs — only shown for multi-yurt reservations so
-            single-package bookings keep their existing look. */}
+            single-package bookings keep their existing look. Tab label
+            prefers yurt.name (alias in parens when set); falls back to
+            the ordinal when include is missing (older admin views). */}
         {hasMultiplePackages && (
           <div className="flex border-b border-[#E8ECE4] bg-[#F8F7F4]">
-            {(reservation.orders || []).map((o, i) => (
-              <button
-                key={o.id}
-                onClick={() => setSelectedOrderIndex(i)}
-                className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
-                  selectedOrderIndex === i
-                    ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E] bg-white'
-                    : 'text-[#8C8478] hover:text-brown'
-                }`}
-              >
-                {t('detail.packageTab', { index: i + 1 })}
-              </button>
-            ))}
+            {(reservation.orders || []).map((o, i) => {
+              const order = o as Order
+              const yurt = order.reservationYurt?.yurt
+              const label = yurt
+                ? yurt.alias
+                  ? `${yurt.name} · ${yurt.alias}`
+                  : yurt.name
+                : t('detail.packageTab', { index: i + 1 })
+              return (
+                <button
+                  key={order.id}
+                  onClick={() => setSelectedOrderIndex(i)}
+                  className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                    selectedOrderIndex === i
+                      ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E] bg-white'
+                      : 'text-[#8C8478] hover:text-brown'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         )}
         {/* Order content */}

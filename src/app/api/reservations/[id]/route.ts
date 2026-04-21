@@ -109,7 +109,15 @@ export async function GET(
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, wechatId: true } },
         yurt: true,
-        orders: { include: { items: { include: { menuItem: true } } } },
+        orders: {
+          orderBy: { createdAt: "asc" },
+          include: {
+            items: { include: { menuItem: true } },
+            reservationYurt: {
+              include: { yurt: { select: { id: true, name: true, alias: true, capacity: true } } },
+            },
+          },
+        },
         rescheduleHistory: { orderBy: { rescheduledAt: "desc" } },
       },
     });

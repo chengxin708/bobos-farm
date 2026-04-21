@@ -48,6 +48,10 @@ export interface Order {
   submittedAt: string | null
   lockedAt?: string | null
   items: OrderItem[]
+  reservationYurt?: {
+    id: string
+    yurt: { id: string; name: string; alias: string | null; capacity: number }
+  } | null
 }
 
 export interface OrderSummary {

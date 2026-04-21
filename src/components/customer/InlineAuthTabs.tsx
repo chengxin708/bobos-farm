@@ -67,8 +67,11 @@ export default function InlineAuthTabs({ claimCode, claimToken, onSuccess }: Inl
         setBusy(false)
         return
       }
-      const data = await claimRes.json()
-      onSuccess(data.reservation?.id ? `/reservations/${data.reservation.id}` : '/reservations')
+      await claimRes.json()
+      // /reservations is the list page — the single-reservation detail
+      // route doesn't exist yet, so the user lands on the list (which
+      // already highlights the just-claimed booking).
+      onSuccess('/reservations')
     } catch {
       setError(t('networkError'))
       setBusy(false)
@@ -117,8 +120,7 @@ export default function InlineAuthTabs({ claimCode, claimToken, onSuccess }: Inl
         setBusy(false)
         return
       }
-      const reservationId = body.claim?.reservation?.id
-      onSuccess(reservationId ? `/reservations/${reservationId}` : '/reservations')
+      onSuccess('/reservations')
     } catch {
       setError(t('networkError'))
       setBusy(false)
