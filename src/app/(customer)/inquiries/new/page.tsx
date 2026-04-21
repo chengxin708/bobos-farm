@@ -1,9 +1,24 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { ArrowLeft, Loader2 } from "lucide-react"
+import useSWR from "swr"
+import { DatePickerCalendar, type DateStatus } from "@/components/customer/DatePickerCalendar"
+import { GuestRangePicker, type GuestRangeValue } from "@/components/customer/GuestRangePicker"
+
+const fetcher = (url: string) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error("Fetch failed")
+  return r.json()
+})
+
+function toLocalDateStr(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
 
 export default function InquiryNewPageWrapper() {
   return (
@@ -21,28 +36,72 @@ export default function InquiryNewPageWrapper() {
 
 function InquiryNewPage() {
   const t = useTranslations("inquiryForm")
+  const tCommon = useTranslations("common")
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [preferredDate, setPreferredDate] = useState(searchParams.get("date") ?? "")
+  const [preferredDate, setPreferredDate] = useState<string | null>(
+    searchParams.get("date") || null,
+  )
   const prefillCount = parseInt(searchParams.get("guestCount") ?? "", 10)
-  const [guestCountMin, setGuestCountMin] = useState<number>(
-    Number.isFinite(prefillCount) && prefillCount > 0 ? prefillCount : 40,
+  const [guests, setGuests] = useState<GuestRangeValue | null>(() =>
+    Number.isFinite(prefillCount) && prefillCount > 0
+      ? { min: prefillCount, max: prefillCount }
+      : null,
   )
-  const [guestCountMax, setGuestCountMax] = useState<number>(
-    Number.isFinite(prefillCount) && prefillCount > 0 ? prefillCount : 60,
-  )
-  const [packageHint, setPackageHint] = useState<number | null>(null)
   const [note, setNote] = useState(searchParams.get("note") ?? "")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    if (guestCountMax < guestCountMin) setGuestCountMax(guestCountMin)
-  }, [guestCountMin, guestCountMax])
+  const [today] = useState(() => new Date())
+
+  // Use the same settings-backed booking window as /booking/date. For inquiries
+  // we still respect the farm's configured window (no point collecting dates
+  // the farm isn't even open for), but we leave sold-out days clickable so
+  // "I want this date even though it's full" inquiries can come through.
+  const { data: settings } = useSWR<Record<string, string>>("/api/settings/public", fetcher, {
+    revalidateOnFocus: false,
+  })
+  const minAdvanceDays = settings?.min_advance_booking_days
+    ? Number(settings.min_advance_booking_days)
+    : 1
+  const maxAdvanceDays = settings?.max_advance_booking_days
+    ? Number(settings.max_advance_booking_days)
+    : 90
+
+  const earliestStr = useMemo(() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + minAdvanceDays)
+    return toLocalDateStr(d)
+  }, [today, minAdvanceDays])
+  const latestStr = useMemo(() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + maxAdvanceDays)
+    return toLocalDateStr(d)
+  }, [today, maxAdvanceDays])
+
+  const { data: slots } = useSWR<Record<string, { total: number; occupied: number; available: number }>>(
+    `/api/availability/slots?startDate=${earliestStr}&endDate=${latestStr}`,
+    fetcher,
+    { revalidateOnFocus: false },
+  )
+
+  const dateStatusMap = useMemo<Record<string, DateStatus>>(() => {
+    if (!slots || typeof slots !== "object") return {}
+    const map: Record<string, DateStatus> = {}
+    for (const [dateKey, info] of Object.entries(slots)) {
+      if (info.available === 0) map[dateKey] = "full"
+      else if (info.available === 1) map[dateKey] = "limited"
+      else map[dateKey] = "available"
+    }
+    return map
+  }, [slots])
+
+  const canSubmit = preferredDate != null && guests != null && !busy
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canSubmit || !preferredDate || !guests) return
     setError("")
     setBusy(true)
     try {
@@ -51,9 +110,8 @@ function InquiryNewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           preferredDate,
-          guestCountMin,
-          guestCountMax,
-          packageHint,
+          guestCountMin: guests.min,
+          guestCountMax: guests.max,
           note: note || null,
         }),
       })
@@ -75,8 +133,10 @@ function InquiryNewPage() {
     <div className="min-h-full flex flex-col">
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <button
+          type="button"
           onClick={() => router.back()}
           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#E8ECE4] transition-colors"
+          aria-label={tCommon("back")}
         >
           <ArrowLeft className="w-5 h-5 text-[#2C2416]" />
         </button>
@@ -90,56 +150,25 @@ function InquiryNewPage() {
           <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm mb-4">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
-            {t("preferredDate")}
-            <input
-              type="date"
-              required
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-[#6B6157]">{t("preferredDate")}</span>
+            <DatePickerCalendar
               value={preferredDate}
-              onChange={(e) => setPreferredDate(e.target.value)}
-              className="h-11 px-3 rounded-xl border border-[#E8ECE4] focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]"
+              onChange={setPreferredDate}
+              minDate={earliestStr}
+              maxDate={latestStr}
+              dateStatus={dateStatusMap}
+              allowFullDates
+              showLegend={false}
             />
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
-              {t("guestCountMin")}
-              <input
-                type="number"
-                required
-                min={1}
-                value={guestCountMin}
-                onChange={(e) => setGuestCountMin(parseInt(e.target.value) || 1)}
-                className="h-11 px-3 rounded-xl border border-[#E8ECE4] focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
-              {t("guestCountMax")}
-              <input
-                type="number"
-                required
-                min={1}
-                value={guestCountMax}
-                onChange={(e) => setGuestCountMax(parseInt(e.target.value) || 1)}
-                className="h-11 px-3 rounded-xl border border-[#E8ECE4] focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]"
-              />
-            </label>
           </div>
 
-          <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
-            {t("packageHint")}
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={packageHint ?? ""}
-              onChange={(e) => setPackageHint(e.target.value ? parseInt(e.target.value) : null)}
-              className="h-11 px-3 rounded-xl border border-[#E8ECE4] focus:outline-none focus:ring-2 focus:ring-[#6B7F5E]/20 focus:border-[#6B7F5E]"
-              placeholder={t("packageHintPlaceholder")}
-            />
-            <span className="text-xs text-[#8C8478]">{t("packageHintHelp")}</span>
-          </label>
+          <GuestRangePicker
+            value={guests}
+            onChange={setGuests}
+            softThreshold={30}
+          />
 
           <label className="flex flex-col gap-1 text-sm text-[#2C2416]">
             {t("note")}
@@ -155,7 +184,7 @@ function InquiryNewPage() {
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={!canSubmit}
             className="h-12 rounded-full bg-[#6B7F5E] text-white font-semibold hover:bg-[#5A6E4E] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {busy && <Loader2 size={14} className="animate-spin" />}
