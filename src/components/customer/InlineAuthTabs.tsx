@@ -228,6 +228,7 @@ export default function InlineAuthTabs({ claimCode, claimToken, onSuccess }: Inl
             <button
               type="button"
               onClick={() => setShowLoginPw(v => !v)}
+              aria-label={showLoginPw ? 'Hide password' : 'Show password'}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C8478]"
             >
               {showLoginPw ? <EyeOff size={16} /> : <Eye size={16} />}

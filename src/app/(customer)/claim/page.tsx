@@ -159,6 +159,7 @@ function ClaimPage() {
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <button
           onClick={() => router.push("/")}
+          aria-label={t("back")}
           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#E8ECE4] transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-[#2C2416]" />

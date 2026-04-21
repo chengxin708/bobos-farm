@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 import { ArrowLeft, ChevronDown, ChevronUp, Save } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
@@ -112,6 +112,8 @@ export default function CustomerDetailPage() {
   const t = useTranslations('admin.customers')
   const tRes = useTranslations('admin.reservations')
   const tc = useTranslations('admin.common')
+  const locale = useLocale()
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US'
   const isMobile = useIsMobile()
 
   // ── State ──────────────────────────────────────────────────────
@@ -389,7 +391,7 @@ export default function CustomerDetailPage() {
                           {e.source === 'self' ? t('detailPage.sourceSelf') : t('detailPage.sourceAdmin')}
                         </span>
                         {e.recordedBy?.name && <span className="text-[10px]">{t('detailPage.recordedBy', { name: e.recordedBy.name })}</span>}
-                        <span className="text-[10px]">{t('detailPage.recordedOn', { date: new Date(e.createdAt).toLocaleDateString() })}</span>
+                        <span className="text-[10px]">{t('detailPage.recordedOn', { date: new Date(e.createdAt).toLocaleDateString(dateLocale) })}</span>
                       </div>
                     ))}
                   </div>

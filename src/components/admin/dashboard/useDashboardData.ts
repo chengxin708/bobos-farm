@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import useSWR from 'swr'
 import {
@@ -138,12 +138,12 @@ export function toDateStr(d: Date): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function activityText(log: ActivityLog, t: (key: string, params?: any) => string): string {
+export function activityText(log: ActivityLog, t: (key: string, params?: any) => string, dateLocale: string = 'en-US'): string {
   const details = log.details as Record<string, string> | null
   const userName = log.user?.name || log.user?.email || 'Unknown'
   switch (log.action) {
     case 'RESERVATION_CREATED':
-      return t('activityLog.reservationCreated', { userName, date: details?.date ? new Date(details.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '' })
+      return t('activityLog.reservationCreated', { userName, date: details?.date ? new Date(details.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' }) : '' })
     case 'DEPOSIT_CONFIRMED':
       return t('activityLog.depositConfirmed', { userName })
     case 'ORDER_SUBMITTED':
@@ -225,6 +225,8 @@ export interface ActivityItem {
 
 export function useDashboardData() {
   const t = useTranslations('admin.dashboard')
+  const locale = useLocale()
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US'
   const { data: session } = useSession()
 
   const today = toDateStr(new Date())
@@ -341,10 +343,10 @@ export function useDashboardData() {
     if (!activityLogs || !Array.isArray(activityLogs)) return []
     return activityLogs.map(log => ({
       color: ACTIVITY_DOT_COLOR[log.action] || 'bg-[#3B82F6]',
-      text: activityText(log, t),
+      text: activityText(log, t, dateLocale),
       time: timeAgo(log.createdAt, t),
     }))
-  }, [activityLogs, t])
+  }, [activityLogs, t, dateLocale])
 
   const userName = session?.user?.name || ''
 

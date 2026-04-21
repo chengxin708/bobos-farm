@@ -723,6 +723,7 @@ export default function ReservationDetail({
                   }}
                   className="flex items-center gap-1.5 text-sm text-brown hover:text-[#6B7F5E] transition-colors"
                   title={t('detail.copyWechat')}
+                  aria-label={t('detail.copyWechat')}
                 >
                   <span className="font-medium">{reservation.user.wechatId}</span>
                   {copiedWechat ? <Check size={12} className="text-[#6B7F5E]" /> : <Copy size={12} className="text-[#8C8478]" />}

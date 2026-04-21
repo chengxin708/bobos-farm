@@ -84,6 +84,7 @@ export default function ConfirmDialog({
           </div>
           <button
             onClick={onCancel}
+            aria-label={resolvedCancelLabel}
             className="p-1 rounded-lg hover:bg-[#E8ECE4] transition-colors border-0 bg-transparent cursor-pointer"
           >
             <X size={16} className="text-[#8C8478]" />

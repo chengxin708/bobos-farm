@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell, CreditCard, Calendar, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import useSWR from 'swr'
 
 interface PendingReservation {
@@ -32,6 +32,8 @@ function timeAgo(dateStr: string): string {
 export default function NotificationBell() {
   const router = useRouter()
   const t = useTranslations('admin.common')
+  const locale = useLocale()
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US'
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -109,7 +111,7 @@ export default function NotificationBell() {
                       {item.user.name || item.user.email}
                     </p>
                     <p className="text-xs text-[#8C8478] mt-0.5">
-                      ${item.depositAmount} · {item.yurt?.name ? `${item.yurt.name}${item.yurt.alias ? ` (${item.yurt.alias})` : ''}` : t('pendingYurt')} · {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      ${item.depositAmount} · {item.yurt?.name ? `${item.yurt.name}${item.yurt.alias ? ` (${item.yurt.alias})` : ''}` : t('pendingYurt')} · {new Date(item.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                     </p>
                     <p className="text-[10px] text-[#8C8478] mt-1">
                       {timeAgo(item.createdAt)}

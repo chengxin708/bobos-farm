@@ -107,7 +107,7 @@ export default function ConvertInquiryModal({
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-serif font-semibold text-[#2C2416]">{t('title')}</h2>
-          <button onClick={onCancel} className="p-1 rounded hover:bg-[#F2EDE6]">
+          <button onClick={onCancel} aria-label={t('cancel')} className="p-1 rounded hover:bg-[#F2EDE6]">
             <X size={16} />
           </button>
         </div>

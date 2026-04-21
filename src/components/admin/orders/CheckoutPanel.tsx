@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { ArrowLeft, Check, Loader2, Printer } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -42,14 +42,14 @@ function formatCurrency(amount: number): string {
   return `$${amount.toFixed(2)}`
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', year: 'numeric' })
+  return d.toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-function formatDateTime(dateStr: string): string {
+function formatDateTime(dateStr: string, locale: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleString('zh-CN', {
+  return d.toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -71,6 +71,8 @@ export default function CheckoutPanel({
 }: CheckoutPanelProps) {
   const t = useTranslations('admin.orders')
   const tc = useTranslations('admin.common')
+  const appLocale = useLocale()
+  const dateLocale = appLocale === 'zh' ? 'zh-CN' : 'en-US'
   const [discount, setDiscount] = useState<number>(order.discount ?? 0)
   const [paymentMethod, setPaymentMethod] = useState<string>(order.paymentMethod ?? '')
   const [paymentMethods, setPaymentMethods] = useState<string[]>(DEFAULT_PAYMENT_METHODS)
@@ -238,7 +240,7 @@ export default function CheckoutPanel({
                 {' · '}
                 {reservation.yurt?.name ? `${reservation.yurt.name}${reservation.yurt.alias ? ` (${reservation.yurt.alias})` : ''}` : tc('pendingYurt')}
                 {' · '}
-                {formatDate(reservation.date)}
+                {formatDate(reservation.date, dateLocale)}
                 {' · '}
                 {t('guests', { count: reservation.guestCount })}
               </p>
@@ -428,6 +430,8 @@ function PaidSummary({
   onPrint: () => void
 }) {
   const t = useTranslations('admin.orders')
+  const appLocale = useLocale()
+  const dateLocale = appLocale === 'zh' ? 'zh-CN' : 'en-US'
   const discount = order.discount ?? 0
   const totalDue = subtotal - discount
   const amountPaid = order.finalTotal ?? Math.max(0, totalDue - depositCredit)
@@ -448,7 +452,7 @@ function PaidSummary({
 
       {/* Payment details card */}
       <div className="w-full rounded-xl border border-[#E8ECE4] bg-white p-5 space-y-3">
-        <DetailRow label={t('paidAt')} value={order.paidAt ? formatDateTime(order.paidAt) : '-'} />
+        <DetailRow label={t('paidAt')} value={order.paidAt ? formatDateTime(order.paidAt, dateLocale) : '-'} />
         <DetailRow label={t('paymentMethod')} value={order.paymentMethod ?? '-'} />
         <DetailRow
           label={t('paidAmount')}

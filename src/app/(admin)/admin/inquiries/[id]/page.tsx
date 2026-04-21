@@ -4,7 +4,7 @@ import { useState, use } from "react"
 import useSWR from "swr"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { ArrowLeft, Loader2, ExternalLink } from "lucide-react"
 import ConvertInquiryModal from "@/components/admin/inquiries/ConvertInquiryModal"
 
@@ -45,6 +45,8 @@ export default function AdminInquiryDetailPage({
   params: Promise<{ id: string }>
 }) {
   const t = useTranslations("adminInquiries")
+  const locale = useLocale()
+  const dateLocale = locale === "zh" ? "zh-CN" : "en-US"
   const router = useRouter()
   const { id } = use(params)
   const { data, mutate, isLoading } = useSWR<InquiryDetail>(`/api/inquiries/${id}`, fetcher, {
@@ -99,7 +101,7 @@ export default function AdminInquiryDetailPage({
       </div>
 
       <section className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 text-sm">
-        <div className="flex justify-between"><span className="text-[#8C8478]">{t("preferredDate")}</span><span>{new Date(data.preferredDate).toLocaleDateString()}</span></div>
+        <div className="flex justify-between"><span className="text-[#8C8478]">{t("preferredDate")}</span><span>{new Date(data.preferredDate).toLocaleDateString(dateLocale)}</span></div>
         <div className="flex justify-between"><span className="text-[#8C8478]">{t("guestRange")}</span><span>{data.guestCountMin}–{data.guestCountMax}</span></div>
         {data.packageHint && (
           <div className="flex justify-between"><span className="text-[#8C8478]">{t("packageHint")}</span><span>{data.packageHint}</span></div>
@@ -169,7 +171,7 @@ export default function AdminInquiryDetailPage({
           {data.comments.map((c) => (
             <div key={c.id} className="border-l-2 border-[#E8ECE4] pl-3">
               <p className="text-xs text-[#8C8478]">
-                {c.author.name || c.author.email} · {t(`commentType.${c.type}`)} · {new Date(c.createdAt).toLocaleString()}
+                {c.author.name || c.author.email} · {t(`commentType.${c.type}`)} · {new Date(c.createdAt).toLocaleString(dateLocale)}
               </p>
               <p className="text-sm text-[#2C2416] whitespace-pre-wrap">{c.content}</p>
             </div>

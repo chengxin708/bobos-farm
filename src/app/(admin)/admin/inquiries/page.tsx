@@ -3,7 +3,7 @@
 import Link from "next/link"
 import useSWR from "swr"
 import { useState } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { Loader2 } from "lucide-react"
 
 interface InquiryRow {
@@ -32,6 +32,8 @@ const PRIORITY_OPTIONS = ["", "NORMAL", "HIGH", "URGENT"] as const
 
 export default function AdminInquiryListPage() {
   const t = useTranslations("adminInquiries")
+  const locale = useLocale()
+  const dateLocale = locale === "zh" ? "zh-CN" : "en-US"
   const [status, setStatus] = useState<string>("")
   const [priority, setPriority] = useState<string>("")
   const [tag, setTag] = useState<string>("")
@@ -91,7 +93,7 @@ export default function AdminInquiryListPage() {
                   {inq.user.name || inq.user.email}
                 </p>
                 <p className="text-xs text-[#6B6157]">
-                  {new Date(inq.preferredDate).toLocaleDateString()} · {inq.guestCountMin}–{inq.guestCountMax} {t("guestsShort")}
+                  {new Date(inq.preferredDate).toLocaleDateString(dateLocale)} · {inq.guestCountMin}–{inq.guestCountMax} {t("guestsShort")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
