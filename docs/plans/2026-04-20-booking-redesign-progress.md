@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 进行中（23/40 commit）
+**Status:** 进行中（24/40 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -14,7 +14,7 @@
 3. 做完一个 commit 就勾上 checkbox + 更新 "Last updated" + push 到 GitHub
 4. 遇到不确定先停下来问用户，别自作主张改 design
 
-**下一步**: Phase 4 commit 4.5 (`feat(booking-redesign): admin inquiry list + detail pages`)
+**下一步**: Phase 4 commit 4.6 (`feat(booking-redesign): inquiry timeout + auto-expire cron jobs`)
 
 ---
 
@@ -64,7 +64,7 @@
 - [x] 4.2 `feat(booking-redesign): admin inquiry list + detail + comment APIs`
 - [x] 4.3 `feat(booking-redesign): customer inquiry submission form`
 - [x] 4.4 `feat(booking-redesign): customer inquiry list page`
-- [ ] 4.5 `feat(booking-redesign): admin inquiry list + detail pages`
+- [x] 4.5 `feat(booking-redesign): admin inquiry list + detail pages`
 - [ ] 4.6 `feat(booking-redesign): inquiry timeout + auto-expire cron jobs`
 
 ---

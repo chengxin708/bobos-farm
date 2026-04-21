@@ -1777,6 +1777,54 @@
       "marketingOptIn": "Email me occasional farm updates. You can unsubscribe anytime."
     }
   },
+  "adminInquiries": {
+    "title": "Inquiries",
+    "allStatuses": "All statuses",
+    "allPriorities": "All priorities",
+    "tagFilter": "Tag filter",
+    "empty": "No inquiries match.",
+    "guestsShort": "guests",
+    "status": {
+      "PENDING": "Pending",
+      "IN_PROGRESS": "In progress",
+      "AWAITING_CUSTOMER": "Awaiting customer",
+      "CONVERTED": "Converted",
+      "CLOSED": "Closed",
+      "EXPIRED": "Expired"
+    },
+    "priority": {
+      "NORMAL": "Normal",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "detailTitle": "{name} — inquiry",
+    "preferredDate": "Preferred date",
+    "guestRange": "Guests",
+    "packageHint": "Package hint",
+    "statusLabel": "Status",
+    "priorityLabel": "Priority",
+    "note": "Customer note",
+    "convertedTo": "→ Reservation {code}",
+    "markInProgress": "Mark in progress",
+    "markWaiting": "Awaiting customer",
+    "markClosed": "Close",
+    "convertCta": "Convert to reservation",
+    "converting": "Converting...",
+    "convertYurtIdsPrompt": "Comma-separated yurt IDs to assign:",
+    "convertFailed": "Conversion failed",
+    "commentsTitle": "Activity & comments",
+    "noComments": "No activity yet.",
+    "commentPlaceholder": "Log a call, note, or internal comment",
+    "commentPost": "Post",
+    "commentPosting": "Posting...",
+    "commentType": {
+      "INTERNAL_NOTE": "Internal note",
+      "PHONE_LOG": "Phone call",
+      "EMAIL_LOG": "Email",
+      "WECHAT_LOG": "WeChat",
+      "SYSTEM": "System"
+    }
+  },
   "inquiryForm": {
     "title": "Tell us about your gathering",
     "subtitle": "Groups above 30 or special dates are handled as inquiries — we'll reach out within a day to finalize.",
