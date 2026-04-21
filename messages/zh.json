@@ -842,6 +842,7 @@
       },
       "detail": {
         "title": "预订详情",
+        "packageTab": "包 {index}",
         "reservationInfo": "预订信息",
         "date": "日期",
         "yurt": "营地",

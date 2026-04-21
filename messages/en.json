@@ -842,6 +842,7 @@
       },
       "detail": {
         "title": "Reservation Details",
+        "packageTab": "Package {index}",
         "reservationInfo": "Reservation Info",
         "date": "Date",
         "yurt": "Yurt",

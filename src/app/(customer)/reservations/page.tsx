@@ -492,7 +492,10 @@ export default function ReservationsPage() {
               const isCancelling = cancelling === r.id
               const canModify = isConfirmed || isPaymentSubmitted
               const canPreOrder = isConfirmed
-              const preOrderCount = r.orders?.[0]?.items?.length || 0
+              const preOrderCount = (r.orders ?? []).reduce(
+                (sum, o) => sum + (o.items?.length ?? 0),
+                0,
+              )
 
               return (
                 <div

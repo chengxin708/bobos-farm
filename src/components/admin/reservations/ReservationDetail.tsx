@@ -109,7 +109,9 @@ export default function ReservationDetail({
   const locale = useLocale()
   const { data: session } = useSession()
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
-  const panelOrder = reservation.orders?.[0] ?? null
+  const [selectedOrderIndex, setSelectedOrderIndex] = useState(0)
+  const panelOrder = reservation.orders?.[selectedOrderIndex] ?? reservation.orders?.[0] ?? null
+  const hasMultiplePackages = (reservation.orders?.length ?? 0) > 1
 
   const [detailTab, setDetailTab] = useState<'info' | 'order' | 'notes'>('info')
   const [showOrderEditor, setShowOrderEditor] = useState(false)
@@ -916,6 +918,25 @@ export default function ReservationDetail({
 
     return (
       <div className="flex-1 overflow-y-auto flex flex-col">
+        {/* Package tabs — only shown for multi-yurt reservations so
+            single-package bookings keep their existing look. */}
+        {hasMultiplePackages && (
+          <div className="flex border-b border-[#E8ECE4] bg-[#F8F7F4]">
+            {(reservation.orders || []).map((o, i) => (
+              <button
+                key={o.id}
+                onClick={() => setSelectedOrderIndex(i)}
+                className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                  selectedOrderIndex === i
+                    ? 'text-[#6B7F5E] border-b-2 border-[#6B7F5E] bg-white'
+                    : 'text-[#8C8478] hover:text-brown'
+                }`}
+              >
+                {t('detail.packageTab', { index: i + 1 })}
+              </button>
+            ))}
+          </div>
+        )}
         {/* Order content */}
         <div className="p-5 flex flex-col gap-4 flex-1">
           {/* Order status */}
