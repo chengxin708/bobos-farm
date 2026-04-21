@@ -79,6 +79,11 @@ export default function BookingConfirmPage() {
   async function createReservation() {
     setCreating(true)
     setError(null)
+    // 20s timeout: the POST runs through yurt auto-assign, DB writes,
+    // and fire-and-forget emails. A slow/hung request should surface
+    // a retry button instead of spinning forever.
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 20_000)
     try {
       const res = await fetch('/api/reservations', {
         method: 'POST',
@@ -90,6 +95,7 @@ export default function BookingConfirmPage() {
           contactName: booking.contactName || undefined,
           contactPhone: booking.contactPhone || undefined,
         }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -105,9 +111,13 @@ export default function BookingConfirmPage() {
       booking.setReservation(reservation.id, reservation.paymentDeadline)
       setCreated(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      const msg = err instanceof Error && err.name === 'AbortError'
+        ? 'Request timed out. Check your connection and try again.'
+        : err instanceof Error ? err.message : 'Something went wrong'
+      setError(msg)
       creationAttempted.current = false // allow retry
     } finally {
+      clearTimeout(timeoutId)
       setCreating(false)
     }
   }
@@ -224,6 +234,10 @@ export default function BookingConfirmPage() {
     if (!booking.reservationId || !acceptedTerms) return
     setSubmitting(true)
     setError(null)
+    // 30s for the PATCH — allows for a slow DB write on the admin-
+    // deposit email fan-out. Screenshot upload is separate (longer).
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30_000)
 
     try {
       // Upload screenshot if provided
@@ -240,6 +254,7 @@ export default function BookingConfirmPage() {
           paymentReference: `BOBO-${booking.selectedDate?.replace(/-/g, '')}-${booking.contactName.split(' ')[0]?.toUpperCase()}`,
           ...(screenshotUrl ? { paymentScreenshotUrl: screenshotUrl } : {}),
         }),
+        signal: controller.signal,
       })
 
       if (!res.ok) {
@@ -258,8 +273,12 @@ export default function BookingConfirmPage() {
         router.push('/reservations')
       }, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      const msg = err instanceof Error && err.name === 'AbortError'
+        ? 'Request timed out. Check your connection and try again.'
+        : err instanceof Error ? err.message : 'Something went wrong'
+      setError(msg)
     } finally {
+      clearTimeout(timeoutId)
       setSubmitting(false)
     }
   }
