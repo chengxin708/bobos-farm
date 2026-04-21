@@ -1904,6 +1904,7 @@
     "title": "告诉我们您的聚会",
     "subtitle": "超过 30 人或特殊日期通过咨询处理——我们会在一天内联系您确认。",
     "stepLabel": "咨询单",
+    "signedInReassurance": "您已以 {name} 身份登录——我们会通过这个账号联系您。",
     "preferredDate": "期望日期",
     "note": "其它需求？",
     "notePlaceholder": "场合、饮食、特殊要求...",

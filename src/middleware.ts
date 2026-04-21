@@ -65,11 +65,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Protect /booking/* routes ── (phase 3.1)
+  // ── Protect /booking/* and /inquiries/new ── (phase 3.1 + 7)
   // The new booking flow assumes a logged-in customer so that claim,
-  // merge and inquiry routing all work consistently. Anonymous users
-  // get bounced to login with the original destination preserved.
-  if (pathname.startsWith("/booking")) {
+  // merge and inquiry routing all work consistently — and so the inquiry
+  // form can rely on session identity instead of asking for name/email
+  // a second time. Anonymous users get bounced to login with the original
+  // destination preserved.
+  if (pathname.startsWith("/booking") || pathname === "/inquiries/new") {
     const token = await getToken({
       req: request,
       secret: process.env.AUTH_SECRET,

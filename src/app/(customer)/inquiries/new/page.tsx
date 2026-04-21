@@ -3,7 +3,8 @@
 import { useState, useMemo, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ChevronLeft, Loader2 } from "lucide-react"
+import { ChevronLeft, Loader2, UserCircle2 } from "lucide-react"
+import { useSession } from "next-auth/react"
 import useSWR from "swr"
 import { DatePickerCalendar, type DateStatus } from "@/components/customer/DatePickerCalendar"
 import { GuestCountPicker } from "@/components/customer/GuestCountPicker"
@@ -40,6 +41,7 @@ function InquiryNewPage() {
   const tCommon = useTranslations("common")
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
 
   const [preferredDate, setPreferredDate] = useState<string | null>(
     searchParams.get("date") || null,
@@ -158,6 +160,17 @@ function InquiryNewPage() {
         <div className="max-w-[560px] mx-auto flex flex-col gap-5">
           {error && (
             <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm">{error}</div>
+          )}
+
+          {session?.user && (
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#E8ECE4]/60 text-sm text-[#3D4A35]">
+              <UserCircle2 size={18} className="shrink-0 text-[#6B7F5E]" />
+              <span className="flex-1 leading-tight">
+                {t("signedInReassurance", {
+                  name: session.user.name || session.user.email || "",
+                })}
+              </span>
+            </div>
           )}
 
           <div className="flex flex-col gap-2">
