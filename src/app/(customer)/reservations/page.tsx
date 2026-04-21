@@ -513,7 +513,7 @@ function ReservationsPage() {
               {t('emptySubtitle')}
             </p>
             <Link
-              href="/booking/start"
+              href="/booking/date"
               className="no-underline mt-2 bg-[#6B7F5E] text-white rounded-full px-6 py-3 text-sm font-semibold"
             >
               {t('bookFirst')}

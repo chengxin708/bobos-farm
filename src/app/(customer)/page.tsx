@@ -60,7 +60,7 @@ export default function Landing() {
               {t('hero.location')}
             </p>
             <Link
-              href="/booking/start"
+              href="/booking/date"
               className="inline-block mt-6 bg-[#6B7F5E] text-white rounded-full px-8 py-3 text-base font-medium no-underline transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
             >
               {t('hero.bookVisit')}
@@ -201,7 +201,7 @@ export default function Landing() {
               {t('cta.title')}
             </h2>
             <Link
-              href="/booking/start"
+              href="/booking/date"
               className="inline-block bg-[#6B7F5E] text-white rounded-full px-8 py-3 text-base font-medium no-underline transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
             >
               {t('cta.bookVisit')}

@@ -1821,27 +1821,6 @@
       "claimAdminBlocked": "当前账户无法认领客户预约，请用客户账户登录。"
     }
   },
-  "bookingStart": {
-    "title": "您想怎么预约？",
-    "subtitle": "小型聚会可自助预约，大型或日期灵活的聚会建议通过咨询联系我们。",
-    "or": "或者",
-    "decided": {
-      "title": "我已确定",
-      "body": "≤ 30 人，日期固定。选房、付押金、完成。",
-      "cta": "开始预约"
-    },
-    "unsure": {
-      "title": "我还不确定",
-      "body": "人数较多、日期灵活或想先咨询？请发起咨询。",
-      "cta": "发起咨询"
-    },
-    "overGuestModal": {
-      "title": "超过 30 人请通过咨询",
-      "body": "超过 30 人的聚会我们需要直接协调房间和餐食——通常一天内会回复。",
-      "inquire": "转为咨询",
-      "revise": "修改人数"
-    }
-  },
   "adminInquiries": {
     "title": "咨询",
     "allStatuses": "全部状态",

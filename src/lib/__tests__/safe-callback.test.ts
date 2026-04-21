@@ -10,7 +10,7 @@ describe("safeCallbackUrl", () => {
   });
 
   it("accepts allowlisted relative paths", () => {
-    expect(safeCallbackUrl("/booking/start", ORIGIN)).toBe("/booking/start");
+    expect(safeCallbackUrl("/booking/date", ORIGIN)).toBe("/booking/date");
     expect(safeCallbackUrl("/claim", ORIGIN)).toBe("/claim");
     expect(safeCallbackUrl("/reservations/abc123", ORIGIN)).toBe("/reservations/abc123");
     expect(safeCallbackUrl("/inquiries/new", ORIGIN)).toBe("/inquiries/new");

@@ -2,7 +2,7 @@
 
 **Design:** `./2026-04-20-booking-redesign-design.md`
 **Plan:** `./2026-04-20-booking-redesign-plan.md`
-**Status:** 完成（29/40 commit — 合并后仍剩部分可选增强；见下方 "未覆盖" 节）
+**Status:** 完成（29/40 commit）+ Phase 7 UX 整合完成（5/5 commit）
 **Last updated:** 2026-04-20
 
 ---
@@ -80,6 +80,20 @@
 ## Phase 6 — GDPR 数据删除脚本（0/1）
 
 - [x] 6.1 `feat(booking-redesign): admin data deletion script (GDPR)`
+
+---
+
+## Phase 7 — UX 整合（5/5）
+
+2026-04-20 追加：Phase 5.1 的双卡片入口证明对客户是内部概念（预订 vs 咨询）的强推——用户不该关心这个区别。改为统一流程：所有人从 `/booking/date` 进入；中途根据人数范围/数量自动转咨询单。`/booking/start` 保留为 redirect 防止死链。
+
+- [x] 7.1 `feat(booking-redesign): extract DatePickerCalendar shared component`
+- [x] 7.2 `feat(booking-redesign): add GuestRangePicker component`
+- [x] 7.3 `feat(booking-redesign): rework /inquiries/new with new pickers`
+- [x] 7.4 `feat(booking-redesign): range picker + auto inquiry conversion in details`
+- [x] 7.5 `feat(booking-redesign): remove /booking/start dual-path entry`
+
+转咨询触发条件：人数选范围（min != max）或 max > 30；自助预约上限继续按 Phase 5.2 的 30 人保持不变。
 
 ---
 

@@ -153,7 +153,7 @@ export default function Navbar() {
             {t('menu')}
           </Link>
           <Link
-            href="/booking/start"
+            href="/booking/date"
             className="no-underline px-5 py-2 rounded-full bg-[#6B7F5E] text-white text-sm font-medium transition-all hover:bg-[#5A6E4F] active:scale-[0.97]"
           >
             {t('bookVisit')}
