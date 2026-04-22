@@ -13,6 +13,11 @@ const convertSchema = z.object({
     message: "Invalid date",
   }),
   customDeposit: z.number().min(0).optional(),
+  // Default true: when converting an inquiry, the customer's free-text
+  // request is the admin's main context for the final reservation.
+  // Admin can opt out if they rewrote the note separately.
+  copyNoteToSpecialRequests: z.boolean().optional().default(true),
+  specialRequests: z.string().max(2000).optional(),
 });
 
 function randomCode(): string {
@@ -61,7 +66,7 @@ export async function POST(
         { status: 400 },
       );
     }
-    const { yurtIds, guestCount, date, customDeposit } = parsed.data;
+    const { yurtIds, guestCount, date, customDeposit, copyNoteToSpecialRequests, specialRequests } = parsed.data;
     const uniqueYurtIds = Array.from(new Set(yurtIds));
     const reservationDate = new Date(date);
 
@@ -129,6 +134,13 @@ export async function POST(
     const primaryYurtId = uniqueYurtIds[0];
 
     const now = new Date();
+    // Prefer an explicit specialRequests override; otherwise fall back to
+    // the inquiry's original note if the admin opted to carry it over.
+    const resolvedSpecialRequests =
+      specialRequests?.trim() ||
+      (copyNoteToSpecialRequests ? inquiry.note?.trim() || null : null) ||
+      null;
+
     const created = await prisma.$transaction(async (tx) => {
       const reservation = await tx.reservation.create({
         data: {
@@ -145,6 +157,7 @@ export async function POST(
           paymentDeadline: adminPaymentDeadline,
           packageCount: uniqueYurtIds.length,
           yurtAssignedAt: now,
+          specialRequests: resolvedSpecialRequests,
         },
       });
 
