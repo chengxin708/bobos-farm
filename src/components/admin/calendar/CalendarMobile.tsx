@@ -606,11 +606,24 @@ export default function CalendarMobile() {
 
   const { used, total, assignedCount, unassignedCount, hasAnomaly } = selectedDayCapacity
   const capacityPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0
+  const overflow = activeYurts.length > 0
+    ? Math.max(0, assignedCount + unassignedCount - activeYurts.length)
+    : 0
 
-  // Status indicator for capacity header
+  // Status indicator for capacity header. Over-allocation takes priority —
+  // admin needs to see this before anomaly/pending signals.
   let statusIndicator: React.ReactNode = null
   if (assignedCount + unassignedCount > 0) {
-    if (hasAnomaly) {
+    if (overflow > 0) {
+      statusIndicator = (
+        <span className="flex items-center gap-1">
+          <AlertTriangle size={12} className="text-[#C4533A]" />
+          <span className="text-[11px] text-[#C4533A] font-semibold">
+            {t('overflowShort', { count: overflow })}
+          </span>
+        </span>
+      )
+    } else if (hasAnomaly) {
       statusIndicator = (
         <span className="flex items-center gap-1">
           <AlertTriangle size={12} className="text-[#C4533A]" />

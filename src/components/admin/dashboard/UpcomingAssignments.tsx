@@ -8,6 +8,7 @@ import { CalendarDays } from 'lucide-react'
 interface DaySummary {
   totalGuests: number
   totalCapacity: number
+  yurtCount: number
   reservationCount: number
   assignedCount: number
   unassignedCount: number
@@ -56,10 +57,17 @@ export default function UpcomingAssignments() {
     cur.setDate(cur.getDate() + 1)
   }
 
-  // Filter to only dates with unassigned reservations
+  // Show dates with unassigned reservations OR over-allocations.
   const rows = dates
     .map(d => ({ date: d, summary: data?.[d] }))
-    .filter(r => r.summary && r.summary.unassignedCount > 0)
+    .filter(r => {
+      if (!r.summary) return false
+      if (r.summary.unassignedCount > 0) return true
+      const overflow = r.summary.yurtCount > 0
+        ? r.summary.reservationCount - r.summary.yurtCount
+        : 0
+      return overflow > 0
+    })
 
   if (!data || rows.length === 0) return null
 
@@ -91,10 +99,16 @@ export default function UpcomingAssignments() {
           const s = summary!
           const allAssigned = s.unassignedCount === 0
           const hasAnomaly = s.hasAnomaly
-          // Status: green (all assigned), yellow (some unassigned), red (anomaly)
+          const overflow = s.yurtCount > 0
+            ? Math.max(0, s.reservationCount - s.yurtCount)
+            : 0
+          // Status priority: over-allocation > anomaly > all-assigned > pending.
           let statusDot: string
           let statusColor: string
-          if (hasAnomaly) {
+          if (overflow > 0) {
+            statusDot = 'bg-[#DC3545]'
+            statusColor = '#DC3545'
+          } else if (hasAnomaly) {
             statusDot = 'bg-[#DC3545]'
             statusColor = '#DC3545'
           } else if (allAssigned) {
@@ -110,7 +124,7 @@ export default function UpcomingAssignments() {
               key={date}
               onClick={() => router.push(`/admin/calendar?date=${date}`)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors hover:bg-[#F5F2ED] cursor-pointer bg-transparent border-none w-full text-left"
-              style={hasAnomaly ? { backgroundColor: '#FEF2F2' } : undefined}
+              style={overflow > 0 || hasAnomaly ? { backgroundColor: '#FEF2F2' } : undefined}
             >
               {/* Status dot */}
               <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${statusDot}`} />
@@ -125,12 +139,17 @@ export default function UpcomingAssignments() {
                 {s.reservationCount} res
               </span>
 
-              {/* Assigned / Unassigned */}
+              {/* Assigned / Unassigned / Over */}
               <span className="text-[11px] font-medium shrink-0" style={{ color: statusColor }}>
                 {s.assignedCount} {t('assigned')}
                 {s.unassignedCount > 0 && (
-                  <span className="ml-1.5" style={{ color: '#D4A017' }}>
+                  <span className="ml-1.5" style={{ color: overflow > 0 ? '#DC3545' : '#D4A017' }}>
                     {s.unassignedCount} {t('unassigned')}
+                  </span>
+                )}
+                {overflow > 0 && (
+                  <span className="ml-1.5 font-semibold" style={{ color: '#DC3545' }}>
+                    +{overflow} over
                   </span>
                 )}
               </span>

@@ -33,17 +33,21 @@ export async function GET(req: NextRequest) {
     select: { date: true, guestCount: true, yurtId: true },
   });
 
-  // Get total capacity
+  // Get total capacity + yurt count. yurtCount is exposed so clients can
+  // detect over-allocation (reservationCount > yurtCount) without needing
+  // a separate /api/yurts round-trip.
   const activeYurts = await prisma.yurt.findMany({
     where: { status: "ACTIVE" },
     select: { capacity: true },
   });
   const totalCapacity = activeYurts.reduce((sum, y) => sum + y.capacity, 0);
+  const yurtCount = activeYurts.length;
 
   // Group by date
   const dateMap: Record<string, {
     totalGuests: number;
     totalCapacity: number;
+    yurtCount: number;
     reservationCount: number;
     assignedCount: number;
     unassignedCount: number;
@@ -56,6 +60,7 @@ export async function GET(req: NextRequest) {
       dateMap[dateKey] = {
         totalGuests: 0,
         totalCapacity: totalCapacity,
+        yurtCount: yurtCount,
         reservationCount: 0,
         assignedCount: 0,
         unassignedCount: 0,

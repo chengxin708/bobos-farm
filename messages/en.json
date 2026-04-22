@@ -1134,6 +1134,8 @@
       "allAssigned": "All assigned",
       "pendingShort": "Pend",
       "anomaly": "Anomaly",
+      "overflowShort": "+{count} over",
+      "overflowTitle": "Over-allocated: {count} reservation(s) beyond physical yurt count",
       "anomalyOverbooked": "Overbooked: guests exceed total capacity",
       "yurtCapacity": "{capacity}",
       "navLabel": {

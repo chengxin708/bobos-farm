@@ -283,15 +283,18 @@ export default function CalendarDesktop() {
 
   /** Per-date capacity summary (for week view footer) */
   const weekCapacity = useMemo(() => {
-    if (!reservations || !yurts) return new Map<string, { used: number; total: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }>()
-    const activeTotal = (yurts || []).filter(y => y.status === 'ACTIVE').reduce((sum, y) => sum + y.capacity, 0)
-    const map = new Map<string, { used: number; total: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }>()
+    type CapEntry = { used: number; total: number; yurtCount: number; assignedCount: number; unassignedCount: number; hasAnomaly: boolean }
+    if (!reservations || !yurts) return new Map<string, CapEntry>()
+    const activeYurts = (yurts || []).filter(y => y.status === 'ACTIVE')
+    const activeTotal = activeYurts.reduce((sum, y) => sum + y.capacity, 0)
+    const activeYurtCount = activeYurts.length
+    const map = new Map<string, CapEntry>()
 
     for (const r of reservations) {
       if (r.status === 'CANCELLED' || r.status === 'CANCELLED_PENDING_REFUND' || r.status === 'EXPIRED') continue
       const dateKey = r.date.split('T')[0]
       if (!map.has(dateKey)) {
-        map.set(dateKey, { used: 0, total: activeTotal, assignedCount: 0, unassignedCount: 0, hasAnomaly: false })
+        map.set(dateKey, { used: 0, total: activeTotal, yurtCount: activeYurtCount, assignedCount: 0, unassignedCount: 0, hasAnomaly: false })
       }
       const entry = map.get(dateKey)!
       entry.used += r.guestCount
@@ -972,10 +975,25 @@ export default function CalendarDesktop() {
                   const assignedCount = cap?.assignedCount ?? 0
                   const unassignedCount = cap?.unassignedCount ?? 0
 
-                  // Determine assignment status indicator
+                  // Determine assignment status indicator. Over-allocation
+                  // (admin Holds piled up beyond physical yurt count) takes
+                  // visual priority — it needs attention before anomalies.
+                  const yurtCount = cap?.yurtCount ?? 0
+                  const overflow = yurtCount > 0
+                    ? Math.max(0, assignedCount + unassignedCount - yurtCount)
+                    : 0
                   let statusIcon: React.ReactNode = null
                   if (assignedCount + unassignedCount > 0) {
-                    if (cap?.hasAnomaly) {
+                    if (overflow > 0) {
+                      statusIcon = (
+                        <div className="flex items-center gap-1 mt-1">
+                          <AlertTriangle size={10} className="text-[#C4533A]" />
+                          <span className="text-[9px] text-[#C4533A] font-semibold">
+                            {t('overflowShort', { count: overflow })}
+                          </span>
+                        </div>
+                      )
+                    } else if (cap?.hasAnomaly) {
                       statusIcon = (
                         <div className="flex items-center gap-1 mt-1">
                           <AlertTriangle size={10} className="text-[#C4533A]" />
@@ -1050,11 +1068,18 @@ export default function CalendarDesktop() {
     const unassignedCount = summary?.unassignedCount ?? 0
     const hasAnomaly = summary?.hasAnomaly ?? false
     const pct = totalCap > 0 ? Math.min(100, Math.round((totalGuests / totalCap) * 100)) : 0
+    const activeYurtCount = (yurts || []).filter(y => y.status === 'ACTIVE').length
+    const overflow = activeYurtCount > 0
+      ? Math.max(0, assignedCount + unassignedCount - activeYurtCount)
+      : 0
 
-    // Determine status indicator
+    // Determine status indicator. Over-allocation wins priority over anomaly
+    // and pending markers — admins need to see it immediately.
     let statusIndicator: React.ReactNode = null
     if (resCount > 0) {
-      if (hasAnomaly) {
+      if (overflow > 0) {
+        statusIndicator = <AlertTriangle size={10} className="text-[#C4533A]" />
+      } else if (hasAnomaly) {
         statusIndicator = <AlertTriangle size={10} className="text-[#C4533A]" />
       } else if (unassignedCount > 0) {
         statusIndicator = <span className="w-2 h-2 rounded-full bg-[#E8B730] inline-block" />
@@ -1069,10 +1094,10 @@ export default function CalendarDesktop() {
         className={`
           min-h-[90px] p-2 border-b border-r border-[#E8ECE4]/60
           transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
-          ${isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
+          ${overflow > 0 ? 'bg-[#FDECEA] border-l-2 border-l-[#C4533A]' : isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
         `}
         onClick={() => goToWeekOf(dateStr)}
-        title={t('clickViewDetails')}
+        title={overflow > 0 ? t('overflowTitle', { count: overflow }) : t('clickViewDetails')}
       >
         {/* Date number + status indicator */}
         <div className="mb-1.5 flex items-center justify-between">
@@ -1092,7 +1117,12 @@ export default function CalendarDesktop() {
           <div className="mb-1.5">
             <span className="text-[11px] font-semibold text-[#2C2416]">{resCount}</span>
             <span className="text-[10px] text-[#8A7E6B] ml-1">{resCount === 1 ? 'res' : 'res'}</span>
-            {unassignedCount > 0 && (
+            {overflow > 0 && (
+              <span className="text-[9px] text-[#C4533A] ml-1.5 font-semibold">
+                +{overflow} over
+              </span>
+            )}
+            {overflow === 0 && unassignedCount > 0 && (
               <span className="text-[9px] text-[#E8B730] ml-1.5 font-medium">
                 ({unassignedCount} pend)
               </span>

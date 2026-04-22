@@ -1134,6 +1134,8 @@
       "allAssigned": "已全部分配",
       "pendingShort": "待分配",
       "anomaly": "异常",
+      "overflowShort": "超额 {count}",
+      "overflowTitle": "已超额 {count} 个预订（超过物理 yurt 数）",
       "anomalyOverbooked": "超额预订：客人数超过总容量",
       "yurtCapacity": "{capacity}",
       "navLabel": {
