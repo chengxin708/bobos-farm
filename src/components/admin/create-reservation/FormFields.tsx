@@ -150,29 +150,56 @@ export function FormFields({
       {/* Yurt assignment — always full-width */}
       <div className="flex flex-col gap-2">
         <FieldLabel>{t("selectYurt")}</FieldLabel>
-        <div className="flex flex-col gap-1.5">
-          {(["auto", "specific", "hold"] as const).map((mode) => (
-            <label
-              key={mode}
-              className="flex items-center gap-2 text-sm text-[#2C2416] cursor-pointer"
-            >
-              <input
-                type="radio"
-                name="yurtMode"
-                checked={form.yurtMode === mode}
-                onChange={() => {
-                  form.setYurtMode(mode)
-                }}
-              />
-              <span>
-                {mode === "auto"
-                  ? t("autoAssign")
-                  : mode === "specific"
-                    ? t("specificYurts")
-                    : t("holdNoAssign")}
-              </span>
-            </label>
-          ))}
+
+        {form.isOverAllocated && (
+          <div className="rounded-lg border border-[#DC3545]/30 bg-[#FDECEA] px-3 py-2 flex items-start gap-2">
+            <span className="text-base">⚠️</span>
+            <p className="text-[12px] text-[#991B1B] leading-snug">
+              {t("overAllocatedBanner", {
+                reservationCount: form.reservationCount,
+                yurtCount: form.activeYurtCount,
+              })}
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          {(["auto", "specific", "hold"] as const).map((mode) => {
+            const hintKey =
+              mode === "auto"
+                ? "autoAssignHint"
+                : mode === "specific"
+                  ? "specificYurtsHint"
+                  : "holdNoAssignHint"
+            return (
+              <label
+                key={mode}
+                className="flex items-start gap-2 text-sm text-[#2C2416] cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name="yurtMode"
+                  className="mt-0.5"
+                  checked={form.yurtMode === mode}
+                  onChange={() => {
+                    form.setYurtMode(mode)
+                  }}
+                />
+                <span className="flex-1">
+                  <span className="font-medium">
+                    {mode === "auto"
+                      ? t("autoAssign")
+                      : mode === "specific"
+                        ? t("specificYurts")
+                        : t("holdNoAssign")}
+                  </span>
+                  <span className="block text-[11px] text-[#8C8478] leading-snug mt-0.5">
+                    {t(hintKey)}
+                  </span>
+                </span>
+              </label>
+            )
+          })}
         </div>
         {form.yurtMode === "specific" && (
           <div

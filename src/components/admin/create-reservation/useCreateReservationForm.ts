@@ -75,13 +75,22 @@ export function useCreateReservationForm({
     { revalidateOnFocus: false },
   )
 
+  const activeReservations = (dateReservations || []).filter(
+    (r) => !["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"].includes(r.status),
+  )
   const occupiedYurtIds = new Set(
-    (dateReservations || [])
-      .filter((r) => r.yurtId && !["CANCELLED", "CANCELLED_PENDING_REFUND", "EXPIRED"].includes(r.status))
-      .map((r) => r.yurtId),
+    activeReservations.filter((r) => r.yurtId).map((r) => r.yurtId),
   )
   const availableYurts = activeYurts.filter((y) => !occupiedYurtIds.has(y.id))
   const fittingYurts = availableYurts.filter((y) => y.capacity >= guestCount)
+
+  // Over-allocation: total active reservations (assigned + unassigned) on
+  // this date meets or exceeds the physical yurt count. Admin is free to
+  // add more Holds beyond this; we just warn them the new reservation is
+  // over-allocated and won't correspond to a bookable yurt.
+  const activeYurtCount = activeYurts.length
+  const reservationCount = activeReservations.length
+  const isOverAllocated = activeYurtCount > 0 && reservationCount >= activeYurtCount
 
   const selectedYurts = activeYurts.filter((y) => yurtIds.includes(y.id))
   const combinedCapacity = selectedYurts.reduce((s, y) => s + y.capacity, 0)
@@ -196,6 +205,9 @@ export function useCreateReservationForm({
     noRoomAvailable,
     isPastDate,
     selectedYurtsCount: yurtIds.length,
+    isOverAllocated,
+    reservationCount,
+    activeYurtCount,
     // Submit
     submitting, error,
     handleSubmit,
