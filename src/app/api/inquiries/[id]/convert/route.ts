@@ -203,9 +203,15 @@ export async function POST(
 
     // Always issue a claim token — even if the customer is signed in
     // already, admin may still share a link for them to bookmark.
-    await createClaimToken(prisma, created.id);
+    const claim = await createClaimToken(prisma, created.id);
 
-    return NextResponse.json({ reservation: created }, { status: 201 });
+    return NextResponse.json(
+      {
+        reservation: created,
+        claimToken: claim.token,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     if (isYurtDateConflict(error)) {
       return NextResponse.json(
