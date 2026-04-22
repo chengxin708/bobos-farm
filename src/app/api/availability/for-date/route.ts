@@ -39,17 +39,23 @@ export async function GET(req: NextRequest) {
     const reservations = await prisma.reservation.findMany({
       where: {
         date: dateObj,
-        yurtId: { in: activeYurts.map((y) => y.id) },
         OR: [
           { status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] } },
           { status: "PENDING_PAYMENT", holdByAdmin: true },
         ],
       },
-      select: { yurtId: true },
+      select: { yurtId: true, packageCount: true },
     });
     const occupiedYurtIds = new Set(
       reservations.map((r) => r.yurtId).filter((id): id is string => !!id),
     );
+    // Unassigned reservations (admin Hold / auto-unassigned) consume generic
+    // yurt slots without naming a specific yurt. We conservatively treat
+    // them as consuming the largest still-free yurt(s) so the customer-side
+    // cap never under-counts.
+    const unassignedSlots = reservations
+      .filter((r) => !r.yurtId)
+      .reduce((acc, r) => acc + (r.packageCount ?? 1), 0);
 
     const yurts = activeYurts.map((y) => ({
       id: y.id,
@@ -58,9 +64,16 @@ export async function GET(req: NextRequest) {
       isAvailable: !closedYurtIds.has(y.id) && !occupiedYurtIds.has(y.id),
     }));
 
-    const maxAvailableCapacity = yurts
+    // Burn through the largest remaining yurts first so the advertised cap
+    // reflects what's really still pickable by a self-serve customer.
+    const freeYurtsDesc = yurts
       .filter((y) => y.isAvailable)
-      .reduce((acc, y) => Math.max(acc, y.capacity), 0);
+      .sort((a, b) => b.capacity - a.capacity)
+      .slice(unassignedSlots)
+    const maxAvailableCapacity = freeYurtsDesc.reduce(
+      (acc, y) => Math.max(acc, y.capacity),
+      0,
+    )
 
     return NextResponse.json({
       date,

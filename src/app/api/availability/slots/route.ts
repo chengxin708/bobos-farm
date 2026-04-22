@@ -60,30 +60,41 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Get occupying reservations on ACTIVE yurts only
-    // Includes PAYMENT_SUBMITTED, CONFIRMED, and admin-held PENDING_PAYMENT
+    // Get occupying reservations. We include BOTH yurt-assigned reservations
+    // and unassigned ones (admin Hold / auto that failed to deterministically
+    // place) so the customer-facing calendar reflects the true remaining
+    // capacity. Admins can still over-allocate via Hold in the admin POST
+    // path; that's a deliberate decision surfaced as an admin warning, but
+    // the customer should never see those dates as bookable.
     const reservations = await prisma.reservation.findMany({
       where: {
         date: { gte: startDateObj, lte: endDateObj },
-        yurtId: { in: [...activeYurtIds] },
         OR: [
           { status: { in: ["PAYMENT_SUBMITTED", "CONFIRMED"] } },
           { status: "PENDING_PAYMENT", holdByAdmin: true },
         ],
       },
-      select: { yurtId: true, date: true },
+      select: { yurtId: true, date: true, packageCount: true },
     });
 
-    // Group reservations by date (only count those with assigned yurts)
-    const reservationsByDate: Record<string, Set<string>> = {};
+    // Per-date occupancy. Yurt-assigned reservations occupy that specific
+    // yurt; unassigned reservations consume `packageCount || 1` generic yurt
+    // slots. Cap at activeYurtCount so an admin over-allocation (say 5
+    // reservations on a 3-yurt date) shows as "full" rather than going
+    // negative.
+    const assignedByDate: Record<string, Set<string>> = {};
+    const unassignedSlotsByDate: Record<string, number> = {};
     for (const r of reservations) {
-      if (!r.yurtId) continue; // unassigned reservations don't occupy a specific yurt
       const dateKey = r.date.toISOString().slice(0, 10);
-      if (!reservationsByDate[dateKey]) reservationsByDate[dateKey] = new Set();
-      reservationsByDate[dateKey].add(r.yurtId);
+      if (r.yurtId && activeYurtIds.has(r.yurtId)) {
+        if (!assignedByDate[dateKey]) assignedByDate[dateKey] = new Set();
+        assignedByDate[dateKey].add(r.yurtId);
+      } else if (!r.yurtId) {
+        unassignedSlotsByDate[dateKey] =
+          (unassignedSlotsByDate[dateKey] ?? 0) + (r.packageCount ?? 1);
+      }
     }
 
-    // Build response: iterate each day in the range
     const result: Record<string, { total: number; occupied: number; available: number }> = {};
     const current = new Date(startDateObj);
 
@@ -91,7 +102,9 @@ export async function GET(req: NextRequest) {
       const dateKey = current.toISOString().slice(0, 10);
       const closedCount = closuresByDate[dateKey]?.size || 0;
       const total = activeYurtCount - closedCount;
-      const occupied = reservationsByDate[dateKey]?.size || 0;
+      const assignedCount = assignedByDate[dateKey]?.size || 0;
+      const unassignedCount = unassignedSlotsByDate[dateKey] || 0;
+      const occupied = Math.min(total, assignedCount + unassignedCount);
       const available = Math.max(0, total - occupied);
 
       result[dateKey] = { total, occupied, available };

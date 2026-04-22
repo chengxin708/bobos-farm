@@ -226,8 +226,9 @@ export async function POST(req: NextRequest) {
             { status: 400 },
           );
         }
-      } else {
-        // No yurt specified — run simulation to check capacity
+      } else if (!holdAssignment) {
+        // Auto mode: verify the farm CAN actually assign a yurt later —
+        // if simulation fails here, deterministic assignment will too.
         const { assignable } = await simulateWithNewReservation(reservationDate, guestCount);
         if (!assignable) {
           return NextResponse.json(
@@ -236,6 +237,10 @@ export async function POST(req: NextRequest) {
           );
         }
       }
+      // Hold mode: no capacity check — admin deliberately over-allocates
+      // ("先占位再说"), and the customer-side /api/availability endpoints
+      // treat each Hold as consuming a yurt slot so this doesn't open a
+      // path to customer overbooking.
 
       // Customer matching:
       //   - Email is the only true account identifier; if provided, look up by email (may match real or placeholder)
