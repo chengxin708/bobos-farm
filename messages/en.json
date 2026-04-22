@@ -1689,6 +1689,31 @@
         "resCount": "{count} res"
       }
     },
+    "createInquiry": {
+      "title": "Create Inquiry",
+      "guestName": "Guest Name",
+      "guestNamePlaceholder": "Enter guest name",
+      "guestEmail": "Guest Email",
+      "emailPlaceholder": "guest@example.com",
+      "guestPhone": "Guest Phone",
+      "phonePlaceholder": "(555) 000-0000",
+      "guestWechat": "WeChat ID",
+      "wechatPlaceholder": "WeChat ID, group name, etc.",
+      "contactHint": "At least one of email / phone / WeChat is required.",
+      "atLeastOneContactRequired": "Please provide at least one contact method.",
+      "preferredDate": "Preferred Date",
+      "dateRequired": "Please pick a preferred date.",
+      "guestCountMin": "Min guests",
+      "guestCountMax": "Max guests",
+      "countRangeInvalid": "Max must be greater than or equal to min.",
+      "note": "Note",
+      "notePlaceholder": "What the customer asked for (occasion, dietary needs, flexibility)...",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "submit": "Create Inquiry",
+      "createFailed": "Failed to create inquiry",
+      "networkError": "Network error. Please try again."
+    },
     "createReservation": {
       "title": "Create Reservation",
       "guestName": "Guest Name",
@@ -1830,6 +1855,7 @@
   },
   "adminInquiries": {
     "title": "Inquiries",
+    "newInquiry": "New inquiry",
     "allStatuses": "All statuses",
     "allPriorities": "All priorities",
     "tagFilter": "Tag filter",

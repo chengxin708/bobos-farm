@@ -1689,6 +1689,31 @@
         "resCount": "{count} 个预订"
       }
     },
+    "createInquiry": {
+      "title": "新建咨询单",
+      "guestName": "客户姓名",
+      "guestNamePlaceholder": "输入客户姓名",
+      "guestEmail": "邮箱",
+      "emailPlaceholder": "guest@example.com",
+      "guestPhone": "电话",
+      "phonePlaceholder": "(555) 000-0000",
+      "guestWechat": "微信",
+      "wechatPlaceholder": "微信号、群名等",
+      "contactHint": "邮箱 / 电话 / 微信 至少填一项。",
+      "atLeastOneContactRequired": "请至少填写一种联系方式。",
+      "preferredDate": "期望日期",
+      "dateRequired": "请选择期望日期。",
+      "guestCountMin": "最少人数",
+      "guestCountMax": "最多人数",
+      "countRangeInvalid": "最多人数不能小于最少人数。",
+      "note": "备注",
+      "notePlaceholder": "客户的需求（场合、饮食、是否灵活等）……",
+      "cancel": "取消",
+      "creating": "创建中...",
+      "submit": "创建咨询",
+      "createFailed": "创建咨询失败",
+      "networkError": "网络错误，请重试。"
+    },
     "createReservation": {
       "title": "创建预订",
       "guestName": "客户姓名",
@@ -1830,6 +1855,7 @@
   },
   "adminInquiries": {
     "title": "咨询",
+    "newInquiry": "新建咨询",
     "allStatuses": "全部状态",
     "allPriorities": "全部优先级",
     "tagFilter": "标签筛选",

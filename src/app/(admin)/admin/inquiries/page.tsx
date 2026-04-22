@@ -4,7 +4,8 @@ import Link from "next/link"
 import useSWR from "swr"
 import { useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
+import CreateInquiryModal from "@/components/admin/CreateInquiryModal"
 
 interface InquiryRow {
   id: string
@@ -37,11 +38,12 @@ export default function AdminInquiryListPage() {
   const [status, setStatus] = useState<string>("")
   const [priority, setPriority] = useState<string>("")
   const [tag, setTag] = useState<string>("")
+  const [createOpen, setCreateOpen] = useState(false)
   const qs = new URLSearchParams()
   if (status) qs.set("status", status)
   if (priority) qs.set("priority", priority)
   if (tag) qs.set("tag", tag)
-  const { data, isLoading } = useSWR<InquiryRow[]>(
+  const { data, isLoading, mutate } = useSWR<InquiryRow[]>(
     `/api/inquiries${qs.toString() ? `?${qs.toString()}` : ""}`,
     fetcher,
     { revalidateOnFocus: false },
@@ -49,7 +51,16 @@ export default function AdminInquiryListPage() {
 
   return (
     <div className="p-6 flex flex-col gap-4">
-      <h1 className="text-2xl font-serif font-semibold text-[#2C2416]">{t("title")}</h1>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-2xl font-serif font-semibold text-[#2C2416]">{t("title")}</h1>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="h-9 px-4 rounded-full text-sm font-semibold text-white border-none bg-[#6B7F5E] hover:bg-[#5A6E4F] transition-colors cursor-pointer flex items-center gap-1.5"
+        >
+          <Plus size={16} />
+          {t("newInquiry")}
+        </button>
+      </div>
 
       <div className="flex gap-2 flex-wrap">
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 px-2 rounded border border-[#E8ECE4] text-sm">
@@ -115,6 +126,12 @@ export default function AdminInquiryListPage() {
           </Link>
         ))}
       </div>
+
+      <CreateInquiryModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => mutate()}
+      />
     </div>
   )
 }
