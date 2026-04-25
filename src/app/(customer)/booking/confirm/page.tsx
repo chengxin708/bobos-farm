@@ -14,6 +14,11 @@ const settingsFetcher = (url: string) => fetch(url).then(r => {
   return r.json()
 })
 
+// Temporary site-in-testing flag. While true, the Zelle payment UI is replaced
+// with a bilingual "do not pay" notice. Flip to false (or wire to an env var)
+// when the site goes live.
+const TESTING_MODE: boolean = true
+
 export default function BookingConfirmPage() {
   const t = useTranslations('booking.confirm')
   const router = useRouter()
@@ -482,197 +487,221 @@ export default function BookingConfirmPage() {
               {summaryCard}
             </div>
 
-            {/* ===== Left Column: Payment + Upload ===== */}
+            {/* ===== Left Column: Payment + Upload (or testing notice) ===== */}
             <div className="flex-1 flex flex-col gap-6">
 
-              {/* Payment Instructions */}
-              <div className="flex flex-col gap-4">
-                <h2 className="font-serif text-lg text-[#1A1208]">Payment Instructions</h2>
-
-                <div className="flex flex-col gap-4">
-                  {/* Step 1 */}
+              {TESTING_MODE ? (
+                /* Testing-mode notice (replaces payment UI while site is in testing) */
+                <div className="rounded-2xl border-2 border-[#C4453A]/30 bg-[#C4453A]/5 p-6 flex flex-col gap-4">
                   <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">1</span>
-                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Open Zelle in your bank app</span>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">2</span>
-                    <div className="flex flex-col gap-2 pt-0.5">
-                      <span className="text-sm text-[#3D3229] leading-relaxed">
-                        Send to: <span className="font-medium">{zelleDisplay}</span>
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(zelleEmail, 'email')}
-                        className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
-                      >
-                        {copiedField === 'email' ? (
-                          <>
-                            <Check size={12} />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} />
-                            Copy
-                          </>
-                        )}
-                      </button>
+                    <AlertCircle size={22} className="text-[#C4453A] shrink-0 mt-0.5" />
+                    <div className="flex flex-col gap-3">
+                      <h2 className="font-serif text-lg text-[#1A1208] leading-tight">
+                        <span>网站测试中,请勿付款</span>
+                        <span className="mx-2 text-[#6B6157]">·</span>
+                        <span>Site in Testing — Do Not Pay</span>
+                      </h2>
+                      <p className="text-sm text-[#3D3229] leading-relaxed">
+                        我们正在测试预订系统,付款信息暂时隐藏。请不要进行任何转账。正式上线后将通知您。
+                      </p>
+                      <p className="text-sm text-[#3D3229] leading-relaxed">
+                        We&apos;re currently testing the booking system. Payment information is hidden for now — please do not send any money. We&apos;ll notify you when we go live.
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">3</span>
-                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Amount: <span className="font-medium">${DEPOSIT_AMOUNT}</span></span>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">4</span>
-                    <div className="flex flex-col gap-2 pt-0.5">
-                      <span className="text-sm text-[#3D3229] leading-relaxed">
-                        Memo: <span className="font-mono font-medium">{paymentMemo}</span>
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(paymentMemo, 'memo')}
-                        className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
-                      >
-                        {copiedField === 'memo' ? (
-                          <>
-                            <Check size={12} />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} />
-                            Copy
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Step 5 */}
-                  <div className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">5</span>
-                    <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Upload screenshot below</span>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Payment Instructions */}
+                  <div className="flex flex-col gap-4">
+                    <h2 className="font-serif text-lg text-[#1A1208]">Payment Instructions</h2>
 
-              {/* Upload Zone */}
-              <div className="flex flex-col gap-3">
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
-                  onDragLeave={() => setIsDragOver(false)}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`relative rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
-                    uploadedFile
-                      ? 'border-[#6B7F5E]/40 bg-[#E8ECE4]/30 p-4'
-                      : isDragOver
-                        ? 'border-[#6B7F5E] bg-[#E8ECE4]/50 p-8'
-                        : 'border-[#E8ECE4] hover:border-[#6B7F5E]/40 p-8'
-                  }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,application/pdf"
-                    className="hidden"
-                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                  />
+                    <div className="flex flex-col gap-4">
+                      {/* Step 1 */}
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Open Zelle in your bank app</span>
+                      </div>
 
-                  {uploadedFile ? (
-                    <div className="flex items-center gap-4">
-                      {uploadPreview ? (
-                        <img
-                          src={uploadPreview}
-                          alt="Payment screenshot"
-                          className="w-14 h-14 rounded-xl object-cover border border-[#E8ECE4]"
-                        />
+                      {/* Step 2 */}
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <div className="flex flex-col gap-2 pt-0.5">
+                          <span className="text-sm text-[#3D3229] leading-relaxed">
+                            Send to: <span className="font-medium">{zelleDisplay}</span>
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(zelleEmail, 'email')}
+                            className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
+                          >
+                            {copiedField === 'email' ? (
+                              <>
+                                <Check size={12} />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Amount: <span className="font-medium">${DEPOSIT_AMOUNT}</span></span>
+                      </div>
+
+                      {/* Step 4 */}
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">4</span>
+                        <div className="flex flex-col gap-2 pt-0.5">
+                          <span className="text-sm text-[#3D3229] leading-relaxed">
+                            Memo: <span className="font-mono font-medium">{paymentMemo}</span>
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(paymentMemo, 'memo')}
+                            className="inline-flex items-center gap-1.5 border border-[#6B7F5E] text-[#6B7F5E] rounded-full px-3 py-1 text-xs font-medium bg-transparent cursor-pointer hover:bg-[#6B7F5E]/5 transition-colors w-fit"
+                          >
+                            {copiedField === 'memo' ? (
+                              <>
+                                <Check size={12} />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Step 5 */}
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-[#F2EDE6] text-[#6B6157] text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">5</span>
+                        <span className="text-sm text-[#3D3229] leading-relaxed pt-0.5">Upload screenshot below</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Zone */}
+                  <div className="flex flex-col gap-3">
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`relative rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
+                        uploadedFile
+                          ? 'border-[#6B7F5E]/40 bg-[#E8ECE4]/30 p-4'
+                          : isDragOver
+                            ? 'border-[#6B7F5E] bg-[#E8ECE4]/50 p-8'
+                            : 'border-[#E8ECE4] hover:border-[#6B7F5E]/40 p-8'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,application/pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                      />
+
+                      {uploadedFile ? (
+                        <div className="flex items-center gap-4">
+                          {uploadPreview ? (
+                            <img
+                              src={uploadPreview}
+                              alt="Payment screenshot"
+                              className="w-14 h-14 rounded-xl object-cover border border-[#E8ECE4]"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-[#6B7F5E]/10 flex items-center justify-center">
+                              <FileText size={22} className="text-[#6B7F5E]" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-base font-medium text-[#1A1208] truncate">{uploadedFile.name}</p>
+                            <p className="text-[15px] text-[#6B6157] mt-0.5">
+                              {(uploadedFile.size / 1024).toFixed(0)} KB
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setUploadedFile(null)
+                              setUploadPreview(prev => {
+                                if (prev) URL.revokeObjectURL(prev)
+                                return null
+                              })
+                            }}
+                            className="w-8 h-8 rounded-full bg-[#1A1208]/5 hover:bg-[#C4453A]/10 flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
+                          >
+                            <X size={14} className="text-[#6B6157]" />
+                          </button>
+                        </div>
                       ) : (
-                        <div className="w-14 h-14 rounded-xl bg-[#6B7F5E]/10 flex items-center justify-center">
-                          <FileText size={22} className="text-[#6B7F5E]" />
+                        <div className="flex flex-col items-center gap-2.5">
+                          <Upload size={24} className="text-[#6B7F5E]" />
+                          <div className="text-center">
+                            <p className="text-sm text-[#3D3229]">Upload payment proof</p>
+                            <p className="text-[15px] text-[#6B6157] mt-1">Tap or drag file here</p>
+                          </div>
+                          <p className="text-[15px] text-[#6B6157]">JPG, PNG, PDF (max 5MB)</p>
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium text-[#1A1208] truncate">{uploadedFile.name}</p>
-                        <p className="text-[15px] text-[#6B6157] mt-0.5">
-                          {(uploadedFile.size / 1024).toFixed(0)} KB
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setUploadedFile(null)
-                          setUploadPreview(prev => {
-                            if (prev) URL.revokeObjectURL(prev)
-                            return null
-                          })
-                        }}
-                        className="w-8 h-8 rounded-full bg-[#1A1208]/5 hover:bg-[#C4453A]/10 flex items-center justify-center border-none cursor-pointer transition-colors shrink-0"
-                      >
-                        <X size={14} className="text-[#6B6157]" />
-                      </button>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2.5">
-                      <Upload size={24} className="text-[#6B7F5E]" />
-                      <div className="text-center">
-                        <p className="text-sm text-[#3D3229]">Upload payment proof</p>
-                        <p className="text-[15px] text-[#6B6157] mt-1">Tap or drag file here</p>
-                      </div>
-                      <p className="text-[15px] text-[#6B6157]">JPG, PNG, PDF (max 5MB)</p>
+                  </div>
+
+                  {/* Error message */}
+                  {error && created && (
+                    <div className="flex items-center gap-3 bg-[#C4453A]/5 border border-[#C4453A]/15 text-[#C4453A] text-sm rounded-xl px-4 py-3">
+                      <AlertCircle size={16} className="shrink-0" />
+                      {error}
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Error message */}
-              {error && created && (
-                <div className="flex items-center gap-3 bg-[#C4453A]/5 border border-[#C4453A]/15 text-[#C4453A] text-sm rounded-xl px-4 py-3">
-                  <AlertCircle size={16} className="shrink-0" />
-                  {error}
-                </div>
+                  {/* Terms Checkbox */}
+                  <label className="flex gap-3 cursor-pointer select-none">
+                    <button
+                      type="button"
+                      onClick={() => setAcceptedTerms(!acceptedTerms)}
+                      className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${
+                        acceptedTerms ? 'bg-[#6B7F5E] border-[#6B7F5E]' : 'border-[#D6D1CA] bg-white hover:border-[#6B7F5E]/50'
+                      }`}
+                    >
+                      {acceptedTerms && <Check size={12} className="text-white" />}
+                    </button>
+                    <span className="text-[15px] text-[#6B6157] leading-relaxed">
+                      {t('cancellationPolicyText')}{' '}
+                      <Link href="/cancellation" className="text-[#C47D52] font-medium no-underline hover:underline">
+                        {t('cancellationPolicyLink')}
+                      </Link>
+                    </span>
+                  </label>
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={handleSubmitPayment}
+                    disabled={!acceptedTerms || submitting}
+                    className={`rounded-full py-3.5 text-base font-medium w-full border-none transition-all flex items-center justify-center gap-2 ${
+                      acceptedTerms && !submitting
+                        ? 'bg-[#C47D52] text-white cursor-pointer hover:bg-[#B06D42]'
+                        : 'bg-[#C47D52] text-white opacity-40 cursor-not-allowed'
+                    }`}
+                  >
+                    {submitting && <Loader2 size={18} className="animate-spin" />}
+                    {submitting ? 'Submitting...' : t('completedTransfer')}
+                  </button>
+                </>
               )}
 
-              {/* Terms Checkbox */}
-              <label className="flex gap-3 cursor-pointer select-none">
-                <button
-                  type="button"
-                  onClick={() => setAcceptedTerms(!acceptedTerms)}
-                  className={`w-[18px] h-[18px] rounded border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${
-                    acceptedTerms ? 'bg-[#6B7F5E] border-[#6B7F5E]' : 'border-[#D6D1CA] bg-white hover:border-[#6B7F5E]/50'
-                  }`}
-                >
-                  {acceptedTerms && <Check size={12} className="text-white" />}
-                </button>
-                <span className="text-[15px] text-[#6B6157] leading-relaxed">
-                  {t('cancellationPolicyText')}{' '}
-                  <Link href="/cancellation" className="text-[#C47D52] font-medium no-underline hover:underline">
-                    {t('cancellationPolicyLink')}
-                  </Link>
-                </span>
-              </label>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleSubmitPayment}
-                disabled={!acceptedTerms || submitting}
-                className={`rounded-full py-3.5 text-base font-medium w-full border-none transition-all flex items-center justify-center gap-2 ${
-                  acceptedTerms && !submitting
-                    ? 'bg-[#C47D52] text-white cursor-pointer hover:bg-[#B06D42]'
-                    : 'bg-[#C47D52] text-white opacity-40 cursor-not-allowed'
-                }`}
-              >
-                {submitting && <Loader2 size={18} className="animate-spin" />}
-                {submitting ? 'Submitting...' : t('completedTransfer')}
-              </button>
-
-              {/* Cancel link */}
+              {/* Cancel link (always shown) */}
               <div className="text-center md:text-left">
                 <button
                   onClick={handleCancel}
