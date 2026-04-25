@@ -307,7 +307,7 @@ export default function ReservationDetail({
       variant: 'danger' as const,
       confirmLabel: (reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0)
         ? t('actions.cancelPendingRefund')
-        : t('actions.cancel'),
+        : t('actions.confirmCancel'),
     },
     cancelAndRefund: {
       title: t('dialog.cancelWithRefundTitle'),
@@ -1320,7 +1320,7 @@ export default function ReservationDetail({
               disabled={isUpdating}
               className="w-full py-2 text-sm font-semibold rounded-lg border border-[#DC3545] text-[#DC3545] hover:bg-[#DC3545]/5 disabled:opacity-50"
             >
-              {t('actions.cancel')}
+              {t('actions.cancelReservation')}
             </button>
             {/* One-step cancel+refund option when deposit is confirmed */}
             {reservation.depositStatus === 'CONFIRMED' && reservation.depositAmount > 0 && (

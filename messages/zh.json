@@ -822,6 +822,8 @@
         "confirm": "确认定金",
         "reject": "拒绝",
         "cancel": "取消",
+        "cancelReservation": "取消预订",
+        "confirmCancel": "确认取消",
         "save": "保存",
         "saving": "保存中...",
         "complete": "完成",

@@ -822,6 +822,8 @@
         "confirm": "Confirm Deposit",
         "reject": "Reject",
         "cancel": "Cancel",
+        "cancelReservation": "Cancel Reservation",
+        "confirmCancel": "Confirm Cancellation",
         "save": "Save",
         "saving": "Saving...",
         "complete": "Complete",
