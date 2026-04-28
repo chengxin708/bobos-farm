@@ -962,8 +962,8 @@ export default function ReservationDetail({
               const yurt = order.reservationYurt?.yurt
               const label = yurt
                 ? yurt.alias
-                  ? `${yurt.name} · ${yurt.alias}`
-                  : yurt.name
+                  ? t('detail.yurtTabWithAlias', { name: yurt.name, alias: yurt.alias, capacity: yurt.capacity })
+                  : t('detail.yurtTab', { name: yurt.name, capacity: yurt.capacity })
                 : t('detail.packageTab', { index: i + 1 })
               return (
                 <button

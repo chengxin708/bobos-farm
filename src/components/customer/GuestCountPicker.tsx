@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, MessageCircle } from 'lucide-react'
 
 interface Props {
   value: number | null
@@ -68,6 +68,11 @@ export function GuestCountPicker({
   const atHardMax = value != null && value >= hardMax
   const belowMin =
     minRecommended != null && value != null && value < minRecommended && !overSoft && !atHardMax
+  // Preemptive amber tint on the + button when the next click would
+  // push the user over the self-serve cap. Lets them feel the threshold
+  // before they cross it.
+  const incrementWillCrossThreshold =
+    softThreshold != null && value != null && value <= softThreshold && value + 1 > softThreshold
 
   function commit(n: number) {
     const clamped = Math.max(min, Math.min(hardMax, n))
@@ -106,8 +111,14 @@ export function GuestCountPicker({
 
         <div className="min-w-[72px] text-center">
           <span
-            className={`text-3xl font-serif font-semibold ${
-              value == null ? 'text-[#1A1208]/30' : 'text-[#1A1208]'
+            className={`text-3xl font-serif font-semibold transition-colors ${
+              value == null
+                ? 'text-[#1A1208]/30'
+                : atHardMax
+                  ? 'text-[#C4453A]'
+                  : overSoft
+                    ? 'text-[#8B6914]'
+                    : 'text-[#1A1208]'
             }`}
           >
             {value ?? min}
@@ -120,10 +131,12 @@ export function GuestCountPicker({
           onClick={() => canIncrement && commit(displayValue + 1)}
           disabled={!canIncrement}
           aria-label={t('increment')}
-          className={`w-12 h-12 rounded-full border border-[#E8ECE4] flex items-center justify-center transition-colors ${
-            canIncrement
-              ? 'bg-white text-[#1A1208] cursor-pointer hover:bg-[#E8ECE4]/60'
-              : 'bg-[#F2EDE6]/60 text-[#1A1208]/30 cursor-not-allowed'
+          className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors ${
+            !canIncrement
+              ? 'border-[#E8ECE4] bg-[#F2EDE6]/60 text-[#1A1208]/30 cursor-not-allowed'
+              : incrementWillCrossThreshold || overSoft
+                ? 'border-[#C4A45C] bg-[#FEFBF4] text-[#8B6914] cursor-pointer hover:bg-[#FDF5E6]'
+                : 'border-[#E8ECE4] bg-white text-[#1A1208] cursor-pointer hover:bg-[#E8ECE4]/60'
           }`}
         >
           <Plus size={20} />
@@ -166,8 +179,9 @@ export function GuestCountPicker({
       )}
 
       {overSoft && !atHardMax && (
-        <p className="mt-3 text-center text-xs font-semibold text-[#8B6914]">
-          {t('overThresholdHint', { threshold: softThreshold! })}
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-[#8B6914]">
+          <MessageCircle size={14} className="shrink-0" />
+          <span>{t('overThresholdHint', { threshold: softThreshold! })}</span>
         </p>
       )}
 

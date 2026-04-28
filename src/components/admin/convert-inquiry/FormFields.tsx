@@ -74,7 +74,7 @@ export function FormFields({ form }: { form: ConvertInquiryFormModel }) {
     <div className="flex flex-col gap-5">
       {/* Inquiry snapshot */}
       {inquiry && (
-        <section className="rounded-xl border border-[#E5D8B8] bg-[#FEFBF4] px-4 py-3 text-sm flex flex-col gap-1">
+        <section className="rounded-xl border border-[#E5D8B8] bg-[#FEFBF4] px-4 py-3 text-sm flex flex-col gap-3">
           <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-[#8B6914]">
             {t("originalRequest")}
           </div>
@@ -83,11 +83,20 @@ export function FormFields({ form }: { form: ConvertInquiryFormModel }) {
             <span><b>{t("originalDate")}:</b> {new Date(inquiry.preferredDate).toLocaleDateString(dateLocale)}</span>
             <span><b>{t("originalGuests")}:</b> {inquiry.guestCountMin}–{inquiry.guestCountMax}</span>
           </div>
-          {inquiry.note && (
-            <p className="text-[12px] text-[#5A4A1A] whitespace-pre-wrap leading-snug mt-1">
-              {inquiry.note}
-            </p>
-          )}
+          <div className="rounded-lg border border-[#E5D8B8] bg-white px-3 py-2 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8B6914]">
+              {t("noteFromCustomerLabel")}
+            </span>
+            {inquiry.note?.trim() ? (
+              <p className="text-[13px] text-[#2C2416] whitespace-pre-wrap leading-relaxed">
+                {inquiry.note}
+              </p>
+            ) : (
+              <p className="text-[12px] italic text-[#8C8478]">
+                {t("noteFromCustomerEmpty")}
+              </p>
+            )}
+          </div>
         </section>
       )}
 
@@ -231,19 +240,44 @@ export function FormFields({ form }: { form: ConvertInquiryFormModel }) {
         )}
       </div>
 
-      {/* Note carryover */}
-      <label className="flex items-start gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          className="mt-0.5"
-          checked={form.copyNote}
-          onChange={(e) => form.setCopyNote(e.target.checked)}
+      {/* Special requests editor — pre-filled with inquiry.note, admin can edit */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label>{t("specialRequestsLabel")}</Label>
+          {inquiry?.note?.trim() && form.specialRequestsTouched && (
+            <button
+              type="button"
+              onClick={form.resetSpecialRequestsToOriginal}
+              className="text-[11px] font-medium text-[#6B7F5E] hover:text-[#5A6B4E] cursor-pointer bg-transparent border-none p-0"
+            >
+              ↺ {t("specialRequestsResetCta")}
+            </button>
+          )}
+        </div>
+        <textarea
+          value={form.specialRequests}
+          onChange={(e) => form.setSpecialRequests(e.target.value)}
+          rows={3}
+          className="w-full px-3 py-2 rounded-lg border outline-none bg-white text-sm leading-relaxed resize-y"
+          style={{ borderColor: "#E8E2D9", color: "#2C2416", minHeight: "72px" }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "#6B7F5E"
+            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(107,127,94,0.15)"
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "#E8E2D9"
+            e.currentTarget.style.boxShadow = "none"
+          }}
         />
-        <span className="text-sm text-[#2C2416]">
-          <span className="font-medium">{t("copyNoteLabel")}</span>
-          <span className="block text-[11px] text-[#8C8478]">{t("copyNoteHint")}</span>
-        </span>
-      </label>
+        {!!inquiry?.note?.trim() && !form.specialRequests.trim() ? (
+          <p className="text-[12px] font-semibold text-[#DC3545] flex items-start gap-1">
+            <span>⚠️</span>
+            <span>{t("specialRequestsLossWarning")}</span>
+          </p>
+        ) : (
+          <p className="text-[11px] text-[#8C8478]">{t("specialRequestsHint")}</p>
+        )}
+      </div>
 
       {form.error && (
         <div

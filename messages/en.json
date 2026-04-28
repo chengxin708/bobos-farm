@@ -480,7 +480,7 @@
       },
       "deposits": {
         "title": "Deposits",
-        "body": "A deposit of $300 is required to secure your reservation. Deposits must be paid via Zelle within the specified time window (typically 12 hours). If payment is not received within this window, the reservation will be automatically cancelled and the date will be released."
+        "body": "A deposit of $300 is required to secure your reservation. Deposits must be paid via Zelle within the specified time window (typically 24 hours for self-serve bookings, 48 hours for admin-assisted bookings). If payment is not received within this window, the reservation will be automatically cancelled and the date will be released."
       },
       "liability": {
         "title": "Limitation of Liability",
@@ -881,6 +881,8 @@
       "detail": {
         "title": "Reservation Details",
         "packageTab": "Package {index}",
+        "yurtTab": "{name} · {capacity} guests",
+        "yurtTabWithAlias": "{name} · {alias} · {capacity} guests",
         "reservationInfo": "Reservation Info",
         "date": "Date",
         "yurt": "Yurt",
@@ -1059,7 +1061,38 @@
       "back": "Back",
       "views": {
         "month": "Month",
-        "week": "Week"
+        "week": "Week",
+        "list": "List"
+      },
+      "listView": {
+        "searchPlaceholder": "Search name, phone, or email…",
+        "statusFilterLabel": "Status",
+        "statusAll": "All",
+        "statusPending": "Pending",
+        "statusConfirmed": "Confirmed",
+        "statusCompleted": "Completed",
+        "sourceFilterLabel": "Source",
+        "sourceAll": "All",
+        "sourceSelf": "Self-serve",
+        "sourceAdmin": "Admin proxy",
+        "countSummary": "{count} of {total}",
+        "emptyState": "No upcoming reservations match your filters.",
+        "placeholderEmail": "(no email — admin proxy)",
+        "yurtPending": "Unassigned",
+        "overdue": "Overdue",
+        "col": {
+          "date": "Date",
+          "customer": "Customer",
+          "phone": "Phone",
+          "email": "Email",
+          "guests": "Guests",
+          "yurt": "Yurt",
+          "status": "Status",
+          "deadline": "Deposit Deadline",
+          "notes": "Notes",
+          "source": "Source",
+          "createdAt": "Created"
+        }
       },
       "today": "Today",
       "nextAvailable": "Next Available",
@@ -1340,7 +1373,7 @@
         "depositAmount": "Deposit Amount",
         "depositAmountHelp": "Amount required to hold a reservation. Must be paid within 72 hours of booking to secure the date.",
         "paymentTimeout": "Payment Timeout",
-        "paymentTimeoutUnit": "minutes",
+        "paymentTimeoutUnit": "hours",
         "paymentTimeoutHelp": "Time allowed for guests to complete payment. If not received within this window, the reservation will automatically be cancelled.",
         "maxAdvanceBooking": "Max Advance Booking",
         "maxAdvanceBookingUnit": "days",
@@ -1912,8 +1945,12 @@
       "depositOverride": "Deposit (optional)",
       "depositPlaceholder": "Default: $300 × {n} = ${total}",
       "depositPreview": "Charged deposit: ${total}",
-      "copyNoteLabel": "Copy inquiry note to special requests",
-      "copyNoteHint": "On by default — the customer's original message becomes the reservation's specialRequests.",
+      "noteFromCustomerLabel": "Customer's original note",
+      "noteFromCustomerEmpty": "Customer didn't include a note.",
+      "specialRequestsLabel": "Reservation special requests",
+      "specialRequestsHint": "Pre-filled with the customer's note. Edit or append as needed — whatever is here gets saved.",
+      "specialRequestsResetCta": "Reset to customer's original",
+      "specialRequestsLossWarning": "Customer wrote a note. Clearing this field will discard it from the reservation.",
       "selectAtLeastOne": "Select at least one yurt.",
       "capacityExceeded": "Guest count ({guests}) exceeds combined capacity ({capacity}).",
       "cancel": "Cancel",

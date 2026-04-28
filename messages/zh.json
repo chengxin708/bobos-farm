@@ -480,7 +480,7 @@
       },
       "deposits": {
         "title": "定金",
-        "body": "预订需要支付300美元定金。定金必须在规定时间窗口内（通常为12小时）通过Zelle支付。如果在此窗口内未收到付款，预订将自动取消，日期将被释放。"
+        "body": "预订需要支付300美元定金。定金必须在规定时间窗口内（自助预订通常为24小时，代客预订为48小时）通过Zelle支付。如果在此窗口内未收到付款，预订将自动取消，日期将被释放。"
       },
       "liability": {
         "title": "责任限制",
@@ -881,6 +881,8 @@
       "detail": {
         "title": "预订详情",
         "packageTab": "包 {index}",
+        "yurtTab": "{name} · {capacity}人",
+        "yurtTabWithAlias": "{name} · {alias} · {capacity}人",
         "reservationInfo": "预订信息",
         "date": "日期",
         "yurt": "营地",
@@ -1059,7 +1061,38 @@
       "back": "返回",
       "views": {
         "month": "月视图",
-        "week": "周视图"
+        "week": "周视图",
+        "list": "列表"
+      },
+      "listView": {
+        "searchPlaceholder": "搜索姓名、电话或邮箱…",
+        "statusFilterLabel": "状态",
+        "statusAll": "全部",
+        "statusPending": "待付款",
+        "statusConfirmed": "已确认",
+        "statusCompleted": "已完成",
+        "sourceFilterLabel": "来源",
+        "sourceAll": "全部",
+        "sourceSelf": "客户自助",
+        "sourceAdmin": "代客预订",
+        "countSummary": "{count} / {total}",
+        "emptyState": "没有匹配筛选条件的待办预约。",
+        "placeholderEmail": "（无邮箱 · 代客单）",
+        "yurtPending": "待分配",
+        "overdue": "已超时",
+        "col": {
+          "date": "日期",
+          "customer": "客户",
+          "phone": "电话",
+          "email": "邮箱",
+          "guests": "人数",
+          "yurt": "蒙古包",
+          "status": "状态",
+          "deadline": "押金截止",
+          "notes": "备注",
+          "source": "来源",
+          "createdAt": "创建时间"
+        }
       },
       "today": "今天",
       "nextAvailable": "下一个可用",
@@ -1340,7 +1373,7 @@
         "depositAmount": "定金金额",
         "depositAmountHelp": "担保预订所需的定金金额。必须在预订后72小时内完成支付以保留日期。",
         "paymentTimeout": "支付期限",
-        "paymentTimeoutUnit": "分钟",
+        "paymentTimeoutUnit": "小时",
         "paymentTimeoutHelp": "客户完成支付的允许时间。如果在此期限内未收到付款，预订将自动取消。",
         "maxAdvanceBooking": "最远预订时长",
         "maxAdvanceBookingUnit": "天",
@@ -1912,8 +1945,12 @@
       "depositOverride": "押金（可选）",
       "depositPlaceholder": "默认：$300 × {n} = ${total}",
       "depositPreview": "最终押金：${total}",
-      "copyNoteLabel": "将咨询备注复制到特殊要求",
-      "copyNoteHint": "默认开启——客户的原话会作为预约的 specialRequests。",
+      "noteFromCustomerLabel": "客户原始备注",
+      "noteFromCustomerEmpty": "客户没有留备注。",
+      "specialRequestsLabel": "预约特殊要求",
+      "specialRequestsHint": "已预填客户原话,可编辑或追加 — 此处的内容会保存到预约。",
+      "specialRequestsResetCta": "重置为客户原话",
+      "specialRequestsLossWarning": "客户留有备注,清空此处将丢失这条信息。",
       "selectAtLeastOne": "请至少选择一个蒙古包。",
       "capacityExceeded": "人数（{guests}）超过总容量（{capacity}）。",
       "cancel": "取消",

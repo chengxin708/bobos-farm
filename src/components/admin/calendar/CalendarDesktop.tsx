@@ -11,10 +11,11 @@ import ReservationDetail from '@/components/admin/reservations/ReservationDetail
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
 import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
+import CalendarListView from '@/components/admin/calendar/CalendarListView'
 
 // ── Types ──────────────────────────────────────────────────────────
 
-type ViewMode = 'month' | 'week'
+type ViewMode = 'month' | 'week' | 'list'
 
 interface Yurt {
   id: string
@@ -50,6 +51,8 @@ interface Reservation {
   depositAmount: number
   depositStatus: string
   holdByAdmin?: boolean
+  paymentDeadline?: string | null
+  createdAt?: string
   user: ReservationUser
   yurt: ReservationYurt | null
   orders?: Array<{ status: string; estimatedTotal: number | null; finalTotal: number | null }>
@@ -150,6 +153,13 @@ function getDisplayName(user: ReservationUser): string {
 // ── Closed-cell diagonal stripe pattern as CSS background ──────
 const CLOSED_CROSSHATCH_BG = `repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px), repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.04) 5px, rgba(0,0,0,0.04) 6px)`
 
+/**
+ * List view fetches a wider rolling window so the "upcoming" rows aren't
+ * boxed in by the calendar's current month. 180d covers the venue's max
+ * advance booking horizon.
+ */
+const LIST_VIEW_HORIZON_DAYS = 180
+
 /** Format money with 2 decimal places */
 const fmtMoney = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -208,10 +218,18 @@ export default function CalendarDesktop() {
 
   const monthRange = useMemo(() => getMonthRange(currentYear, currentMonth), [currentYear, currentMonth])
   const weekRange = useMemo(() => getWeekRange(weekBase), [weekBase])
+  const listRange = useMemo(() => {
+    const now = new Date()
+    const end = new Date(now)
+    end.setDate(now.getDate() + LIST_VIEW_HORIZON_DAYS)
+    return { start: formatDate(now), end: formatDate(end) }
+  }, [])
 
   const dateRange = view === 'month'
     ? { start: monthRange.start, end: monthRange.end }
-    : { start: formatDate(weekRange.start), end: formatDate(weekRange.end) }
+    : view === 'list'
+      ? listRange
+      : { start: formatDate(weekRange.start), end: formatDate(weekRange.end) }
 
   // ── Data fetching ────────────────────────────────────────────
 
@@ -1215,55 +1233,76 @@ export default function CalendarDesktop() {
             >
               {t('views.month')}
             </button>
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center gap-3">
             <button
-              onClick={view === 'month' ? prevMonth : prevWeek}
-              className="p-1.5 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
+              onClick={() => setView('list')}
+              className={`
+                px-5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ml-2
+                ${view === 'list'
+                  ? 'bg-[#6B7F5E] text-white shadow-sm'
+                  : 'bg-transparent text-[#2C2416] border border-[#E8ECE4] hover:bg-[#F5F2ED]'
+                }
+              `}
             >
-              <ChevronLeft size={18} className="text-[#2C2416]" />
-            </button>
-            <span
-              className="text-lg font-semibold text-[#2C2416] min-w-[220px] text-center"
-              style={{ fontFamily: 'var(--font-playfair)' }}
-            >
-              {navLabel}
-            </span>
-            <button
-              onClick={view === 'month' ? nextMonth : nextWeek}
-              className="p-1.5 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
-            >
-              <ChevronRight size={18} className="text-[#2C2416]" />
+              {t('views.list')}
             </button>
           </div>
 
-          {/* Today link + Legend */}
-          <div className="flex items-center gap-5">
-            {/* Legend (inline) */}
-            <div className="flex items-center gap-4">
-              {legendItems.map(l => (
-                <div key={l.label} className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${l.color}`} />
-                  <span className="text-[11px] text-[#8A7E6B]">{l.label}</span>
-                </div>
-              ))}
+          {/* Navigation — hidden in list view since the list shows a fixed
+              today→+180d horizon with its own filter/sort UI. */}
+          {view !== 'list' && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={view === 'month' ? prevMonth : prevWeek}
+                className="p-1.5 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
+              >
+                <ChevronLeft size={18} className="text-[#2C2416]" />
+              </button>
+              <span
+                className="text-lg font-semibold text-[#2C2416] min-w-[220px] text-center"
+                style={{ fontFamily: 'var(--font-playfair)' }}
+              >
+                {navLabel}
+              </span>
+              <button
+                onClick={view === 'month' ? nextMonth : nextWeek}
+                className="p-1.5 rounded-full hover:bg-[#E8ECE4]/50 transition-colors"
+              >
+                <ChevronRight size={18} className="text-[#2C2416]" />
+              </button>
             </div>
-            <button
-              onClick={goToToday}
-              className="text-sm font-semibold text-[#6B7F5E] hover:underline transition-colors"
-            >
-              {t('today')}
-            </button>
-            <button
-              onClick={findNextAvailable}
-              disabled={findingNext}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              <ChevronRight size={14} />
-              {t('nextAvailable')}
-            </button>
+          )}
+
+          {/* Today link + Legend + Create */}
+          <div className="flex items-center gap-5">
+            {/* Legend (inline) — only meaningful for week/month grid */}
+            {view !== 'list' && (
+              <div className="flex items-center gap-4">
+                {legendItems.map(l => (
+                  <div key={l.label} className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${l.color}`} />
+                    <span className="text-[11px] text-[#8A7E6B]">{l.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {view !== 'list' && (
+              <button
+                onClick={goToToday}
+                className="text-sm font-semibold text-[#6B7F5E] hover:underline transition-colors"
+              >
+                {t('today')}
+              </button>
+            )}
+            {view !== 'list' && (
+              <button
+                onClick={findNextAvailable}
+                disabled={findingNext}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                <ChevronRight size={14} />
+                {t('nextAvailable')}
+              </button>
+            )}
             <button
               onClick={() => { setCreateModalDate(undefined); setCreateModalYurtId(undefined); setShowCreateModal(true) }}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-[#6B7F5E] hover:bg-[#5A6E4F] transition-colors cursor-pointer"
@@ -1276,7 +1315,13 @@ export default function CalendarDesktop() {
 
         {/* ── Calendar Content ─────────────────────────────── */}
 
-        {view === 'week' ? (
+        {view === 'list' ? (
+          <CalendarListView
+            reservations={reservations || []}
+            onSelect={(id) => setSelectedResId(id)}
+            selectedId={selectedResId}
+          />
+        ) : view === 'week' ? (
           renderWeekView()
         ) : (
           <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden flex-1 flex flex-col">

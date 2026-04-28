@@ -8,16 +8,12 @@ import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
 import { LanguageToggle } from '@/components/customer/LanguageToggle'
+import { paymentsEnabled } from '@/lib/feature-flags'
 
 const settingsFetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error('Fetch failed')
   return r.json()
 })
-
-// Temporary site-in-testing flag. While true, the Zelle payment UI is replaced
-// with a bilingual "do not pay" notice. Flip to false (or wire to an env var)
-// when the site goes live.
-const TESTING_MODE: boolean = true
 
 export default function BookingConfirmPage() {
   const t = useTranslations('booking.confirm')
@@ -32,7 +28,7 @@ export default function BookingConfirmPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [countdown, setCountdown] = useState('12:00:00')
+  const [countdown, setCountdown] = useState('24:00:00')
   const [expired, setExpired] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
@@ -490,7 +486,7 @@ export default function BookingConfirmPage() {
             {/* ===== Left Column: Payment + Upload (or testing notice) ===== */}
             <div className="flex-1 flex flex-col gap-6">
 
-              {TESTING_MODE ? (
+              {!paymentsEnabled ? (
                 /* Testing-mode notice (replaces payment UI while site is in testing) */
                 <div className="rounded-2xl border-2 border-[#C4453A]/30 bg-[#C4453A]/5 p-6 flex flex-col gap-4">
                   <div className="flex items-start gap-3">

@@ -12,6 +12,7 @@ import { recordContactsFromUser } from "@/lib/contact-history";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
 import { computeAdminPaymentDeadline, resolveAdminDeadlineHours } from "@/lib/admin-deadline";
+import { computeCustomerPaymentDeadline, resolveCustomerDeadlineHours } from "@/lib/customer-deadline";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -561,13 +562,13 @@ export async function POST(req: NextRequest) {
       ? parseFloat(settingsMap.deposit_amount)
       : 300;
 
-    // Get timeout from settings (stored as minutes)
-    const timeoutMinutes = settingsMap.payment_timeout_hours
-      ? parseFloat(settingsMap.payment_timeout_hours)
-      : 720; // default 12 hours = 720 minutes
-
-    const paymentDeadline = new Date();
-    paymentDeadline.setMinutes(paymentDeadline.getMinutes() + timeoutMinutes);
+    // Customer self-serve deadline: setting value is HOURS, default 24.
+    // Mirrors admin proxy convention (lib/admin-deadline.ts).
+    const customerHours = resolveCustomerDeadlineHours(settingsMap.payment_timeout_hours);
+    const paymentDeadline = computeCustomerPaymentDeadline({
+      now: new Date(),
+      hours: customerHours,
+    });
 
     const confirmationCode = await generateConfirmationCode();
     const reservation = await prisma.reservation.create({

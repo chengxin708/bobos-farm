@@ -62,7 +62,13 @@ export function useConvertInquiryForm({
   const [guestCount, setGuestCount] = useState<number | null>(defaultGuestCount)
   const [yurtIds, setYurtIds] = useState<string[]>([])
   const [customDeposit, setCustomDeposit] = useState<string>("")
-  const [copyNote, setCopyNote] = useState<boolean>(true)
+  // Editable preview of what gets saved to reservation.specialRequests.
+  // Synced once from inquiry.note when the snapshot first loads (see effect
+  // below); admin can then edit, append, or clear. `specialRequestsTouched`
+  // tracks whether admin has modified the field so a later inquiry refetch
+  // doesn't clobber their edits.
+  const [specialRequests, setSpecialRequests] = useState<string>("")
+  const [specialRequestsTouched, setSpecialRequestsTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [result, setResult] = useState<ConversionResult | null>(null)
@@ -76,7 +82,8 @@ export function useConvertInquiryForm({
     setGuestCount(defaultGuestCount)
     setYurtIds([])
     setCustomDeposit("")
-    setCopyNote(true)
+    setSpecialRequests("")
+    setSpecialRequestsTouched(false)
     setError("")
     setResult(null)
     setSubmitting(false)
@@ -88,6 +95,28 @@ export function useConvertInquiryForm({
     fetcher,
     { revalidateOnFocus: false },
   )
+
+  // Prefill specialRequests with the inquiry note the first time the
+  // snapshot arrives (or after the admin hits "reset to customer's
+  // original"). Skip if admin has already edited the field.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!isOpen) return
+    if (specialRequestsTouched) return
+    const note = inquiry?.note?.trim() ?? ""
+    setSpecialRequests(note)
+  }, [isOpen, inquiry, specialRequestsTouched])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  function updateSpecialRequests(value: string) {
+    setSpecialRequests(value)
+    setSpecialRequestsTouched(true)
+  }
+
+  function resetSpecialRequestsToOriginal() {
+    setSpecialRequests(inquiry?.note?.trim() ?? "")
+    setSpecialRequestsTouched(false)
+  }
 
   const { data: yurts } = useSWR<YurtRow[]>(isOpen ? "/api/yurts" : null, fetcher)
   const activeYurts = useMemo(
@@ -201,7 +230,7 @@ export function useConvertInquiryForm({
           guestCount,
           date,
           ...(customDeposit !== "" ? { customDeposit: Number(customDeposit) } : {}),
-          copyNoteToSpecialRequests: copyNote,
+          specialRequests: specialRequests.trim(),
         }),
       })
       if (!res.ok) {
@@ -243,7 +272,10 @@ export function useConvertInquiryForm({
     guestCount, setGuestCount,
     yurtIds, toggleYurt, applyCombo,
     customDeposit, setCustomDeposit,
-    copyNote, setCopyNote,
+    specialRequests,
+    setSpecialRequests: updateSpecialRequests,
+    resetSpecialRequestsToOriginal,
+    specialRequestsTouched,
     // Derived
     combinedCapacity,
     capacityExceeded,

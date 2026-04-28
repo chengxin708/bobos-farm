@@ -498,4 +498,98 @@ describe("claimReservation", () => {
     expect(merged?.details?.placeholderEmail).toBe("temp-abc@placeholder.local");
     expect(merged?.details?.mergedReservationIds).toContain("res-1");
   });
+
+  // Concurrent-claim guard — two parallel attackers race for the same
+  // single-use token. The contract relies on `updateMany({where: {token,
+  // consumedAt: null}})` being atomic: only the first call matches a
+  // row, the second matches zero. Even though Jest runs single-threaded,
+  // Promise.all forces both branches to traverse the full pipeline before
+  // either commits, which is the case the production DB constraint must
+  // catch. Exactly one claim must win.
+  it("concurrent claims with the same token: exactly one wins", async () => {
+    const { db, state } = baseFixture();
+    // Add a second real account to play the role of the second claimant.
+    state.users.push({
+      id: "user-second",
+      email: "second@example.com",
+      name: null,
+      phone: null,
+      wechatId: null,
+      mergedIntoUserId: null,
+    });
+
+    const [a, b] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      claimReservation(db as any, {
+        userId: "user-real",
+        isAdmin: false,
+        code: "ABC123",
+        token: "validtoken",
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      claimReservation(db as any, {
+        userId: "user-second",
+        isAdmin: false,
+        code: "ABC123",
+        token: "validtoken",
+      }),
+    ]);
+
+    const successes = [a, b].filter((r) => r.ok);
+    const failures = [a, b].filter((r) => !r.ok);
+    expect(successes).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+
+    // The reservation should now belong to the winner, never both.
+    const reservation = state.reservations.find((r) => r.id === "res-1");
+    expect(["user-real", "user-second"]).toContain(reservation?.userId);
+
+    // Token must be consumed exactly once.
+    const token = state.tokens.find((t) => t.token === "validtoken");
+    expect(token?.consumedAt).not.toBeNull();
+  });
+
+  // Replay attack — once the token is consumed, every later claim must
+  // fail (INVALID_TOKEN or ALREADY_CLAIMED depending on whether the
+  // placeholder has been merged). No path leads to a stolen reservation.
+  it("post-consume replay attempts always fail", async () => {
+    const { db, state } = baseFixture();
+    // First valid claim consumes the token.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const first = await claimReservation(db as any, {
+      userId: "user-real",
+      isAdmin: false,
+      code: "ABC123",
+      token: "validtoken",
+    });
+    expect(first.ok).toBe(true);
+
+    // Spawn three more attackers in parallel.
+    state.users.push(
+      { id: "atk-1", email: "a1@x.com", name: null, phone: null, wechatId: null, mergedIntoUserId: null },
+      { id: "atk-2", email: "a2@x.com", name: null, phone: null, wechatId: null, mergedIntoUserId: null },
+      { id: "atk-3", email: "a3@x.com", name: null, phone: null, wechatId: null, mergedIntoUserId: null },
+    );
+
+    const replays = await Promise.all(
+      ["atk-1", "atk-2", "atk-3"].map((uid) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        claimReservation(db as any, {
+          userId: uid,
+          isAdmin: false,
+          code: "ABC123",
+          token: "validtoken",
+        }),
+      ),
+    );
+    for (const r of replays) {
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(["ALREADY_CLAIMED", "INVALID_TOKEN"]).toContain(r.error);
+      }
+    }
+    // Reservation still owned by the original winner, not any attacker.
+    const reservation = state.reservations.find((r) => r.id === "res-1");
+    expect(["atk-1", "atk-2", "atk-3"]).not.toContain(reservation?.userId);
+  });
 });

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClaimToken } from "@/lib/claim-token";
 import { resolveAdminDeadlineHours, computeAdminPaymentDeadline } from "@/lib/admin-deadline";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
+import { validateYurtSelection } from "@/lib/yurt-selection";
 
 const convertSchema = z.object({
   yurtIds: z.array(z.string().min(1)).min(1, "At least one yurt is required"),
@@ -13,10 +14,9 @@ const convertSchema = z.object({
     message: "Invalid date",
   }),
   customDeposit: z.number().min(0).optional(),
-  // Default true: when converting an inquiry, the customer's free-text
-  // request is the admin's main context for the final reservation.
-  // Admin can opt out if they rewrote the note separately.
-  copyNoteToSpecialRequests: z.boolean().optional().default(true),
+  // Front-end (ConvertInquiryModal) is responsible for prefilling this
+  // with the inquiry note and letting admin edit before submit. Whatever
+  // arrives here is saved verbatim — no implicit fallback to inquiry.note.
   specialRequests: z.string().max(2000).optional(),
 });
 
@@ -66,7 +66,7 @@ export async function POST(
         { status: 400 },
       );
     }
-    const { yurtIds, guestCount, date, customDeposit, copyNoteToSpecialRequests, specialRequests } = parsed.data;
+    const { yurtIds, guestCount, date, customDeposit, specialRequests } = parsed.data;
     const uniqueYurtIds = Array.from(new Set(yurtIds));
     const reservationDate = new Date(date);
 
@@ -87,18 +87,13 @@ export async function POST(
       where: { id: { in: uniqueYurtIds } },
       select: { id: true, name: true, capacity: true, status: true },
     });
-    if (yurts.length !== uniqueYurtIds.length) {
-      return NextResponse.json({ error: "One or more yurts not found" }, { status: 400 });
-    }
-    if (yurts.some((y) => y.status !== "ACTIVE")) {
-      return NextResponse.json({ error: "Selected yurt is not active" }, { status: 400 });
-    }
-    const totalCapacity = yurts.reduce((s, y) => s + y.capacity, 0);
-    if (guestCount > totalCapacity) {
-      return NextResponse.json(
-        { error: "Guest count exceeds combined capacity of selected yurts" },
-        { status: 400 },
-      );
+    const validation = validateYurtSelection({
+      requestedYurtIds: uniqueYurtIds,
+      foundYurts: yurts,
+      guestCount,
+    });
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
     const conflicts = await prisma.reservation.findFirst({
       where: {
@@ -134,12 +129,7 @@ export async function POST(
     const primaryYurtId = uniqueYurtIds[0];
 
     const now = new Date();
-    // Prefer an explicit specialRequests override; otherwise fall back to
-    // the inquiry's original note if the admin opted to carry it over.
-    const resolvedSpecialRequests =
-      specialRequests?.trim() ||
-      (copyNoteToSpecialRequests ? inquiry.note?.trim() || null : null) ||
-      null;
+    const resolvedSpecialRequests = specialRequests?.trim() || null;
 
     const created = await prisma.$transaction(async (tx) => {
       const reservation = await tx.reservation.create({

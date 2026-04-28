@@ -307,10 +307,10 @@ export default function BookingDetailsPage() {
           </button>
 
           {goingToInquiry && (
-            <div className="bg-[#FDF5E6] border border-[#E5D8B8] rounded-xl p-3.5 flex items-start gap-2.5">
-              <Info size={16} className="text-[#8B6914] shrink-0 mt-0.5" />
+            <div className="bg-[#FDF5E6] border-2 border-[#C4A45C] rounded-xl p-4 flex items-start gap-3 shadow-[0_2px_8px_rgba(196,164,92,0.15)]">
+              <MessageCircle size={20} className="text-[#8B6914] shrink-0 mt-0.5" />
               <div className="text-sm text-[#5A4A1A] leading-relaxed">
-                <p className="font-semibold">{t('inquiryBanner.title')}</p>
+                <p className="font-semibold text-[15px]">{t('inquiryBanner.title')}</p>
                 <p className="mt-1">{t(inquiryReasonKey, { cap: selfServeCap })}</p>
               </div>
             </div>
@@ -336,13 +336,15 @@ export default function BookingDetailsPage() {
             disabled={!isValid}
             aria-label={!isValid ? 'Please complete required fields' : goingToInquiry ? t('continueAsInquiry') : 'Continue to confirmation'}
             className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
-              isValid
-                ? 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
-                : 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
+              !isValid
+                ? 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
+                : goingToInquiry
+                  ? 'bg-[#C4A45C] text-white cursor-pointer shadow-[0_2px_8px_rgba(196,164,92,0.3)]'
+                  : 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
             }`}
           >
             {goingToInquiry ? t('continueAsInquiry') : tCommon('next')}
-            <ChevronRight size={18} />
+            {goingToInquiry ? <MessageCircle size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
       </div>

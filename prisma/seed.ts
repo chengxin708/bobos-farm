@@ -321,8 +321,8 @@ async function main() {
     },
     {
       key: "payment_timeout_hours",
-      value: "12",
-      description: "Hours before unpaid reservation auto-expires",
+      value: "24",
+      description: "Hours before unpaid customer self-serve reservation auto-expires",
     },
     {
       key: "max_advance_months",
