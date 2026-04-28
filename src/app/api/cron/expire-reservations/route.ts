@@ -1,33 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeEqual } from "crypto";
+import { authorizeCron, runCron } from "@/lib/cron-runner";
 
 export async function GET(req: NextRequest) {
-  try {
-    // Always enforce CRON_SECRET in all environments (including local dev)
-    const configuredSecret = process.env.CRON_SECRET;
-    if (!configuredSecret) {
-      return NextResponse.json(
-        { error: "CRON_SECRET not configured" },
-        { status: 500 }
-      );
-    }
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    // Use timing-safe comparison to prevent token extraction via timing attacks
-    const expected = `Bearer ${configuredSecret}`;
-    try {
-      const a = Buffer.from(authHeader, "utf8");
-      const b = Buffer.from(expected, "utf8");
-      if (a.length !== b.length || !timingSafeEqual(a, b)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const authErr = authorizeCron(req);
+  if (authErr) return authErr;
 
+  return runCron("expire-reservations", async () => {
     const now = new Date();
 
     // Only auto-expire customer self-serve holds. Admin-created proxy
@@ -45,22 +24,14 @@ export async function GET(req: NextRequest) {
     });
 
     if (expiredReservations.length === 0) {
-      return NextResponse.json({
-        success: true,
-        expired: 0,
-        message: "No reservations to expire",
-      });
+      return { expired: 0, message: "No reservations to expire" };
     }
 
-    // Update all expired reservations
     const result = await prisma.reservation.updateMany({
       where: autoExpireFilter,
-      data: {
-        status: "EXPIRED",
-      },
+      data: { status: "EXPIRED" },
     });
 
-    // Log activity for each expired reservation
     const activityLogs = expiredReservations.map((reservation) =>
       prisma.activityLog.create({
         data: {
@@ -74,21 +45,13 @@ export async function GET(req: NextRequest) {
             date: reservation.date,
           },
         },
-      })
+      }),
     );
-
     await prisma.$transaction(activityLogs);
 
-    return NextResponse.json({
-      success: true,
+    return {
       expired: result.count,
       message: `Expired ${result.count} reservation(s)`,
-    });
-  } catch (error) {
-    console.error("Failed to expire reservations:", error);
-    return NextResponse.json(
-      { error: "Failed to expire reservations" },
-      { status: 500 }
-    );
-  }
+    };
+  });
 }

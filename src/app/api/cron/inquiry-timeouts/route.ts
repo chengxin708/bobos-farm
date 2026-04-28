@@ -1,28 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeEqual } from "crypto";
 import { sendPushToAdmins } from "@/lib/push";
-
-function authorize(req: NextRequest): NextResponse | null {
-  const configuredSecret = process.env.CRON_SECRET;
-  if (!configuredSecret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
-  }
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  try {
-    const a = Buffer.from(authHeader, "utf8");
-    const b = Buffer.from(`Bearer ${configuredSecret}`, "utf8");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return null;
-}
+import { authorizeCron, runCron } from "@/lib/cron-runner";
 
 async function readIntSetting(key: string, fallback: number): Promise<number> {
   const row = await prisma.systemSetting.findUnique({ where: { key } });
@@ -37,10 +16,10 @@ async function readIntSetting(key: string, fallback: number): Promise<number> {
  * per inquiry per threshold — so repeat cron ticks don't spam.
  */
 export async function GET(req: NextRequest) {
-  const authErr = authorize(req);
+  const authErr = authorizeCron(req);
   if (authErr) return authErr;
 
-  try {
+  return runCron("inquiry-timeouts", async () => {
     const now = new Date();
     const warnHours = await readIntSetting("inquiry_timeout_warn_hours", 24);
     const escalateHours = await readIntSetting("inquiry_timeout_escalate_hours", 48);
@@ -92,9 +71,6 @@ export async function GET(req: NextRequest) {
       }).catch(() => {});
     }
 
-    return NextResponse.json({ success: true, warnsSent, escalationsSent, scanned: stalePending.length });
-  } catch (err) {
-    console.error("Inquiry timeouts cron failed:", err);
-    return NextResponse.json({ error: "Cron failed" }, { status: 500 });
-  }
+    return { warnsSent, escalationsSent, scanned: stalePending.length };
+  });
 }

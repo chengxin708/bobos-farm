@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:i18n": "tsx scripts/check-i18n.ts",
+    "check:migrations": "tsx scripts/check-migrations.ts",
+    "verify:claim-flow": "tsx scripts/verify-claim-flow.ts",
     "test": "jest",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",

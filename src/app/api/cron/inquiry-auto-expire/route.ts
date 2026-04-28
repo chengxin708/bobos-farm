@@ -1,27 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeEqual } from "crypto";
-
-function authorize(req: NextRequest): NextResponse | null {
-  const configuredSecret = process.env.CRON_SECRET;
-  if (!configuredSecret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 500 });
-  }
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  try {
-    const a = Buffer.from(authHeader, "utf8");
-    const b = Buffer.from(`Bearer ${configuredSecret}`, "utf8");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return null;
-}
+import { authorizeCron, runCron } from "@/lib/cron-runner";
 
 async function readIntSetting(key: string, fallback: number): Promise<number> {
   const row = await prisma.systemSetting.findUnique({ where: { key } });
@@ -36,10 +15,10 @@ async function readIntSetting(key: string, fallback: number): Promise<number> {
  * the admin is waiting on — silence beyond a week means it's stale.
  */
 export async function GET(req: NextRequest) {
-  const authErr = authorize(req);
+  const authErr = authorizeCron(req);
   if (authErr) return authErr;
 
-  try {
+  return runCron("inquiry-auto-expire", async () => {
     const days = await readIntSetting("inquiry_auto_expire_days", 7);
     const cutoff = new Date(Date.now() - days * 24 * 3600_000);
 
@@ -48,7 +27,7 @@ export async function GET(req: NextRequest) {
       select: { id: true },
     });
     if (stale.length === 0) {
-      return NextResponse.json({ success: true, expired: 0 });
+      return { expired: 0 };
     }
 
     const ids = stale.map((s) => s.id);
@@ -71,9 +50,6 @@ export async function GET(req: NextRequest) {
       ),
     );
 
-    return NextResponse.json({ success: true, expired: ids.length });
-  } catch (err) {
-    console.error("Inquiry auto-expire cron failed:", err);
-    return NextResponse.json({ error: "Cron failed" }, { status: 500 });
-  }
+    return { expired: ids.length };
+  });
 }

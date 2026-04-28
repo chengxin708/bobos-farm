@@ -13,6 +13,7 @@ import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
 import { computeAdminPaymentDeadline, resolveAdminDeadlineHours } from "@/lib/admin-deadline";
 import { computeCustomerPaymentDeadline, resolveCustomerDeadlineHours } from "@/lib/customer-deadline";
+import { rateLimit } from "@/lib/rate-limit";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -143,7 +144,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// TODO: [SECURITY] Add rate limiting to prevent spam reservation creation (e.g., 5 per user per hour)
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
@@ -152,6 +152,30 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+
+    // Customer-side rate limit: 5 reservations per user per hour. Admins
+    // creating proxy bookings are exempt — they may legitimately punch
+    // in many on a busy phone-call day. Keyed by userId (not IP) so a
+    // shared-NAT household doesn't bottleneck on each other.
+    if (!isAdmin) {
+      const rl = rateLimit(`reservation:${session.user.id}`, {
+        limit: 5,
+        windowMs: 60 * 60 * 1000,
+      });
+      if (!rl.ok) {
+        return NextResponse.json(
+          {
+            error: "Too many reservation attempts. Please try again later.",
+            retryAfterSeconds: rl.retryAfterSeconds,
+          },
+          {
+            status: 429,
+            headers: { "Retry-After": String(rl.retryAfterSeconds) },
+          },
+        );
+      }
+    }
+
     const body = await req.json();
 
     // ── Admin branch: create reservation on behalf of a customer ──
