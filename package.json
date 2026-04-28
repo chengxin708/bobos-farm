@@ -10,6 +10,8 @@
     "check:i18n": "tsx scripts/check-i18n.ts",
     "check:migrations": "tsx scripts/check-migrations.ts",
     "verify:claim-flow": "tsx scripts/verify-claim-flow.ts",
+    "csv:clean-historical": "tsx scripts/process-historical-csv.ts",
+    "csv:import-historical": "tsx scripts/import-historical-reservations.ts",
     "test": "jest",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
