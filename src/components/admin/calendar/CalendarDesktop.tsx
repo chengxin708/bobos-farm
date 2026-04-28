@@ -9,9 +9,10 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import ReservationDetail from '@/components/admin/reservations/ReservationDetail'
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
-import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed, X } from 'lucide-react'
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
-import CalendarListView from '@/components/admin/calendar/CalendarListView'
+import CalendarListView, { type ListInquiry } from '@/components/admin/calendar/CalendarListView'
+import InquiryDetailPanel from '@/components/admin/inquiries/InquiryDetailPanel'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -180,6 +181,7 @@ export default function CalendarDesktop() {
   const [createModalDate, setCreateModalDate] = useState<string | undefined>(undefined)
   const [createModalYurtId, setCreateModalYurtId] = useState<string | undefined>(undefined)
   const [selectedResId, setSelectedResId] = useState<string | null>(null)
+  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null)
   const [actionUpdating, setActionUpdating] = useState(false)
   const [swapSourceId, setSwapSourceId] = useState<string | null>(null)
   const [swapLoading, setSwapLoading] = useState(false)
@@ -245,6 +247,14 @@ export default function CalendarDesktop() {
     fetcher
   )
 
+  // Pull active inquiries in the same window for the list view + day-cell
+  // strip. We don't filter by status server-side — the list view's filter
+  // pills want to optionally show CLOSED/EXPIRED rows.
+  const { data: inquiries } = useSWR<ListInquiry[]>(
+    `/api/inquiries?startDate=${dateRange.start}&endDate=${dateRange.end}`,
+    fetcher
+  )
+
   // Calendar summary for month view (capacity, assignment status)
   const { data: calendarSummary } = useSWR<Record<string, CalendarSummaryEntry>>(
     view === 'month'
@@ -254,6 +264,23 @@ export default function CalendarDesktop() {
   )
 
   // ── Indexed lookups ──────────────────────────────────────────
+
+  /** Active inquiries indexed by their preferredDate. Drives the day-cell
+   *  strip + popover. Filters to the three active statuses so admin sees
+   *  only what still needs action; CONVERTED/CLOSED/EXPIRED stay out of
+   *  the grid (still visible in list view via "Show archived"). */
+  const inquiriesByDate = useMemo(() => {
+    const map = new Map<string, ListInquiry[]>()
+    if (!inquiries) return map
+    const ACTIVE = new Set(['PENDING', 'IN_PROGRESS', 'AWAITING_CUSTOMER'])
+    for (const i of inquiries) {
+      if (!ACTIVE.has(i.status)) continue
+      const dateKey = i.preferredDate.split('T')[0]
+      if (!map.has(dateKey)) map.set(dateKey, [])
+      map.get(dateKey)!.push(i)
+    }
+    return map
+  }, [inquiries])
 
   /** Map: "YYYY-MM-DD" -> yurtId -> Reservation[] (assigned) */
   const resByDateYurt = useMemo(() => {
@@ -780,6 +807,7 @@ export default function CalendarDesktop() {
                 {weekDays.map((d, i) => {
                   const dateStr = formatDate(d)
                   const isToday = dateStr === todayStr
+                  const dayInquiries = inquiriesByDate.get(dateStr)
                   return (
                     <th
                       key={i}
@@ -797,6 +825,21 @@ export default function CalendarDesktop() {
                       `}>
                         {d.getDate()}
                       </div>
+                      {dayInquiries && dayInquiries.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedInquiryId(dayInquiries[0].id)}
+                          className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#FEFBF4] border border-[#C4A45C]/40 hover:bg-[#FDF5E6] transition-colors cursor-pointer"
+                          title={t('inquiryStripTitle', { count: dayInquiries.length })}
+                        >
+                          <ClipboardList size={10} className="text-[#8B6914] shrink-0" />
+                          <span className="text-[10px] font-semibold text-[#8B6914]">
+                            {dayInquiries.length === 1
+                              ? t('inquiryStripSingle')
+                              : t('inquiryStripMulti', { count: dayInquiries.length })}
+                          </span>
+                        </button>
+                      )}
                     </th>
                   )
                 })}
@@ -1130,6 +1173,33 @@ export default function CalendarDesktop() {
           </div>
         </div>
 
+        {/* Active inquiry strip — separate from reservation count to
+            avoid muddling capacity math. Click pops the drawer for the
+            first inquiry of the day; admin can navigate to the rest via
+            list view if there are more. */}
+        {(() => {
+          const dayInquiries = inquiriesByDate.get(dateStr)
+          if (!dayInquiries || dayInquiries.length === 0) return null
+          return (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedInquiryId(dayInquiries[0].id)
+              }}
+              className="mb-1.5 w-full flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#FEFBF4] border border-[#C4A45C]/40 hover:bg-[#FDF5E6] transition-colors cursor-pointer"
+              title={t('inquiryStripTitle', { count: dayInquiries.length })}
+            >
+              <ClipboardList size={10} className="text-[#8B6914] shrink-0" />
+              <span className="text-[10px] font-semibold text-[#8B6914] truncate">
+                {dayInquiries.length === 1
+                  ? t('inquiryStripSingle')
+                  : t('inquiryStripMulti', { count: dayInquiries.length })}
+              </span>
+            </button>
+          )
+        })()}
+
         {/* Reservation count */}
         {resCount > 0 && (
           <div className="mb-1.5">
@@ -1318,8 +1388,11 @@ export default function CalendarDesktop() {
         {view === 'list' ? (
           <CalendarListView
             reservations={reservations || []}
-            onSelect={(id) => setSelectedResId(id)}
-            selectedId={selectedResId}
+            inquiries={inquiries || []}
+            onSelectReservation={(id) => setSelectedResId(id)}
+            onSelectInquiry={(id) => setSelectedInquiryId(id)}
+            selectedReservationId={selectedResId}
+            selectedInquiryId={selectedInquiryId}
           />
         ) : view === 'week' ? (
           renderWeekView()
@@ -1357,6 +1430,34 @@ export default function CalendarDesktop() {
             isUpdating={actionUpdating}
             onOrderChanged={() => { mutateReservations(); mutateSelectedRes(); mutateSelectedResLogs(); }}
           />
+        </div>
+      )}
+
+      {/* Inquiry Detail Drawer */}
+      {selectedInquiryId && (
+        <div className="w-[400px] border-l border-[#E8ECE4] bg-white flex flex-col overflow-hidden shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8ECE4] bg-[#FAFAF7]">
+            <div className="flex items-center gap-2">
+              <ClipboardList size={16} className="text-[#8B6914]" />
+              <span className="text-sm font-semibold text-[#2C2416]">{t('inquiryDrawerTitle')}</span>
+            </div>
+            <button
+              onClick={() => setSelectedInquiryId(null)}
+              className="p-1 rounded hover:bg-[#E8ECE4]/30 cursor-pointer bg-transparent border-none"
+              aria-label={tc('close')}
+            >
+              <X size={16} className="text-[#5A4F3F]" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <InquiryDetailPanel
+              inquiryId={selectedInquiryId}
+              onViewReservation={(rid) => {
+                setSelectedInquiryId(null)
+                setSelectedResId(rid)
+              }}
+            />
+          </div>
         </div>
       )}
 

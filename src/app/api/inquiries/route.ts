@@ -32,11 +32,21 @@ export async function GET(req: NextRequest) {
   const priority = searchParams.get("priority");
   const tag = searchParams.get("tag");
   const userId = searchParams.get("userId");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (priority) where.priority = priority;
   if (tag) where.tags = { has: tag };
   if (userId) where.userId = userId;
+  // Calendar/list views pass startDate+endDate to scope inquiries to a
+  // visible window. Filter on preferredDate (the inquiry's anchor day).
+  if (startDate || endDate) {
+    const dateFilter: Record<string, Date> = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) dateFilter.lte = new Date(endDate);
+    where.preferredDate = dateFilter;
+  }
 
   const inquiries = await prisma.inquiry.findMany({
     where,

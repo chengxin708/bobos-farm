@@ -1066,6 +1066,10 @@
       },
       "listView": {
         "searchPlaceholder": "Search name, phone, or email…",
+        "kindFilterLabel": "Type",
+        "kindAll": "All",
+        "kindReservation": "Reservations",
+        "kindInquiry": "Inquiries",
         "statusFilterLabel": "Status",
         "statusAll": "All",
         "statusPending": "Pending",
@@ -1075,12 +1079,15 @@
         "sourceAll": "All",
         "sourceSelf": "Self-serve",
         "sourceAdmin": "Admin proxy",
+        "includeArchivedInquiries": "Show archived inquiries",
         "countSummary": "{count} of {total}",
-        "emptyState": "No upcoming reservations match your filters.",
+        "emptyState": "No upcoming items match your filters.",
         "placeholderEmail": "(no email — admin proxy)",
         "yurtPending": "Unassigned",
+        "yurtNotApplicable": "n/a",
         "overdue": "Overdue",
         "col": {
+          "type": "Type",
           "date": "Date",
           "customer": "Customer",
           "phone": "Phone",
@@ -1094,6 +1101,10 @@
           "createdAt": "Created"
         }
       },
+      "inquiryDrawerTitle": "Inquiry detail",
+      "inquiryStripSingle": "1 inquiry",
+      "inquiryStripMulti": "{count} inquiries",
+      "inquiryStripTitle": "{count} active inquiry(s) on this date — click to open",
       "today": "Today",
       "nextAvailable": "Next Available",
       "pastSlotLabel": "Retroactive",

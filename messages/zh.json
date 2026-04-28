@@ -1066,6 +1066,10 @@
       },
       "listView": {
         "searchPlaceholder": "搜索姓名、电话或邮箱…",
+        "kindFilterLabel": "类型",
+        "kindAll": "全部",
+        "kindReservation": "预约",
+        "kindInquiry": "咨询",
         "statusFilterLabel": "状态",
         "statusAll": "全部",
         "statusPending": "待付款",
@@ -1075,12 +1079,15 @@
         "sourceAll": "全部",
         "sourceSelf": "客户自助",
         "sourceAdmin": "代客预订",
+        "includeArchivedInquiries": "显示已归档咨询",
         "countSummary": "{count} / {total}",
-        "emptyState": "没有匹配筛选条件的待办预约。",
+        "emptyState": "没有匹配筛选条件的待办项。",
         "placeholderEmail": "（无邮箱 · 代客单）",
         "yurtPending": "待分配",
+        "yurtNotApplicable": "—",
         "overdue": "已超时",
         "col": {
+          "type": "类型",
           "date": "日期",
           "customer": "客户",
           "phone": "电话",
@@ -1094,6 +1101,10 @@
           "createdAt": "创建时间"
         }
       },
+      "inquiryDrawerTitle": "咨询单详情",
+      "inquiryStripSingle": "1 个咨询",
+      "inquiryStripMulti": "{count} 个咨询",
+      "inquiryStripTitle": "当日有 {count} 个待办咨询单 — 点击打开",
       "today": "今天",
       "nextAvailable": "下一个可用",
       "pastSlotLabel": "补录",
