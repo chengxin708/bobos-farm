@@ -134,17 +134,35 @@ export default function BookingDetailsPage() {
     setTouched((prev) => ({ ...prev, [field]: true }))
   }
 
-  function handleNext() {
+  async function handleNext() {
     setTouched({ contactName: true, contactEmail: true, contactPhone: true, guestCount: true })
     if (!isValid || guestCount == null) return
 
+    // Fast path: stepper-cap-based hint says inquiry. Skip the probe.
     if (goingToInquiry) {
-      const qs = new URLSearchParams()
-      if (booking.selectedDate) qs.set('date', booking.selectedDate)
-      qs.set('guestCount', String(guestCount))
-      if (specialRequests) qs.set('note', specialRequests)
-      router.push(`/inquiries/new?${qs.toString()}`)
+      routeToInquiry()
       return
+    }
+
+    // Deep check: does the algorithm say a new reservation actually fits
+    // on this date, accounting for possible reshuffles of non-manual rows?
+    if (booking.selectedDate) {
+      try {
+        const probeRes = await fetch(
+          `/api/availability/check?date=${booking.selectedDate}&guests=${guestCount}`,
+        )
+        if (probeRes.ok) {
+          const probe = await probeRes.json()
+          if (probe.shouldInquire) {
+            routeToInquiry()
+            return
+          }
+        }
+        // Non-OK / network errors fall through to the normal confirm flow.
+        // The booking POST will surface a real failure later if it happens.
+      } catch {
+        // Same as above — don't block the user on a probe failure.
+      }
     }
 
     booking.setDetails({
@@ -155,6 +173,15 @@ export default function BookingDetailsPage() {
       guestCount,
     })
     router.push('/booking/confirm')
+  }
+
+  function routeToInquiry() {
+    if (guestCount == null) return
+    const qs = new URLSearchParams()
+    if (booking.selectedDate) qs.set('date', booking.selectedDate)
+    qs.set('guestCount', String(guestCount))
+    if (specialRequests) qs.set('note', specialRequests)
+    router.push(`/inquiries/new?${qs.toString()}`)
   }
 
   function handleInquireEscape() {
