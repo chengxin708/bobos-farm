@@ -268,6 +268,11 @@ async function main() {
     const date = new Date(dateStr + "T00:00:00Z");
     const result = await tryDeterministicAssignment(date);
 
+    if (!result) {
+      console.log(`${dateStr}: skipped (within T-7 freeze)`);
+      continue;
+    }
+
     const assigned = result.assignments.map(
       (a) => `${a.yurtName}←${a.guestCount}人`
     );

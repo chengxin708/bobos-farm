@@ -210,8 +210,13 @@ async function main() {
     let totalAssigned = 0;
     let totalPending = 0;
     let totalAnomalies = 0;
+    let skippedFreeze = 0;
     for (const dateStr of dates) {
       const result = await tryDeterministicAssignment(new Date(`${dateStr}T00:00:00.000Z`));
+      if (!result) {
+        skippedFreeze++;
+        continue;
+      }
       totalAssigned += result.assignments.length;
       totalPending += result.pending.length;
       totalAnomalies += result.anomalies.length;
@@ -219,6 +224,7 @@ async function main() {
     console.log(`  Yurt assignments produced: ${totalAssigned}`);
     console.log(`  Pending (couldn't fit):    ${totalPending}`);
     console.log(`  Date anomalies:            ${totalAnomalies}`);
+    console.log(`  Skipped (T-7 freeze):      ${skippedFreeze}`);
   }
 
   console.log("");

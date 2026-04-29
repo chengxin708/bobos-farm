@@ -136,6 +136,9 @@ export async function simulateWithNewReservation(
  * deposits aren't refunded on cancel, and operations have already prepared
  * for the current yurt allocation. Re-allocation must therefore skip these
  * dates — the T-7 cron is the last auto-pass.
+ *
+ * Uses UTC math because reservation.date is stored at UTC midnight (Prisma);
+ * local-time setHours would skew across DST and non-UTC servers.
  */
 export function isWithinFreeze(date: Date, now: Date = new Date()): boolean {
   const sevenDaysFromNow = new Date(now);
@@ -153,9 +156,9 @@ export function isWithinFreeze(date: Date, now: Date = new Date()): boolean {
  */
 export async function tryDeterministicAssignment(
   targetDate: Date
-): Promise<DeterministicResult | void> {
+): Promise<DeterministicResult | null> {
   if (isWithinFreeze(targetDate)) {
-    return; // T-7 freeze: ops have prepared, do not auto-shuffle.
+    return null; // T-7 freeze: ops have prepared, do not auto-shuffle.
   }
 
   const [availableYurts, reservations] = await Promise.all([
