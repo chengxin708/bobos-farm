@@ -344,3 +344,96 @@ export function computeOptimizationSuggestion(
 
   return { currentWaste, suggestedWaste, moves };
 }
+
+// ─── Availability Probe ─────────────────────────────────────────────
+
+export interface AvailabilityProbeResult {
+  /** True iff the hypothetical party can be placed on the date. */
+  canFit: boolean;
+  /**
+   * If canFit, which yurt would the hypothetical party land in under
+   * the algorithm's current solution? Null when canFit but the row
+   * stayed pending (ambiguous between two rooms).
+   */
+  hypotheticalYurtId: string | null;
+  /**
+   * Convenience flag for callers that want a simple "all full" yes/no.
+   * True iff the hypothetical row produced an anomaly OR
+   *         every yurt is taken AND none of the existing rows can shift.
+   */
+  allYurtsFullForCount: boolean;
+  /** When canFit=false, why? */
+  anomalyReason?: "exceeds_max_capacity" | "no_yurt_available";
+}
+
+/**
+ * Probe: would adding a hypothetical reservation of `guestCount` to the
+ * existing set on a given date produce a feasible solution?
+ *
+ * Implementation: append a synthetic row with a special id, run the
+ * standard deterministic algorithm, inspect whether the synthetic row
+ * landed in `assignments` (canFit) or in `anomalies` (does not fit).
+ *
+ * Manually-assigned existing rows stay pinned (per Phase 0); the
+ * algorithm can reshuffle non-manual existing rows to make room.
+ */
+export function computeAvailabilityProbe(
+  availableYurts: YurtInput[],
+  existingReservations: DeterministicReservationInput[],
+  hypotheticalGuestCount: number
+): AvailabilityProbeResult {
+  const HYPOTHETICAL_ID = "__probe__";
+  // Newest createdAt so it loses every FIFO tiebreak — we never want
+  // the probe to evict an existing customer's natural placement.
+  const hypothetical: DeterministicReservationInput = {
+    id: HYPOTHETICAL_ID,
+    guestCount: hypotheticalGuestCount,
+    yurtId: null,
+    manuallyAssigned: false,
+    createdAt: new Date(8640000000000000),
+  };
+
+  // Free non-manual existing rows so the algorithm can reshuffle them
+  // around the hypothetical party. Manually-assigned rows keep their
+  // yurtId and stay pinned by Phase 0.
+  const reshuffleable: DeterministicReservationInput[] = existingReservations.map(
+    (r) => (r.manuallyAssigned ? r : { ...r, yurtId: null })
+  );
+
+  const result = computeDeterministicAssignment(availableYurts, [
+    ...reshuffleable,
+    hypothetical,
+  ]);
+
+  const probeAssignment = result.assignments.find(
+    (a) => a.reservationId === HYPOTHETICAL_ID
+  );
+  if (probeAssignment) {
+    return {
+      canFit: true,
+      hypotheticalYurtId: probeAssignment.yurtId,
+      allYurtsFullForCount: false,
+    };
+  }
+
+  const probeAnomaly = result.anomalies.find(
+    (a) => a.reservationId === HYPOTHETICAL_ID
+  );
+  if (probeAnomaly) {
+    return {
+      canFit: false,
+      hypotheticalYurtId: null,
+      allYurtsFullForCount: true,
+      anomalyReason: probeAnomaly.reason,
+    };
+  }
+
+  // Probe is in `pending` — fits in capacity terms but the algorithm
+  // couldn't disambiguate. We treat that as canFit=true, no specific
+  // room.
+  return {
+    canFit: true,
+    hypotheticalYurtId: null,
+    allYurtsFullForCount: false,
+  };
+}
