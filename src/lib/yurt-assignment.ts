@@ -2,11 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { sendPushToAdmins } from "@/lib/push";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import {
+  computeAvailabilityProbe,
   computeBestFitDecreasing,
   computeDeterministicAssignment,
   type AssignmentResult,
   type Anomaly,
   type AssignmentPlan,
+  type AvailabilityProbeResult,
   type DeterministicReservationInput,
   type DeterministicResult,
   type YurtInput,
@@ -177,6 +179,22 @@ export async function tryDeterministicAssignment(
   }
 
   return result;
+}
+
+/**
+ * Server-side wrapper: load active yurts + non-cancelled reservations
+ * for `date`, ask the pure probe whether a new party of `guestCount`
+ * can fit. Used by /api/availability/check.
+ */
+export async function checkAvailabilityForDate(
+  date: Date,
+  guestCount: number,
+): Promise<AvailabilityProbeResult> {
+  const [yurts, existing] = await Promise.all([
+    getAvailableYurts(date),
+    getActiveReservationsFull(date),
+  ]);
+  return computeAvailabilityProbe(yurts, existing, guestCount);
 }
 
 /**
