@@ -7,7 +7,7 @@ import {
 // ─── Test fixtures ──────────────────────────────────────────────────
 
 const YURTS = [
-  { id: 'yurt-1', name: '#1', capacity: 28 },
+  { id: 'yurt-1', name: '#1', capacity: 30 },
   { id: 'yurt-2', name: '#2', capacity: 24 },
   { id: 'yurt-3', name: '#3', capacity: 16 },
 ];
@@ -34,8 +34,8 @@ function findAssignment(result: DeterministicResult, resId: string) {
 // ─── Tests ──────────────────────────────────────────────────────────
 
 describe('computeDeterministicAssignment', () => {
-  // 1. 25-28 → #1 immediately
-  it('assigns 25-28 guests to #1 (only room that fits)', () => {
+  // 1. 25-30 → #1 immediately
+  it('assigns 25-30 guests to #1 (only room that fits)', () => {
     const res = [makeRes('A', 26)];
     const result = computeDeterministicAssignment(YURTS, res);
 
@@ -167,9 +167,9 @@ describe('computeDeterministicAssignment', () => {
     expect(result.pending).toContain('B');
   });
 
-  // 11. >28 → anomaly
-  it('marks >28 guests as anomaly (exceeds max capacity)', () => {
-    const res = [makeRes('A', 30)];
+  // 11. >30 → anomaly
+  it('marks >30 guests as anomaly (exceeds max capacity)', () => {
+    const res = [makeRes('A', 31)];
     const result = computeDeterministicAssignment(YURTS, res);
 
     expect(result.assignments).toHaveLength(0);

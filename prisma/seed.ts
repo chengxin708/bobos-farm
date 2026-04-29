@@ -49,12 +49,12 @@ async function main() {
   const yurts = await Promise.all([
     prisma.yurt.upsert({
       where: { id: "room-1" },
-      update: { name: "#1", alias: "大", capacity: 28, sortOrder: 1 },
+      update: { name: "#1", alias: "大", capacity: 30, sortOrder: 1 },
       create: {
         id: "room-1",
         name: "#1",
         alias: "大",
-        capacity: 28,
+        capacity: 30,
         status: "ACTIVE",
         sortOrder: 1,
       },
