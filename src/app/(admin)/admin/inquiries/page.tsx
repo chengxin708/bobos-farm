@@ -66,12 +66,27 @@ export default function AdminInquiryListPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 px-2 rounded border border-[#E8ECE4] text-sm">
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s ? t(`status.${s}`) : t("allStatuses")}</option>
-          ))}
-        </select>
+      <div className="flex gap-1.5 flex-wrap items-center">
+        {STATUS_OPTIONS.map((s) => {
+          const active = status === s
+          const label = s ? t(`status.${s}`) : t("allStatuses")
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatus(s)}
+              className={`h-8 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                active
+                  ? "bg-[#6B7F5E] text-white border-[#6B7F5E]"
+                  : "bg-transparent text-[#1A1208] border-[#E8ECE4] hover:border-[#6B7F5E]/40"
+              }`}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex gap-2 flex-wrap items-center">
         <select value={priority} onChange={(e) => setPriority(e.target.value)} className="h-9 px-2 rounded border border-[#E8ECE4] text-sm">
           {PRIORITY_OPTIONS.map((p) => (
             <option key={p} value={p}>{p ? t(`priority.${p}`) : t("allPriorities")}</option>

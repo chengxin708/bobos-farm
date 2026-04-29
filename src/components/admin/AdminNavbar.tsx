@@ -5,9 +5,14 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSession, signOut } from 'next-auth/react'
+import useSWR from 'swr'
 import { ChevronDown, Settings, LogOut } from 'lucide-react'
 import { setLocale } from '@/lib/locale-actions'
 import NotificationBell from './NotificationBell'
+
+interface InquirySummary { id: string; status: string }
+const PENDING_STATUSES = new Set(['PENDING', 'IN_PROGRESS', 'AWAITING_CUSTOMER'])
+const navFetcher = (url: string) => fetch(url).then(r => r.ok ? r.json() : [])
 
 /* ── helpers ── */
 
@@ -106,6 +111,16 @@ export default function AdminNavbar() {
   const reservations = useHoverDropdown()
   const operations = useHoverDropdown()
 
+  // Pending inquiry count for the badge on the "Inquiries" link.
+  const { data: inquiries } = useSWR<InquirySummary[]>(
+    '/api/inquiries',
+    navFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000, refreshInterval: 60000 },
+  )
+  const pendingInquiryCount = Array.isArray(inquiries)
+    ? inquiries.filter((i) => PENDING_STATUSES.has(i.status)).length
+    : 0
+
   // Click dropdown for avatar
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
@@ -169,9 +184,14 @@ export default function AdminNavbar() {
         {/* 咨询单 */}
         <Link
           href="/admin/inquiries"
-          className={linkClass(pathname.startsWith('/admin/inquiries'))}
+          className={`${linkClass(pathname.startsWith('/admin/inquiries'))} relative inline-flex items-center gap-1.5`}
         >
           {t('inquiries')}
+          {pendingInquiryCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-[#DC3545] text-white text-[10px] font-bold px-1">
+              {pendingInquiryCount > 9 ? '9+' : pendingInquiryCount}
+            </span>
+          )}
         </Link>
 
         {/* 运营 dropdown */}
