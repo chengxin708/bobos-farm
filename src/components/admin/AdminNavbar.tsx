@@ -171,6 +171,14 @@ export default function AdminNavbar() {
           {t('customers')}
         </Link>
 
+        {/* 咨询单 */}
+        <Link
+          href="/admin/inquiries"
+          className={linkClass(pathname.startsWith('/admin/inquiries'))}
+        >
+          {t('inquiries')}
+        </Link>
+
         {/* 运营 dropdown */}
         <div
           ref={operations.ref}
