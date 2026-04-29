@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-29
 **Status:** Approved by operator (chengxin); ready for implementation plan
-**Driver:** Bobo's Farm only operates weekends + holidays. Mon-Fri must default to closed for the public; admin retains override for private VIP events.
+**Driver:** Bobo's Farm only operates weekends + holidays. Mon-Fri must default to closed for the public; admin retains override for private events.
 
 ## Problem
 
@@ -11,7 +11,7 @@ Until now, every future date in the customer booking calendar has been bookable,
 We need a venue-level "is this date a working day?" concept that the booking flow respects, while preserving admin power to:
 
 1. Open a specific weekday for a holiday or special event (公开节日加开)
-2. Mark a closed weekday for a VIP / private event (关闭日 + 私人预订标记)
+2. Mark a closed weekday for a private event / 私享日 (关闭日 + 私人预订标记)
 3. Close a normally-open weekend (停业维护)
 
 ## Operating Rule (the model)
@@ -29,9 +29,9 @@ model OperatingDay {
 }
 
 enum OperatingDayMode {
-  OPEN     // bookable by public (overrides default closed)
-  VIP      // closed to public; admin manages a private/special booking
-  CLOSED   // explicitly closed (overrides default open weekend)
+  OPEN            // bookable by public (overrides default closed weekday)
+  PRIVATE_EVENT   // closed to public; admin manages a private/special booking (私享日)
+  CLOSED          // explicitly closed (overrides default open weekend)
 }
 ```
 
@@ -44,13 +44,13 @@ enum OperatingDayMode {
 | Sat / Sun | no | OPEN (rule-based default) |
 | Sat / Sun | row=CLOSED | CLOSED (maintenance) |
 | Sat / Sun | row=OPEN | OPEN (no-op but valid) |
-| Sat / Sun | row=VIP | VIP (rare; weekend reserved for private event) |
+| Sat / Sun | row=PRIVATE_EVENT | PRIVATE_EVENT (rare; weekend reserved for private buyout) |
 | Mon-Fri | no | CLOSED (rule-based default) |
 | Mon-Fri | row=OPEN | OPEN (holiday or admin-extended) |
-| Mon-Fri | row=VIP | VIP (admin-arranged private event) |
+| Mon-Fri | row=PRIVATE_EVENT | PRIVATE_EVENT (admin-arranged private event) |
 | Mon-Fri | row=CLOSED | CLOSED (no-op but valid) |
 
-A pure helper `isOperatingDay(date, operatingDayMap): { mode, isPublic }` derives the effective state. `isPublic = true` only for OPEN. VIP and CLOSED are equivalent to the customer.
+A pure helper `effectiveOperatingMode(date, operatingDayMap): { mode, isPublic }` derives the effective state. `isPublic = true` only for OPEN. PRIVATE_EVENT and CLOSED are equivalent to the customer.
 
 ## User Behavior
 
@@ -58,28 +58,28 @@ A pure helper `isOperatingDay(date, operatingDayMap): { mode, isPublic }` derive
 
 - `/booking/date` calendar:
   - OPEN dates → green/normal, bookable.
-  - CLOSED + VIP dates → grey, **not** bookable, click handler routes to `/inquiries/new?date=…&from=closed-day`. Same UX whether the date is plainly closed or held for a VIP event.
+  - CLOSED + PRIVATE_EVENT dates → grey, **not** bookable, click handler routes to `/inquiries/new?date=…&from=closed-day`. Same UX whether the date is plainly closed or held for a private event.
   - The booking-confirm probe (Task 5 of the dynamic-yurt-allocation plan) gains a "is operating day?" pre-check; non-operating → `shouldInquire: true, reason: 'closed_day'`.
 
 ### Admin-facing
 
-- **Month view (admin calendar):** Layout unchanged. A subtle background tint distinguishes CLOSED weekdays from OPEN/VIP days. VIP gets a small gold badge; explicit OPEN-on-weekday gets a blue / "extended" badge.
-- **Week view + Day view (admin calendar):** Filter to operating days (OPEN ∪ VIP) plus any date that has at least one reservation/inquiry. Closed days with no data are omitted from the compressed view.
+- **Month view (admin calendar):** Layout unchanged. A subtle background tint distinguishes CLOSED weekdays from OPEN/PRIVATE_EVENT days. PRIVATE_EVENT gets a small gold badge ("私享"); explicit OPEN-on-weekday gets a blue / "extended" badge ("加开").
+- **Week view + Day view (admin calendar):** Filter to operating days (OPEN ∪ PRIVATE_EVENT) plus any date that has at least one reservation/inquiry. Closed days with no data are omitted from the compressed view.
 - **Click-on-date popup in month view:**
-  - Currently CLOSED weekday → menu: [Mark Open] [Enable VIP] [Cancel]
-  - Currently OPEN weekday → menu: [Close] [Convert to VIP] [Cancel]
-  - Currently VIP weekday → menu: [Close] [Make Public OPEN] [Cancel]
+  - Currently CLOSED weekday → menu: [Mark Open] [Enable Private Event] [Cancel]
+  - Currently OPEN weekday → menu: [Close] [Convert to Private Event] [Cancel]
+  - Currently PRIVATE_EVENT weekday → menu: [Close] [Make Public OPEN] [Cancel]
   - Currently OPEN weekend (default rule) → no menu opens by default; long-press / "More" surfaces [Mark Closed for Maintenance].
-  - Currently VIP/CLOSED weekend (override) → menu: [Restore Default OPEN] [other modes] [Cancel].
+  - Currently PRIVATE_EVENT/CLOSED weekend (override) → menu: [Restore Default OPEN] [other modes] [Cancel].
 
 The popup is one new UI piece, not a separate page. Admins manage operating-day status in-context.
 
-## Auto-promote-to-VIP on Reservation Create
+## Auto-promote-to-PRIVATE_EVENT on Reservation Create
 
-When admin creates a reservation (or converts an inquiry to a reservation) on a date whose effective state is CLOSED (no `OperatingDay` row, or row=CLOSED), the system **automatically** writes/updates the row to `mode=VIP, note='auto-set on reservation create'`. Reasons:
+When admin creates a reservation (or converts an inquiry to a reservation) on a date whose effective state is CLOSED (no `OperatingDay` row, or row=CLOSED), the system **automatically** writes/updates the row to `mode=PRIVATE_EVENT, note='auto-set on reservation create'`. Reasons:
 
-1. The new reservation is a real bookings on a closed day; the calendar must surface it.
-2. Admins shouldn't need a second click ("first mark VIP, then create reservation") — the act of creating the reservation is the intent.
+1. The new reservation is real activity on a closed day; the calendar must surface it.
+2. Admins shouldn't need a second click ("first mark private, then create reservation") — the act of creating the reservation is the intent.
 3. Audit log records who/why via `OperatingDay.createdBy + note`.
 
 Same auto-promotion runs for inquiry → reservation conversion when the chosen date is closed.
@@ -88,7 +88,7 @@ Same auto-promotion runs for inquiry → reservation conversion when the chosen 
 
 Historical reservations on weekdays already exist (the recent 102-row CSV import + production data). On migration:
 
-1. Run a backfill script: for every existing `Reservation` whose `date.day_of_week ∈ {Mon..Fri}` and which has no corresponding `OperatingDay` row, insert `OperatingDay { date, mode: 'VIP', note: 'backfill: weekday with existing reservation', createdBy: null }`.
+1. Run a backfill script: for every existing `Reservation` whose `date.day_of_week ∈ {Mon..Fri}` (in America/New_York) and which has no corresponding `OperatingDay` row, insert `OperatingDay { date, mode: 'PRIVATE_EVENT', note: 'backfill: weekday with existing reservation', createdBy: null }`.
 
 2. Idempotent: re-running is safe (the `@@unique date` constraint prevents duplicates; the script checks-then-inserts).
 
@@ -107,7 +107,7 @@ Admin only. Routes:
 
 ### Modified: `/api/availability/slots`
 
-Add `mode: 'OPEN' | 'VIP' | 'CLOSED'` to each per-date entry so the customer calendar can grey out non-OPEN dates without a separate fetch.
+Add `mode: 'OPEN' | 'PRIVATE_EVENT' | 'CLOSED'` to each per-date entry so the customer calendar can grey out non-OPEN dates without a separate fetch.
 
 ### Modified: `/api/availability/check`
 
@@ -127,7 +127,7 @@ So a customer attempting to book a closed weekday gets routed to inquiry without
 ### Modified: reservation create paths
 
 Two locations:
-1. `/api/reservations` POST — add the auto-promote-to-VIP step at the end of the transaction
+1. `/api/reservations` POST — add the auto-promote step at the end of the transaction
 2. `/api/inquiries/[id]/convert` POST — same auto-promote step
 
 Both wrap the OperatingDay write in the same Prisma transaction as the reservation create, so a failed reservation never leaves a stale OperatingDay row.
@@ -141,8 +141,8 @@ Both wrap the OperatingDay write in the same Prisma transaction as the reservati
 
 ### Admin calendar (`CalendarDesktop` + `CalendarMobile`)
 - New SWR fetch for `/api/operating-days` over the visible window.
-- Month view: tint weekday cells based on effective state. VIP badge for VIP days.
-- Week / Day view: filter to OPEN ∪ VIP ∪ (dates with reservations or inquiries).
+- Month view: tint weekday cells based on effective state. PRIVATE_EVENT badge ("私享") for private-event days, OPEN badge ("加开") for explicitly-opened weekdays.
+- Week / Day view: filter to OPEN ∪ PRIVATE_EVENT ∪ (dates with reservations or inquiries).
 - New popup component `OperatingDayActionsMenu` rendered on date-cell click. Submits to `/api/operating-days` on action.
 
 ### Inquiry form (`/inquiries/new`)
@@ -152,14 +152,14 @@ Both wrap the OperatingDay write in the same Prisma transaction as the reservati
 
 New keys under existing namespaces. Bilingual (en + zh):
 
-- `admin.calendar.operatingDay.markOpen` / `enableVip` / `markClosed` / `restoreDefault` / `convertToVip` / `makePublic`
-- `admin.calendar.operatingDay.modeBadge.open` / `vip` / `closed`
+- `admin.calendar.operatingDay.markOpen` / `enablePrivateEvent` / `markClosed` / `restoreDefault` / `convertToPrivateEvent` / `makePublic`
+- `admin.calendar.operatingDay.modeBadge.open` (加开) / `privateEvent` (私享) / `closed` (休息)
 - `customer.booking.closedDayInquireLabel` (the grey-day click label)
 - `customer.inquiries.fromClosedDayBanner`
 
 ## Edge Cases & Decisions
 
-- **Cancelling the last reservation on a VIP day:** Do NOT auto-revert VIP back to CLOSED. The admin set VIP intentionally; if they want to close it, they do so explicitly via the menu. Keeps the workflow predictable.
+- **Cancelling the last reservation on a PRIVATE_EVENT day:** Do NOT auto-revert PRIVATE_EVENT back to CLOSED. The admin set the mode intentionally; if they want to close it, they do so explicitly via the menu. Keeps the workflow predictable.
 - **Multiple yurts closed on the same date (existing `YurtAvailability`):** Orthogonal to OperatingDay. A date can be `OPEN` (operating) but have all 3 yurts closed via `YurtAvailability` (rare, but legal). The slots API already handles per-yurt closures; OperatingDay layers on top.
 - **Holidays imported from a static list:** Out of scope. Admins manage holidays manually via the calendar popup (one-click "Mark Open" per holiday, ~10 dates per year).
 - **Customer's existing reservation on a closed date:** They can still see / modify / cancel it via `/admin/reservations` and customer flows. OperatingDay only gates NEW booking creation, not existing reservation management.
@@ -168,7 +168,7 @@ New keys under existing namespaces. Bilingual (en + zh):
 ## Out of Scope (v2 candidates)
 
 - Recurring open-day rules (e.g. "every 3rd Friday", "Memorial Day weekend Friday")
-- VIP-only customer-facing flow (customers with a token / role accessing closed days)
+- Customer-facing access tokens for private events (a customer with a shared link bypassing the grey state)
 - Automatic holiday import from a calendar feed
 - Operator-facing dashboard widget showing "next 30 days operating breakdown"
 - Multi-venue / multi-region operating rules (Bobo's Farm is single-venue today)
@@ -181,5 +181,5 @@ New keys under existing namespaces. Bilingual (en + zh):
 4. Slots API + availability/check API integration + customer calendar consumes mode
 5. Inquiry form prefill banner for `from=closed-day`
 6. Admin calendar — month-view tint + click popup + week/day view filter
-7. Auto-promote-to-VIP in reservation create + inquiry convert
-8. End-to-end smoke (manual): customer books weekend OK / customer clicks weekday → inquiry / admin opens a Monday → customer can book / admin VIP-flag a Tuesday → customer still sees grey, admin creates reservation, system auto-confirms VIP row
+7. Auto-promote in reservation create + inquiry convert
+8. End-to-end smoke (manual): customer books weekend OK / customer clicks weekday → inquiry / admin opens a Monday → customer can book / admin private-event-flags a Tuesday → customer still sees grey, admin creates reservation, system auto-confirms PRIVATE_EVENT row
