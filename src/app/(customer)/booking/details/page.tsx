@@ -60,6 +60,7 @@ export default function BookingDetailsPage() {
   const [specialRequests, setSpecialRequests] = useState(booking.specialRequests || '')
 
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [submitting, setSubmitting] = useState(false)
 
   const { data: userProfile } = useSWR(
     session?.user ? '/api/users/me' : null,
@@ -138,41 +139,52 @@ export default function BookingDetailsPage() {
     setTouched({ contactName: true, contactEmail: true, contactPhone: true, guestCount: true })
     if (!isValid || guestCount == null) return
 
-    // Fast path: stepper-cap-based hint says inquiry. Skip the probe.
-    if (goingToInquiry) {
-      routeToInquiry()
-      return
-    }
+    // Belt-and-suspenders re-entry guard. The disabled button should already
+    // prevent a second click during the probe, but if a click squeaks through
+    // (touch hardware quirks, etc.) this avoids stacking probes whose results
+    // could resolve out of order against stale closure state.
+    if (submitting) return
 
-    // Deep check: does the algorithm say a new reservation actually fits
-    // on this date, accounting for possible reshuffles of non-manual rows?
-    if (booking.selectedDate) {
-      try {
-        const probeRes = await fetch(
-          `/api/availability/check?date=${booking.selectedDate}&guests=${guestCount}`,
-        )
-        if (probeRes.ok) {
-          const probe = await probeRes.json()
-          if (probe.shouldInquire) {
-            routeToInquiry()
-            return
-          }
-        }
-        // Non-OK / network errors fall through to the normal confirm flow.
-        // The booking POST will surface a real failure later if it happens.
-      } catch {
-        // Same as above — don't block the user on a probe failure.
+    setSubmitting(true)
+    try {
+      // Fast path: stepper-cap-based hint says inquiry. Skip the probe.
+      if (goingToInquiry) {
+        routeToInquiry()
+        return
       }
-    }
 
-    booking.setDetails({
-      contactName: contactName.trim(),
-      contactEmail: contactEmail.trim(),
-      contactPhone: contactPhone.trim(),
-      specialRequests: specialRequests.trim(),
-      guestCount,
-    })
-    router.push('/booking/confirm')
+      // Deep check: does the algorithm say a new reservation actually fits
+      // on this date, accounting for possible reshuffles of non-manual rows?
+      if (booking.selectedDate) {
+        try {
+          const probeRes = await fetch(
+            `/api/availability/check?date=${booking.selectedDate}&guests=${guestCount}`,
+          )
+          if (probeRes.ok) {
+            const probe = await probeRes.json()
+            if (probe.shouldInquire) {
+              routeToInquiry()
+              return
+            }
+          }
+          // Non-OK / network errors fall through to the normal confirm flow.
+          // The booking POST will surface a real failure later if it happens.
+        } catch {
+          // Same as above — don't block the user on a probe failure.
+        }
+      }
+
+      booking.setDetails({
+        contactName: contactName.trim(),
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim(),
+        specialRequests: specialRequests.trim(),
+        guestCount,
+      })
+      router.push('/booking/confirm')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function routeToInquiry() {
@@ -360,18 +372,32 @@ export default function BookingDetailsPage() {
         <div className="max-w-[560px] mx-auto">
           <button
             onClick={handleNext}
-            disabled={!isValid}
+            disabled={!isValid || submitting}
+            aria-busy={submitting}
             aria-label={!isValid ? 'Please complete required fields' : goingToInquiry ? t('continueAsInquiry') : 'Continue to confirmation'}
             className={`w-full py-3.5 rounded-full text-base font-medium border-none transition-all flex items-center justify-center gap-2 ${
               !isValid
                 ? 'bg-[#6B7F5E] text-white opacity-40 cursor-not-allowed'
-                : goingToInquiry
-                  ? 'bg-[#C4A45C] text-white cursor-pointer shadow-[0_2px_8px_rgba(196,164,92,0.3)]'
-                  : 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
+                : submitting
+                  ? goingToInquiry
+                    ? 'bg-[#C4A45C] text-white opacity-70 cursor-wait shadow-[0_2px_8px_rgba(196,164,92,0.3)]'
+                    : 'bg-[#6B7F5E] text-white opacity-70 cursor-wait shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
+                  : goingToInquiry
+                    ? 'bg-[#C4A45C] text-white cursor-pointer shadow-[0_2px_8px_rgba(196,164,92,0.3)]'
+                    : 'bg-[#6B7F5E] text-white cursor-pointer shadow-[0_2px_8px_rgba(107,127,94,0.25)]'
             }`}
           >
-            {goingToInquiry ? t('continueAsInquiry') : tCommon('next')}
-            {goingToInquiry ? <MessageCircle size={18} /> : <ChevronRight size={18} />}
+            {submitting ? (
+              <>
+                {tCommon('loading')}
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+              </>
+            ) : (
+              <>
+                {goingToInquiry ? t('continueAsInquiry') : tCommon('next')}
+                {goingToInquiry ? <MessageCircle size={18} /> : <ChevronRight size={18} />}
+              </>
+            )}
           </button>
         </div>
       </div>
