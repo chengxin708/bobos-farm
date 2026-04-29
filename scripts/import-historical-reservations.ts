@@ -227,6 +227,7 @@ async function processRow(
   prisma: PrismaClient,
   row: ImportRow,
   apply: boolean,
+  depositAmount: number,
 ): Promise<Outcome> {
   const hash = rowHash(row)
 
@@ -335,7 +336,7 @@ async function processRow(
         date: dateObj,
         guestCount: row.guestCount,
         status: "CONFIRMED",
-        depositAmount: 300,
+        depositAmount,
         depositStatus: "CONFIRMED",
         depositConfirmedAt: now,
         holdByAdmin: true,
@@ -430,6 +431,15 @@ async function processRow(
 
 // ── Main ───────────────────────────────────────────────────────────
 
+async function loadDepositAmount(prisma: PrismaClient): Promise<number> {
+  const setting = await prisma.systemSetting.findUnique({
+    where: { key: "deposit_amount" },
+  })
+  if (!setting?.value) return 300
+  const parsed = parseFloat(setting.value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 300
+}
+
 async function main() {
   const args = process.argv.slice(2)
   const apply = args.includes("--apply")
@@ -457,9 +467,13 @@ async function main() {
   const results: Outcome[] = []
 
   try {
+    const depositAmount = await loadDepositAmount(prisma)
+    console.log(`Deposit amount: $${depositAmount} (from systemSetting deposit_amount, fallback 300)`)
+    console.log("")
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
-      const out = await processRow(prisma, row, apply)
+      const out = await processRow(prisma, row, apply, depositAmount)
       results.push(out)
       const tag =
         out.status === "created"
