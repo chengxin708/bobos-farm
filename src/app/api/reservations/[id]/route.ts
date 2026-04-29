@@ -737,6 +737,13 @@ export async function PATCH(
         },
       });
 
+      // Re-run yurt allocation if guestCount changed — the row may now
+      // have a different fit, and other rows on the date may shift.
+      // Within-T-7 dates are guarded inside tryDeterministicAssignment.
+      if (parsedModify.data.guestCount !== undefined) {
+        void tryDeterministicAssignment(new Date(reservation.date));
+      }
+
       return NextResponse.json(updated);
     }
 

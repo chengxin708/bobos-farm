@@ -132,13 +132,32 @@ export async function simulateWithNewReservation(
 }
 
 /**
+ * Reservations on dates within 7 days are locked: customers can't modify,
+ * deposits aren't refunded on cancel, and operations have already prepared
+ * for the current yurt allocation. Re-allocation must therefore skip these
+ * dates — the T-7 cron is the last auto-pass.
+ */
+export function isWithinFreeze(date: Date, now: Date = new Date()): boolean {
+  const sevenDaysFromNow = new Date(now);
+  sevenDaysFromNow.setUTCHours(0, 0, 0, 0);
+  sevenDaysFromNow.setUTCDate(sevenDaysFromNow.getUTCDate() + 7);
+  const target = new Date(date);
+  target.setUTCHours(0, 0, 0, 0);
+  return target.getTime() <= sevenDaysFromNow.getTime();
+}
+
+/**
  * Run deterministic assignment for a target date.
  * Fetches data, computes assignments, writes newly assigned yurtIds to DB,
  * and notifies admins of anomalies.
  */
 export async function tryDeterministicAssignment(
   targetDate: Date
-): Promise<DeterministicResult> {
+): Promise<DeterministicResult | void> {
+  if (isWithinFreeze(targetDate)) {
+    return; // T-7 freeze: ops have prepared, do not auto-shuffle.
+  }
+
   const [availableYurts, reservations] = await Promise.all([
     getAvailableYurts(targetDate),
     getActiveReservationsFull(targetDate),
