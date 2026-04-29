@@ -16,8 +16,14 @@
  *
  * BEHAVIOR
  *   - Each CSV row → resolves a User (by real email if present, else
- *     creates a placeholder@placeholder.local) and creates one
- *     Reservation marked CONFIRMED + $300 paid + holdByAdmin=true.
+ *     reuses a same-name + same-phone placeholder if one exists from a
+ *     prior row in this or a previous run, else creates a fresh
+ *     placeholder@placeholder.local) and creates one Reservation marked
+ *     CONFIRMED + $300 paid + holdByAdmin=true.
+ *   - Reads the "Assigned Yurt" column from Clean.csv (#1/#2/#3) and
+ *     pins yurtId at import time with manuallyAssigned=true so the
+ *     production auto-assigner won't reshuffle these later. Blank cell
+ *     → yurtId=null, admin assigns later in the back office.
  *   - Phone1/2, real email, and wechat-flag rows become UserContactEntry
  *     rows under that user (upserted, so re-reuns won't dup them).
  *   - A claim token is minted for each reservation so the admin can
@@ -32,9 +38,13 @@
  *   - Refuses to write rows with date < today, guestCount outside [1,70],
  *     or unparseable date.
  *   - Default mode is read-only (dry-run); --apply must be explicit.
- *   - Resolving Users by real email only (not by phone) — phones can be
- *     shared across household members, attaching reservations to the
- *     wrong account would be a permanent misattribution.
+ *   - Resolving Users by real email — phone-based dedup is dangerous in
+ *     general (households share phones). Exception: among placeholder
+ *     users (no-real-email rows that landed on `imported-*@placeholder.local`),
+ *     same name + same phone1 IS treated as the same person, since
+ *     "no email" + "same name" + "same phone" is a much stronger signal
+ *     than phone alone. This keeps Julie Dossantos's 3-yurt full-buyout
+ *     from creating 3 separate User records.
  */
 import fs from "node:fs"
 import crypto from "node:crypto"
@@ -98,6 +108,14 @@ interface ImportRow {
   wechatFlag: 0 | 1
   originalTime: string
   notes: string
+  /** Pre-assigned yurt name from CSV: "#1" | "#2" | "#3" | "" */
+  assignedYurtName: string
+}
+
+const YURT_NAME_TO_ID: Record<string, string> = {
+  "#1": "room-1",
+  "#2": "room-2",
+  "#3": "room-3",
 }
 
 function loadRows(csvPath: string): ImportRow[] {
@@ -121,6 +139,9 @@ function loadRows(csvPath: string): ImportRow[] {
   const wechatI = idx("Wechat Flag")
   const timeI = idx("Original Time")
   const notesI = idx("Notes")
+  // Optional — Clean.csv produced by mark-yurt-assignments.ts has it,
+  // raw process-historical-csv.ts output doesn't.
+  const yurtI = header.indexOf("Assigned Yurt")
 
   const out: ImportRow[] = []
   for (let r = 1; r < rows.length; r++) {
@@ -136,6 +157,7 @@ function loadRows(csvPath: string): ImportRow[] {
       wechatFlag: (cells[wechatI] ?? "").trim() === "1" ? 1 : 0,
       originalTime: (cells[timeI] ?? "").trim(),
       notes: (cells[notesI] ?? "").trim(),
+      assignedYurtName: yurtI >= 0 ? (cells[yurtI] ?? "").trim() : "",
     })
   }
   return out
@@ -190,6 +212,17 @@ interface Outcome {
   reason?: string
 }
 
+/**
+ * In-memory tracker for dry-run mode so the placeholder-dedup branch
+ * shows the right "[reuse user]" tag for repeat rows in the same run.
+ * Real --apply mode hits the DB and doesn't need this — Prisma sees
+ * the row inserted by the previous loop iteration.
+ */
+const dryRunPlaceholderSeen = new Set<string>()
+function placeholderKey(name: string, phone: string): string {
+  return `${name.toLowerCase()}|${phone}`
+}
+
 async function processRow(
   prisma: PrismaClient,
   row: ImportRow,
@@ -224,30 +257,53 @@ async function processRow(
     return { hash, status: "skipped-existing", reservationId: prior.targetId ?? undefined }
   }
 
-  // Resolve user — only by real email. Phone-based dedup is dangerous
-  // (households share phones) and would silently misattribute bookings.
+  // Resolve user — primary path is real email. Cross-row phone-based
+  // dedup is dangerous in general (households share phones), so it's
+  // only applied to the placeholder pool: a row with no real email and
+  // a name+phone that matches an already-imported placeholder user
+  // reuses that user. This stops Julie's full-buyout (3 rows on one
+  // date, no email) from creating 3 separate Julie records.
   let user: { id: string; email: string } | null = null
   let userCreated = false
-  if (row.email && /@/.test(row.email)) {
+  const hasRealEmail = !!row.email && /@/.test(row.email)
+  if (hasRealEmail) {
     user = await prisma.user.findUnique({
       where: { email: row.email },
+      select: { id: true, email: true },
+    })
+  } else if (row.customerName && row.phone1) {
+    user = await prisma.user.findFirst({
+      where: {
+        name: row.customerName,
+        phone: row.phone1,
+        email: { startsWith: "imported-", endsWith: "@placeholder.local" },
+      },
       select: { id: true, email: true },
     })
   }
 
   if (!apply) {
+    let wouldReuseFromThisRun = false
+    if (!user && !hasRealEmail && row.customerName && row.phone1) {
+      const key = placeholderKey(row.customerName, row.phone1)
+      if (dryRunPlaceholderSeen.has(key)) {
+        wouldReuseFromThisRun = true
+      } else {
+        dryRunPlaceholderSeen.add(key)
+      }
+    }
     return {
       hash,
       status: "would-create",
       userId: user?.id,
-      userCreated: !user,
+      userCreated: !user && !wouldReuseFromThisRun,
     }
   }
 
   // ── APPLY MODE: real writes ──────────────────────────────────────
 
   if (!user) {
-    const placeholderEmail = row.email && /@/.test(row.email)
+    const placeholderEmail = hasRealEmail
       ? row.email
       : `imported-${hash}@placeholder.local`
     const created = await prisma.user.create({
@@ -266,12 +322,16 @@ async function processRow(
   const dateObj = new Date(row.date)
   const now = new Date()
 
+  const yurtId = YURT_NAME_TO_ID[row.assignedYurtName] ?? null
   const reservation = await prisma.$transaction(async (tx) => {
     const r = await tx.reservation.create({
       data: {
         confirmationCode: code,
         userId: user!.id,
-        yurtId: null,
+        yurtId,
+        // Lock the assignment so production's auto-assigner doesn't
+        // reshuffle these later; admin can still override in the UI.
+        manuallyAssigned: yurtId !== null,
         date: dateObj,
         guestCount: row.guestCount,
         status: "CONFIRMED",
@@ -347,6 +407,7 @@ async function processRow(
           date: row.date,
           guestCount: row.guestCount,
           userCreated,
+          assignedYurt: row.assignedYurtName || null,
         },
       },
     })
@@ -408,10 +469,11 @@ async function main() {
             : out.status === "would-create"
               ? "+ would create"
               : `✗ error: ${out.reason}`
-      const userInfo = out.userCreated ? "[new user]" : out.userId ? "[reuse user]" : ""
+      const userInfo = out.userCreated ? "[new user]" : "[reuse user]"
+      const yurtTag = row.assignedYurtName ? row.assignedYurtName : "TBD"
       console.log(
         `  [${String(i + 1).padStart(3)}/${rows.length}] ${row.date} ${String(row.guestCount).padStart(3)}p ` +
-          `${row.customerName.padEnd(30).slice(0, 30)}  ${tag}  ${userInfo}`,
+          `${yurtTag.padEnd(3)} ${row.customerName.padEnd(30).slice(0, 30)}  ${tag}  ${userInfo}`,
       )
       if (out.confirmationCode) {
         console.log(`        → code=${out.confirmationCode}  claim=${out.claimUrlSuffix}`)
