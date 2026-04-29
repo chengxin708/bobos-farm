@@ -22,16 +22,24 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const date = new Date(`${dateStr}T00:00:00.000Z`);
-  const probe = await checkAvailabilityForDate(date, guestCount);
-  return NextResponse.json({
-    date: dateStr,
-    guests: guestCount,
-    canFit: probe.canFit,
-    hypotheticalYurtId: probe.hypotheticalYurtId,
-    allYurtsFullForCount: probe.allYurtsFullForCount,
-    anomalyReason: probe.anomalyReason ?? null,
-    /** UI hint: should the booking flow redirect to /inquiries/new? */
-    shouldInquire: !probe.canFit,
-  });
+  try {
+    const date = new Date(`${dateStr}T00:00:00.000Z`);
+    const probe = await checkAvailabilityForDate(date, guestCount);
+    return NextResponse.json({
+      date: dateStr,
+      guests: guestCount,
+      canFit: probe.canFit,
+      hypotheticalYurtId: probe.hypotheticalYurtId,
+      allYurtsFullForCount: probe.allYurtsFullForCount,
+      anomalyReason: probe.anomalyReason ?? null,
+      /** UI hint: should the booking flow redirect to /inquiries/new? */
+      shouldInquire: !probe.canFit,
+    });
+  } catch (error) {
+    console.error("Failed to check availability:", error);
+    return NextResponse.json(
+      { error: "Failed to check availability" },
+      { status: 500 },
+    );
+  }
 }
