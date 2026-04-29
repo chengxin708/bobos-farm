@@ -451,52 +451,10 @@ export default function CalendarMobile() {
     }
   }, [today])
 
-  // Find next available date (has at least 1 open room)
-  const [lastFoundIdx, setLastFoundIdx] = useState(-1)
   const pillRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
-  const findNextAvailable = useCallback(() => {
-    const activeCount = activeYurts.length
-    if (activeCount === 0) return
-
-    // Start searching from: day after selected date (or after last found)
-    const currentDateStr = formatDate(selectedDate)
-    const searchFromIdx = Math.max(lastFoundIdx + 1, allDays.findIndex(d => formatDate(d) === currentDateStr) + 1)
-
-    for (let i = searchFromIdx; i < allDays.length; i++) {
-      const d = allDays[i]
-      const dateKey = formatDate(d)
-      // Past dates: skip
-      if (dateKey < todayStr) continue
-
-      const dayYurtMap = resByDateYurt.get(dateKey)
-      const unassigned = unassignedByDate.get(dateKey)
-      const occupiedCount = (dayYurtMap?.size || 0) + (unassigned?.length || 0)
-
-      if (occupiedCount < activeCount) {
-        // Found an available date
-        setSelectedDate(new Date(d))
-        setLastFoundIdx(i)
-
-        // Scroll date strip to this pill
-        const pill = pillRefs.current[dateKey]
-        if (pill && dateStripRef.current) {
-          dateStripRef.current.scrollTo({
-            left: pill.offsetLeft - 16,
-            behavior: 'smooth',
-          })
-        }
-        return
-      }
-    }
-    // No more available dates found — reset to start
-    setLastFoundIdx(-1)
-  }, [activeYurts, allDays, selectedDate, todayStr, resByDateYurt, unassignedByDate, lastFoundIdx])
-
-  // Reset lastFoundIdx when user manually selects a date
   const handleDateSelect = useCallback((d: Date) => {
     setSelectedDate(new Date(d))
-    setLastFoundIdx(-1)
   }, [])
 
   // ── Selected date details ────────────────────────────────────
@@ -752,16 +710,6 @@ export default function CalendarMobile() {
                   className="px-2.5 py-1 text-[12px] font-semibold text-[#6B7F5E] border border-[#6B7F5E] rounded-full hover:bg-[#6B7F5E]/5 transition-colors"
                 >
                   {t('today')}
-                </button>
-              )}
-              {view === 'day' && (
-                <button
-                  onClick={findNextAvailable}
-                  className="px-2.5 py-1 text-[12px] font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 transition-colors flex items-center gap-1"
-                  title={t('nextAvailable')}
-                >
-                  <ChevronRight size={12} />
-                  {t('nextAvailable')}
                 </button>
               )}
               <button

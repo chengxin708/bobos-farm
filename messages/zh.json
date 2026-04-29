@@ -1107,7 +1107,6 @@
       "inquiryStripMulti": "{count} 个咨询",
       "inquiryStripTitle": "当日有 {count} 个待办咨询单 — 点击打开",
       "today": "今天",
-      "nextAvailable": "下一个可用",
       "pastSlotLabel": "补录",
       "pastDateRetroactive": "过去日期 — 补录历史预约（自动标记为已完成）",
       "legend": {

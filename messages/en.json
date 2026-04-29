@@ -1107,7 +1107,6 @@
       "inquiryStripMulti": "{count} inquiries",
       "inquiryStripTitle": "{count} active inquiry(s) on this date — click to open",
       "today": "Today",
-      "nextAvailable": "Next Available",
       "pastSlotLabel": "Retroactive",
       "pastDateRetroactive": "Past date — retroactive booking (will be marked COMPLETED)",
       "legend": {
