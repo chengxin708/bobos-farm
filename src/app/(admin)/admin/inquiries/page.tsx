@@ -4,7 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, ChevronDown } from "lucide-react"
 import CreateInquiryModal from "@/components/admin/CreateInquiryModal"
 
 interface InquiryRow {
@@ -39,6 +39,7 @@ export default function AdminInquiryListPage() {
   const [priority, setPriority] = useState<string>("")
   const [tag, setTag] = useState<string>("")
   const [createOpen, setCreateOpen] = useState(false)
+  const [showResolved, setShowResolved] = useState(false)
   const qs = new URLSearchParams()
   if (status) qs.set("status", status)
   if (priority) qs.set("priority", priority)
@@ -48,6 +49,9 @@ export default function AdminInquiryListPage() {
     fetcher,
     { revalidateOnFocus: false },
   )
+
+  const openInquiries = data?.filter((i) => ["PENDING", "IN_PROGRESS", "AWAITING_CUSTOMER"].includes(i.status)) ?? []
+  const resolvedInquiries = data?.filter((i) => ["CONVERTED", "CLOSED", "EXPIRED"].includes(i.status)) ?? []
 
   return (
     <div className="p-6 flex flex-col gap-4">
@@ -87,12 +91,12 @@ export default function AdminInquiryListPage() {
         </div>
       )}
 
-      {!isLoading && data?.length === 0 && (
+      {!isLoading && openInquiries.length === 0 && resolvedInquiries.length === 0 && (
         <p className="text-sm text-[#8C8478] py-8 text-center">{t("empty")}</p>
       )}
 
       <div className="flex flex-col gap-2">
-        {data?.map((inq) => (
+        {openInquiries.map((inq) => (
           <Link
             key={inq.id}
             href={`/admin/inquiries/${inq.id}`}
@@ -126,6 +130,52 @@ export default function AdminInquiryListPage() {
           </Link>
         ))}
       </div>
+
+      {resolvedInquiries.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setShowResolved((v) => !v)}
+            className="self-start px-3 py-1.5 text-xs rounded-full border border-[#E8ECE4] text-[#8C8478] hover:bg-[#E8ECE4]/30 cursor-pointer bg-transparent flex items-center gap-1.5"
+          >
+            <ChevronDown size={12} className={`transition-transform ${showResolved ? "rotate-180" : ""}`} />
+            {t("resolvedToggle", { count: resolvedInquiries.length })}
+          </button>
+          {showResolved && resolvedInquiries.map((inq) => (
+            <Link
+              key={inq.id}
+              href={`/admin/inquiries/${inq.id}`}
+              className="block bg-white rounded-xl border border-[#E8ECE4] px-4 py-3 hover:border-[#6B7F5E]/40 opacity-60"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-[#2C2416]">
+                    {inq.user.name || inq.user.email}
+                  </p>
+                  <p className="text-xs text-[#6B6157]">
+                    {new Date(inq.preferredDate).toLocaleDateString(dateLocale)} · {inq.guestCountMin}–{inq.guestCountMax} {t("guestsShort")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
+                    inq.priority === "URGENT" ? "bg-[#DC3545]/15 text-[#DC3545]" :
+                    inq.priority === "HIGH" ? "bg-[#F4A623]/20 text-[#8B6914]" :
+                    "bg-[#E8ECE4] text-[#6B7F5E]"
+                  }`}>{t(`priority.${inq.priority}`)}</span>
+                  <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#F2EDE6] text-[#6B6157]">
+                    {t(`status.${inq.status}`)}
+                  </span>
+                  {inq.tags.map((tg) => (
+                    <span key={tg} className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#E8ECE4] text-[#6B7F5E]">
+                      {tg}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <CreateInquiryModal
         isOpen={createOpen}

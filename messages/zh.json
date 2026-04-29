@@ -1921,6 +1921,13 @@
       "URGENT": "紧急"
     },
     "detailTitle": "{name} 的咨询",
+    "customerName": "客户姓名",
+    "customerPhone": "电话",
+    "customerEmail": "邮箱",
+    "customerWechat": "微信",
+    "filedAt": "提交时间",
+    "assignedTo": "负责跟进",
+    "resolvedToggle": "已完结 ({count})",
     "preferredDate": "期望日期",
     "guestRange": "人数",
     "packageHint": "包数建议",

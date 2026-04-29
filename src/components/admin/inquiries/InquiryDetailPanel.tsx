@@ -119,6 +119,40 @@ export default function InquiryDetailPanel({
   return (
     <div className="flex flex-col gap-5">
       <section className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 text-sm">
+        <div className="flex justify-between gap-3">
+          <span className="text-[#8C8478]">{t("customerName")}</span>
+          <span className="font-semibold text-right break-words">{data.user.name || "—"}</span>
+        </div>
+        {data.user.phone && (
+          <div className="flex justify-between gap-3">
+            <span className="text-[#8C8478]">{t("customerPhone")}</span>
+            <a href={`tel:${data.user.phone}`} className="font-semibold text-[#6B7F5E] underline-offset-2 hover:underline">{data.user.phone}</a>
+          </div>
+        )}
+        {data.user.email && !data.user.email.endsWith("@placeholder.local") && (
+          <div className="flex justify-between gap-3">
+            <span className="text-[#8C8478]">{t("customerEmail")}</span>
+            <a href={`mailto:${data.user.email}`} className="font-semibold text-[#6B7F5E] underline-offset-2 hover:underline break-all text-right">{data.user.email}</a>
+          </div>
+        )}
+        {data.user.wechatId && (
+          <div className="flex justify-between gap-3">
+            <span className="text-[#8C8478]">{t("customerWechat")}</span>
+            <span className="font-semibold text-right break-all">{data.user.wechatId}</span>
+          </div>
+        )}
+        <div className="flex justify-between gap-3">
+          <span className="text-[#8C8478]">{t("filedAt")}</span>
+          <span>{new Date(data.createdAt).toLocaleString(dateLocale)}</span>
+        </div>
+        {data.assignedAdmin && (
+          <div className="flex justify-between gap-3">
+            <span className="text-[#8C8478]">{t("assignedTo")}</span>
+            <span>{data.assignedAdmin.name || data.assignedAdmin.email}</span>
+          </div>
+        )}
+      </section>
+      <section className="bg-white rounded-xl border border-[#E8ECE4] p-4 flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <span className="text-[#8C8478]">{t("preferredDate")}</span>
           <span>{new Date(data.preferredDate).toLocaleDateString(dateLocale)}</span>

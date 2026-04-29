@@ -1921,6 +1921,13 @@
       "URGENT": "Urgent"
     },
     "detailTitle": "{name} — inquiry",
+    "customerName": "Customer name",
+    "customerPhone": "Phone",
+    "customerEmail": "Email",
+    "customerWechat": "WeChat",
+    "filedAt": "Filed at",
+    "assignedTo": "Assigned to",
+    "resolvedToggle": "Resolved ({count})",
     "preferredDate": "Preferred date",
     "guestRange": "Guests",
     "packageHint": "Package hint",
