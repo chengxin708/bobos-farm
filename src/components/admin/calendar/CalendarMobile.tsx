@@ -144,6 +144,13 @@ export default function CalendarMobile() {
   const todayStr = formatDate(today)
 
   const [selectedDate, setSelectedDate] = useState(() => new Date(today))
+  // 'day' = horizontal date strip + reservation panel for selectedDate.
+  // 'month' = full-month grid for an at-a-glance overview; tap any day
+  // to drill back into 'day' mode for that date.
+  const [view, setView] = useState<'day' | 'month'>('day')
+  // Independent month cursor — lets admin browse past/future months in
+  // month view without rotating selectedDate (which the day view owns).
+  const [monthBase, setMonthBase] = useState(() => new Date(today))
   const dateStripRef = useRef<HTMLDivElement>(null)
   const todayPillRef = useRef<HTMLButtonElement>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -573,12 +580,39 @@ export default function CalendarMobile() {
     }
   }
 
-  // ── Month/year label from selected date ──────────────────────
+  // ── Month/year label from selected date or month-view cursor ─
 
   const monthYearLabel = useMemo(() => {
-    const month = t(`monthNames.${selectedDate.getMonth()}`)
-    return `${month} ${selectedDate.getFullYear()}`
-  }, [selectedDate, t])
+    const anchor = view === 'month' ? monthBase : selectedDate
+    const month = t(`monthNames.${anchor.getMonth()}`)
+    return `${month} ${anchor.getFullYear()}`
+  }, [view, monthBase, selectedDate, t])
+
+  // ── Month grid cells (for view === 'month') ──────────────────
+
+  /** 6 weeks × 7 days = 42 cells covering the visible month, padded
+   *  with leading nulls for days from the prior month. */
+  const monthCells = useMemo<({ day: number; dateStr: string } | null)[]>(() => {
+    const year = monthBase.getFullYear()
+    const month = monthBase.getMonth()
+    const firstOfMonth = new Date(year, month, 1)
+    const startDayOfWeek = firstOfMonth.getDay() // 0=Sun
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const cells: ({ day: number; dateStr: string } | null)[] = []
+    for (let i = 0; i < startDayOfWeek; i++) cells.push(null)
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      cells.push({ day: d, dateStr })
+    }
+    return cells
+  }, [monthBase])
+
+  const goPrevMonth = useCallback(() => {
+    setMonthBase((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+  }, [])
+  const goNextMonth = useCallback(() => {
+    setMonthBase((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+  }, [])
 
   // ── Selected date heading ────────────────────────────────────
 
@@ -658,13 +692,61 @@ export default function CalendarMobile() {
       <div className="flex-1 flex flex-col overflow-auto">
         {/* ── Week Selector Header ────────────────────────── */}
         <div className="bg-white border-b border-[#E8ECE4] px-4 pt-3 pb-2">
-          {/* Header row: month label + today button + create */}
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[15px] font-semibold text-[#2C2416]">
-              {monthYearLabel}
-            </span>
-            <div className="flex items-center gap-2">
-              {selectedDateStr !== todayStr && (
+          {/* Header row: month label (with month nav in 'month' view) + view toggle + actions */}
+          <div className="flex items-center justify-between mb-3 gap-2">
+            {view === 'month' ? (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <button
+                  onClick={goPrevMonth}
+                  className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors text-[#2C2416]"
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-[15px] font-semibold text-[#2C2416] truncate">
+                  {monthYearLabel}
+                </span>
+                <button
+                  onClick={goNextMonth}
+                  className="p-1 rounded-full hover:bg-[#E8ECE4]/50 transition-colors text-[#2C2416]"
+                  aria-label="Next month"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            ) : (
+              <span className="text-[15px] font-semibold text-[#2C2416] truncate">
+                {monthYearLabel}
+              </span>
+            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Day / Month toggle pill */}
+              <div className="flex rounded-full border border-[#E8ECE4] overflow-hidden">
+                <button
+                  onClick={() => setView('day')}
+                  className={`px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+                    view === 'day'
+                      ? 'bg-[#6B7F5E] text-white'
+                      : 'bg-transparent text-[#2C2416]'
+                  }`}
+                >
+                  {t('views.day')}
+                </button>
+                <button
+                  onClick={() => {
+                    setView('month')
+                    setMonthBase(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
+                  }}
+                  className={`px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+                    view === 'month'
+                      ? 'bg-[#6B7F5E] text-white'
+                      : 'bg-transparent text-[#2C2416]'
+                  }`}
+                >
+                  {t('views.month')}
+                </button>
+              </div>
+              {view === 'day' && selectedDateStr !== todayStr && (
                 <button
                   onClick={goToToday}
                   className="px-2.5 py-1 text-[12px] font-semibold text-[#6B7F5E] border border-[#6B7F5E] rounded-full hover:bg-[#6B7F5E]/5 transition-colors"
@@ -672,14 +754,16 @@ export default function CalendarMobile() {
                   {t('today')}
                 </button>
               )}
-              <button
-                onClick={findNextAvailable}
-                className="px-2.5 py-1 text-[12px] font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 transition-colors flex items-center gap-1"
-                title={t('nextAvailable')}
-              >
-                <ChevronRight size={12} />
-                {t('nextAvailable')}
-              </button>
+              {view === 'day' && (
+                <button
+                  onClick={findNextAvailable}
+                  className="px-2.5 py-1 text-[12px] font-semibold text-[#8B6914] border border-[#8B6914] rounded-full hover:bg-[#8B6914]/5 transition-colors flex items-center gap-1"
+                  title={t('nextAvailable')}
+                >
+                  <ChevronRight size={12} />
+                  {t('nextAvailable')}
+                </button>
+              )}
               <button
                 onClick={() => { setCreateYurtId(undefined); setShowCreateModal(true) }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6B7F5E] text-white rounded-full text-[13px] font-medium cursor-pointer"
@@ -691,6 +775,7 @@ export default function CalendarMobile() {
           </div>
 
           {/* Scrollable date strip — static list, pure native scroll */}
+          {view === 'day' && (
           <div
             ref={dateStripRef}
             className="flex gap-1 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1"
@@ -757,10 +842,92 @@ export default function CalendarMobile() {
               )
             })}
           </div>
+          )}
+
+          {/* ── Month grid (alternative to date strip) ───── */}
+          {view === 'month' && (
+            <div className="-mx-1">
+              {/* Day-of-week header */}
+              <div className="grid grid-cols-7 mb-1">
+                {[0, 1, 2, 3, 4, 5, 6].map((di) => (
+                  <div
+                    key={di}
+                    className="text-center text-[10px] uppercase tracking-wider font-semibold text-[#8A7E6B] py-1"
+                  >
+                    {t(`dayShort.${di}`)}
+                  </div>
+                ))}
+              </div>
+              {/* Cells: 6 rows × 7 cols. Tap a day → switch to day view. */}
+              <div className="grid grid-cols-7 gap-0.5">
+                {monthCells.map((cell, idx) => {
+                  if (cell === null) {
+                    return <div key={`empty-${idx}`} className="aspect-square" />
+                  }
+                  const isToday = cell.dateStr === todayStr
+                  const isSelected = cell.dateStr === selectedDateStr
+                  const dayYurtMap = resByDateYurt.get(cell.dateStr)
+                  const bookedYurtCount = dayYurtMap?.size ?? 0
+                  const pendingCount = unassignedByDate.get(cell.dateStr)?.length ?? 0
+                  const totalCount = bookedYurtCount + pendingCount
+                  return (
+                    <button
+                      key={cell.dateStr}
+                      onClick={() => {
+                        const d = new Date(cell.dateStr + 'T00:00:00')
+                        setSelectedDate(d)
+                        setView('day')
+                      }}
+                      className={`aspect-square flex flex-col items-center justify-start py-1 px-0.5 rounded-lg border transition-colors ${
+                        isToday
+                          ? 'border-[#6B7F5E] bg-[#6B7F5E]/10'
+                          : isSelected
+                            ? 'border-[#6B7F5E]/40 bg-[#6B7F5E]/5'
+                            : 'border-transparent active:bg-[#E8ECE4]/40'
+                      }`}
+                    >
+                      <span
+                        className={`text-[13px] font-semibold leading-none ${
+                          isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'
+                        }`}
+                      >
+                        {cell.day}
+                      </span>
+                      {totalCount > 0 && (
+                        <div className="flex items-center gap-0.5 mt-1.5">
+                          {bookedYurtCount > 0 && (
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#6B7F5E] text-white text-[9px] font-bold leading-none">
+                              {bookedYurtCount}
+                            </span>
+                          )}
+                          {pendingCount > 0 && (
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#E8B730] text-white text-[9px] font-bold leading-none">
+                              {pendingCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-3 mt-3 text-[10px] text-[#8A7E6B]">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#6B7F5E]" />
+                  {t('legend.confirmed')}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#E8B730]" />
+                  {t('pendingShort')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Week Pending Summary Banner ─────────────────── */}
-        {!loadingRes && weekPendingTotal > 0 && (
+        {view === 'day' && !loadingRes && weekPendingTotal > 0 && (
           <div className="mx-4 mt-3 flex items-center gap-2 bg-[#FFF8E1] border border-[#E8B730]/30 rounded-xl px-4 py-2.5 flex-wrap">
             <ClipboardList size={15} className="text-[#E8B730] shrink-0" />
             <span className="text-[13px] font-semibold text-[#92400E]">
@@ -794,7 +961,8 @@ export default function CalendarMobile() {
           </div>
         )}
 
-        {/* ── Selected Date Detail ────────────────────────── */}
+        {/* ── Selected Date Detail (only in day view) ───── */}
+        {view === 'day' && (
         <div className="flex-1 px-4 py-4">
 
           {/* ── Capacity Bar Header ─────────────────────── */}
@@ -1131,6 +1299,7 @@ export default function CalendarMobile() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <CreateReservationModal

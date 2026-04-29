@@ -1062,7 +1062,8 @@
       "views": {
         "month": "Month",
         "week": "Week",
-        "list": "List"
+        "list": "List",
+        "day": "Day"
       },
       "listView": {
         "searchPlaceholder": "Search name, phone, or email…",

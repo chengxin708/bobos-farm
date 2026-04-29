@@ -1062,7 +1062,8 @@
       "views": {
         "month": "月视图",
         "week": "周视图",
-        "list": "列表"
+        "list": "列表",
+        "day": "日"
       },
       "listView": {
         "searchPlaceholder": "搜索姓名、电话或邮箱…",
