@@ -444,6 +444,10 @@ export default function CalendarMobile() {
 
   const goToToday = useCallback(() => {
     setSelectedDate(new Date(today))
+    // Also re-anchor the month-view cursor so "Today" works consistently
+    // in both views — month view jumps to current month, day view scrolls
+    // its strip to today's pill.
+    setMonthBase(new Date(today.getFullYear(), today.getMonth(), 1))
     if (todayPillRef.current && dateStripRef.current) {
       const strip = dateStripRef.current
       const pill = todayPillRef.current
@@ -704,7 +708,12 @@ export default function CalendarMobile() {
                   {t('views.month')}
                 </button>
               </div>
-              {view === 'day' && selectedDateStr !== todayStr && (
+              {(
+                (view === 'day' && selectedDateStr !== todayStr) ||
+                (view === 'month' &&
+                  (monthBase.getFullYear() !== today.getFullYear() ||
+                    monthBase.getMonth() !== today.getMonth()))
+              ) && (
                 <button
                   onClick={goToToday}
                   className="px-2.5 py-1 text-[12px] font-semibold text-[#6B7F5E] border border-[#6B7F5E] rounded-full hover:bg-[#6B7F5E]/5 transition-colors"
