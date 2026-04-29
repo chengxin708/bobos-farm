@@ -166,11 +166,6 @@ export default function AdminNavbar() {
           {t('calendar')}
         </Link>
 
-        {/* 客户管理 */}
-        <Link href="/admin/customers" className={linkClass(isActive('/admin/customers'))}>
-          {t('customers')}
-        </Link>
-
         {/* 咨询单 */}
         <Link
           href="/admin/inquiries"
@@ -199,6 +194,13 @@ export default function AdminNavbar() {
           </button>
           {operations.open && (
             <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[140px] z-50">
+              <DropdownLink
+                href="/admin/customers"
+                active={isActive('/admin/customers')}
+                onClick={() => operations.setOpen(false)}
+              >
+                {t('customers')}
+              </DropdownLink>
               <DropdownLink
                 href="/admin/venues"
                 active={isActive('/admin/venues')}
