@@ -214,18 +214,26 @@ export function computeDeterministicAssignment(
     }
   }
 
-  // Phase 1b: Smallest-room optimization
+  // Phase 1b: Smallest-room optimization — pick the smallest pending party
+  // that still fits #3, not the FIFO-first one. Leaves headroom for
+  // mid-sized parties to land in #2 instead of crowding #3 to capacity.
   const smallestRoom = sortedYurtsAsc[0];
-  const afterPhase1: DeterministicReservationInput[] = [];
-  for (const res of afterPhase1a) {
-    if (
-      smallestRoom &&
-      !usedYurtIds.has(smallestRoom.id) &&
-      res.guestCount <= smallestRoom.capacity
-    ) {
-      assignRes(res, smallestRoom);
-    } else {
-      afterPhase1.push(res);
+  const afterPhase1: DeterministicReservationInput[] = [...afterPhase1a];
+  if (smallestRoom && !usedYurtIds.has(smallestRoom.id)) {
+    const fitsSmallest = afterPhase1
+      .map((res, idx) => ({ res, idx }))
+      .filter(({ res }) => res.guestCount <= smallestRoom.capacity);
+    if (fitsSmallest.length > 0) {
+      // Pick smallest guestCount; on tie, FIFO (createdAt ASC).
+      fitsSmallest.sort((a, b) => {
+        if (a.res.guestCount !== b.res.guestCount) {
+          return a.res.guestCount - b.res.guestCount;
+        }
+        return a.res.createdAt.getTime() - b.res.createdAt.getTime();
+      });
+      const winner = fitsSmallest[0];
+      assignRes(winner.res, smallestRoom);
+      afterPhase1.splice(winner.idx, 1);
     }
   }
 

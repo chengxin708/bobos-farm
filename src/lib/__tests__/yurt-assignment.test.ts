@@ -154,17 +154,18 @@ describe('computeDeterministicAssignment', () => {
     expect(result.anomalies[0].reservationId).toBe('B');
   });
 
-  // 10. 15(#3) + 12 → 12 pending
-  it('15→#3, then 12 stays pending (≤16 but #3 occupied)', () => {
+  // 10. 15 + 12 → smallest-first: 12→#3, 15 pending
+  it('Phase 1b smallest-first: 12→#3, 15 stays pending', () => {
     const res = [
       makeRes('A', 15, { createdAt: new Date('2026-04-20T08:00:00Z') }),
       makeRes('B', 12, { createdAt: new Date('2026-04-20T09:00:00Z') }),
     ];
     const result = computeDeterministicAssignment(YURTS, res);
 
-    expect(findAssignment(result, 'A')?.yurtId).toBe('yurt-3');
-    // B=12, #3 occupied. B goes pending (1 pending, 2 rooms → skip Phase 3)
-    expect(result.pending).toContain('B');
+    // B=12 is smaller, so it wins #3 over A=15 (Phase 1b smallest-first).
+    expect(findAssignment(result, 'B')?.yurtId).toBe('yurt-3');
+    // A=15 pending (1 pending, 2 rooms remaining → skip Phase 3).
+    expect(result.pending).toContain('A');
   });
 
   // 11. >30 → anomaly
@@ -230,5 +231,18 @@ describe('computeDeterministicAssignment', () => {
     expect(findAssignment(result, 'A')?.yurtId).toBe('yurt-3');
     expect(findAssignment(result, 'C')?.yurtId).toBe('yurt-1');
     expect(findAssignment(result, 'B')?.yurtId).toBe('yurt-2');
+  });
+
+  // 1b smallest-first: 16 + 8 → 8 takes #3, 16 stays pending (or cascades to #2)
+  it('Phase 1b: smallest party (8) wins #3 over larger party (16)', () => {
+    const res = [
+      makeRes('A', 16, { createdAt: new Date('2026-04-20T08:00:00Z') }),
+      makeRes('B', 8, { createdAt: new Date('2026-04-20T09:00:00Z') }),
+    ];
+    const result = computeDeterministicAssignment(YURTS, res);
+
+    expect(findAssignment(result, 'B')?.yurtId).toBe('yurt-3');
+    // A=16 fits #1 or #2 — single pending row with 2 candidates → ambiguous
+    expect(result.pending).toContain('A');
   });
 });
