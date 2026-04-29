@@ -625,7 +625,8 @@
         "todayReservations": "今日预订",
         "pendingDeposits": "待处理定金",
         "pendingOrders": "待处理订单",
-        "monthRevenue": "本月收入"
+        "monthRevenue": "本月收入",
+        "pendingInquiries": "待处理咨询"
       },
       "actions": {
         "createReservation": "创建预订",
@@ -649,6 +650,12 @@
       "pendingRefunds": "{count} 笔定金待退款",
       "processRefund": "去处理",
       "pendingItems": "待办事项",
+      "pendingInquiriesTitle": "待处理咨询",
+      "inquiriesView": "查看全部",
+      "noPendingInquiries": "暂无待处理咨询",
+      "viewAllInquiries": "查看全部 {count} 条",
+      "inquiryGuests": "人数",
+      "inquiryPriority": "优先级",
       "todayBookings": "今日预订",
       "recentActivity": "最新动态",
       "noActivity": "暂无最新动态",

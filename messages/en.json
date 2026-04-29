@@ -625,7 +625,8 @@
         "todayReservations": "Today's Reservations",
         "pendingDeposits": "Pending Deposits",
         "pendingOrders": "Pending Orders",
-        "monthRevenue": "This Month Revenue"
+        "monthRevenue": "This Month Revenue",
+        "pendingInquiries": "Pending Inquiries"
       },
       "actions": {
         "createReservation": "Create Reservation",
@@ -649,6 +650,12 @@
       "pendingRefunds": "{count} deposits awaiting refund",
       "processRefund": "Process",
       "pendingItems": "Action Required",
+      "pendingInquiriesTitle": "Pending Inquiries",
+      "inquiriesView": "View all",
+      "noPendingInquiries": "No pending inquiries",
+      "viewAllInquiries": "View all {count} inquiries",
+      "inquiryGuests": "Guests",
+      "inquiryPriority": "Priority",
       "todayBookings": "Today's Bookings",
       "recentActivity": "Recent Activity",
       "noActivity": "No recent activity",

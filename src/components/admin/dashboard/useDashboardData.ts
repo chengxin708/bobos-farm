@@ -8,7 +8,7 @@ import {
   Calendar as CalendarIcon,
   Clock4,
   Utensils,
-  DollarSign,
+  MessageCircle,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -295,6 +295,19 @@ export function useDashboardData() {
   })
   const submittedOrderCount = Array.isArray(submittedOrders) ? submittedOrders.length : 0
 
+  // Fetch all inquiries; client-filter to active statuses since the API
+  // accepts only a single `status` query param.
+  const { data: allInquiries, mutate: mutateInquiries } = useSWR<Array<{
+    id: string
+    preferredDate: string
+    guestCountMin: number
+    guestCountMax: number
+    status: string
+    priority: 'NORMAL' | 'HIGH' | 'URGENT'
+    createdAt: string
+    user: { id: string; name: string | null; email: string; phone: string | null }
+  }>>('/api/inquiries', fetcher, swrOpts)
+
   const hasError = !!(todayErr || pendingDepErr || weekErr || monthErr)
 
   // Compute stats
@@ -306,6 +319,14 @@ export function useDashboardData() {
       .filter(r => r.depositStatus === 'CONFIRMED')
       .reduce((sum, r) => sum + r.depositAmount, 0)
   }, [monthRes])
+
+  // Active inquiries: PENDING / IN_PROGRESS / AWAITING_CUSTOMER
+  const pendingInquiries = useMemo(() => {
+    if (!allInquiries) return []
+    const activeSet = new Set(['PENDING', 'IN_PROGRESS', 'AWAITING_CUSTOMER'])
+    return allInquiries.filter((i) => activeSet.has(i.status))
+  }, [allInquiries])
+  const pendingInquiryCount = pendingInquiries.length
 
   // Expiring soon: PENDING_PAYMENT with deadline within 24h
   const expiringSoon = useMemo(() => {
@@ -378,12 +399,13 @@ export function useDashboardData() {
       href: '/admin/reservations?tab=orders',
     },
     {
-      icon: DollarSign,
-      iconBg: 'bg-[#E8F5E9]',
-      iconColor: 'text-[#4A7C59]',
-      value: formatCurrency(monthRevenue),
-      label: t('stats.monthRevenue'),
-      href: '/admin/reports',
+      icon: MessageCircle,
+      iconBg: 'bg-[#F0E7FF]',
+      iconColor: 'text-[#7C3AED]',
+      value: String(pendingInquiryCount),
+      label: t('stats.pendingInquiries'),
+      pulse: pendingInquiryCount > 0,
+      href: '/admin/inquiries',
     },
   ]
 
@@ -402,6 +424,7 @@ export function useDashboardData() {
     mutateWeekRes()
     mutateMonthRes()
     mutateActivityLogs()
+    mutateInquiries()
   }
 
   // Remind handler
@@ -435,6 +458,9 @@ export function useDashboardData() {
     pendingRefundCount,
     submittedOrderCount,
     monthRevenue,
+    pendingInquiries,
+    pendingInquiryCount,
+    mutateInquiries,
     expiringSoon,
     activeYurts,
     weekGrid,

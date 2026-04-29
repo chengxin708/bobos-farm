@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Check,
   XCircle,
+  MessageCircle,
 } from 'lucide-react'
 import AdminTopBar from '@/components/admin/AdminTopBar'
 import StatusBadge from '@/components/admin/StatusBadge'
@@ -39,6 +40,8 @@ export default function DashboardMobile() {
     expiringSoon,
     pendingRefunds,
     pendingRefundCount,
+    pendingInquiries,
+    pendingInquiryCount,
     remindingSoon,
     showCreateModal,
     setShowCreateModal,
@@ -240,6 +243,65 @@ export default function DashboardMobile() {
             </div>
           </section>
         )}
+
+        {/* ─── 待处理咨询 ─── */}
+        <section className="mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[14px] font-bold" style={{ color: '#2C2416' }}>
+              {t('pendingInquiriesTitle')}
+            </span>
+            <Link href="/admin/inquiries" className="text-[12px] font-medium flex items-center gap-0.5" style={{ color: '#6B7F5E' }}>
+              {t('inquiriesView')} <ChevronRight size={14} />
+            </Link>
+          </div>
+          {pendingInquiryCount === 0 ? (
+            <div
+              className="rounded-xl p-6 flex flex-col items-center gap-2"
+              style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
+            >
+              <span className="text-sm" style={{ color: '#8A7E6B' }}>{t('noPendingInquiries')}</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {pendingInquiries.slice(0, 5).map((inq) => (
+                <Link
+                  key={inq.id}
+                  href={`/admin/inquiries/${inq.id}`}
+                  className="rounded-xl p-4 flex items-center gap-3 no-underline"
+                  style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9' }}
+                >
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0E7FF' }}>
+                    <MessageCircle size={16} style={{ color: '#7C3AED' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[13px] font-semibold block truncate" style={{ color: '#2C2416' }}>
+                      {inq.user.name || inq.user.email}
+                    </span>
+                    <span className="text-[11px]" style={{ color: '#8A7E6B' }}>
+                      {new Date(inq.preferredDate).toLocaleDateString('zh-CN')} · {inq.guestCountMin}–{inq.guestCountMax} {t('guestSuffix')}
+                    </span>
+                  </div>
+                  {inq.priority !== 'NORMAL' && (
+                    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
+                      inq.priority === 'URGENT' ? 'bg-[#DC3545]/15 text-[#DC3545]' : 'bg-[#F4A623]/20 text-[#8B6914]'
+                    }`}>
+                      {inq.priority}
+                    </span>
+                  )}
+                </Link>
+              ))}
+              {pendingInquiries.length > 5 && (
+                <Link
+                  href="/admin/inquiries"
+                  className="text-center text-[12px] font-medium py-2 no-underline"
+                  style={{ color: '#6B7F5E' }}
+                >
+                  {t('viewAllInquiries', { count: pendingInquiries.length })}
+                </Link>
+              )}
+            </div>
+          )}
+        </section>
 
         {/* ─── 今日预订 ─── */}
         <section className="mb-5">

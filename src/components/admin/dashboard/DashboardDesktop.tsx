@@ -8,6 +8,8 @@ import {
   CalendarPlus,
   Eye,
   Clock4,
+  MessageCircle,
+  ChevronRight,
 } from 'lucide-react'
 import CreateReservationModal from '@/components/admin/CreateReservationModal'
 import UpcomingAssignments from './UpcomingAssignments'
@@ -38,6 +40,8 @@ export default function DashboardDesktop() {
     expiringSoon,
     pendingRefunds,
     pendingRefundCount,
+    pendingInquiries,
+    pendingInquiryCount,
     remindingSoon,
     showCreateModal,
     setShowCreateModal,
@@ -117,6 +121,96 @@ export default function DashboardDesktop() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ─── Pending Inquiries ─── */}
+          <div
+            className="rounded-xl p-6 flex flex-col gap-4"
+            style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F0E7FF' }}>
+                  <MessageCircle size={16} style={{ color: '#7C3AED' }} />
+                </div>
+                <span className="text-base font-bold" style={{ color: '#2C2416' }}>
+                  {t('pendingInquiriesTitle')}
+                </span>
+              </div>
+              <Link href="/admin/inquiries" className="text-[13px] font-medium flex items-center gap-0.5" style={{ color: '#6B7F5E' }}>
+                {t('inquiriesView')} <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            {pendingInquiryCount === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-2">
+                <span className="text-sm" style={{ color: '#8A7E6B' }}>{t('noPendingInquiries')}</span>
+              </div>
+            ) : (
+              <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #E8E2D9' }}>
+                {/* Table Head */}
+                <div className="flex items-center px-5 py-2.5" style={{ backgroundColor: '#FAF8F5' }}>
+                  <span className="flex-1 text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#8A7E6B' }}>
+                    {t('expiringSoon.colCustomer')}
+                  </span>
+                  <span className="w-[140px] text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#8A7E6B' }}>
+                    {t('expiringSoon.colDate')}
+                  </span>
+                  <span className="w-[120px] text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#8A7E6B' }}>
+                    {t('inquiryGuests')}
+                  </span>
+                  <span className="w-[120px] text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#8A7E6B' }}>
+                    {t('inquiryPriority')}
+                  </span>
+                  <span className="w-[60px]" />
+                </div>
+                {/* Table Rows */}
+                {pendingInquiries.slice(0, 5).map((inq) => (
+                  <Link
+                    key={inq.id}
+                    href={`/admin/inquiries/${inq.id}`}
+                    className="flex items-center px-5 py-3 no-underline transition-colors hover:bg-[#FAF8F5]"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      borderTop: '1px solid #F0EBE4',
+                    }}
+                  >
+                    <span className="flex-1 text-[13px] font-medium" style={{ color: '#2C2416' }}>
+                      {inq.user.name || inq.user.email}
+                    </span>
+                    <span className="w-[140px] text-[13px]" style={{ color: '#2C2416' }}>
+                      {new Date(inq.preferredDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <span className="w-[120px] text-[13px]" style={{ color: '#2C2416' }}>
+                      {inq.guestCountMin}–{inq.guestCountMax} {t('guestSuffix')}
+                    </span>
+                    <div className="w-[120px]">
+                      {inq.priority !== 'NORMAL' ? (
+                        <span className={`inline-flex text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${
+                          inq.priority === 'URGENT' ? 'bg-[#DC3545]/15 text-[#DC3545]' : 'bg-[#F4A623]/20 text-[#8B6914]'
+                        }`}>
+                          {inq.priority}
+                        </span>
+                      ) : (
+                        <span className="text-[12px]" style={{ color: '#8A7E6B' }}>—</span>
+                      )}
+                    </div>
+                    <div className="w-[60px] text-right">
+                      <ChevronRight size={16} style={{ color: '#8A7E6B' }} />
+                    </div>
+                  </Link>
+                ))}
+                {pendingInquiries.length > 5 && (
+                  <Link
+                    href="/admin/inquiries"
+                    className="flex items-center justify-center px-5 py-2.5 text-[12px] font-medium no-underline transition-colors hover:bg-[#FAF8F5]"
+                    style={{ color: '#6B7F5E', borderTop: '1px solid #F0EBE4', backgroundColor: '#FFFFFF' }}
+                  >
+                    {t('viewAllInquiries', { count: pendingInquiries.length })}
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ─── Two Column: Week Overview + Activity Feed ─── */}
