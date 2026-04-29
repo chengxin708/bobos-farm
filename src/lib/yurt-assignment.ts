@@ -132,21 +132,45 @@ export async function simulateWithNewReservation(
 }
 
 /**
- * Reservations on dates within 7 days are locked: customers can't modify,
- * deposits aren't refunded on cancel, and operations have already prepared
- * for the current yurt allocation. Re-allocation must therefore skip these
- * dates — the T-7 cron is the last auto-pass.
+ * Returns true if `date` is on or within `freezeDays` from `now`.
  *
- * Uses UTC math because reservation.date is stored at UTC midnight (Prisma);
- * local-time setHours would skew across DST and non-UTC servers.
+ * Uses UTC math because reservation.date is stored at UTC midnight
+ * (Prisma); local-time setHours would skew across DST and non-UTC
+ * servers. This intentionally diverges from the plan's local-time
+ * pseudocode in docs/plans/2026-04-29-dynamic-yurt-allocation-plan.md.
+ *
+ * `freezeDays` is the operational lock window — within that horizon,
+ * customers can't modify, deposits aren't refunded on cancel, and
+ * ops have already prepared per the current allocation. The single
+ * source of truth is `cancellation_window_days` in SystemSetting
+ * (default 7); production callers should pass that value in. This
+ * function stays pure / parameterized for testability.
  */
-export function isWithinFreeze(date: Date, now: Date = new Date()): boolean {
-  const sevenDaysFromNow = new Date(now);
-  sevenDaysFromNow.setUTCHours(0, 0, 0, 0);
-  sevenDaysFromNow.setUTCDate(sevenDaysFromNow.getUTCDate() + 7);
+export function isWithinFreeze(
+  date: Date,
+  freezeDays: number,
+  now: Date = new Date()
+): boolean {
+  const horizon = new Date(now);
+  horizon.setUTCHours(0, 0, 0, 0);
+  horizon.setUTCDate(horizon.getUTCDate() + freezeDays);
   const target = new Date(date);
   target.setUTCHours(0, 0, 0, 0);
-  return target.getTime() <= sevenDaysFromNow.getTime();
+  return target.getTime() <= horizon.getTime();
+}
+
+/**
+ * Load the freeze window from settings. Same key as the reservation
+ * cancellation window (operationally they're the same concept).
+ * Falls back to 7 if the setting is missing or unparseable.
+ */
+export async function getFreezeDays(): Promise<number> {
+  const setting = await prisma.systemSetting.findUnique({
+    where: { key: "cancellation_window_days" },
+  });
+  if (!setting?.value) return 7;
+  const parsed = parseInt(setting.value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 7;
 }
 
 /**
@@ -157,7 +181,8 @@ export function isWithinFreeze(date: Date, now: Date = new Date()): boolean {
 export async function tryDeterministicAssignment(
   targetDate: Date
 ): Promise<DeterministicResult | null> {
-  if (isWithinFreeze(targetDate)) {
+  const freezeDays = await getFreezeDays();
+  if (isWithinFreeze(targetDate, freezeDays)) {
     return null; // T-7 freeze: ops have prepared, do not auto-shuffle.
   }
 

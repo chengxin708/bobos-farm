@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assignYurtsForDate } from "@/lib/yurt-assignment";
+import { assignYurtsForDate, getFreezeDays } from "@/lib/yurt-assignment";
 import { timingSafeEqual } from "crypto";
 
 export async function GET(req: NextRequest) {
@@ -15,11 +15,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Target date = today + 7 days in America/New_York timezone (T-7 fallback)
+  // Target date = today + freezeDays in America/New_York timezone (T-N fallback)
+  const freezeDays = await getFreezeDays();
   const etDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const etToday = new Date(etDateStr + "T00:00:00Z");
   const targetDate = new Date(etToday);
-  targetDate.setUTCDate(targetDate.getUTCDate() + 7);
+  targetDate.setUTCDate(targetDate.getUTCDate() + freezeDays);
 
   const plan = await assignYurtsForDate(targetDate);
 
