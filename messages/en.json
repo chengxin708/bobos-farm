@@ -212,7 +212,9 @@
         "limited": "Limited",
         "limitedShort": "Few",
         "full": "Full",
-        "fullShort": "Full"
+        "fullShort": "Full",
+        "closed": "Closed",
+        "closedAria": "{date} (closed — tap to inquire)"
       },
       "days": {
         "sun": "Sun",

@@ -212,7 +212,9 @@
         "limited": "紧张",
         "limitedShort": "少",
         "full": "已满",
-        "fullShort": "满"
+        "fullShort": "满",
+        "closed": "暂未开放",
+        "closedAria": "{date}（暂未开放 — 点击咨询）"
       },
       "days": {
         "sun": "日",

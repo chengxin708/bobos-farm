@@ -298,7 +298,7 @@ export function DatePickerCalendar({
                     onClick={() => handleDayClick(day)}
                     ariaLabel={
                       getStatus(day) === 'closed'
-                        ? `${getDateKey(day)} (closed — tap to inquire)`
+                        ? t('legend.closedAria', { date: getDateKey(day) })
                         : getDateKey(day)
                     }
                     t={t}
@@ -325,6 +325,10 @@ export function DatePickerCalendar({
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#6B6157]/30" />
             <span className="text-[14px] font-medium text-[#6B6157]">{t('legend.full')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#A8A19A]" />
+            <span className="text-[14px] font-medium text-[#A8A19A]">{t('legend.closed')}</span>
           </div>
         </div>
       )}
