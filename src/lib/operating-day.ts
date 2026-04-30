@@ -2,6 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { OperatingDayMode } from "@prisma/client";
 import { type OperatingDayMode as PureMode } from "./operating-day-pure";
 
+/**
+ * Audit notes used by the auto-promote step in reservation create / inquiry
+ * convert. Centralised so the reservations route, inquiry-convert route, and
+ * any future caller all stamp the same string and so we can search for it
+ * (e.g. "show me dates that were promoted automatically vs. set by an admin").
+ */
+export const AUTO_PROMOTE_NOTE_RESERVATION = "auto-set on reservation create";
+export const AUTO_PROMOTE_NOTE_INQUIRY_CONVERT =
+  "auto-set on inquiry convert";
+
 // Compile-time guard: keep the pure-string union in sync with Prisma's enum.
 // If Prisma adds a new variant (e.g. MAINTENANCE) without updating
 // operating-day-pure.ts, this assertion will fail tsc.
