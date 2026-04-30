@@ -43,6 +43,8 @@ function InquiryNewPage() {
   const searchParams = useSearchParams()
   const { data: session } = useSession()
 
+  const fromClosedDay = searchParams.get("from") === "closed-day"
+
   const [preferredDate, setPreferredDate] = useState<string | null>(
     searchParams.get("date") || null,
   )
@@ -158,6 +160,12 @@ function InquiryNewPage() {
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6">
         <div className="max-w-[560px] mx-auto flex flex-col gap-5">
+          {fromClosedDay && (
+            <div className="rounded-xl bg-[#FFF8E1] border border-[#F4E4A1] px-4 py-3 text-sm text-[#8B6914]">
+              {t("closedDayBanner")}
+            </div>
+          )}
+
           {error && (
             <div className="bg-[#C4453A]/10 text-[#C4453A] rounded-xl p-3 text-sm">{error}</div>
           )}

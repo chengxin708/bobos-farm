@@ -2035,6 +2035,7 @@
     "title": "Tell us about your gathering",
     "subtitle": "Groups above 30 or special dates are handled as inquiries — we'll reach out within a day to finalize.",
     "stepLabel": "Inquiry",
+    "closedDayBanner": "This date is outside our regular operating days. Tell us about your plans and we'll get back to you.",
     "signedInReassurance": "Signed in as {name} — we'll use this contact to follow up.",
     "preferredDate": "Preferred date",
     "note": "Anything else?",
