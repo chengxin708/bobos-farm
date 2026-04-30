@@ -151,6 +151,23 @@ model YurtAvailability {
   @@map("yurt_availability")
 }
 
+enum OperatingDayMode {
+  OPEN
+  PRIVATE_EVENT
+  CLOSED
+}
+
+model OperatingDay {
+  id        String           @id @default(cuid())
+  date      DateTime         @unique @db.Date
+  mode      OperatingDayMode
+  note      String?
+  createdAt DateTime         @default(now())
+  createdBy String?
+
+  @@map("operating_day")
+}
+
 // ============ MENU ============
 
 model MenuCategory {
