@@ -6,8 +6,7 @@ import { createClaimToken } from "@/lib/claim-token";
 import { resolveAdminDeadlineHours, computeAdminPaymentDeadline } from "@/lib/admin-deadline";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
 import { validateYurtSelection } from "@/lib/yurt-selection";
-import { isWeekendET } from "@/lib/operating-day-pure";
-import { AUTO_PROMOTE_NOTE_INQUIRY_CONVERT } from "@/lib/operating-day";
+import { AUTO_PROMOTE_NOTE_INQUIRY_CONVERT, autoPromoteIfClosed } from "@/lib/operating-day";
 
 const convertSchema = z.object({
   yurtIds: z.array(z.string().min(1)).min(1, "At least one yurt is required"),
@@ -196,31 +195,12 @@ export async function POST(
       // (or explicit CLOSED row) needs to be promoted in the same
       // transaction so the calendar surfaces the new reservation.
       // Existing OPEN/PRIVATE_EVENT rows are not touched.
-      //
-      // `reservation.date` is `@db.Date` → midnight UTC. Anchor at
-      // noon UTC before isWeekendET to avoid ET-zone DOW drift.
-      const existingOp = await tx.operatingDay.findUnique({
-        where: { date: reservation.date },
-      });
-      const opAnchor = new Date(reservation.date);
-      opAnchor.setUTCHours(12, 0, 0, 0);
-      const effectiveMode =
-        existingOp?.mode ?? (isWeekendET(opAnchor) ? "OPEN" : "CLOSED");
-      if (effectiveMode === "CLOSED") {
-        await tx.operatingDay.upsert({
-          where: { date: reservation.date },
-          create: {
-            date: reservation.date,
-            mode: "PRIVATE_EVENT",
-            note: AUTO_PROMOTE_NOTE_INQUIRY_CONVERT,
-            createdBy: session.user.id,
-          },
-          update: {
-            mode: "PRIVATE_EVENT",
-            note: AUTO_PROMOTE_NOTE_INQUIRY_CONVERT,
-          },
-        });
-      }
+      await autoPromoteIfClosed(
+        tx,
+        reservation.date,
+        session.user.id,
+        AUTO_PROMOTE_NOTE_INQUIRY_CONVERT,
+      );
 
       return reservation;
     });

@@ -14,8 +14,7 @@ import { isYurtDateConflict } from "@/lib/reservation-errors";
 import { computeAdminPaymentDeadline, resolveAdminDeadlineHours } from "@/lib/admin-deadline";
 import { computeCustomerPaymentDeadline, resolveCustomerDeadlineHours } from "@/lib/customer-deadline";
 import { rateLimit } from "@/lib/rate-limit";
-import { isWeekendET } from "@/lib/operating-day-pure";
-import { AUTO_PROMOTE_NOTE_RESERVATION } from "@/lib/operating-day";
+import { AUTO_PROMOTE_NOTE_RESERVATION, autoPromoteIfClosed } from "@/lib/operating-day";
 
 /** Generate a unique human-readable confirmation code like BF-A3K9X2 */
 function randomCuid(): string {
@@ -420,32 +419,12 @@ export async function POST(req: NextRequest) {
         // PRIVATE_EVENT row so the calendar surfaces the booking and
         // audit log records who/why. Existing OPEN/PRIVATE_EVENT rows
         // are left alone — admin's explicit choice wins.
-        //
-        // `created.date` is `@db.Date` → midnight UTC. Anchor at noon
-        // UTC before passing to isWeekendET so ET-zone DOW resolution
-        // doesn't shift the weekend boundary by one day.
-        const existingOp = await tx.operatingDay.findUnique({
-          where: { date: created.date },
-        });
-        const opAnchor = new Date(created.date);
-        opAnchor.setUTCHours(12, 0, 0, 0);
-        const effectiveMode =
-          existingOp?.mode ?? (isWeekendET(opAnchor) ? "OPEN" : "CLOSED");
-        if (effectiveMode === "CLOSED") {
-          await tx.operatingDay.upsert({
-            where: { date: created.date },
-            create: {
-              date: created.date,
-              mode: "PRIVATE_EVENT",
-              note: AUTO_PROMOTE_NOTE_RESERVATION,
-              createdBy: session.user.id,
-            },
-            update: {
-              mode: "PRIVATE_EVENT",
-              note: AUTO_PROMOTE_NOTE_RESERVATION,
-            },
-          });
-        }
+        await autoPromoteIfClosed(
+          tx,
+          created.date,
+          session.user.id,
+          AUTO_PROMOTE_NOTE_RESERVATION,
+        );
 
         return created;
       });
@@ -630,6 +609,9 @@ export async function POST(req: NextRequest) {
     });
 
     const confirmationCode = await generateConfirmationCode();
+    // Customer flow does not auto-promote: checkAvailabilityForDate (Task 4)
+    // already gates customers off CLOSED dates. Customers can only reach this
+    // code path on dates whose effective operating mode is OPEN.
     const reservation = await prisma.reservation.create({
       data: {
         confirmationCode,

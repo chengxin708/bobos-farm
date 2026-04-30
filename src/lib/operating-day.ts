@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { OperatingDayMode } from "@prisma/client";
-import { type OperatingDayMode as PureMode } from "./operating-day-pure";
+import { OperatingDayMode, type Prisma } from "@prisma/client";
+import {
+  type OperatingDayMode as PureMode,
+  isWeekendET,
+} from "./operating-day-pure";
 
 /**
  * Audit notes used by the auto-promote step in reservation create / inquiry
@@ -52,6 +55,43 @@ export async function loadOperatingDayMap(
     map.set(dbDateToCalendarKey(r.date), r.mode as PureMode);
   }
   return map;
+}
+
+/**
+ * Auto-promote a closed-by-default or explicitly-CLOSED date to
+ * PRIVATE_EVENT inside an existing transaction. Used when admin creates
+ * a reservation or converts an inquiry on a date that isn't operating —
+ * the booking implies a private event, so we record it.
+ *
+ * Skips OPEN and PRIVATE_EVENT rows (admin's explicit choice wins).
+ * Use a noon-UTC anchor for DOW resolution because @db.Date materializes
+ * at midnight UTC, which would shift to the previous day in ET.
+ */
+export async function autoPromoteIfClosed(
+  tx: Prisma.TransactionClient,
+  date: Date,
+  createdBy: string,
+  note: string,
+): Promise<void> {
+  const existingOp = await tx.operatingDay.findUnique({ where: { date } });
+  const opAnchor = new Date(date);
+  opAnchor.setUTCHours(12, 0, 0, 0);
+  const effectiveMode: OperatingDayMode =
+    existingOp?.mode ?? (isWeekendET(opAnchor) ? "OPEN" : "CLOSED");
+  if (effectiveMode !== "CLOSED") return;
+  await tx.operatingDay.upsert({
+    where: { date },
+    create: {
+      date,
+      mode: "PRIVATE_EVENT",
+      note,
+      createdBy,
+    },
+    update: {
+      mode: "PRIVATE_EVENT",
+      note,
+    },
+  });
 }
 
 export async function upsertOperatingDay(input: {
