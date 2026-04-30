@@ -4,9 +4,9 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
 
-export type DateStatus = 'available' | 'limited' | 'full'
+export type DateStatus = 'available' | 'limited' | 'full' | 'closed'
 
-type CellStatus = DateStatus | 'past' | 'closed'
+type CellStatus = DateStatus | 'past' | 'outside'
 
 const MONTH_KEYS = [
   'january', 'february', 'march', 'april', 'may', 'june',
@@ -41,19 +41,23 @@ function DayCell({
   t: (key: string) => string
 }) {
   // Resolve the visual branch. Order matters: selected wins; then hard-disabled
-  // (full-when-blocked, past, closed); then status-specific styles.
+  // (full-when-blocked, past, outside-window); then status-specific styles.
+  // 'closed' (operating-day non-OPEN) is clickable but muted — clicking
+  // surfaces the inquiry redirect.
   const fullBlocked = status === 'full' && disabled
   const statusClass = selected
     ? 'bg-[#6B7F5E] text-white scale-105 shadow-sm'
     : fullBlocked
       ? 'text-[#6B6157]/50 cursor-not-allowed bg-[#F2EDE6]/60 line-through'
-      : status === 'full'
-        ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
-        : status === 'limited'
+      : status === 'closed'
+        ? 'text-[#A8A19A] cursor-pointer bg-[#F5F3EE] hover:bg-[#EDEAE3]'
+        : status === 'full'
           ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
-          : disabled
-            ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
-            : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
+          : status === 'limited'
+            ? 'text-[#C47D52] cursor-pointer bg-[#C47D52]/8 hover:bg-[#C47D52]/15'
+            : disabled
+              ? 'text-[#6B6157]/40 cursor-not-allowed bg-transparent'
+              : 'text-[#1A1208] cursor-pointer bg-transparent hover:bg-[#E8ECE4]'
   return (
     <button
       onClick={onClick}
@@ -98,6 +102,10 @@ interface Props {
   showLegend?: boolean
   /** Show skeleton loading state for the date grid. */
   loading?: boolean
+  /** Fires when a 'closed' (non-OPEN operating mode) cell is clicked. If
+   *  provided, takes over the click handling for that cell — onChange is
+   *  not called. Use to redirect the customer to the inquiry flow. */
+  onClosedDayClick?: (dateStr: string) => void
 }
 
 export function DatePickerCalendar({
@@ -109,6 +117,7 @@ export function DatePickerCalendar({
   allowFullDates = false,
   showLegend = true,
   loading = false,
+  onClosedDayClick,
 }: Props) {
   const t = useTranslations('booking.date')
   const locale = useLocale()
@@ -193,7 +202,7 @@ export function DatePickerCalendar({
 
   function getStatus(day: number): CellStatus {
     if (isPast(day)) return 'past'
-    if (isOutsideWindow(day)) return 'closed'
+    if (isOutsideWindow(day)) return 'outside'
     return dateStatus?.[getDateKey(day)] ?? 'available'
   }
 
@@ -203,14 +212,22 @@ export function DatePickerCalendar({
 
   function isDisabled(day: number): boolean {
     const s = getStatus(day)
-    if (s === 'past' || s === 'closed') return true
+    if (s === 'past' || s === 'outside') return true
     if (s === 'full' && !allowFullDates) return true
+    // 'closed' is *not* disabled — it's clickable and routes to the inquiry
+    // flow via onClosedDayClick (handled in handleDayClick).
     return false
   }
 
   function handleDayClick(day: number) {
-    if (isDisabled(day)) return
+    const s = getStatus(day)
+    if (s === 'past' || s === 'outside') return
     const k = getDateKey(day)
+    if (s === 'closed') {
+      onClosedDayClick?.(k)
+      return
+    }
+    if (s === 'full' && !allowFullDates) return
     onChange(isSelected(day) ? null : k)
   }
 
@@ -279,7 +296,11 @@ export function DatePickerCalendar({
                     disabled={isDisabled(day)}
                     today={isToday(day)}
                     onClick={() => handleDayClick(day)}
-                    ariaLabel={getDateKey(day)}
+                    ariaLabel={
+                      getStatus(day) === 'closed'
+                        ? `${getDateKey(day)} (closed — tap to inquire)`
+                        : getDateKey(day)
+                    }
                     t={t}
                   />
                 ) : (

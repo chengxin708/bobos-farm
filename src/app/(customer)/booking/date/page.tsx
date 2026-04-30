@@ -50,7 +50,7 @@ export default function BookingDatePage() {
   // Fetch slots for a wide-enough window so month-hopping stays responsive.
   // The calendar internally restricts picks to minDate..maxDate; slot fetching
   // covers the same window.
-  const { data: slots, isLoading: loadingAvail } = useSWR<Record<string, { total: number; occupied: number; available: number }>>(
+  const { data: slots, isLoading: loadingAvail } = useSWR<Record<string, { total: number; occupied: number; available: number; mode: 'OPEN' | 'PRIVATE_EVENT' | 'CLOSED' }>>(
     `/api/availability/slots?startDate=${earliestBookableStr}&endDate=${latestBookableStr}`,
     fetcher,
     { revalidateOnFocus: false }
@@ -60,9 +60,15 @@ export default function BookingDatePage() {
     if (!slots || typeof slots !== 'object') return {}
     const map: Record<string, DateStatus> = {}
     for (const [dateKey, info] of Object.entries(slots)) {
-      if (info.available === 0) map[dateKey] = 'full'
-      else if (info.available === 1) map[dateKey] = 'limited'
-      else map[dateKey] = 'available'
+      if (info.mode === 'CLOSED' || info.mode === 'PRIVATE_EVENT') {
+        map[dateKey] = 'closed'
+      } else if (info.available === 0) {
+        map[dateKey] = 'full'
+      } else if (info.available === 1) {
+        map[dateKey] = 'limited'
+      } else {
+        map[dateKey] = 'available'
+      }
     }
     return map
   }, [slots])
@@ -120,6 +126,9 @@ export default function BookingDatePage() {
           allowFullDates={false}
           showLegend
           loading={loadingAvail}
+          onClosedDayClick={(dateStr) => {
+            router.push(`/inquiries/new?date=${dateStr}&from=closed-day`)
+          }}
         />
       </div>
 
