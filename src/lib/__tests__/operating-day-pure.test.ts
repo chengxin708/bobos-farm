@@ -117,6 +117,29 @@ describe('effectiveOperatingMode', () => {
   });
 });
 
+describe('effectiveOperatingMode with @db.Date-style map keys', () => {
+  // Pin the contract between loadOperatingDayMap and its callers:
+  // - Map keys are UTC calendar dates derived from Prisma `@db.Date` values
+  //   (which materialize as midnight UTC, e.g. stored `2026-05-04` →
+  //   `2026-05-04T00:00:00Z` → key "2026-05-04").
+  // - Caller probes use a noon-UTC anchor so the UTC date and the ET date
+  //   are identical, and `etDateKey` (which formats in ET) produces the
+  //   same "YYYY-MM-DD" string the map was keyed with.
+  //
+  // Regression for the bug where loadOperatingDayMap previously called
+  // `etDateKey(r.date)` on the midnight-UTC Date, which formatted as 8pm
+  // the previous day in ET and produced an off-by-one key — every override
+  // silently missed.
+  it('resolves override when map is keyed by UTC calendar date', () => {
+    // Simulates loadOperatingDayMap output: keys are UTC calendar dates.
+    const map = new Map<string, OperatingDayMode>([['2026-05-04', 'OPEN']]);
+    // Caller queries for Monday May 4 using noon UTC anchor (same date in both zones).
+    const r = effectiveOperatingMode(new Date('2026-05-04T12:00:00Z'), map);
+    expect(r.mode).toBe('OPEN');
+    expect(r.isPublic).toBe(true);
+  });
+});
+
 describe('Operating mode + probe interaction', () => {
   // Yurt #1 capacity = 30 (per dynamic-yurt-allocation merged baseline).
   const YURTS = [
