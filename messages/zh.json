@@ -1227,6 +1227,7 @@
       "optimizationConfirm": "确定应用此优化建议？将重新分配包房。",
       "unknownError": "未知错误",
       "moveHere": "移入此房间",
+      "emptyWeekNoOperatingDays": "本周无营业日。可在月视图中开启某天。",
       "operatingDay": {
         "markOpen": "标记开放(加开)",
         "enablePrivateEvent": "开启私享日",

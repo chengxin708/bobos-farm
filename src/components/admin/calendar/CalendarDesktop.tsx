@@ -312,12 +312,30 @@ export default function CalendarDesktop() {
   }, [operatingDayMap, operatingDayRowByDate])
 
   /** Submit an operating-day mutation: POST /api/operating-days for set,
-   *  DELETE /api/operating-days/[id] for clear. Refreshes the SWR after. */
+   *  DELETE /api/operating-days/[id] for clear. Optimistically updates
+   *  the SWR cache so the badge appears/disappears instantly; rolls back
+   *  on failure. */
   const handleOperatingDayAction = useCallback(async (
     action: 'set' | 'clear',
     mode?: OperatingDayMode,
   ) => {
     if (!menuFor) return
+    const previous = operatingDays ?? []
+    const optimistic: OperatingDayRow[] = action === 'set' && mode
+      ? [
+          ...previous.filter(r => r.date.slice(0, 10) !== menuFor.date),
+          {
+            id: '__optimistic__',
+            date: `${menuFor.date}T00:00:00.000Z`,
+            mode,
+            note: null,
+          },
+        ]
+      : previous.filter(r => r.id !== menuFor.rowId)
+
+    // Optimistic update without revalidation
+    await mutateOperatingDays(optimistic, { revalidate: false })
+
     try {
       if (action === 'set' && mode) {
         const resp = await fetch('/api/operating-days', {
@@ -325,22 +343,19 @@ export default function CalendarDesktop() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: menuFor.date, mode }),
         })
-        if (!resp.ok) {
-          alert(t('unknownError'))
-          return
-        }
+        if (!resp.ok) throw new Error('Set failed')
       } else if (action === 'clear' && menuFor.rowId) {
         const resp = await fetch(`/api/operating-days/${menuFor.rowId}`, { method: 'DELETE' })
-        if (!resp.ok) {
-          alert(t('unknownError'))
-          return
-        }
+        if (!resp.ok) throw new Error('Clear failed')
       }
       await mutateOperatingDays()
-    } catch {
+    } catch (err) {
+      // Roll back on error
+      await mutateOperatingDays(previous, { revalidate: false })
       alert(t('unknownError'))
+      console.error('Operating day action failed:', err)
     }
-  }, [menuFor, mutateOperatingDays, t])
+  }, [menuFor, operatingDays, mutateOperatingDays, t])
 
   // Calendar summary for month view (capacity, assignment status)
   const { data: calendarSummary } = useSWR<Record<string, CalendarSummaryEntry>>(
@@ -836,6 +851,19 @@ export default function CalendarDesktop() {
 
   /** Render the week view tape chart */
   function renderWeekView() {
+    // Empty-week fallback — happens when every day in the visible week
+    // is non-operating AND has no reservations / inquiries (e.g. a
+    // weekend explicitly closed for maintenance). Without this the table
+    // collapses to just the header column with no actionable hint.
+    if (weekDays.length === 0) {
+      return (
+        <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
+          <div className="p-8 text-center text-sm text-[#8C8478]">
+            {t('emptyWeekNoOperatingDays')}
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] overflow-hidden">
         {swapSourceId && (() => {
@@ -1244,13 +1272,16 @@ export default function CalendarDesktop() {
           ${bgClass}
         `}
         onClick={() => {
-          // Weekday cells: open the operating-day actions menu so the
-          // admin can flip mode without leaving month view. Weekend
-          // cells preserve the existing drill-into-week behavior.
-          if (opIsWeekend) {
-            goToWeekOf(dateStr)
-          } else {
+          // Empty cells (no res, no inquiries): open the operating-day
+          // actions menu so the admin can flip mode without leaving
+          // month view. Busy cells drill into week view — preserves the
+          // existing UX where clicking a day with bookings jumps you to
+          // the tape chart. Works the same for weekday and weekend.
+          const hasData = resCount > 0 || (inquiriesByDate.get(dateStr)?.length ?? 0) > 0
+          if (!hasData) {
             openOperatingDayMenu(dateStr)
+          } else {
+            goToWeekOf(dateStr)
           }
         }}
         title={overflow > 0 ? t('overflowTitle', { count: overflow }) : t('clickViewDetails')}

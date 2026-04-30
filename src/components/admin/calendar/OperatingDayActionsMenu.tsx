@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
 import type { OperatingDayMode } from "@/lib/operating-day-pure"
 
@@ -17,6 +18,7 @@ export default function OperatingDayActionsMenu({
   date, isWeekend, currentMode, hasRow, onClose, onSubmit,
 }: Props) {
   const t = useTranslations("admin.calendar.operatingDay")
+  const firstActionRef = useRef<HTMLButtonElement>(null)
 
   const buttonClass =
     "w-full text-left px-4 py-2.5 text-sm bg-white hover:bg-[#F2EDE6] cursor-pointer border-0"
@@ -44,12 +46,30 @@ export default function OperatingDayActionsMenu({
     }
   }
 
+  // Esc key closes the menu (mirrors ConfirmDialog pattern)
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  // Auto-focus first action button on mount so keyboard users can hit
+  // Enter immediately. Also lets screen readers announce the dialog.
+  useEffect(() => {
+    firstActionRef.current?.focus()
+  }, [])
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={date}
         className="bg-white rounded-xl shadow-lg min-w-[260px] py-1 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -57,7 +77,12 @@ export default function OperatingDayActionsMenu({
           <p className="text-xs text-[#8C8478]">{date}</p>
         </div>
         {actions.map((a, i) => (
-          <button key={i} className={buttonClass} onClick={() => { a.run(); onClose(); }}>
+          <button
+            key={i}
+            ref={i === 0 ? firstActionRef : undefined}
+            className={buttonClass}
+            onClick={() => { a.run(); onClose(); }}
+          >
             {a.label}
           </button>
         ))}

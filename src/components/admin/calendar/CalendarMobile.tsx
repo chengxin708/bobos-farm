@@ -296,6 +296,22 @@ export default function CalendarMobile() {
     mode?: OperatingDayMode,
   ) => {
     if (!menuFor) return
+    const previous = operatingDays ?? []
+    const optimistic: OperatingDayRow[] = action === 'set' && mode
+      ? [
+          ...previous.filter(r => r.date.slice(0, 10) !== menuFor.date),
+          {
+            id: '__optimistic__',
+            date: `${menuFor.date}T00:00:00.000Z`,
+            mode,
+            note: null,
+          },
+        ]
+      : previous.filter(r => r.id !== menuFor.rowId)
+
+    // Optimistic update without revalidation
+    await mutateOperatingDays(optimistic, { revalidate: false })
+
     try {
       if (action === 'set' && mode) {
         const resp = await fetch('/api/operating-days', {
@@ -303,22 +319,19 @@ export default function CalendarMobile() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: menuFor.date, mode }),
         })
-        if (!resp.ok) {
-          alert(t('unknownError'))
-          return
-        }
+        if (!resp.ok) throw new Error('Set failed')
       } else if (action === 'clear' && menuFor.rowId) {
         const resp = await fetch(`/api/operating-days/${menuFor.rowId}`, { method: 'DELETE' })
-        if (!resp.ok) {
-          alert(t('unknownError'))
-          return
-        }
+        if (!resp.ok) throw new Error('Clear failed')
       }
       await mutateOperatingDays()
-    } catch {
+    } catch (err) {
+      // Roll back on error
+      await mutateOperatingDays(previous, { revalidate: false })
       alert(t('unknownError'))
+      console.error('Operating day action failed:', err)
     }
-  }, [menuFor, mutateOperatingDays, t])
+  }, [menuFor, operatingDays, mutateOperatingDays, t])
 
   // ── Reservation actions (must be after SWR declarations) ────
   const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
@@ -940,9 +953,11 @@ export default function CalendarMobile() {
                     <button
                       key={cell.dateStr}
                       onClick={() => {
-                        // Weekday with no bookings: open the operating-day menu.
-                        // Otherwise (weekend OR has bookings): drill into day view.
-                        if (!opIsWeekend && totalCount === 0) {
+                        // Empty cells (no bookings, no pending): open the
+                        // operating-day menu — works for weekday AND
+                        // weekend so admin can mark a Saturday closed.
+                        // Busy cells drill into day view.
+                        if (totalCount === 0) {
                           openOperatingDayMenu(cell.dateStr)
                           return
                         }

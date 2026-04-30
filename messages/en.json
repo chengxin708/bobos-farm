@@ -1227,6 +1227,7 @@
       "optimizationConfirm": "Apply this optimization? Rooms will be reassigned.",
       "unknownError": "Unknown error",
       "moveHere": "Move here",
+      "emptyWeekNoOperatingDays": "No operating days this week. Use the month view to mark a day open.",
       "operatingDay": {
         "markOpen": "Mark Open (extend)",
         "enablePrivateEvent": "Enable Private Event",
