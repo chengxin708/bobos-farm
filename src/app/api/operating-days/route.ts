@@ -90,18 +90,40 @@ export async function POST(req: NextRequest) {
     );
   }
   try {
-    const row = await prisma.operatingDay.upsert({
-      where: { date: new Date(`${date}T00:00:00Z`) },
-      create: {
-        date: new Date(`${date}T00:00:00Z`),
-        mode: mode as OperatingDayMode,
-        note: note ?? null,
-        createdBy: user.id,
-      },
-      update: {
-        mode: mode as OperatingDayMode,
-        note: note ?? undefined,
-      },
+    const dateObj = new Date(`${date}T00:00:00Z`);
+    const row = await prisma.$transaction(async (tx) => {
+      const previous = await tx.operatingDay.findUnique({
+        where: { date: dateObj },
+        select: { mode: true },
+      });
+      const upserted = await tx.operatingDay.upsert({
+        where: { date: dateObj },
+        create: {
+          date: dateObj,
+          mode: mode as OperatingDayMode,
+          note: note ?? null,
+          createdBy: user.id,
+        },
+        update: {
+          mode: mode as OperatingDayMode,
+          note: note ?? undefined,
+        },
+      });
+      await tx.activityLog.create({
+        data: {
+          userId: user.id,
+          action: "OPERATING_DAY_UPSERTED",
+          targetType: "OperatingDay",
+          targetId: upserted.id,
+          details: {
+            date,
+            mode,
+            note: note ?? null,
+            previousMode: previous?.mode ?? null,
+          },
+        },
+      });
+      return upserted;
     });
     return NextResponse.json(row, { status: 200 });
   } catch (err) {

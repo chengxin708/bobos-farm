@@ -5,8 +5,10 @@ import { OperatingDayMode } from "@prisma/client";
 
 const VALID_MODES: OperatingDayMode[] = ["OPEN", "PRIVATE_EVENT", "CLOSED"];
 
+type AdminUser = { id: string; role?: string };
+
 async function requireAdmin(): Promise<
-  | { ok: true }
+  | { ok: true; user: AdminUser }
   | { ok: false; response: NextResponse }
 > {
   const session = await auth();
@@ -23,7 +25,7 @@ async function requireAdmin(): Promise<
       response: NextResponse.json({ error: "Admin only" }, { status: 403 }),
     };
   }
-  return { ok: true };
+  return { ok: true, user: session.user as AdminUser };
 }
 
 export async function PATCH(
@@ -32,6 +34,7 @@ export async function PATCH(
 ) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
+  const user = guard.user;
   const { id } = await params;
 
   let body: { mode?: string; note?: string | null };
@@ -55,10 +58,37 @@ export async function PATCH(
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
   try {
-    const row = await prisma.operatingDay.update({
-      where: { id },
-      data: updateData,
+    const row = await prisma.$transaction(async (tx) => {
+      const existing = await tx.operatingDay.findUnique({
+        where: { id },
+        select: { mode: true, note: true },
+      });
+      if (!existing) return null;
+      const updated = await tx.operatingDay.update({
+        where: { id },
+        data: updateData,
+      });
+      await tx.activityLog.create({
+        data: {
+          userId: user.id,
+          action: "OPERATING_DAY_PATCHED",
+          targetType: "OperatingDay",
+          targetId: id,
+          details: {
+            id,
+            changes: updateData,
+            previous: { mode: existing.mode, note: existing.note },
+          },
+        },
+      });
+      return updated;
     });
+    if (!row) {
+      return NextResponse.json(
+        { error: "operating_day_not_found" },
+        { status: 404 },
+      );
+    }
     return NextResponse.json(row);
   } catch (err) {
     console.error("Failed to patch operating day:", err);
@@ -75,9 +105,37 @@ export async function DELETE(
 ) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
+  const user = guard.user;
   const { id } = await params;
   try {
-    await prisma.operatingDay.delete({ where: { id } });
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.operatingDay.findUnique({
+        where: { id },
+        select: { id: true, date: true, mode: true },
+      });
+      if (!existing) return null;
+      await tx.operatingDay.delete({ where: { id } });
+      await tx.activityLog.create({
+        data: {
+          userId: user.id,
+          action: "OPERATING_DAY_DELETED",
+          targetType: "OperatingDay",
+          targetId: id,
+          details: {
+            id: existing.id,
+            date: existing.date.toISOString(),
+            mode: existing.mode,
+          },
+        },
+      });
+      return existing;
+    });
+    if (!result) {
+      return NextResponse.json(
+        { error: "operating_day_not_found" },
+        { status: 404 },
+      );
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to delete operating day:", err);
