@@ -152,6 +152,7 @@ export default function AdminNavbar() {
   const operationsActive =
     pathname.startsWith('/admin/venues') ||
     pathname.startsWith('/admin/customers') ||
+    pathname.startsWith('/admin/holidays') ||
     pathname.startsWith('/admin/reports')
 
   return (
@@ -227,6 +228,13 @@ export default function AdminNavbar() {
                 onClick={() => operations.setOpen(false)}
               >
                 {t('venues')}
+              </DropdownLink>
+              <DropdownLink
+                href="/admin/holidays"
+                active={isActive('/admin/holidays')}
+                onClick={() => operations.setOpen(false)}
+              >
+                {t('holidays')}
               </DropdownLink>
               <DropdownLink
                 href="/admin/reports"

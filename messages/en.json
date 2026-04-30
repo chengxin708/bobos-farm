@@ -541,6 +541,7 @@
       "venues": "Venues",
       "customers": "Customers",
       "inquiries": "Inquiries",
+      "holidays": "Holidays",
       "reports": "Reports",
       "settings": "Settings",
       "more": "More",
@@ -591,6 +592,8 @@
       "customersDesc": "Customer list & details",
       "inquiries": "Inquiries",
       "inquiriesDesc": "Customer inquiries & follow-ups",
+      "holidays": "Federal Holidays",
+      "holidaysDesc": "Toggle holiday open/closed",
       "reports": "Reports",
       "reportsDesc": "Revenue & booking statistics",
       "settings": "Settings",
@@ -1241,6 +1244,43 @@
           "privateEvent": "Private",
           "closed": "Closed"
         }
+      }
+    },
+    "holidays": {
+      "title": "Federal Holidays",
+      "subtitle": "Toggle which US federal holidays the farm should be open to the public.",
+      "yearLabel": "Year",
+      "suggestionTitle": "{count} Mon/Fri holidays not yet open",
+      "suggestionSubtitle": "Customers expect long weekends — open all of these with one click.",
+      "suggestionApply": "Open all",
+      "weekendNote": "Already open (weekend)",
+      "manageInCalendar": "Manage in calendar →",
+      "observedNote": "Federal observance — actual {actual}",
+      "toggleLabel": "Open to public",
+      "footnote": "Toggling on creates an OPEN day in the calendar. Toggling off restores the default rule (weekday → closed). Weekends are open by default and are managed from the calendar (use the calendar to close for maintenance).",
+      "errorMsg": "Failed to update. Please try again.",
+      "col": {
+        "date": "Date",
+        "day": "Day",
+        "holiday": "Holiday",
+        "status": "Status",
+        "action": "Open?"
+      },
+      "status": {
+        "openExplicit": "Open",
+        "openWeekendDefault": "Open (weekend)",
+        "closedDefault": "Closed",
+        "closedExplicit": "Closed (admin)",
+        "privateEvent": "Private event"
+      },
+      "days": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
       }
     },
     "menu": {

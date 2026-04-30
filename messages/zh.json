@@ -541,6 +541,7 @@
       "venues": "场地管理",
       "customers": "客户管理",
       "inquiries": "咨询单",
+      "holidays": "法定假日",
       "reports": "数据报表",
       "settings": "系统设置",
       "more": "更多",
@@ -591,6 +592,8 @@
       "customersDesc": "客户列表与详情",
       "inquiries": "咨询单",
       "inquiriesDesc": "客户咨询与跟进记录",
+      "holidays": "法定假日",
+      "holidaysDesc": "切换假日开放/关闭",
       "reports": "数据报表",
       "reportsDesc": "营收与预订统计",
       "settings": "系统设置",
@@ -1241,6 +1244,43 @@
           "privateEvent": "私享",
           "closed": "休息"
         }
+      }
+    },
+    "holidays": {
+      "title": "法定假日",
+      "subtitle": "选择哪些美国联邦假日对外开放预订。",
+      "yearLabel": "年份",
+      "suggestionTitle": "{count} 个周一/周五假日尚未开放",
+      "suggestionSubtitle": "客户期待长周末 — 一键开放所有这些假日。",
+      "suggestionApply": "全部开放",
+      "weekendNote": "周末默认已开放",
+      "manageInCalendar": "前往日历管理 →",
+      "observedNote": "联邦观察日 — 实际 {actual}",
+      "toggleLabel": "对外开放",
+      "footnote": "打开开关会在日历中创建对外开放记录;关闭则恢复默认规则(工作日默认关闭)。周末默认开放,如需维护停业请到日历操作。",
+      "errorMsg": "更新失败,请重试。",
+      "col": {
+        "date": "日期",
+        "day": "星期",
+        "holiday": "假日",
+        "status": "当前状态",
+        "action": "开放?"
+      },
+      "status": {
+        "openExplicit": "对外开放",
+        "openWeekendDefault": "已开放(周末)",
+        "closedDefault": "默认关闭",
+        "closedExplicit": "管理员已关闭",
+        "privateEvent": "私享日"
+      },
+      "days": {
+        "sun": "周日",
+        "mon": "周一",
+        "tue": "周二",
+        "wed": "周三",
+        "thu": "周四",
+        "fri": "周五",
+        "sat": "周六"
       }
     },
     "menu": {
