@@ -4,7 +4,10 @@ import {
   isWeekendET,
   type OperatingDayMode,
 } from '../operating-day-pure';
-import { computeAvailabilityProbe } from '../yurt-assignment-pure';
+import {
+  closedDayProbeResult,
+  computeAvailabilityProbe,
+} from '../yurt-assignment-pure';
 
 describe('isWeekendET', () => {
   it('Saturday in UTC is Saturday in ET → weekend', () => {
@@ -137,6 +140,21 @@ describe('effectiveOperatingMode with @db.Date-style map keys', () => {
     const r = effectiveOperatingMode(new Date('2026-05-04T12:00:00Z'), map);
     expect(r.mode).toBe('OPEN');
     expect(r.isPublic).toBe(true);
+  });
+});
+
+describe('closedDayProbeResult', () => {
+  it('returns the canonical short-circuit result', () => {
+    const r = closedDayProbeResult();
+    expect(r.canFit).toBe(false);
+    expect(r.hypotheticalYurtId).toBeNull();
+    expect(r.allYurtsFullForCount).toBe(true);
+    expect(r.anomalyReason).toBe('closed_day');
+  });
+
+  it('result flows through canFit gate as not-bookable', () => {
+    const r = closedDayProbeResult();
+    expect(!r.canFit).toBe(true); // shouldInquire = !canFit, so this should be true
   });
 });
 

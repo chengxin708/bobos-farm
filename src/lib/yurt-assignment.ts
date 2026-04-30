@@ -4,6 +4,7 @@ import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
 import { loadOperatingDayMap } from "./operating-day";
 import { effectiveOperatingMode } from "./operating-day-pure";
 import {
+  closedDayProbeResult,
   computeAvailabilityProbe,
   computeBestFitDecreasing,
   computeDeterministicAssignment,
@@ -257,12 +258,7 @@ export async function checkAvailabilityForDate(
   const operatingMap = await loadOperatingDayMap(date, date);
   const opMode = effectiveOperatingMode(opModeAnchor, operatingMap);
   if (!opMode.isPublic) {
-    return {
-      canFit: false,
-      hypotheticalYurtId: null,
-      allYurtsFullForCount: true,
-      anomalyReason: "closed_day",
-    };
+    return closedDayProbeResult();
   }
   const [yurts, existing] = await Promise.all([
     getAvailableYurts(date),

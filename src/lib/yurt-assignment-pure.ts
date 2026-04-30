@@ -367,6 +367,20 @@ export interface AvailabilityProbeResult {
 }
 
 /**
+ * Canonical AvailabilityProbeResult for dates that are not operating days.
+ * Used by checkAvailabilityForDate's pre-check short-circuit, and exposed
+ * here so unit tests can pin the contract without a Prisma mock.
+ */
+export function closedDayProbeResult(): AvailabilityProbeResult {
+  return {
+    canFit: false,
+    hypotheticalYurtId: null,
+    allYurtsFullForCount: true,
+    anomalyReason: 'closed_day',
+  };
+}
+
+/**
  * Probe: would adding a hypothetical reservation of `guestCount` to the
  * existing set on a given date produce a feasible solution?
  *

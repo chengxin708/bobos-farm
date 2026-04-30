@@ -33,7 +33,15 @@ export function isWeekendET(date: Date): boolean {
   return dow === 0 || dow === 6;
 }
 
-/** Year-Month-Day key in ET, used to look up rows in the operatingDayMap. */
+/**
+ * Year-Month-Day key in ET, used to look up rows in the operatingDayMap.
+ *
+ * DO NOT use this on Prisma `@db.Date` row values — those materialize at
+ * midnight UTC and ET-formatting shifts them to the previous day. For the
+ * server-side map keying, see `dbDateToCalendarKey` in `operating-day.ts`.
+ * `etDateKey` is correct for caller probes that pass full UTC instants
+ * (e.g. `new Date()`) or noon-UTC anchors derived from a date-only string.
+ */
 export function etDateKey(date: Date): string {
   return ET_DATEKEY_FMT.format(date); // e.g. "2026-05-02"
 }
