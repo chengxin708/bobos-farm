@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { loadOperatingDayMap } from "@/lib/operating-day";
+import {
+  effectiveOperatingMode,
+  type OperatingDayMode,
+} from "@/lib/operating-day-pure";
 
 /**
  * GET /api/availability/slots?startDate=2026-04-01&endDate=2026-04-30
@@ -9,6 +14,8 @@ import { prisma } from "@/lib/prisma";
  * - occupied: reservations with status PAYMENT_SUBMITTED or CONFIRMED,
  *   plus admin-held PENDING_PAYMENT reservations (holdByAdmin=true)
  * - available: total - occupied
+ * - mode: effective operating mode (OPEN | PRIVATE_EVENT | CLOSED) for the
+ *   date. Customer calendar greys non-OPEN dates.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -39,6 +46,9 @@ export async function GET(req: NextRequest) {
     });
     const activeYurtCount = activeYurts.length;
     const activeYurtIds = new Set(activeYurts.map((y) => y.id));
+
+    // Load operating-day overrides for the visible window.
+    const operatingMap = await loadOperatingDayMap(startDateObj, endDateObj);
 
     // Get admin-set closures in the date range
     const closures = await prisma.yurtAvailability.findMany({
@@ -95,7 +105,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const result: Record<string, { total: number; occupied: number; available: number }> = {};
+    const result: Record<
+      string,
+      {
+        total: number;
+        occupied: number;
+        available: number;
+        mode: OperatingDayMode;
+      }
+    > = {};
     const current = new Date(startDateObj);
 
     while (current <= endDateObj) {
@@ -107,7 +125,13 @@ export async function GET(req: NextRequest) {
       const occupied = Math.min(total, assignedCount + unassignedCount);
       const available = Math.max(0, total - occupied);
 
-      result[dateKey] = { total, occupied, available };
+      // Construct Date at noon UTC (~8am ET) so the UTC date and the ET
+      // date match — using T00:00:00Z would land at 8pm previous-day ET
+      // and a Monday key would read as Sunday weekend, defaulting to OPEN.
+      const dayDate = new Date(`${dateKey}T12:00:00Z`);
+      const opMode = effectiveOperatingMode(dayDate, operatingMap);
+
+      result[dateKey] = { total, occupied, available, mode: opMode.mode };
 
       current.setDate(current.getDate() + 1);
     }

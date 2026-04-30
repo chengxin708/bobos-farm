@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushToAdmins } from "@/lib/push";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
+import { loadOperatingDayMap } from "./operating-day";
+import { effectiveOperatingMode } from "./operating-day-pure";
 import {
   computeAvailabilityProbe,
   computeBestFitDecreasing,
@@ -232,11 +234,27 @@ export async function tryDeterministicAssignment(
  * Server-side wrapper: load active yurts + non-cancelled reservations
  * for `date`, ask the pure probe whether a new party of `guestCount`
  * can fit. Used by /api/availability/check.
+ *
+ * Short-circuits to `anomalyReason: 'closed_day'` when the requested
+ * date isn't an operating day (default-closed weekday with no row, or
+ * any explicit CLOSED / PRIVATE_EVENT override). The customer flow
+ * uses this to redirect to the inquiry form instead of running the
+ * yurt-fit probe against a date that isn't bookable.
  */
 export async function checkAvailabilityForDate(
   date: Date,
   guestCount: number,
 ): Promise<AvailabilityProbeResult> {
+  const operatingMap = await loadOperatingDayMap(date, date);
+  const opMode = effectiveOperatingMode(date, operatingMap);
+  if (!opMode.isPublic) {
+    return {
+      canFit: false,
+      hypotheticalYurtId: null,
+      allYurtsFullForCount: true,
+      anomalyReason: "closed_day",
+    };
+  }
   const [yurts, existing] = await Promise.all([
     getAvailableYurts(date),
     getActiveReservationsFull(date),

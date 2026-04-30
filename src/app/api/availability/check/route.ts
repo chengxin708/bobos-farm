@@ -31,6 +31,11 @@ export async function GET(req: NextRequest) {
       canFit: probe.canFit,
       hypotheticalYurtId: probe.hypotheticalYurtId,
       allYurtsFullForCount: probe.allYurtsFullForCount,
+      // anomalyReason: 'exceeds_max_capacity' | 'no_yurt_available' |
+      // 'closed_day' | null. 'closed_day' means the date isn't an
+      // operating day (default-closed weekday or admin-set
+      // CLOSED/PRIVATE_EVENT override) — UI should still redirect to
+      // /inquiries/new via shouldInquire.
       anomalyReason: probe.anomalyReason ?? null,
       /** UI hint: should the booking flow redirect to /inquiries/new? */
       shouldInquire: !probe.canFit,

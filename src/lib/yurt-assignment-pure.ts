@@ -363,7 +363,7 @@ export interface AvailabilityProbeResult {
    */
   allYurtsFullForCount: boolean;
   /** When canFit=false, why? */
-  anomalyReason?: "exceeds_max_capacity" | "no_yurt_available";
+  anomalyReason?: "exceeds_max_capacity" | "no_yurt_available" | "closed_day";
 }
 
 /**

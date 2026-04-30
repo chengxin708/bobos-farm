@@ -4,6 +4,7 @@ import {
   isWeekendET,
   type OperatingDayMode,
 } from '../operating-day-pure';
+import { computeAvailabilityProbe } from '../yurt-assignment-pure';
 
 describe('isWeekendET', () => {
   it('Saturday in UTC is Saturday in ET → weekend', () => {
@@ -113,5 +114,31 @@ describe('effectiveOperatingMode', () => {
     const r = effectiveOperatingMode(new Date('2026-05-02T12:00:00Z'), map);
     expect(r.mode).toBe('PRIVATE_EVENT');
     expect(r.isPublic).toBe(false);
+  });
+});
+
+describe('Operating mode + probe interaction', () => {
+  // Yurt #1 capacity = 30 (per dynamic-yurt-allocation merged baseline).
+  const YURTS = [
+    { id: 'yurt-1', name: '#1', capacity: 30 },
+    { id: 'yurt-2', name: '#2', capacity: 24 },
+    { id: 'yurt-3', name: '#3', capacity: 16 },
+  ];
+
+  it('weekend with no row + probe says canFit → returns canFit', () => {
+    const map = new Map<string, OperatingDayMode>();
+    const date = new Date('2026-05-02T12:00:00Z'); // Saturday in ET
+    const opMode = effectiveOperatingMode(date, map);
+    expect(opMode.isPublic).toBe(true);
+    const probe = computeAvailabilityProbe(YURTS, [], 20);
+    expect(probe.canFit).toBe(true);
+  });
+
+  it('weekday with no row → effectiveOperatingMode says not public', () => {
+    const map = new Map<string, OperatingDayMode>();
+    const date = new Date('2026-05-04T12:00:00Z'); // Monday in ET
+    const opMode = effectiveOperatingMode(date, map);
+    expect(opMode.isPublic).toBe(false);
+    expect(opMode.mode).toBe('CLOSED');
   });
 });
