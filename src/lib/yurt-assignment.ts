@@ -245,8 +245,17 @@ export async function checkAvailabilityForDate(
   date: Date,
   guestCount: number,
 ): Promise<AvailabilityProbeResult> {
+  // Reservation/YurtAvailability rows are stored at UTC midnight, so
+  // the Prisma date-equality queries below need that exact instant.
+  // effectiveOperatingMode reads the ET calendar via etDateKey, and a
+  // UTC-midnight Date lands at 8pm previous-day ET — that would shift
+  // a Monday request to Sunday and miss the closed-day default. Build
+  // a sibling Date at noon UTC (~8am ET, same calendar day in both
+  // zones) just for the operating-mode resolution.
+  const opModeAnchor = new Date(date);
+  opModeAnchor.setUTCHours(12, 0, 0, 0);
   const operatingMap = await loadOperatingDayMap(date, date);
-  const opMode = effectiveOperatingMode(date, operatingMap);
+  const opMode = effectiveOperatingMode(opModeAnchor, operatingMap);
   if (!opMode.isPublic) {
     return {
       canFit: false,

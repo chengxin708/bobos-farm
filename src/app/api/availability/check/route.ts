@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // UTC midnight matches how Reservation/YurtAvailability rows are
+    // stored, so the yurt-fit DB queries hit. Operating-day resolution
+    // re-anchors to ET internally (see checkAvailabilityForDate).
     const date = new Date(`${dateStr}T00:00:00.000Z`);
     const probe = await checkAvailabilityForDate(date, guestCount);
     return NextResponse.json({
