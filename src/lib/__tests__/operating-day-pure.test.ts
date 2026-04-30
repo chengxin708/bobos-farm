@@ -1,5 +1,6 @@
 import {
   effectiveOperatingMode,
+  etDateKey,
   isWeekendET,
   type OperatingDayMode,
 } from '../operating-day-pure';
@@ -22,6 +23,44 @@ describe('isWeekendET', () => {
   it('Early Saturday UTC = late Friday ET → still Friday → not weekend', () => {
     // 2026-05-09T03:00:00Z = Fri May 8 11pm ET → DOW=5 (Fri) → not weekend
     expect(isWeekendET(new Date('2026-05-09T03:00:00Z'))).toBe(false);
+  });
+});
+
+describe('isWeekendET DST + all-DOW sweep', () => {
+  // 2026-03-08 is the spring-forward Sunday in ET (02:00 EST → 03:00 EDT)
+  it('handles spring-forward Sunday (DST start)', () => {
+    expect(isWeekendET(new Date('2026-03-08T07:00:00Z'))).toBe(true); // 2am EST / 3am EDT, still Sunday
+  });
+  // 2026-11-01 is the fall-back Sunday in ET (02:00 EDT → 01:00 EST)
+  it('handles fall-back Sunday (DST end)', () => {
+    expect(isWeekendET(new Date('2026-11-01T06:00:00Z'))).toBe(true); // 2am EDT / 1am EST, still Sunday
+  });
+
+  // All seven days, noon UTC = morning ET, same calendar date in both zones.
+  // 2026-05-03 (Sun) … 2026-05-09 (Sat)
+  const days = [
+    { iso: '2026-05-03T12:00:00Z', label: 'Sun', weekend: true },
+    { iso: '2026-05-04T12:00:00Z', label: 'Mon', weekend: false },
+    { iso: '2026-05-05T12:00:00Z', label: 'Tue', weekend: false },
+    { iso: '2026-05-06T12:00:00Z', label: 'Wed', weekend: false },
+    { iso: '2026-05-07T12:00:00Z', label: 'Thu', weekend: false },
+    { iso: '2026-05-08T12:00:00Z', label: 'Fri', weekend: false },
+    { iso: '2026-05-09T12:00:00Z', label: 'Sat', weekend: true },
+  ];
+  for (const d of days) {
+    it(`${d.label} (${d.iso}) → weekend=${d.weekend}`, () => {
+      expect(isWeekendET(new Date(d.iso))).toBe(d.weekend);
+    });
+  }
+});
+
+describe('etDateKey', () => {
+  it('returns the ET calendar date for a UTC instant', () => {
+    // 2026-05-04T03:00:00Z = May 3 11pm ET (Sunday)
+    expect(etDateKey(new Date('2026-05-04T03:00:00Z'))).toBe('2026-05-03');
+  });
+  it('pads month/day to 2 digits', () => {
+    expect(etDateKey(new Date('2026-01-05T12:00:00Z'))).toBe('2026-01-05');
   });
 });
 
