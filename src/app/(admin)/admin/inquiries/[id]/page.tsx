@@ -34,18 +34,20 @@ export default function AdminInquiryDetailPage({
   })
 
   return (
-    <div className="p-3 sm:p-6 flex flex-col gap-5 max-w-3xl">
-      <div className="flex items-center gap-2">
-        <Link href="/admin/inquiries" className="p-1 rounded hover:bg-[#E8ECE4]/30">
-          <ArrowLeft size={18} />
-        </Link>
-        <h1 className="text-2xl font-serif font-semibold text-[#2C2416]">
-          {data
-            ? t("detailTitle", { name: data.user.name || data.user.email })
-            : t("detailTitle", { name: "…" })}
-        </h1>
+    <div className="flex-1 overflow-y-auto">
+      <div className="p-3 sm:p-6 flex flex-col gap-5 max-w-3xl">
+        <div className="flex items-center gap-2">
+          <Link href="/admin/inquiries" className="p-1 rounded hover:bg-[#E8ECE4]/30">
+            <ArrowLeft size={18} />
+          </Link>
+          <h1 className="text-2xl font-serif font-semibold text-[#2C2416]">
+            {data
+              ? t("detailTitle", { name: data.user.name || data.user.email })
+              : t("detailTitle", { name: "…" })}
+          </h1>
+        </div>
+        <InquiryDetailPanel inquiryId={id} />
       </div>
-      <InquiryDetailPanel inquiryId={id} />
     </div>
   )
 }

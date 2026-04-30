@@ -54,7 +54,7 @@ export default function AdminInquiryListPage() {
   const resolvedInquiries = data?.filter((i) => ["CONVERTED", "CLOSED", "EXPIRED"].includes(i.status)) ?? []
 
   return (
-    <div className="p-6 flex flex-col gap-4">
+    <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-serif font-semibold text-[#2C2416]">{t("title")}</h1>
         <button
