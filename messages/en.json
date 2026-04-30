@@ -1226,7 +1226,21 @@
       "optimizationApply": "Apply",
       "optimizationConfirm": "Apply this optimization? Rooms will be reassigned.",
       "unknownError": "Unknown error",
-      "moveHere": "Move here"
+      "moveHere": "Move here",
+      "operatingDay": {
+        "markOpen": "Mark Open (extend)",
+        "enablePrivateEvent": "Enable Private Event",
+        "convertToPrivateEvent": "Convert to Private Event",
+        "makePublicOpen": "Make Public OPEN",
+        "markClosed": "Close (maintenance)",
+        "restoreDefault": "Restore Default",
+        "cancel": "Cancel",
+        "modeBadge": {
+          "open": "Extended",
+          "privateEvent": "Private",
+          "closed": "Closed"
+        }
+      }
     },
     "menu": {
       "title": "Menu Management",

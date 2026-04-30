@@ -13,6 +13,8 @@ import ReservationDetail from '@/components/admin/reservations/ReservationDetail
 import { type Reservation as FullReservation } from '@/components/admin/reservations/useReservationsData'
 import { CalendarPlus, ChevronLeft, ChevronRight, Users, ArrowLeft, ClipboardList, AlertTriangle, ArrowLeftRight, Lightbulb, FileText, CheckCircle, UtensilsCrossed } from 'lucide-react'
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
+import OperatingDayActionsMenu from '@/components/admin/calendar/OperatingDayActionsMenu'
+import { effectiveOperatingMode, isWeekendET, type OperatingDayMode } from '@/lib/operating-day-pure'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -62,6 +64,13 @@ interface AvailabilityEntry {
   isOpen: boolean
   note: string | null
   yurt: { id: string; name: string }
+}
+
+interface OperatingDayRow {
+  id: string
+  date: string
+  mode: OperatingDayMode
+  note: string | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -162,6 +171,7 @@ export default function CalendarMobile() {
   const [swapSuccess, setSwapSuccess] = useState(false)
   const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[]; isMove?: boolean } | null>(null)
   const [pendingOptimization, setPendingOptimization] = useState(false)
+  const [menuFor, setMenuFor] = useState<{ date: string; mode: OperatingDayMode; hasRow: boolean; rowId?: string; isWeekend: boolean } | null>(null)
 
   // Fetch full detail for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -196,7 +206,7 @@ export default function CalendarMobile() {
   const FUTURE_DAYS = 180
 
   // Generate once: 30 days back + today + 180 days forward
-  const allDays = useMemo(() => {
+  const allDaysRaw = useMemo(() => {
     const days: Date[] = []
     for (let i = -PAST_DAYS; i <= FUTURE_DAYS; i++) {
       const d = new Date(today)
@@ -205,6 +215,9 @@ export default function CalendarMobile() {
     }
     return days
   }, [today])
+
+  // Don't reference operatingDayMap / booking maps yet — they're declared
+  // below. The filtered list is built below the SWR hooks.
 
   // Fixed data range covering the whole strip
   const dateRange = useMemo(() => {
@@ -237,6 +250,75 @@ export default function CalendarMobile() {
     `/api/availability?startDate=${dateRange.start}&endDate=${dateRange.end}`,
     fetcher
   )
+
+  const { data: operatingDays, mutate: mutateOperatingDays } = useSWR<OperatingDayRow[]>(
+    `/api/operating-days?startDate=${dateRange.start}&endDate=${dateRange.end}`,
+    fetcher
+  )
+
+  /** Map ET-date-key -> mode. Server rows have `date` as ISO datetime;
+   *  the calendar key is the leading "YYYY-MM-DD" slice (matches what
+   *  `etDateKey` produces for noon-UTC anchors built from a date-only
+   *  string). */
+  const operatingDayMap = useMemo(() => {
+    const map = new Map<string, OperatingDayMode>()
+    if (!operatingDays) return map
+    for (const r of operatingDays) {
+      map.set(r.date.slice(0, 10), r.mode)
+    }
+    return map
+  }, [operatingDays])
+
+  const operatingDayRowByDate = useMemo(() => {
+    const map = new Map<string, OperatingDayRow>()
+    if (!operatingDays) return map
+    for (const r of operatingDays) {
+      map.set(r.date.slice(0, 10), r)
+    }
+    return map
+  }, [operatingDays])
+
+  const openOperatingDayMenu = useCallback((dateStr: string) => {
+    const anchor = new Date(`${dateStr}T12:00:00Z`)
+    const result = effectiveOperatingMode(anchor, operatingDayMap)
+    const row = operatingDayRowByDate.get(dateStr)
+    setMenuFor({
+      date: dateStr,
+      mode: result.mode,
+      hasRow: !!row,
+      rowId: row?.id,
+      isWeekend: isWeekendET(anchor),
+    })
+  }, [operatingDayMap, operatingDayRowByDate])
+
+  const handleOperatingDayAction = useCallback(async (
+    action: 'set' | 'clear',
+    mode?: OperatingDayMode,
+  ) => {
+    if (!menuFor) return
+    try {
+      if (action === 'set' && mode) {
+        const resp = await fetch('/api/operating-days', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: menuFor.date, mode }),
+        })
+        if (!resp.ok) {
+          alert(t('unknownError'))
+          return
+        }
+      } else if (action === 'clear' && menuFor.rowId) {
+        const resp = await fetch(`/api/operating-days/${menuFor.rowId}`, { method: 'DELETE' })
+        if (!resp.ok) {
+          alert(t('unknownError'))
+          return
+        }
+      }
+      await mutateOperatingDays()
+    } catch {
+      alert(t('unknownError'))
+    }
+  }, [menuFor, mutateOperatingDays, t])
 
   // ── Reservation actions (must be after SWR declarations) ────
   const handleResAction = useCallback(async (id: string, action: string, data?: Record<string, unknown>) => {
@@ -429,6 +511,21 @@ export default function CalendarMobile() {
     }
     return count
   }, [unassignedByDate])
+
+  /** Date strip days, filtered to operating days (OPEN / PRIVATE_EVENT)
+   *  plus dates that carry any reservation. Closed weekdays with no
+   *  data drop out so the strip compresses around real activity. */
+  const allDays = useMemo(() => {
+    return allDaysRaw.filter(d => {
+      const dateStr = formatDate(d)
+      const opMode = effectiveOperatingMode(
+        new Date(`${dateStr}T12:00:00Z`),
+        operatingDayMap,
+      ).mode
+      if (opMode === 'OPEN' || opMode === 'PRIVATE_EVENT') return true
+      return datesWithBookings.has(dateStr) || datesWithPending.has(dateStr)
+    })
+  }, [allDaysRaw, operatingDayMap, datesWithBookings, datesWithPending])
 
   const activeYurts = useMemo(() =>
     (yurts || []).filter(y => y.status === 'ACTIVE').sort((a, b) => a.sortOrder - b.sortOrder),
@@ -815,7 +912,9 @@ export default function CalendarMobile() {
                   </div>
                 ))}
               </div>
-              {/* Cells: 6 rows × 7 cols. Tap a day → switch to day view. */}
+              {/* Cells: 6 rows × 7 cols. Tap a day → switch to day view.
+                  Weekday cells with no bookings open the operating-day
+                  actions menu instead, so admin can flip mode in place. */}
               <div className="grid grid-cols-7 gap-0.5">
                 {monthCells.map((cell, idx) => {
                   if (cell === null) {
@@ -827,10 +926,26 @@ export default function CalendarMobile() {
                   const bookedYurtCount = dayYurtMap?.size ?? 0
                   const pendingCount = unassignedByDate.get(cell.dateStr)?.length ?? 0
                   const totalCount = bookedYurtCount + pendingCount
+
+                  const opAnchor = new Date(`${cell.dateStr}T12:00:00Z`)
+                  const opResult = effectiveOperatingMode(opAnchor, operatingDayMap)
+                  const opMode = opResult.mode
+                  const opIsWeekend = opResult.isWeekend
+                  const hasOpRow = operatingDayRowByDate.has(cell.dateStr)
+                  const isExtendedOpen = opMode === 'OPEN' && !opIsWeekend && hasOpRow
+                  const isPrivateEvent = opMode === 'PRIVATE_EVENT'
+                  const isClosedWeekday = opMode === 'CLOSED' && !opIsWeekend
+
                   return (
                     <button
                       key={cell.dateStr}
                       onClick={() => {
+                        // Weekday with no bookings: open the operating-day menu.
+                        // Otherwise (weekend OR has bookings): drill into day view.
+                        if (!opIsWeekend && totalCount === 0) {
+                          openOperatingDayMenu(cell.dateStr)
+                          return
+                        }
                         const d = new Date(cell.dateStr + 'T00:00:00')
                         setSelectedDate(d)
                         setView('day')
@@ -840,16 +955,31 @@ export default function CalendarMobile() {
                           ? 'border-[#6B7F5E] bg-[#6B7F5E]/10'
                           : isSelected
                             ? 'border-[#6B7F5E]/40 bg-[#6B7F5E]/5'
-                            : 'border-transparent active:bg-[#E8ECE4]/40'
+                            : isClosedWeekday
+                              ? 'border-transparent bg-[#FAFAF7]'
+                              : 'border-transparent active:bg-[#E8ECE4]/40'
                       }`}
                     >
                       <span
                         className={`text-[13px] font-semibold leading-none ${
-                          isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'
+                          isClosedWeekday ? 'text-[#A8A096]' : isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'
                         }`}
                       >
                         {cell.day}
                       </span>
+                      {(isPrivateEvent || isExtendedOpen) && (
+                        <span
+                          className={`mt-0.5 text-[8px] font-semibold leading-none px-1 py-px rounded-full border ${
+                            isPrivateEvent
+                              ? 'bg-[#FDF5E6] text-[#8B6914] border-[#C4A45C]/40'
+                              : 'bg-[#E8F0F7] text-[#2980B9] border-[#2980B9]/30'
+                          }`}
+                        >
+                          {isPrivateEvent
+                            ? t('operatingDay.modeBadge.privateEvent')
+                            : t('operatingDay.modeBadge.open')}
+                        </span>
+                      )}
                       {totalCount > 0 && (
                         <div className="flex items-center gap-0.5 mt-1.5">
                           {bookedYurtCount > 0 && (
@@ -1319,6 +1449,19 @@ export default function CalendarMobile() {
           loading={suggestionLoading}
           onConfirm={executeOptimization}
           onCancel={() => setPendingOptimization(false)}
+        />
+      )}
+
+      {/* Operating-day actions menu (mobile month-cell tap on empty weekday) */}
+      {menuFor && (
+        <OperatingDayActionsMenu
+          date={menuFor.date}
+          isWeekend={menuFor.isWeekend}
+          currentMode={menuFor.mode}
+          hasRow={menuFor.hasRow}
+          rowId={menuFor.rowId}
+          onClose={() => setMenuFor(null)}
+          onSubmit={handleOperatingDayAction}
         />
       )}
     </>

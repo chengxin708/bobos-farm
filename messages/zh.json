@@ -1226,7 +1226,21 @@
       "optimizationApply": "应用",
       "optimizationConfirm": "确定应用此优化建议？将重新分配包房。",
       "unknownError": "未知错误",
-      "moveHere": "移入此房间"
+      "moveHere": "移入此房间",
+      "operatingDay": {
+        "markOpen": "标记开放(加开)",
+        "enablePrivateEvent": "开启私享日",
+        "convertToPrivateEvent": "改为私享日",
+        "makePublicOpen": "改为公开开放",
+        "markClosed": "关闭(维护)",
+        "restoreDefault": "恢复默认",
+        "cancel": "取消",
+        "modeBadge": {
+          "open": "加开",
+          "privateEvent": "私享",
+          "closed": "休息"
+        }
+      }
     },
     "menu": {
       "title": "菜单管理",

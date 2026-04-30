@@ -13,6 +13,8 @@ import { ChevronLeft, ChevronRight, Users, Plus, ClipboardList, AlertTriangle, A
 import { computeOptimizationSuggestion } from '@/lib/yurt-assignment-pure'
 import CalendarListView, { type ListInquiry } from '@/components/admin/calendar/CalendarListView'
 import InquiryDetailPanel from '@/components/admin/inquiries/InquiryDetailPanel'
+import OperatingDayActionsMenu from '@/components/admin/calendar/OperatingDayActionsMenu'
+import { effectiveOperatingMode, isWeekendET, type OperatingDayMode } from '@/lib/operating-day-pure'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -66,6 +68,13 @@ interface AvailabilityEntry {
   isOpen: boolean
   note: string | null
   yurt: { id: string; name: string }
+}
+
+interface OperatingDayRow {
+  id: string
+  date: string // ISO datetime string from API (UTC midnight)
+  mode: OperatingDayMode
+  note: string | null
 }
 
 interface CalendarSummaryEntry {
@@ -188,6 +197,7 @@ export default function CalendarDesktop() {
   const [swapSuccess, setSwapSuccess] = useState(false)
   const [pendingSwap, setPendingSwap] = useState<{ targetId: string; warnings: string[]; isMove?: boolean } | null>(null)
   const [pendingOptimization, setPendingOptimization] = useState<string | null>(null)
+  const [menuFor, setMenuFor] = useState<{ date: string; mode: OperatingDayMode; hasRow: boolean; rowId?: string; isWeekend: boolean } | null>(null)
 
   // Fetch full detail + activity logs for selected reservation
   const { data: selectedResFull, mutate: mutateSelectedRes } = useSWR<FullReservation>(
@@ -254,6 +264,83 @@ export default function CalendarDesktop() {
     `/api/inquiries?startDate=${dateRange.start}&endDate=${dateRange.end}`,
     fetcher
   )
+
+  // Operating-day overrides for the visible window.
+  const { data: operatingDays, mutate: mutateOperatingDays } = useSWR<OperatingDayRow[]>(
+    `/api/operating-days?startDate=${dateRange.start}&endDate=${dateRange.end}`,
+    fetcher
+  )
+
+  /** Map ET-date-key ("YYYY-MM-DD") -> mode. Server returns rows with
+   *  `date` as ISO strings keyed at UTC midnight; the calendar key is
+   *  the leading "YYYY-MM-DD" slice (matches what `etDateKey` produces
+   *  for noon-UTC anchors built from a date-only string). */
+  const operatingDayMap = useMemo(() => {
+    const map = new Map<string, OperatingDayMode>()
+    if (!operatingDays) return map
+    for (const r of operatingDays) {
+      const key = r.date.slice(0, 10)
+      map.set(key, r.mode)
+    }
+    return map
+  }, [operatingDays])
+
+  /** Map ET-date-key -> row id. Needed for DELETE on "restore default". */
+  const operatingDayRowByDate = useMemo(() => {
+    const map = new Map<string, OperatingDayRow>()
+    if (!operatingDays) return map
+    for (const r of operatingDays) {
+      map.set(r.date.slice(0, 10), r)
+    }
+    return map
+  }, [operatingDays])
+
+  /** Open the operating-day actions menu for a given date string. */
+  const openOperatingDayMenu = useCallback((dateStr: string) => {
+    // Use noon-UTC anchor so the ET conversion stays on the intended
+    // calendar day across DST + timezone offsets (see Task 4 review).
+    const anchor = new Date(`${dateStr}T12:00:00Z`)
+    const result = effectiveOperatingMode(anchor, operatingDayMap)
+    const row = operatingDayRowByDate.get(dateStr)
+    setMenuFor({
+      date: dateStr,
+      mode: result.mode,
+      hasRow: !!row,
+      rowId: row?.id,
+      isWeekend: isWeekendET(anchor),
+    })
+  }, [operatingDayMap, operatingDayRowByDate])
+
+  /** Submit an operating-day mutation: POST /api/operating-days for set,
+   *  DELETE /api/operating-days/[id] for clear. Refreshes the SWR after. */
+  const handleOperatingDayAction = useCallback(async (
+    action: 'set' | 'clear',
+    mode?: OperatingDayMode,
+  ) => {
+    if (!menuFor) return
+    try {
+      if (action === 'set' && mode) {
+        const resp = await fetch('/api/operating-days', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: menuFor.date, mode }),
+        })
+        if (!resp.ok) {
+          alert(t('unknownError'))
+          return
+        }
+      } else if (action === 'clear' && menuFor.rowId) {
+        const resp = await fetch(`/api/operating-days/${menuFor.rowId}`, { method: 'DELETE' })
+        if (!resp.ok) {
+          alert(t('unknownError'))
+          return
+        }
+      }
+      await mutateOperatingDays()
+    } catch {
+      alert(t('unknownError'))
+    }
+  }, [menuFor, mutateOperatingDays, t])
 
   // Calendar summary for month view (capacity, assignment status)
   const { data: calendarSummary } = useSWR<Record<string, CalendarSummaryEntry>>(
@@ -518,7 +605,8 @@ export default function CalendarDesktop() {
 
   // ── Week view days ───────────────────────────────────────────
 
-  const weekDays = useMemo(() => {
+  /** All 7 days of the visible week. */
+  const weekDaysAll = useMemo(() => {
     const days: Date[] = []
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekRange.start)
@@ -527,6 +615,23 @@ export default function CalendarDesktop() {
     }
     return days
   }, [weekRange])
+
+  /** Visible week days: operating (OPEN / PRIVATE_EVENT) OR carrying at
+   *  least one reservation / inquiry. Closed days with no data drop out
+   *  so the week view actually compresses around real activity. */
+  const weekDays = useMemo(() => {
+    return weekDaysAll.filter(d => {
+      const dateStr = formatDate(d)
+      const opMode = effectiveOperatingMode(
+        new Date(`${dateStr}T12:00:00Z`),
+        operatingDayMap,
+      ).mode
+      if (opMode === 'OPEN' || opMode === 'PRIVATE_EVENT') return true
+      const hasRes = !!resByDateYurt.get(dateStr) || !!unassignedByDate.get(dateStr)
+      const hasInquiry = (inquiriesByDate.get(dateStr)?.length ?? 0) > 0
+      return hasRes || hasInquiry
+    })
+  }, [weekDaysAll, operatingDayMap, resByDateYurt, unassignedByDate, inquiriesByDate])
 
   // ── Legend items (design system) ─────────────────────────────
 
@@ -1094,6 +1199,17 @@ export default function CalendarDesktop() {
       ? Math.max(0, assignedCount + unassignedCount - activeYurtCount)
       : 0
 
+    // Operating-day mode for tint + badge. Use a noon-UTC anchor so ET
+    // formatting lands on the intended calendar day regardless of DST.
+    const opAnchor = new Date(`${dateStr}T12:00:00Z`)
+    const opResult = effectiveOperatingMode(opAnchor, operatingDayMap)
+    const opMode = opResult.mode
+    const opIsWeekend = opResult.isWeekend
+    const hasOpRow = operatingDayRowByDate.has(dateStr)
+    const isExtendedOpen = opMode === 'OPEN' && !opIsWeekend && hasOpRow
+    const isPrivateEvent = opMode === 'PRIVATE_EVENT'
+    const isClosedWeekday = opMode === 'CLOSED' && !opIsWeekend
+
     // Determine status indicator. Over-allocation wins priority over anomaly
     // and pending markers — admins need to see it immediately.
     let statusIndicator: React.ReactNode = null
@@ -1109,26 +1225,55 @@ export default function CalendarDesktop() {
       }
     }
 
+    // Background tint for closed weekdays (subtle grey). Today / overflow
+    // wins so admin signals stay readable.
+    const bgClass = overflow > 0
+      ? 'bg-[#FDECEA] border-l-2 border-l-[#C4533A]'
+      : isToday
+        ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]'
+        : isClosedWeekday
+          ? 'bg-[#FAFAF7]'
+          : ''
+
     return (
       <div
         key={idx}
         className={`
           min-h-[90px] p-2 border-b border-r border-[#E8ECE4]/60
           transition-shadow duration-150 hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)] cursor-pointer group
-          ${overflow > 0 ? 'bg-[#FDECEA] border-l-2 border-l-[#C4533A]' : isToday ? 'bg-[#FFF8E1] border-l-2 border-l-[#6B7F5E]' : ''}
+          ${bgClass}
         `}
-        onClick={() => goToWeekOf(dateStr)}
+        onClick={() => {
+          // Weekday cells: open the operating-day actions menu so the
+          // admin can flip mode without leaving month view. Weekend
+          // cells preserve the existing drill-into-week behavior.
+          if (opIsWeekend) {
+            goToWeekOf(dateStr)
+          } else {
+            openOperatingDayMenu(dateStr)
+          }
+        }}
         title={overflow > 0 ? t('overflowTitle', { count: overflow }) : t('clickViewDetails')}
       >
-        {/* Date number + status indicator */}
-        <div className="mb-1.5 flex items-center justify-between">
+        {/* Date number + status indicator + operating-mode badge */}
+        <div className="mb-1.5 flex items-center justify-between gap-1">
           <span className={`
             text-[13px] font-semibold
-            ${isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'}
+            ${isClosedWeekday ? 'text-[#8A7E6B]' : isToday ? 'text-[#6B7F5E]' : 'text-[#2C2416]'}
           `}>
             {day}
           </span>
           <div className="flex items-center gap-1">
+            {isPrivateEvent && (
+              <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-[#FDF5E6] text-[#8B6914] border border-[#C4A45C]/40">
+                {t('operatingDay.modeBadge.privateEvent')}
+              </span>
+            )}
+            {isExtendedOpen && (
+              <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-[#E8F0F7] text-[#2980B9] border border-[#2980B9]/30">
+                {t('operatingDay.modeBadge.open')}
+              </span>
+            )}
             {statusIndicator}
           </div>
         </div>
@@ -1443,6 +1588,19 @@ export default function CalendarDesktop() {
           loading={suggestionLoading}
           onConfirm={() => executeOptimization(pendingOptimization)}
           onCancel={() => setPendingOptimization(null)}
+        />
+      )}
+
+      {/* Operating-day actions menu (weekday month-cell click) */}
+      {menuFor && (
+        <OperatingDayActionsMenu
+          date={menuFor.date}
+          isWeekend={menuFor.isWeekend}
+          currentMode={menuFor.mode}
+          hasRow={menuFor.hasRow}
+          rowId={menuFor.rowId}
+          onClose={() => setMenuFor(null)}
+          onSubmit={handleOperatingDayAction}
         />
       )}
     </div>
