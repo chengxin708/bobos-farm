@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Calendar, Tent, Users, Mail, Upload, Copy, Check, CheckCircle, Loader2, Clock, X, FileText, AlertCircle } from 'lucide-react'
+import { ChevronLeft, Calendar, Tent, Users, Mail, Upload, Copy, Check, CheckCircle, Loader2, Clock, X, FileText, AlertCircle, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { useBooking } from '@/contexts/BookingContext'
@@ -503,6 +503,29 @@ export default function BookingConfirmPage() {
                       <p className="text-sm text-[#3D3229] leading-relaxed">
                         We&apos;re currently testing the booking system. Payment information is hidden for now — please do not send any money. We&apos;ll notify you when we go live.
                       </p>
+                    </div>
+                  </div>
+
+                  {/* Call-to-book CTA — phone is the only working channel during testing */}
+                  <div className="rounded-xl bg-white/60 border border-[#C4453A]/15 p-4 flex flex-col gap-3">
+                    <p className="text-sm font-medium text-[#1A1208] leading-relaxed">
+                      想预约请直接拨打电话 · To book, please call us directly
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <a
+                        href="tel:+15162729999"
+                        className="flex items-center gap-2 rounded-full bg-[#6B7F5E] text-white px-4 py-2 text-sm font-medium no-underline hover:bg-[#5A6E4F] transition-colors w-fit"
+                      >
+                        <Phone size={14} />
+                        中文: (516) 272-9999
+                      </a>
+                      <a
+                        href="tel:+19175020445"
+                        className="flex items-center gap-2 rounded-full bg-[#6B7F5E] text-white px-4 py-2 text-sm font-medium no-underline hover:bg-[#5A6E4F] transition-colors w-fit"
+                      >
+                        <Phone size={14} />
+                        English: (917) 502-0445
+                      </a>
                     </div>
                   </div>
                 </div>
