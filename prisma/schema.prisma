@@ -475,3 +475,40 @@ model InquiryComment {
   @@index([inquiryId, createdAt])
   @@map("inquiry_comments")
 }
+
+// ============ BILL (quick receipt subdomain) ============
+
+model QuickReceipt {
+  id            String   @id @default(cuid())
+  token         String   @unique
+  customerName  String
+  customerPhone String?
+  notes         String?
+  taxRate       Float
+  subtotalCents Int
+  discountCents Int      @default(0)
+  taxCents      Int
+  totalCents    Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  items         QuickReceiptItem[]
+
+  @@index([createdAt])
+  @@index([token])
+  @@map("quick_receipts")
+}
+
+model QuickReceiptItem {
+  id         String   @id @default(cuid())
+  receiptId  String
+  menuItemId String?
+  nameEnSnap String
+  nameZhSnap String?
+  priceCents Int
+  quantity   Int
+  sortOrder  Int      @default(0)
+  receipt    QuickReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  @@index([receiptId])
+  @@map("quick_receipt_items")
+}
