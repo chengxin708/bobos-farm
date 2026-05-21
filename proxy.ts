@@ -15,6 +15,13 @@ const adminRoutes = ['/admin'];
 const authRoutes = ['/login', '/register'];
 
 export async function proxy(req: NextRequest) {
+  // ── Bill subdomain dispatch (must come first) ───────────────────
+  const host = req.headers.get("host") ?? "";
+  const { isBillHost, handleBillSubdomain } = await import("@/lib/bill/middleware");
+  if (isBillHost(host)) {
+    return handleBillSubdomain(req);
+  }
+
   const { pathname } = req.nextUrl;
 
   // Get JWT token (doesn't need Prisma); secureCookie required for NextAuth v5
