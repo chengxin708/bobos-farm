@@ -788,6 +788,9 @@
       },
       "itemsSuffix": "{count} 项",
       "guestsSuffix": "{count} 位客人",
+      "preOrder": {
+        "count": "{count} 道菜"
+      },
       "cancelled": "已取消",
       "cancelReason": "原因：{reason}",
       "confirmDepositPrompt": "确认该定金？预订将变为有效。",
@@ -1257,7 +1260,7 @@
       "manageInCalendar": "前往日历管理 →",
       "observedNote": "联邦观察日 — 实际 {actual}",
       "toggleLabel": "对外开放",
-      "footnote": "打开开关会在日历中创建对外开放记录;关闭则恢复默认规则(工作日默认关闭)。周末默认开放,如需维护停业请到日历操作。",
+      "footnote": "每个开关控制该假日是否对外开放预订。工作日默认关闭,周末默认开放。日历中已设置的私享日或管理员手动覆盖的日期在此处只读,以避免误覆盖。",
       "errorMsg": "更新失败,请重试。",
       "col": {
         "date": "日期",
@@ -1525,6 +1528,8 @@
         "businessPhoneHelp": "面向客户显示的商家电话号码。",
         "businessAddress": "商家地址",
         "businessAddressHelp": "商家的实际地址。",
+        "taxRate": "销售税率",
+        "taxRateHelp": "Bill 子域使用的小数税率(0–1)。New Paltz / Ulster County = 0.08。",
         "changePassword": "修改密码",
         "changePasswordHelp": "更新你的账户密码。",
         "currentPassword": "当前密码",

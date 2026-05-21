@@ -788,6 +788,9 @@
       },
       "itemsSuffix": "{count} items",
       "guestsSuffix": "{count} guests",
+      "preOrder": {
+        "count": "{count} dishes"
+      },
       "cancelled": "Cancelled",
       "cancelReason": "Reason: {reason}",
       "confirmDepositPrompt": "Confirm this deposit? The reservation will become active.",
@@ -1257,7 +1260,7 @@
       "manageInCalendar": "Manage in calendar →",
       "observedNote": "Federal observance — actual {actual}",
       "toggleLabel": "Open to public",
-      "footnote": "Toggling on creates an OPEN day in the calendar. Toggling off restores the default rule (weekday → closed). Weekends are open by default and are managed from the calendar (use the calendar to close for maintenance).",
+      "footnote": "Each toggle controls whether the farm is open to public booking on that holiday. Weekday default is closed; weekend default is open. Existing private events or admin-managed days from the calendar are read-only here so deliberate overrides aren't clobbered.",
       "errorMsg": "Failed to update. Please try again.",
       "col": {
         "date": "Date",
@@ -1525,6 +1528,8 @@
         "businessPhoneHelp": "Business phone number shown to customers.",
         "businessAddress": "Business Address",
         "businessAddressHelp": "Physical address of your business.",
+        "taxRate": "Sales tax rate",
+        "taxRateHelp": "Decimal rate (0–1) used by the bill subdomain. Ulster County, NY = 0.08.",
         "changePassword": "Change Password",
         "changePasswordHelp": "Update your account password.",
         "currentPassword": "Current Password",
