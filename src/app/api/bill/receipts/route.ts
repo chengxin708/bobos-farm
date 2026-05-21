@@ -7,7 +7,8 @@ import { receiptInputSchema } from "@/lib/bill/validations";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get("cursor");
-  const limit = Math.min(Number(searchParams.get("limit") ?? 50), 100);
+  const rawLimit = Number(searchParams.get("limit") ?? 50);
+  const limit = Math.min(Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 50), 100);
 
   const rows = await prisma.quickReceipt.findMany({
     take: limit + 1,

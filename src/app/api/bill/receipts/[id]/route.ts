@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeTotals } from "@/lib/bill/totals";
 import { receiptInputSchema } from "@/lib/bill/validations";
@@ -81,8 +82,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   try {
     await prisma.quickReceipt.delete({ where: { id } });
-  } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    throw e;
   }
   return new NextResponse(null, { status: 204 });
 }
