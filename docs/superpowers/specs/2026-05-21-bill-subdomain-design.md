@@ -66,7 +66,7 @@ prisma/migrations/…_bill/  ← schema changes for the two new tables
 
 External edits:
 
-- `proxy.ts` — add `host === 'bill.bobosfarm.com'` branch at the top
+- `src/middleware.ts` — add `host === 'bill.bobosfarm.com'` branch at the top
 - `prisma/schema.prisma` — add `QuickReceipt` + `QuickReceiptItem` models
 - `prisma/seed-settings-v2.ts` — add `tax_rate` setting
 - `src/app/(admin)/admin/settings/page.tsx` — add tax-rate input
@@ -89,7 +89,7 @@ src/app/(bill)/r/[token]/page.tsx          ← public receipt (NOT under /_bill,
                                               served on both hosts intentionally)
 ```
 
-**Middleware** (`proxy.ts`, top of the function):
+**Middleware** (`src/middleware.ts`, top of the function):
 
 ```ts
 const host = req.headers.get('host') ?? '';
@@ -115,7 +115,7 @@ It does **not** consult NextAuth (`getToken`) — bill subdomain has its own aut
 
 - Main domain (`bobosfarm.com`) never matches `/_bill/...` because the middleware on that host doesn't rewrite anything to it, and direct access is blocked.
 - The public `/r/<token>` page lives outside `_bill` so it can theoretically be served on either host. The middleware on the main host could also serve it (we don't actively block) — but the canonical shared link is on `bill.bobosfarm.com/r/<token>` so this isn't a concern.
-- Removal becomes trivial: delete the `(bill)` route group folder and the bill branch in `proxy.ts`. Nothing else in the URL space is affected.
+- Removal becomes trivial: delete the `(bill)` route group folder and the bill branch in `src/middleware.ts`. Nothing else in the URL space is affected.
 
 ### 4.3 Password gate
 
@@ -367,7 +367,7 @@ When the tool is no longer needed:
 
 1. `rm -rf src/app/\(bill\)/ src/app/api/bill/ src/lib/bill/`
 2. New Prisma migration: `DROP TABLE quick_receipts; DROP TABLE quick_receipt_items;` and remove the two models from `schema.prisma`
-3. Revert the host-branch lines added to `proxy.ts`
+3. Revert the bill-host dispatch and the `/panel*`, `/r*`, `/api/bill/*` 404 guards added to `src/middleware.ts`
 4. Vercel:
    - Remove the `bill.bobosfarm.com` domain from the project
    - Delete `BILL_PASSWORD` and `BILL_SESSION_SECRET` env vars

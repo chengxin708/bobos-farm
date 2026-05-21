@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { isBillHost, handleBillSubdomain } from "@/lib/bill/middleware";
 
 /**
  * Edge-compatible middleware for route protection.
@@ -11,7 +12,26 @@ import { getToken } from "next-auth/jwt";
  * - bobos.farm → customer routes
  */
 export async function middleware(request: NextRequest) {
+  // ── Bill subdomain dispatch (must come first; bill has its own auth) ──
+  const billHost = request.headers.get("host") ?? "";
+  if (isBillHost(billHost)) {
+    return handleBillSubdomain(request);
+  }
+
   const { pathname } = request.nextUrl;
+
+  // Defense in depth: even though bill paths are intended for the bill
+  // subdomain, the (bill) route group is path-transparent. Without this
+  // guard the main domain would also serve /panel, /r/<token>, and the
+  // /api/bill/* endpoints, bypassing the password gate entirely.
+  if (
+    pathname === "/panel" || pathname.startsWith("/panel/") ||
+    pathname.startsWith("/api/bill/") ||
+    pathname === "/r" || pathname.startsWith("/r/")
+  ) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const hostname = request.headers.get("host") || "";
 
   // Detect admin subdomain (admin.bobos.farm or admin.localhost:3000)

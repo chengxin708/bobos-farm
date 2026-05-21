@@ -61,6 +61,7 @@ const KEY_TAB_MAP: Record<string, TabIndex> = {
   business_email: 0,
   business_phone: 0,
   business_address: 0,
+  tax_rate: 0,
   deposit_amount: 1,
   payment_timeout_hours: 1,
   max_advance_booking_days: 1,
@@ -552,6 +553,22 @@ export default function Settings() {
             placeholder="891 Albany Post Rd, New Paltz, NY 12561"
           />
           <p className="text-xs text-[#8C8478] mt-1">{t('general.businessAddressHelp')}</p>
+        </div>
+
+        {/* Tax Rate */}
+        <div className="mb-8">
+          <label className="text-sm font-semibold text-[#1A1208] block mb-1">{t('general.taxRate')}</label>
+          <input
+            type="number"
+            step="0.0001"
+            min="0"
+            max="1"
+            value={formValues.tax_rate ?? ''}
+            onChange={e => updateField('tax_rate', e.target.value)}
+            className={`${inputClass('tax_rate')} max-w-[8rem]`}
+            placeholder="0.08"
+          />
+          <p className="text-xs text-[#8C8478] mt-1">{t('general.taxRateHelp')}</p>
         </div>
 
         {/* Password Change Section */}

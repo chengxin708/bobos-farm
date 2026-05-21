@@ -57,6 +57,8 @@ const ALLOWED_SETTING_KEYS = [
   "inquiry_timeout_escalate_hours",
   "inquiry_auto_expire_days",
   "require_email_verification",
+  // Tax
+  "tax_rate",
 ] as const;
 
 // Accept any string keys, but only process allowed ones
