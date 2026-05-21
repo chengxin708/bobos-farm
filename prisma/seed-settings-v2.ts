@@ -97,6 +97,13 @@ const NEW_SETTINGS: NewSetting[] = [
     value: "true",
     description: "是否强制邮箱验证才能预订",
   },
+
+  // Tax
+  {
+    key: "tax_rate",
+    value: "0.08",
+    description: "Sales tax rate as a decimal (Ulster County, NY = 0.08)",
+  },
 ];
 
 async function main() {
