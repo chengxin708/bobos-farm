@@ -19,6 +19,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
+
+  // Block bill internal paths from main-domain access (defense in depth;
+  // the (bill) route group's underscore-free folder is technically routable).
+  if (pathname === "/panel" || pathname.startsWith("/panel/")) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const hostname = request.headers.get("host") || "";
 
   // Detect admin subdomain (admin.bobos.farm or admin.localhost:3000)

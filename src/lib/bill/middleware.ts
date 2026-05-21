@@ -17,19 +17,19 @@ export type BillPathClass =
 
 export function classifyBillPath(pathname: string): BillPathClass {
   // Direct external access to internal prefix is forbidden.
-  if (pathname === "/_bill" || pathname.startsWith("/_bill/")) {
+  if (pathname === "/panel" || pathname.startsWith("/panel/")) {
     return { kind: "forbidden" };
   }
   // Auth API and public receipt page.
   if (pathname === "/api/bill/auth") return { kind: "public" };
   if (pathname === "/r" || pathname.startsWith("/r/")) return { kind: "public" };
-  // Password screen: public, rewrites to internal /_bill.
-  if (pathname === "/") return { kind: "public", rewriteTo: "/_bill" };
-  // Authed admin pages — rewrite to internal /_bill prefix.
-  if (pathname === "/list") return { kind: "authed", rewriteTo: "/_bill/list" };
-  if (pathname === "/new") return { kind: "authed", rewriteTo: "/_bill/new" };
+  // Password screen: public, rewrites to internal /panel.
+  if (pathname === "/") return { kind: "public", rewriteTo: "/panel" };
+  // Authed admin pages — rewrite to internal /panel prefix.
+  if (pathname === "/list") return { kind: "authed", rewriteTo: "/panel/list" };
+  if (pathname === "/new") return { kind: "authed", rewriteTo: "/panel/new" };
   if (pathname.startsWith("/edit/")) {
-    return { kind: "authed", rewriteTo: `/_bill${pathname}` };
+    return { kind: "authed", rewriteTo: `/panel${pathname}` };
   }
   // Authed API — no rewrite needed.
   if (pathname.startsWith("/api/bill/")) return { kind: "authed" };

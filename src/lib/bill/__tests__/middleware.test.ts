@@ -19,15 +19,15 @@ describe("isBillHost", () => {
 
 describe("classifyBillPath", () => {
   it("public paths bypass auth", () => {
-    expect(classifyBillPath("/")).toEqual({ kind: "public", rewriteTo: "/_bill" });
+    expect(classifyBillPath("/")).toEqual({ kind: "public", rewriteTo: "/panel" });
     expect(classifyBillPath("/api/bill/auth")).toEqual({ kind: "public" });
     expect(classifyBillPath("/r/abc123")).toEqual({ kind: "public" });
   });
 
-  it("authed paths require session and rewrite to /_bill prefix", () => {
-    expect(classifyBillPath("/list")).toEqual({ kind: "authed", rewriteTo: "/_bill/list" });
-    expect(classifyBillPath("/new")).toEqual({ kind: "authed", rewriteTo: "/_bill/new" });
-    expect(classifyBillPath("/edit/abc")).toEqual({ kind: "authed", rewriteTo: "/_bill/edit/abc" });
+  it("authed paths require session and rewrite to /panel prefix", () => {
+    expect(classifyBillPath("/list")).toEqual({ kind: "authed", rewriteTo: "/panel/list" });
+    expect(classifyBillPath("/new")).toEqual({ kind: "authed", rewriteTo: "/panel/new" });
+    expect(classifyBillPath("/edit/abc")).toEqual({ kind: "authed", rewriteTo: "/panel/edit/abc" });
   });
 
   it("api/bill/receipts paths are authed without rewrite", () => {
@@ -35,9 +35,9 @@ describe("classifyBillPath", () => {
     expect(classifyBillPath("/api/bill/receipts/abc")).toEqual({ kind: "authed" });
   });
 
-  it("internal _bill prefix is forbidden", () => {
-    expect(classifyBillPath("/_bill")).toEqual({ kind: "forbidden" });
-    expect(classifyBillPath("/_bill/list")).toEqual({ kind: "forbidden" });
+  it("internal panel prefix is forbidden", () => {
+    expect(classifyBillPath("/panel")).toEqual({ kind: "forbidden" });
+    expect(classifyBillPath("/panel/list")).toEqual({ kind: "forbidden" });
   });
 
   it("unknown paths are forbidden", () => {
@@ -68,8 +68,8 @@ describe("handleBillSubdomain", () => {
     expect(res.status).toBe(404);
   });
 
-  it("404s direct access to /_bill", async () => {
-    const res = await handleBillSubdomain(makeReq("/_bill/list"));
+  it("404s direct access to /panel", async () => {
+    const res = await handleBillSubdomain(makeReq("/panel/list"));
     expect(res.status).toBe(404);
   });
 
@@ -85,12 +85,12 @@ describe("handleBillSubdomain", () => {
     expect(res.headers.get("location")).toContain("/");
   });
 
-  it("rewrites authed page paths to /_bill prefix when session valid", async () => {
+  it("rewrites authed page paths to /panel prefix when session valid", async () => {
     const cookie = signSession(newSessionExpiresAt());
     const res = await handleBillSubdomain(makeReq("/list", { cookie }));
     // Rewrite responses set x-middleware-rewrite header in Next.js
     const rewrite = res.headers.get("x-middleware-rewrite");
-    expect(rewrite).toContain("/_bill/list");
+    expect(rewrite).toContain("/panel/list");
   });
 
   it("passes through /api/bill/auth without a cookie", async () => {
@@ -100,8 +100,8 @@ describe("handleBillSubdomain", () => {
     expect(res.headers.get("x-middleware-next")).toBe("1");
   });
 
-  it("rewrites / to /_bill (public)", async () => {
+  it("rewrites / to /panel (public)", async () => {
     const res = await handleBillSubdomain(makeReq("/"));
-    expect(res.headers.get("x-middleware-rewrite")).toContain("/_bill");
+    expect(res.headers.get("x-middleware-rewrite")).toContain("/panel");
   });
 });
