@@ -20,9 +20,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Block bill internal paths from main-domain access (defense in depth;
-  // the (bill) route group's underscore-free folder is technically routable).
-  if (pathname === "/panel" || pathname.startsWith("/panel/")) {
+  // Defense in depth: even though bill paths are intended for the bill
+  // subdomain, the (bill) route group is path-transparent. Without this
+  // guard the main domain would also serve /panel, /r/<token>, and the
+  // /api/bill/* endpoints, bypassing the password gate entirely.
+  if (
+    pathname === "/panel" || pathname.startsWith("/panel/") ||
+    pathname.startsWith("/api/bill/") ||
+    pathname === "/r" || pathname.startsWith("/r/")
+  ) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
