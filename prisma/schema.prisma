@@ -484,7 +484,7 @@ model QuickReceipt {
   customerName  String
   customerPhone String?
   notes         String?
-  taxRate       Float
+  taxRate       Float    // Snapshot rate (e.g. 0.08); IEEE-754 — kept as `number` for computeTotals.
   subtotalCents Int
   discountCents Int      @default(0)
   taxCents      Int
@@ -494,20 +494,19 @@ model QuickReceipt {
   items         QuickReceiptItem[]
 
   @@index([createdAt])
-  @@index([token])
   @@map("quick_receipts")
 }
 
 model QuickReceiptItem {
   id         String   @id @default(cuid())
   receiptId  String
+  receipt    QuickReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   menuItemId String?
   nameEnSnap String
   nameZhSnap String?
   priceCents Int
   quantity   Int
   sortOrder  Int      @default(0)
-  receipt    QuickReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
 
   @@index([receiptId])
   @@map("quick_receipt_items")
