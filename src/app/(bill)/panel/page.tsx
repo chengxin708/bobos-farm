@@ -5,7 +5,7 @@ import PasswordForm from "./PasswordForm";
 
 export default async function BillEntryPage() {
   const c = await cookies();
-  const session = verifySession(c.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifySession(c.get(SESSION_COOKIE_NAME)?.value);
   if (session.ok) redirect("/list");
   return (
     <div className="max-w-sm mx-auto px-4 py-16">

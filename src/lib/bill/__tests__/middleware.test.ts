@@ -86,7 +86,7 @@ describe("handleBillSubdomain", () => {
   });
 
   it("rewrites authed page paths to /panel prefix when session valid", async () => {
-    const cookie = signSession(newSessionExpiresAt());
+    const cookie = await signSession(newSessionExpiresAt());
     const res = await handleBillSubdomain(makeReq("/list", { cookie }));
     // Rewrite responses set x-middleware-rewrite header in Next.js
     const rewrite = res.headers.get("x-middleware-rewrite");

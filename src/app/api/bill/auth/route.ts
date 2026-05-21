@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   }
 
   const expiresAt = newSessionExpiresAt();
-  const cookieValue = signSession(expiresAt);
+  const cookieValue = await signSession(expiresAt);
   const res = NextResponse.json({ ok: true });
   res.cookies.set({
     name: SESSION_COOKIE_NAME,

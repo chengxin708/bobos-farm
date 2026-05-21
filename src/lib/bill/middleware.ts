@@ -38,7 +38,7 @@ export function classifyBillPath(pathname: string): BillPathClass {
   return { kind: "forbidden" };
 }
 
-export function handleBillSubdomain(req: NextRequest): NextResponse {
+export async function handleBillSubdomain(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
   const cls = classifyBillPath(pathname);
 
@@ -48,7 +48,7 @@ export function handleBillSubdomain(req: NextRequest): NextResponse {
 
   if (cls.kind === "authed") {
     const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-    const { ok } = verifySession(cookie);
+    const { ok } = await verifySession(cookie);
     if (!ok) {
       // For API, return 401; for pages, redirect to /.
       if (pathname.startsWith("/api/bill/")) {
