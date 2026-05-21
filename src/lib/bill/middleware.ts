@@ -33,6 +33,8 @@ export function classifyBillPath(pathname: string): BillPathClass {
   }
   // Authed API — no rewrite needed.
   if (pathname.startsWith("/api/bill/")) return { kind: "authed" };
+  // Read-only menu endpoint needed by the menu picker on the bill subdomain.
+  if (pathname === "/api/menu/items") return { kind: "authed" };
   return { kind: "forbidden" };
 }
 

@@ -44,6 +44,10 @@ describe("classifyBillPath", () => {
     expect(classifyBillPath("/admin")).toEqual({ kind: "forbidden" });
     expect(classifyBillPath("/menu")).toEqual({ kind: "forbidden" });
   });
+
+  it("allows /api/menu/items as authed read", () => {
+    expect(classifyBillPath("/api/menu/items")).toEqual({ kind: "authed" });
+  });
 });
 
 function makeReq(path: string, opts: { cookie?: string } = {}): NextRequest {
