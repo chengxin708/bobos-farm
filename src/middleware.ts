@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { isBillHost, handleBillSubdomain } from "@/lib/bill/middleware";
 
 /**
  * Edge-compatible middleware for route protection.
@@ -11,6 +12,12 @@ import { getToken } from "next-auth/jwt";
  * - bobos.farm → customer routes
  */
 export async function middleware(request: NextRequest) {
+  // ── Bill subdomain dispatch (must come first; bill has its own auth) ──
+  const billHost = request.headers.get("host") ?? "";
+  if (isBillHost(billHost)) {
+    return handleBillSubdomain(request);
+  }
+
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") || "";
 

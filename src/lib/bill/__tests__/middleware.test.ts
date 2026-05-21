@@ -1,4 +1,6 @@
-import { classifyBillPath, isBillHost } from "../middleware";
+import { classifyBillPath, isBillHost, handleBillSubdomain } from "../middleware";
+import { NextRequest } from "next/server";
+import { signSession, newSessionExpiresAt, SESSION_COOKIE_NAME } from "../session";
 
 describe("isBillHost", () => {
   it("matches production host", () => {
@@ -41,5 +43,61 @@ describe("classifyBillPath", () => {
   it("unknown paths are forbidden", () => {
     expect(classifyBillPath("/admin")).toEqual({ kind: "forbidden" });
     expect(classifyBillPath("/menu")).toEqual({ kind: "forbidden" });
+  });
+});
+
+function makeReq(path: string, opts: { cookie?: string } = {}): NextRequest {
+  const req = new NextRequest(new URL(`http://bill.localhost:3000${path}`));
+  if (opts.cookie) {
+    req.cookies.set(SESSION_COOKIE_NAME, opts.cookie);
+  }
+  return req;
+}
+
+describe("handleBillSubdomain", () => {
+  beforeEach(() => {
+    process.env.BILL_SESSION_SECRET = "test-secret-for-middleware-tests";
+  });
+
+  it("404s forbidden paths", async () => {
+    const res = await handleBillSubdomain(makeReq("/admin"));
+    expect(res.status).toBe(404);
+  });
+
+  it("404s direct access to /_bill", async () => {
+    const res = await handleBillSubdomain(makeReq("/_bill/list"));
+    expect(res.status).toBe(404);
+  });
+
+  it("401 JSON for unauthenticated API paths", async () => {
+    const res = await handleBillSubdomain(makeReq("/api/bill/receipts"));
+    expect(res.status).toBe(401);
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
+  });
+
+  it("redirects unauthenticated page paths to /", async () => {
+    const res = await handleBillSubdomain(makeReq("/list"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/");
+  });
+
+  it("rewrites authed page paths to /_bill prefix when session valid", async () => {
+    const cookie = signSession(newSessionExpiresAt());
+    const res = await handleBillSubdomain(makeReq("/list", { cookie }));
+    // Rewrite responses set x-middleware-rewrite header in Next.js
+    const rewrite = res.headers.get("x-middleware-rewrite");
+    expect(rewrite).toContain("/_bill/list");
+  });
+
+  it("passes through /api/bill/auth without a cookie", async () => {
+    const res = await handleBillSubdomain(makeReq("/api/bill/auth"));
+    // Public path, no rewrite → next()
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("rewrites / to /_bill (public)", async () => {
+    const res = await handleBillSubdomain(makeReq("/"));
+    expect(res.headers.get("x-middleware-rewrite")).toContain("/_bill");
   });
 });

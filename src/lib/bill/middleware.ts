@@ -36,7 +36,7 @@ export function classifyBillPath(pathname: string): BillPathClass {
   return { kind: "forbidden" };
 }
 
-export async function handleBillSubdomain(req: NextRequest): Promise<NextResponse> {
+export function handleBillSubdomain(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
   const cls = classifyBillPath(pathname);
 
@@ -50,10 +50,7 @@ export async function handleBillSubdomain(req: NextRequest): Promise<NextRespons
     if (!ok) {
       // For API, return 401; for pages, redirect to /.
       if (pathname.startsWith("/api/bill/")) {
-        return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { "content-type": "application/json" },
-        });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       return NextResponse.redirect(new URL("/", req.url));
     }
