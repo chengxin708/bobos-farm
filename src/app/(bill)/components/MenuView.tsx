@@ -11,7 +11,16 @@ export interface MenuItemLite {
   nameEn: string;
   nameZh: string | null;
   price: number;
+  imageUrl: string | null;
   category: { id: string; nameEn: string; nameZh: string | null } | null;
+}
+
+function resolveImageUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  if (raw.startsWith("http")) return raw;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return null;
+  return `${base}/storage/v1/object/public/menu-images/${raw}`;
 }
 
 interface CartItem {
@@ -300,14 +309,28 @@ function ItemCard({
         </p>
       </div>
       <div className="relative shrink-0">
-        {item.nameEn /* placeholder: no imageUrl on MenuItemLite */ ? (
-          <div
-            className="rounded-xl bg-[#F7F4EE] flex items-center justify-center"
-            style={{ width: 72, height: 72 }}
-          >
-            <UtensilsCrossed className="w-5 h-5 text-[#8C8478]/30" />
-          </div>
-        ) : null}
+        {(() => {
+          const url = resolveImageUrl(item.imageUrl);
+          return url ? (
+            <img
+              src={url}
+              alt=""
+              className="rounded-xl object-cover bg-[#F7F4EE]"
+              style={{ width: 72, height: 72 }}
+              loading="lazy"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <div
+              className="rounded-xl bg-[#F7F4EE] flex items-center justify-center"
+              style={{ width: 72, height: 72 }}
+            >
+              <UtensilsCrossed className="w-5 h-5 text-[#8C8478]/30" />
+            </div>
+          );
+        })()}
         {/* qty badge */}
         {qty > 0 && (
           <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#6B7F5E] text-white text-[11px] font-bold flex items-center justify-center z-10">
