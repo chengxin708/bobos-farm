@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { centsToDollarString } from "@/lib/bill/totals";
-import TipBlock from "./TipBlock";
+
+const TIP_PERCENTAGES = [0.10, 0.15, 0.20] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,8 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
 
   const itemName = (en: string, zh: string | null) => (lang === "zh" ? (zh ?? en) : en);
   const t = lang === "zh"
-    ? { subtotal: "小计", discount: "折扣", tax: "税", total: "总计", tip: "建议小费", grand: "含小费合计", langSwitch: "EN", title: "Bobo's Farm" }
-    : { subtotal: "Subtotal", discount: "Discount", tax: "Tax", total: "Total", tip: "Suggested tip", grand: "Total with tip", langSwitch: "中", title: "Bobo's Farm" };
+    ? { subtotal: "小计", discount: "折扣", tax: "税", total: "总计", langSwitch: "EN", title: "Bobo's Farm" }
+    : { subtotal: "Subtotal", discount: "Discount", tax: "Tax", total: "Total", langSwitch: "中", title: "Bobo's Farm" };
 
   return (
     <main className="max-w-md mx-auto px-5 py-8">
@@ -66,7 +67,17 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
         </div>
       </div>
 
-      <TipBlock totalCents={receipt.totalCents} subtotalCents={receipt.subtotalCents} labels={{ tip: t.tip, grand: t.grand }} />
+      <div className="bg-[#FCFAF5] border border-[#E8ECE4] rounded-lg p-4">
+        <div className="text-xs text-[#8C8478] mb-2">Suggested tips</div>
+        <div className="space-y-1 text-sm">
+          {TIP_PERCENTAGES.map((pct) => (
+            <div key={pct} className="flex justify-between">
+              <span>{Math.round(pct * 100)}%</span>
+              <span className="tabular-nums">${centsToDollarString(Math.round(receipt.subtotalCents * pct))}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {receipt.notes && (
         <div className="mt-6 text-xs text-[#8C8478] whitespace-pre-wrap">{receipt.notes}</div>
