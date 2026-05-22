@@ -248,6 +248,39 @@
    Utilities
    ============================================================ */
 html { scroll-behavior: smooth; }
+
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Press / tap effect */
+.press-effect {
+  transition: transform 0.1s ease;
+}
+.press-effect:active {
+  transform: scale(0.97);
+}
+
+/* Card shadow utilities */
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.shadow-card-hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.shadow-float {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Safe area for bottom fixed elements on iPhone */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
 :focus-visible {
   outline: 2px solid #6B7F5E;
   outline-offset: 2px;
