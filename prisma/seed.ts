@@ -86,231 +86,110 @@ async function main() {
   ]);
   console.log("Rooms created:", yurts.map((y) => `${y.name}(${y.alias}) ${y.capacity}`).join(", "));
 
-  // Create menu categories
-  const categories = await Promise.all([
-    prisma.menuCategory.upsert({
-      where: { id: "cat-whole-lamb" },
-      update: {},
-      create: {
-        id: "cat-whole-lamb",
-        nameEn: "Whole Lamb",
-        nameZh: "烤全羊",
-        sortOrder: 1,
-      },
-    }),
-    prisma.menuCategory.upsert({
-      where: { id: "cat-signature" },
-      update: {},
-      create: {
-        id: "cat-signature",
-        nameEn: "Signature Dishes",
-        nameZh: "招牌菜",
-        sortOrder: 2,
-      },
-    }),
-    prisma.menuCategory.upsert({
-      where: { id: "cat-iron-pot" },
-      update: {},
-      create: {
-        id: "cat-iron-pot",
-        nameEn: "Iron Pot Stews",
-        nameZh: "铁锅炖",
-        sortOrder: 3,
-      },
-    }),
-    prisma.menuCategory.upsert({
-      where: { id: "cat-cold" },
-      update: {},
-      create: {
-        id: "cat-cold",
-        nameEn: "Cold Dishes",
-        nameZh: "凉菜",
-        sortOrder: 4,
-      },
-    }),
-    prisma.menuCategory.upsert({
-      where: { id: "cat-staples" },
-      update: {},
-      create: {
-        id: "cat-staples",
-        nameEn: "Staples",
-        nameZh: "主食",
-        sortOrder: 5,
-      },
-    }),
-    prisma.menuCategory.upsert({
-      where: { id: "cat-beverages" },
-      update: {},
-      create: {
-        id: "cat-beverages",
-        nameEn: "Beverages",
-        nameZh: "饮品",
-        sortOrder: 6,
-      },
-    }),
-  ]);
-  console.log(
-    "Menu categories created:",
-    categories.map((c) => c.nameEn).join(", ")
-  );
+  // ── Menu (real Bo Farm menu — Authentic Northeast Chinese / Dongbei) ──
+  // Source of truth: Bo Farm Menu.docx (5 categories, 34 dishes).
+  // Recovered 2026-05-21 after a Supabase schema reset wiped manually-added
+  // items; this section is now authoritative — edits should be made HERE
+  // and synced to DB via `npm run db:seed`.
+  //
+  // Image strategy: only items whose photos still live in Supabase storage
+  // (bucket `menu-images/menu/*.webp`) have an imageUrl. Others render the
+  // placeholder cutlery icon in the bill subdomain UI. Add more by uploading
+  // via `scripts/upload-dish.ts` and writing the path here.
 
-  // Create menu items
-  const menuItems = await Promise.all([
-    prisma.menuItem.upsert({
-      where: { id: "item-roasted-whole-lamb" },
-      update: {},
-      create: {
-        id: "item-roasted-whole-lamb",
-        categoryId: "cat-whole-lamb",
-        nameEn: "Roasted Whole Lamb",
-        nameZh: "烤全羊",
-        price: 880,
-        descriptionEn:
-          "Slow-roasted whole lamb with traditional Mongolian spices, serves 8-15",
-        tags: ["Signature", "Pre-order"],
-        advanceDaysRequired: 3,
-        sortOrder: 1,
-        imageUrl:
-          "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-half-lamb" },
-      update: {},
-      create: {
-        id: "item-half-lamb",
-        categoryId: "cat-whole-lamb",
-        nameEn: "Half Lamb Roast",
-        nameZh: "烤半只羊",
-        price: 480,
-        descriptionEn:
-          "Half portion of our signature roasted lamb, perfect for groups of 4-8",
-        tags: ["Signature"],
-        advanceDaysRequired: 2,
-        sortOrder: 2,
-        imageUrl:
-          "https://images.unsplash.com/photo-1529694157872-4e0c0f3b238b?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-lamb-rack" },
-      update: {},
-      create: {
-        id: "item-lamb-rack",
-        categoryId: "cat-whole-lamb",
-        nameEn: "Lamb Rack",
-        nameZh: "羊排",
-        price: 48,
-        descriptionEn: "Grilled rack of lamb with cumin and chili flakes",
-        tags: ["Spicy"],
-        sortOrder: 3,
-        imageUrl:
-          "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-iron-pot-lamb" },
-      update: {},
-      create: {
-        id: "item-iron-pot-lamb",
-        categoryId: "cat-signature",
-        nameEn: "Iron Pot Lamb Stew",
-        nameZh: "铁锅炖羊肉",
-        price: 65,
-        descriptionEn:
-          "Hearty iron pot lamb stew with glass noodles, tofu, and fresh vegetables",
-        tags: ["Popular"],
-        sortOrder: 1,
-        imageUrl:
-          "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-big-plate-chicken" },
-      update: {},
-      create: {
-        id: "item-big-plate-chicken",
-        categoryId: "cat-signature",
-        nameEn: "Big Plate Chicken",
-        nameZh: "大盘鸡",
-        price: 38,
-        descriptionEn:
-          "Spicy braised chicken with potatoes and hand-pulled noodles",
-        tags: ["Spicy"],
-        sortOrder: 2,
-        imageUrl:
-          "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-cold-noodles" },
-      update: {},
-      create: {
-        id: "item-cold-noodles",
-        categoryId: "cat-signature",
-        nameEn: "Cold Sesame Noodles",
-        nameZh: "凉面",
-        price: 16,
-        descriptionEn:
-          "Chilled noodles with sesame paste, cucumber, and spicy chili oil",
-        tags: ["Cold"],
-        sortOrder: 3,
-        imageUrl:
-          "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-lamb-dumplings" },
-      update: {},
-      create: {
-        id: "item-lamb-dumplings",
-        categoryId: "cat-staples",
-        nameEn: "Lamb Dumplings",
-        nameZh: "羊肉饺子",
-        price: 18,
-        descriptionEn:
-          "Hand-made dumplings filled with lamb, scallion, and ginger",
-        tags: ["Homemade"],
-        sortOrder: 1,
-        imageUrl:
-          "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-scallion-pancakes" },
-      update: {},
-      create: {
-        id: "item-scallion-pancakes",
-        categoryId: "cat-staples",
-        nameEn: "Scallion Pancakes",
-        nameZh: "葱油饼",
-        price: 12,
-        descriptionEn: "Crispy pan-fried scallion pancakes",
-        tags: ["Homemade"],
-        sortOrder: 2,
-        imageUrl:
-          "https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400&q=80",
-      },
-    }),
-    prisma.menuItem.upsert({
-      where: { id: "item-plum-juice" },
-      update: {},
-      create: {
-        id: "item-plum-juice",
-        categoryId: "cat-beverages",
-        nameEn: "House Plum Juice",
-        nameZh: "酸梅汤",
-        price: 8,
-        descriptionEn:
-          "Traditional Chinese sour plum drink, refreshing and sweet",
-        tags: ["Drink"],
-        sortOrder: 1,
-        imageUrl:
-          "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80",
-      },
-    }),
+  const supabaseBase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const dishImg = (name: string) =>
+    supabaseBase
+      ? `${supabaseBase}/storage/v1/object/public/menu-images/menu/${name}.webp`
+      : null;
+
+  // Wipe placeholder data so a re-seed produces exactly the real menu.
+  // (Bill subdomain's QuickReceiptItem snapshots names+prices, so it's
+  // unaffected by menu_items deletes — its menuItemId column is nullable
+  // with no FK.)
+  await prisma.menuItem.deleteMany();
+  await prisma.menuCategory.deleteMany();
+
+  // Categories (sortOrder controls sidebar order in bill subdomain UI)
+  const cats = await Promise.all([
+    prisma.menuCategory.create({ data: { id: "cat-main", nameEn: "Main Course", nameZh: "主菜", sortOrder: 1 } }),
+    prisma.menuCategory.create({ data: { id: "cat-stew", nameEn: "Traditional Stew Dishes", nameZh: "铁锅炖", sortOrder: 2 } }),
+    prisma.menuCategory.create({ data: { id: "cat-stirfry", nameEn: "Stir Fried Courses", nameZh: "热菜", sortOrder: 3 } }),
+    prisma.menuCategory.create({ data: { id: "cat-cold", nameEn: "Variety Tasty Salads", nameZh: "凉菜", sortOrder: 4 } }),
+    prisma.menuCategory.create({ data: { id: "cat-staples", nameEn: "Staples", nameZh: "主食", sortOrder: 5 } }),
   ]);
-  console.log("Menu items created:", menuItems.length);
+  console.log("Menu categories created:", cats.map((c) => `${c.nameEn} (${c.nameZh})`).join(", "));
+
+  // Items. EN names preserved verbatim from the docx (typos and all) at the
+  // user's request; ZH normalised to Simplified Chinese for project consistency.
+  type ItemSeed = {
+    categoryId: string;
+    nameEn: string;
+    nameZh: string;
+    price: number;
+    image?: string;
+    sortOrder: number;
+  };
+  const items: ItemSeed[] = [
+    // ── Main Course (主菜) ──
+    { categoryId: "cat-main", nameEn: "Authentic Chinese Roasted Whole Lamb", nameZh: "烤全羊", price: 880, image: "roast-whole-lamb", sortOrder: 1 },
+
+    // ── Traditional Stew Dishes (铁锅炖) ──
+    { categoryId: "cat-stew", nameEn: "Goose Stew in cast iron wok", nameZh: "铁锅炖大鹅", price: 158, image: "goose-stew", sortOrder: 1 },
+    { categoryId: "cat-stew", nameEn: "Fish stew in cast iron pot", nameZh: "铁锅德莫利炖鱼", price: 88, image: "fish-stew-demoli", sortOrder: 2 },
+    { categoryId: "cat-stew", nameEn: "Chicken and mushroom stew", nameZh: "小鸡炖磨菇", price: 118, sortOrder: 3 },
+    { categoryId: "cat-stew", nameEn: "Beer Duck stew", nameZh: "铁锅炖啤酒鸭", price: 128, sortOrder: 4 },
+    { categoryId: "cat-stew", nameEn: "Pork Ribs and Green Beans stew", nameZh: "铁锅排骨炖豆角", price: 88, sortOrder: 5 },
+    { categoryId: "cat-stew", nameEn: "Pork Ribs and Sauerkraut stew", nameZh: "铁锅排骨炖酸菜", price: 88, sortOrder: 6 },
+    { categoryId: "cat-stew", nameEn: "Sauerkraut stew with pork belly & vermicelli noodles", nameZh: "汆白肉", price: 88, sortOrder: 7 },
+
+    // ── Stir Fried Courses (热菜) ──
+    { categoryId: "cat-stirfry", nameEn: "Stir Fried Sichuan Bacon", nameZh: "四川炒腊肉", price: 48, sortOrder: 1 },
+    { categoryId: "cat-stirfry", nameEn: "Stir fried Tofu skin with hot pepper", nameZh: "尖椒干豆腐", price: 28, sortOrder: 2 },
+    { categoryId: "cat-stirfry", nameEn: "Spicy stir fried cabbage", nameZh: "手撕包菜", price: 28, sortOrder: 3 },
+    { categoryId: "cat-stirfry", nameEn: "Stir fried Sauerkraut and Clear Noodle", nameZh: "渍菜粉", price: 28, sortOrder: 4 },
+    { categoryId: "cat-stirfry", nameEn: "Spicy and sour shredded potato", nameZh: "酸辣土豆丝", price: 28, sortOrder: 5 },
+    { categoryId: "cat-stirfry", nameEn: "Organic and fresh omelet", nameZh: "笨蛋炒大葱", price: 28, sortOrder: 6 },
+    { categoryId: "cat-stirfry", nameEn: "Sweet n sour pork Dongbei style", nameZh: "锅包肉", price: 48, sortOrder: 7 },
+    { categoryId: "cat-stirfry", nameEn: "Chives and Egg", nameZh: "韭菜炒蛋", price: 28, sortOrder: 8 },
+    { categoryId: "cat-stirfry", nameEn: "Spring Chives and eggs Stir fry", nameZh: "韭黄炒蛋", price: 28, sortOrder: 9 },
+    { categoryId: "cat-stirfry", nameEn: "Stir-fried Eggs with Chinese toona", nameZh: "香椿炒蛋", price: 28, sortOrder: 10 },
+    { categoryId: "cat-stirfry", nameEn: "Stir-fried pickled long beans with minced pork", nameZh: "酸豆角肉末", price: 28, sortOrder: 11 },
+
+    // ── Variety Tasty Salads (凉菜) ──
+    { categoryId: "cat-cold", nameEn: "Cucumber salad", nameZh: "凉拌黄瓜", price: 28, sortOrder: 1 },
+    { categoryId: "cat-cold", nameEn: "Dried bean curd stick salad", nameZh: "凉拌腐竹", price: 28, sortOrder: 2 },
+    { categoryId: "cat-cold", nameEn: "Special fungus salad", nameZh: "凉拌木耳", price: 28, sortOrder: 3 },
+    { categoryId: "cat-cold", nameEn: "Mixed veggie salad", nameZh: "家常凉菜", price: 28, sortOrder: 4 },
+    { categoryId: "cat-cold", nameEn: "Cold cut Beef in special Sause", nameZh: "凉拌牛肉", price: 38, sortOrder: 5 },
+    { categoryId: "cat-cold", nameEn: "Shredded Pig's ear in hot sauce", nameZh: "红油耳丝", price: 38, sortOrder: 6 },
+    { categoryId: "cat-cold", nameEn: "Tofu Salad with scallion", nameZh: "小葱拌豆腐", price: 28, sortOrder: 7 },
+    { categoryId: "cat-cold", nameEn: "Thousand-year Egg and Tofu salad", nameZh: "皮蛋豆腐", price: 28, sortOrder: 8 },
+    { categoryId: "cat-cold", nameEn: "Cilantro & pepper salad", nameZh: "老虎菜", price: 28, sortOrder: 9 },
+    { categoryId: "cat-cold", nameEn: "Northeast Jelly Noodle salad", nameZh: "东北大拉皮", price: 28, sortOrder: 10 },
+    { categoryId: "cat-cold", nameEn: "Spicy Cabbage and Scallop Potato", nameZh: "辣白菜土豆片", price: 28, sortOrder: 11 },
+    { categoryId: "cat-cold", nameEn: "Shredded potato salad", nameZh: "凉拌土豆丝", price: 28, sortOrder: 12 },
+    { categoryId: "cat-cold", nameEn: "Mixed veggie salad with Dipping sauce", nameZh: "沾酱菜", price: 28, sortOrder: 13 },
+
+    // ── Staples (主食) ──
+    { categoryId: "cat-staples", nameEn: "Fried Rice", nameZh: "炒饭", price: 28, sortOrder: 1 },
+    { categoryId: "cat-staples", nameEn: "Fried Noodle", nameZh: "炒面", price: 28, sortOrder: 2 },
+  ];
+
+  for (const it of items) {
+    await prisma.menuItem.create({
+      data: {
+        categoryId: it.categoryId,
+        nameEn: it.nameEn,
+        nameZh: it.nameZh,
+        price: it.price,
+        imageUrl: it.image ? dishImg(it.image) : null,
+        isActive: true,
+        sortOrder: it.sortOrder,
+      },
+    });
+  }
+  console.log("Menu items created:", items.length);
 
   // Create default system settings
   const settings = [
