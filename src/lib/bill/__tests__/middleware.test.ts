@@ -4,15 +4,16 @@ import { signSession, newSessionExpiresAt, SESSION_COOKIE_NAME } from "../sessio
 
 describe("isBillHost", () => {
   it("matches production host", () => {
-    expect(isBillHost("bill.bobosfarm.com")).toBe(true);
+    expect(isBillHost("bill.bobos.farm")).toBe(true);
   });
   it("matches localhost variants", () => {
     expect(isBillHost("bill.localhost:3000")).toBe(true);
     expect(isBillHost("bill.localhost")).toBe(true);
   });
-  it("does not match main host", () => {
-    expect(isBillHost("bobosfarm.com")).toBe(false);
-    expect(isBillHost("www.bobosfarm.com")).toBe(false);
+  it("does not match main host or unrelated domains", () => {
+    expect(isBillHost("bobos.farm")).toBe(false);
+    expect(isBillHost("www.bobos.farm")).toBe(false);
+    expect(isBillHost("bill.bobosfarm.com")).toBe(false);
     expect(isBillHost("")).toBe(false);
   });
 });

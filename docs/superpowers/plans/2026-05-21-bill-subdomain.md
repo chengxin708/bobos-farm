@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a throwaway admin tool on `bill.bobosfarm.com` for picking menu items, computing totals with NY tax, saving receipts to a public token URL, and sharing via `sms:` link.
+**Goal:** Build a throwaway admin tool on `bill.bobos.farm` for picking menu items, computing totals with NY tax, saving receipts to a public token URL, and sharing via `sms:` link.
 
 **Architecture:** All code isolated under `src/app/(bill)/`, `src/app/api/bill/`, `src/lib/bill/`. Two new Prisma tables (`quick_receipts`, `quick_receipt_items`). Subdomain dispatched in `proxy.ts` via host check + path rewrite to internal `/_bill/...` paths. Password-only gate, signed httpOnly cookie session.
 
@@ -666,15 +666,15 @@ import { classifyBillPath, isBillHost } from "../middleware";
 
 describe("isBillHost", () => {
   it("matches production host", () => {
-    expect(isBillHost("bill.bobosfarm.com")).toBe(true);
+    expect(isBillHost("bill.bobos.farm")).toBe(true);
   });
   it("matches localhost variants", () => {
     expect(isBillHost("bill.localhost:3000")).toBe(true);
     expect(isBillHost("bill.localhost")).toBe(true);
   });
   it("does not match main host", () => {
-    expect(isBillHost("bobosfarm.com")).toBe(false);
-    expect(isBillHost("www.bobosfarm.com")).toBe(false);
+    expect(isBillHost("bobos.farm")).toBe(false);
+    expect(isBillHost("www.bobos.farm")).toBe(false);
     expect(isBillHost("")).toBe(false);
   });
 });
@@ -722,7 +722,7 @@ Create `src/lib/bill/middleware.ts`:
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, SESSION_COOKIE_NAME } from "./session";
 
-const BILL_HOSTS = new Set(["bill.bobosfarm.com"]);
+const BILL_HOSTS = new Set(["bill.bobos.farm"]);
 
 export function isBillHost(host: string): boolean {
   if (!host) return false;
@@ -2302,6 +2302,6 @@ rm -rf src/app/\(bill\)/ src/app/api/bill/ src/lib/bill/
 # 4. Optionally remove the tax_rate setting (the field on /admin/settings can stay
 #    as a passive setting if other features ever use it)
 
-# 5. Vercel: remove bill.bobosfarm.com domain, BILL_PASSWORD, BILL_SESSION_SECRET env vars
+# 5. Vercel: remove bill.bobos.farm domain, BILL_PASSWORD, BILL_SESSION_SECRET env vars
 # 6. DNS: remove CNAME for bill.*
 ```

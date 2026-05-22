@@ -20,7 +20,7 @@ The tool is explicitly **temporary** — the design must allow a clean, low-fric
 
 **In scope**
 
-- New subdomain `bill.bobosfarm.com` with shared-password gate
+- New subdomain `bill.bobos.farm` with shared-password gate
 - Admin pages: history list, new receipt, edit receipt
 - Public receipt page at `/r/<token>` (no auth)
 - `sms:` URI-based share (no SMS gateway)
@@ -39,7 +39,7 @@ The tool is explicitly **temporary** — the design must allow a clean, low-fric
 
 | Decision | Value |
 | --- | --- |
-| Subdomain | `bill.bobosfarm.com` |
+| Subdomain | `bill.bobos.farm` |
 | Entry gate | Single shared password (env var `BILL_PASSWORD`, default `888888`) |
 | Session | httpOnly signed cookie, 7-day TTL |
 | Item source | Existing `MenuItem` table (read-only), **snapshotted** into receipt rows |
@@ -66,7 +66,7 @@ prisma/migrations/…_bill/  ← schema changes for the two new tables
 
 External edits:
 
-- `src/middleware.ts` — add `host === 'bill.bobosfarm.com'` branch at the top
+- `src/middleware.ts` — add `host === 'bill.bobos.farm'` branch at the top
 - `prisma/schema.prisma` — add `QuickReceipt` + `QuickReceiptItem` models
 - `prisma/seed-settings-v2.ts` — add `tax_rate` setting
 - `src/app/(admin)/admin/settings/page.tsx` — add tax-rate input
@@ -76,7 +76,7 @@ Removal path (Section 12) is then trivial.
 
 ### 4.2 Subdomain routing
 
-DNS: `bill.bobosfarm.com  CNAME  cname.vercel-dns.com`. Add the domain to the same Vercel project (no separate project — same Next.js app serves both hosts).
+DNS: `bill.bobos.farm  CNAME  cname.vercel-dns.com`. Add the domain to the same Vercel project (no separate project — same Next.js app serves both hosts).
 
 **File structure** — bill UI lives under an internal `/_bill/...` prefix so it cannot collide with main-domain routes:
 
@@ -93,7 +93,7 @@ src/app/(bill)/r/[token]/page.tsx          ← public receipt (NOT under /_bill,
 
 ```ts
 const host = req.headers.get('host') ?? '';
-const isBillHost = host === 'bill.bobosfarm.com' || host.startsWith('bill.localhost');
+const isBillHost = host === 'bill.bobos.farm' || host.startsWith('bill.localhost');
 
 if (isBillHost) {
   return handleBillSubdomain(req);  // see src/lib/bill/middleware.ts
@@ -113,8 +113,8 @@ It does **not** consult NextAuth (`getToken`) — bill subdomain has its own aut
 
 **Why this works:**
 
-- Main domain (`bobosfarm.com`) never matches `/_bill/...` because the middleware on that host doesn't rewrite anything to it, and direct access is blocked.
-- The public `/r/<token>` page lives outside `_bill` so it can theoretically be served on either host. The middleware on the main host could also serve it (we don't actively block) — but the canonical shared link is on `bill.bobosfarm.com/r/<token>` so this isn't a concern.
+- Main domain (`bobos.farm`) never matches `/_bill/...` because the middleware on that host doesn't rewrite anything to it, and direct access is blocked.
+- The public `/r/<token>` page lives outside `_bill` so it can theoretically be served on either host. The middleware on the main host could also serve it (we don't actively block) — but the canonical shared link is on `bill.bobos.farm/r/<token>` so this isn't a concern.
 - Removal becomes trivial: delete the `(bill)` route group folder and the bill branch in `src/middleware.ts`. Nothing else in the URL space is affected.
 
 ### 4.3 Password gate
@@ -369,7 +369,7 @@ When the tool is no longer needed:
 2. New Prisma migration: `DROP TABLE quick_receipts; DROP TABLE quick_receipt_items;` and remove the two models from `schema.prisma`
 3. Revert the bill-host dispatch and the `/panel*`, `/r*`, `/api/bill/*` 404 guards added to `src/middleware.ts`
 4. Vercel:
-   - Remove the `bill.bobosfarm.com` domain from the project
+   - Remove the `bill.bobos.farm` domain from the project
    - Delete `BILL_PASSWORD` and `BILL_SESSION_SECRET` env vars
 5. DNS: remove the CNAME record for `bill.*`
 6. Optionally keep the `tax_rate` SystemSetting and the settings-page field — they may be reused

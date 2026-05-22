@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession, SESSION_COOKIE_NAME } from "./session";
 
-const BILL_HOSTS = new Set(["bill.bobosfarm.com"]);
+const BILL_HOSTS = new Set(["bill.bobos.farm"]);
 
 export function isBillHost(host: string): boolean {
   if (!host) return false;
