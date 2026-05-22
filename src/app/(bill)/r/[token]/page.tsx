@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { centsToDollarString } from "@/lib/bill/totals";
 
-const TIP_PERCENTAGES = [0.10, 0.15, 0.20] as const;
+const TIP_PERCENTAGES = [0.15, 0.18, 0.20] as const;
 
 export const dynamic = "force-dynamic";
 
