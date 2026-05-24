@@ -155,6 +155,7 @@ async function main() {
     { categoryId: "cat-stirfry", nameEn: "Spring Chives and eggs Stir fry", nameZh: "韭黄炒蛋", price: 28, sortOrder: 9 },
     { categoryId: "cat-stirfry", nameEn: "Stir-fried Eggs with Chinese toona", nameZh: "香椿炒蛋", price: 28, sortOrder: 10 },
     { categoryId: "cat-stirfry", nameEn: "Stir-fried pickled long beans with minced pork", nameZh: "酸豆角肉末", price: 28, sortOrder: 11 },
+    { categoryId: "cat-stirfry", nameEn: "Spicy Cabbage and Scallop Potato", nameZh: "辣白菜土豆片", price: 28, sortOrder: 12 },
 
     // ── Variety Tasty Salads (凉菜) ──
     { categoryId: "cat-cold", nameEn: "Cucumber salad", nameZh: "凉拌黄瓜", price: 28, sortOrder: 1 },
@@ -167,9 +168,8 @@ async function main() {
     { categoryId: "cat-cold", nameEn: "Thousand-year Egg and Tofu salad", nameZh: "皮蛋豆腐", price: 28, sortOrder: 8 },
     { categoryId: "cat-cold", nameEn: "Cilantro & pepper salad", nameZh: "老虎菜", price: 28, sortOrder: 9 },
     { categoryId: "cat-cold", nameEn: "Northeast Jelly Noodle salad", nameZh: "东北大拉皮", price: 28, sortOrder: 10 },
-    { categoryId: "cat-cold", nameEn: "Spicy Cabbage and Scallop Potato", nameZh: "辣白菜土豆片", price: 28, sortOrder: 11 },
-    { categoryId: "cat-cold", nameEn: "Shredded potato salad", nameZh: "凉拌土豆丝", price: 28, sortOrder: 12 },
-    { categoryId: "cat-cold", nameEn: "Mixed veggie salad with Dipping sauce", nameZh: "沾酱菜", price: 28, sortOrder: 13 },
+    { categoryId: "cat-cold", nameEn: "Shredded potato salad", nameZh: "凉拌土豆丝", price: 28, sortOrder: 11 },
+    { categoryId: "cat-cold", nameEn: "Mixed veggie salad with Dipping sauce", nameZh: "沾酱菜", price: 28, sortOrder: 12 },
 
     // ── Staples (主食) ──
     { categoryId: "cat-staples", nameEn: "Fried Rice", nameZh: "炒饭", price: 28, sortOrder: 1 },
