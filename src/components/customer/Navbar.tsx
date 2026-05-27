@@ -3,24 +3,17 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
-import { setLocale } from '@/lib/locale-actions'
-import { ChevronDown, Check, User, Settings, LogOut } from 'lucide-react'
+import { User, Settings, LogOut } from 'lucide-react'
+import { LanguageToggle } from '@/components/customer/LanguageToggle'
 
 export default function Navbar() {
   const t = useTranslations('nav')
-  const tLang = useTranslations('language')
-  const locale = useLocale()
-  const router = useRouter()
   const pathname = usePathname()
   const { data: session } = useSession()
   const [scrolled, setScrolled] = useState(false)
-  const [langOpen, setLangOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
-  const langMobileRef = useRef<HTMLDivElement>(null)
-  const langDesktopRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   const user = session?.user
@@ -39,13 +32,10 @@ export default function Navbar() {
     return () => scrollEl.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Close dropdowns on click outside
+  // Close avatar dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node
-      if (!langMobileRef.current?.contains(target) && !langDesktopRef.current?.contains(target)) {
-        setLangOpen(false)
-      }
       if (!avatarRef.current?.contains(target)) {
         setAvatarOpen(false)
       }
@@ -53,11 +43,6 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  async function handleSetLocale(newLocale: 'en' | 'zh') {
-    await setLocale(newLocale)
-    router.refresh()
-  }
 
   function isActiveLink(href: string): boolean {
     if (href === '/') return pathname === '/'
@@ -87,38 +72,9 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Language dropdown */}
-        <div className="relative w-16 flex justify-end" ref={langMobileRef}>
-          <button
-            onClick={() => setLangOpen(prev => !prev)}
-            className="text-sm text-[#1A1208] flex items-center gap-1 cursor-pointer border-0 bg-transparent"
-            aria-label={tLang('switchTo')}
-          >
-            {locale === 'en' ? 'EN' : '中文'}
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {langOpen && (
-            <div className="absolute right-0 mt-8 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[140px] z-50">
-              <button
-                onClick={() => { handleSetLocale('en'); setLangOpen(false) }}
-                className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
-                  locale === 'en' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
-                }`}
-              >
-                English
-                {locale === 'en' && <Check className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => { handleSetLocale('zh'); setLangOpen(false) }}
-                className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
-                  locale === 'zh' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
-                }`}
-              >
-                中文
-                {locale === 'zh' && <Check className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
+        {/* Language toggle */}
+        <div className="w-16 flex justify-end">
+          <LanguageToggle />
         </div>
       </div>
 
@@ -162,39 +118,7 @@ export default function Navbar() {
 
         {/* Right side: language toggle + auth */}
         <div className="flex items-center gap-4 shrink-0">
-          {/* Language dropdown */}
-          <div className="relative" ref={langDesktopRef}>
-            <button
-              onClick={() => setLangOpen(prev => !prev)}
-              className="text-sm text-[#1A1208] flex items-center gap-1 cursor-pointer border-0 bg-transparent"
-              aria-label={tLang('switchTo')}
-            >
-              {locale === 'en' ? 'EN' : '中文'}
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {langOpen && (
-              <div className="absolute right-0 mt-2 bg-white rounded-xl shadow-lg border border-[#E8ECE4] py-1 min-w-[140px] z-50">
-                <button
-                  onClick={() => { handleSetLocale('en'); setLangOpen(false) }}
-                  className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
-                    locale === 'en' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
-                  }`}
-                >
-                  English
-                  {locale === 'en' && <Check className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={() => { handleSetLocale('zh'); setLangOpen(false) }}
-                  className={`w-full px-4 py-2 text-sm hover:bg-[#E8ECE4] transition-colors cursor-pointer flex items-center justify-between border-0 bg-transparent ${
-                    locale === 'zh' ? 'text-[#6B7F5E] font-medium' : 'text-[#1A1208]'
-                  }`}
-                >
-                  中文
-                  {locale === 'zh' && <Check className="w-4 h-4" />}
-                </button>
-              </div>
-            )}
-          </div>
+          <LanguageToggle />
 
           {/* Auth: avatar dropdown or login link */}
           {user ? (
