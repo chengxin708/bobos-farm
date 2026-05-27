@@ -39,7 +39,7 @@ function centsToDollarInput(cents: number): string {
 export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
   const router = useRouter();
 
-  const [view, setView] = useState<View>("menu");
+  const [view, setView] = useState<View>(mode === "edit" ? "checkout" : "menu");
   const [items, setItems] = useState<EditorItem[]>(initial?.items ?? []);
   const [customerName, setCustomerName] = useState(
     initial?.customerName ?? "",
