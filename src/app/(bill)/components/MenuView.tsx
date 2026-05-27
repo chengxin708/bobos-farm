@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
 import useSWR from "swr";
 import { ShoppingBag, Plus, UtensilsCrossed } from "lucide-react";
 import { centsToDollarString } from "@/lib/bill/totals";
@@ -36,6 +35,7 @@ interface Props {
   items: CartItem[];
   onAddItem: (m: MenuItemLite) => void;
   onCheckout: () => void;
+  onBack: () => void;
 }
 
 interface CategoryGroup {
@@ -46,7 +46,7 @@ interface CategoryGroup {
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
-export default function MenuView({ mode, items, onAddItem, onCheckout }: Props) {
+export default function MenuView({ mode, items, onAddItem, onCheckout, onBack }: Props) {
   const { data: menuItems, isLoading } = useSWR<MenuItemLite[]>(
     "/api/menu/items?activeOnly=true",
     fetcher,
@@ -158,12 +158,12 @@ export default function MenuView({ mode, items, onAddItem, onCheckout }: Props) 
         <h1 className="text-[17px] font-bold text-[#1A1208]">
           {mode === "new" ? "新建账单" : "编辑账单"}
         </h1>
-        <Link
-          href="/list"
+        <button
+          onClick={onBack}
           className="text-sm text-[#8C8478] press-effect"
         >
           返回
-        </Link>
+        </button>
       </div>
 
       {/* Body: sidebar + waterfall */}

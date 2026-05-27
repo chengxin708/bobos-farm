@@ -40,6 +40,7 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
   const router = useRouter();
 
   const [view, setView] = useState<View>(mode === "edit" ? "checkout" : "menu");
+  const [cameFromCheckout, setCameFromCheckout] = useState(false);
   const [items, setItems] = useState<EditorItem[]>(initial?.items ?? []);
   const [customerName, setCustomerName] = useState(
     initial?.customerName ?? "",
@@ -161,6 +162,14 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
         items={items}
         onAddItem={addOrIncrement}
         onCheckout={() => setView("checkout")}
+        onBack={() => {
+          if (cameFromCheckout) {
+            setCameFromCheckout(false);
+            setView("checkout");
+          } else {
+            router.push("/list");
+          }
+        }}
       />
     );
   }
@@ -176,7 +185,17 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
       discountInput={discountInput}
       saving={saving}
       share={share}
-      onBack={() => setView("menu")}
+      onBack={() => {
+        if (mode === "edit") {
+          router.push("/list");
+        } else {
+          setView("menu");
+        }
+      }}
+      onAddMore={() => {
+        setCameFromCheckout(true);
+        setView("menu");
+      }}
       onUpdateQty={updateQty}
       onRemove={removeItem}
       onCustomerName={setCustomerName}

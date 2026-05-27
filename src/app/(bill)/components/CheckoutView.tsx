@@ -29,6 +29,7 @@ interface Props {
   saving: boolean;
   share: ShareInfo | null;
   onBack: () => void;
+  onAddMore: () => void;
   onUpdateQty: (menuItemId: string, delta: number) => void;
   onRemove: (menuItemId: string) => void;
   onCustomerName: (v: string) => void;
@@ -49,6 +50,7 @@ export default function CheckoutView({
   saving,
   share,
   onBack,
+  onAddMore,
   onUpdateQty,
   onRemove,
   onCustomerName,
@@ -173,7 +175,7 @@ export default function CheckoutView({
 
             {/* Continue adding */}
             <button
-              onClick={onBack}
+              onClick={onAddMore}
               className="mt-3 w-full py-3 rounded-2xl border border-dashed border-[#E8ECE4] text-sm text-[#6B7F5E] font-medium flex items-center justify-center gap-1.5 press-effect"
             >
               <Plus className="w-4 h-4" />
