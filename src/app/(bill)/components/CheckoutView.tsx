@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, Plus, Minus, Trash2, UtensilsCrossed } from "lucide-react";
 import { computeTotals, centsToDollarString, dollarsToCents } from "@/lib/bill/totals";
 import ShareDialog from "./ShareDialog";
@@ -72,6 +72,8 @@ export default function CheckoutView({
 
   const itemCount = items.reduce((s, i) => s + i.quantity, 0);
   const canSave = items.length > 0 && !saving;
+  // Item pending a delete confirmation (opened by 删除, or by − on the last unit)
+  const [pendingDelete, setPendingDelete] = useState<CartItem | null>(null);
 
   return (
     <div className="flex flex-col h-dvh overflow-hidden bg-[#FCFAF5]">
@@ -144,7 +146,7 @@ export default function CheckoutView({
                     {/* Qty controls + remove */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E8ECE4]">
                       <button
-                        onClick={() => onRemove(it.menuItemId)}
+                        onClick={() => setPendingDelete(it)}
                         className="flex items-center gap-1.5 text-[13px] text-red-500 font-medium press-effect"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -152,7 +154,11 @@ export default function CheckoutView({
                       </button>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => onUpdateQty(it.menuItemId, -1)}
+                          onClick={() =>
+                            it.quantity === 1
+                              ? setPendingDelete(it)
+                              : onUpdateQty(it.menuItemId, -1)
+                          }
                           className="w-8 h-8 rounded-full bg-[#F7F4EE] flex items-center justify-center text-[#1A1208] press-effect border border-[#E8ECE4]"
                         >
                           <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -282,6 +288,75 @@ export default function CheckoutView({
         >
           {saving ? "保存中..." : mode === "new" ? "保存" : "更新"}
         </button>
+      </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="删除菜品"
+          message={
+            <>
+              确认从订单中删除{" "}
+              <span className="font-bold text-[#1A1208]">
+                「{pendingDelete.nameZhSnap ?? pendingDelete.nameEnSnap}」
+              </span>
+              ？
+            </>
+          }
+          confirmLabel="删除"
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            onRemove(pendingDelete.menuItemId);
+            setPendingDelete(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── Confirm dialog (centered modal, not window.confirm) ─── */
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  title: string;
+  message: React.ReactNode;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 animate-fade-in"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="w-full max-w-[300px] bg-[#FCFAF5] rounded-2xl shadow-float p-5 animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-[16px] font-bold text-[#1A1208]">{title}</h3>
+        <p className="mt-2 text-[14px] text-[#8C8478] leading-relaxed">{message}</p>
+        <div className="mt-5 flex gap-2.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl border border-[#E8ECE4] bg-white text-[14px] font-semibold text-[#1A1208] press-effect"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-[14px] font-semibold press-effect"
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
     </div>
   );
