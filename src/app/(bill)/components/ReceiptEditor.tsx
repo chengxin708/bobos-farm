@@ -94,10 +94,6 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
     );
   }
 
-  function removeItem(menuItemId: string) {
-    setItems((prev) => prev.filter((it) => it.menuItemId !== menuItemId));
-  }
-
   async function onSave() {
     if (!customerName.trim()) {
       alert("请填写客人姓名");
@@ -197,8 +193,6 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
         setCameFromCheckout(true);
         setView("menu");
       }}
-      onUpdateQty={updateQty}
-      onRemove={removeItem}
       onCustomerName={setCustomerName}
       onCustomerPhone={setCustomerPhone}
       onNotes={setNotes}
