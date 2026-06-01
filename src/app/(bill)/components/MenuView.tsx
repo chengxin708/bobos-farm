@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import useSWR from "swr";
-import { ShoppingBag, Plus, UtensilsCrossed } from "lucide-react";
+import { ShoppingBag, Plus, Minus, UtensilsCrossed } from "lucide-react";
 import { centsToDollarString } from "@/lib/bill/totals";
 
 export interface MenuItemLite {
@@ -34,6 +34,7 @@ interface Props {
   mode: "new" | "edit";
   items: CartItem[];
   onAddItem: (m: MenuItemLite) => void;
+  onUpdateQty: (menuItemId: string, delta: number) => void;
   onCheckout: () => void;
   onBack: () => void;
 }
@@ -46,7 +47,7 @@ interface CategoryGroup {
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
-export default function MenuView({ mode, items, onAddItem, onCheckout, onBack }: Props) {
+export default function MenuView({ mode, items, onAddItem, onUpdateQty, onCheckout, onBack }: Props) {
   const { data: menuItems, isLoading } = useSWR<MenuItemLite[]>(
     "/api/menu/items?activeOnly=true",
     fetcher,
@@ -248,6 +249,7 @@ export default function MenuView({ mode, items, onAddItem, onCheckout, onBack }:
                       item={m}
                       qty={qty}
                       onAdd={() => onAddItem(m)}
+                      onDec={() => onUpdateQty(m.id, -1)}
                     />
                   );
                 })}
@@ -290,10 +292,12 @@ function ItemCard({
   item,
   qty,
   onAdd,
+  onDec,
 }: {
   item: MenuItemLite;
   qty: number;
   onAdd: () => void;
+  onDec: () => void;
 }) {
   return (
     <div
@@ -331,23 +335,51 @@ function ItemCard({
             </div>
           );
         })()}
-        {/* qty badge */}
-        {qty > 0 && (
-          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#6B7F5E] text-white text-[11px] font-bold flex items-center justify-center z-10">
-            {qty}
+        {/* qty stepper (− N +) when in cart, else a lone + */}
+        {qty > 0 ? (
+          <div
+            className="absolute -bottom-1 -right-1 z-10 flex items-center rounded-full bg-white border border-[#E8ECE4] shadow-md p-0.5 select-none touch-manipulation"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDec();
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#1A1208] active:bg-[#F0EDE6] transition-colors"
+              aria-label="减少"
+            >
+              <Minus className="w-[18px] h-[18px]" strokeWidth={2.5} />
+            </button>
+            <span className="min-w-[22px] text-center text-[15px] font-bold text-[#1A1208] tabular-nums">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd();
+              }}
+              className="w-8 h-8 rounded-full bg-[#1A1208] text-white flex items-center justify-center active:opacity-80 transition-opacity"
+              aria-label="添加"
+            >
+              <Plus className="w-[18px] h-[18px]" strokeWidth={2.5} />
+            </button>
           </div>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+            className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-[#1A1208] text-white flex items-center justify-center shadow-md press-effect z-10 touch-manipulation"
+            aria-label="添加"
+          >
+            <Plus className="w-[18px] h-[18px]" strokeWidth={2.5} />
+          </button>
         )}
-        {/* + button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdd();
-          }}
-          className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#1A1208] text-white flex items-center justify-center shadow-md press-effect z-10"
-          aria-label="添加"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-        </button>
       </div>
     </div>
   );

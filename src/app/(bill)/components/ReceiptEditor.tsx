@@ -161,6 +161,7 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
         mode={mode}
         items={items}
         onAddItem={addOrIncrement}
+        onUpdateQty={updateQty}
         onCheckout={() => setView("checkout")}
         onBack={() => {
           if (cameFromCheckout) {

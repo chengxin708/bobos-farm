@@ -117,6 +117,7 @@ async function main() {
     prisma.menuCategory.create({ data: { id: "cat-stirfry", nameEn: "Stir Fried Courses", nameZh: "热菜", sortOrder: 3 } }),
     prisma.menuCategory.create({ data: { id: "cat-cold", nameEn: "Variety Tasty Salads", nameZh: "凉菜", sortOrder: 4 } }),
     prisma.menuCategory.create({ data: { id: "cat-staples", nameEn: "Staples", nameZh: "主食", sortOrder: 5 } }),
+    prisma.menuCategory.create({ data: { id: "cat-drinks", nameEn: "Drinks", nameZh: "饮品", sortOrder: 6 } }),
   ]);
   console.log("Menu categories created:", cats.map((c) => `${c.nameEn} (${c.nameZh})`).join(", "));
 
@@ -174,6 +175,10 @@ async function main() {
     // ── Staples (主食) ──
     { categoryId: "cat-staples", nameEn: "Fried Rice", nameZh: "炒饭", price: 28, sortOrder: 1 },
     { categoryId: "cat-staples", nameEn: "Fried Noodle", nameZh: "炒面", price: 28, sortOrder: 2 },
+
+    // ── Drinks (饮品) ──
+    { categoryId: "cat-drinks", nameEn: "Soda", nameZh: "汽水", price: 3, sortOrder: 1 },
+    { categoryId: "cat-drinks", nameEn: "Special Drink", nameZh: "特调饮品", price: 5, sortOrder: 2 },
   ];
 
   for (const it of items) {
