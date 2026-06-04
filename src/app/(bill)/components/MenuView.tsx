@@ -317,10 +317,7 @@ function ItemCard({
   onDec: () => void;
 }) {
   return (
-    <div
-      onClick={onAdd}
-      className="relative flex gap-3 p-2.5 rounded-2xl bg-white shadow-card cursor-pointer press-effect hover:shadow-card-hover transition-shadow duration-200"
-    >
+    <div className="relative flex gap-3 p-2.5 rounded-2xl bg-white shadow-card">
       <div className="flex-1 min-w-0 py-0.5">
         <p className="text-[13px] font-semibold text-[#1A1208] leading-snug line-clamp-2">
           {item.nameZh ?? item.nameEn}
@@ -352,51 +349,35 @@ function ItemCard({
             </div>
           );
         })()}
-        {/* qty stepper (− N +) when in cart, else a lone + */}
-        {qty > 0 ? (
-          <div
-            className="absolute -bottom-1 -right-1 z-10 flex items-center rounded-full bg-white border border-[#E8ECE4] shadow-md p-0.5 select-none touch-manipulation"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDec();
-              }}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#1A1208] active:bg-[#F0EDE6] transition-colors"
-              aria-label="减少"
-            >
-              <Minus className="w-[18px] h-[18px]" strokeWidth={2.5} />
-            </button>
-            <span className="min-w-[22px] text-center text-[15px] font-bold text-[#1A1208] tabular-nums">
-              {qty}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd();
-              }}
-              className="w-8 h-8 rounded-full bg-[#1A1208] text-white flex items-center justify-center active:opacity-80 transition-opacity"
-              aria-label="添加"
-            >
-              <Plus className="w-[18px] h-[18px]" strokeWidth={2.5} />
-            </button>
-          </div>
-        ) : (
+        {/* qty controls: the + stays anchored at bottom-right and never
+            moves; the − and count reveal to its left once in the cart, so
+            nothing shifts under the finger. Feedback is opacity/color only
+            — no transform — so the card never "jumps" while tapping. */}
+        <div className="absolute -bottom-1 -right-1 z-10 flex items-center gap-1.5 select-none">
+          {qty > 0 && (
+            <div className="flex items-center h-8 rounded-full bg-white border border-[#E8ECE4] shadow-md pr-1.5">
+              <button
+                type="button"
+                onClick={onDec}
+                aria-label="减少"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#1A1208] active:bg-[#F0EDE6] transition-colors touch-manipulation"
+              >
+                <Minus className="w-[18px] h-[18px]" strokeWidth={2.5} />
+              </button>
+              <span className="min-w-[20px] text-center text-[15px] font-bold text-[#1A1208] tabular-nums">
+                {qty}
+              </span>
+            </div>
+          )}
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd();
-            }}
-            className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-[#1A1208] text-white flex items-center justify-center shadow-md press-effect z-10 touch-manipulation"
+            onClick={onAdd}
             aria-label="添加"
+            className="w-8 h-8 rounded-full bg-[#1A1208] text-white flex items-center justify-center shadow-md active:opacity-80 transition-opacity touch-manipulation"
           >
             <Plus className="w-[18px] h-[18px]" strokeWidth={2.5} />
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
