@@ -152,6 +152,17 @@ export default function MenuView({ mode, items, onAddItem, onUpdateQty, onChecko
   const cartQtyMap = new Map<string, number>();
   for (const i of items) cartQtyMap.set(i.menuItemId, i.quantity);
 
+  // Per-category selected 份数 (sum of quantities within each category)
+  const catCountMap = new Map<string, number>();
+  {
+    const itemToCat = new Map<string, string>();
+    for (const m of menuItems ?? []) itemToCat.set(m.id, m.category?.id ?? "_uncat");
+    for (const i of items) {
+      const catId = itemToCat.get(i.menuItemId);
+      if (catId) catCountMap.set(catId, (catCountMap.get(catId) ?? 0) + i.quantity);
+    }
+  }
+
   return (
     <div className="flex flex-col h-dvh overflow-hidden bg-[#FCFAF5]">
       {/* Sticky header */}
@@ -182,18 +193,24 @@ export default function MenuView({ mode, items, onAddItem, onUpdateQty, onChecko
             ))}
           {groups.map((g) => {
             const isActive = activeCategoryId === g.id;
+            const catCount = catCountMap.get(g.id) ?? 0;
             return (
               <button
                 key={g.id}
                 data-active={isActive}
                 onClick={() => scrollToCategory(g.id)}
-                className={`w-full px-2 py-3 text-[12px] leading-tight text-center font-medium transition-colors border-l-[3px] ${
+                className={`relative w-full px-2 py-3 text-[12px] leading-tight text-center font-medium transition-colors border-l-[3px] ${
                   isActive
                     ? "bg-white text-[#1A1208] border-[#6B7F5E] font-bold"
                     : "text-[#8C8478] border-transparent"
                 }`}
               >
                 {g.name}
+                {catCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-[#6B7F5E] text-white text-[10px] font-bold leading-none rounded-full min-w-[16px] h-[16px] px-1 flex items-center justify-center tabular-nums">
+                    {catCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -268,17 +285,17 @@ export default function MenuView({ mode, items, onAddItem, onUpdateQty, onChecko
               className="w-full bg-[#1A1208] text-white rounded-2xl py-4 px-5 flex items-center justify-between font-semibold shadow-float press-effect"
             >
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <ShoppingBag className="w-5 h-5" />
-                  <span className="absolute -top-1.5 -right-1.5 bg-[#6B7F5E] text-white text-[10px] font-bold rounded-full flex items-center justify-center min-w-[18px] h-[18px]">
-                    {cartCount}
-                  </span>
-                </div>
+                <ShoppingBag className="w-5 h-5" />
                 <span className="text-[15px]">下一步</span>
               </div>
-              <span className="text-[15px] font-bold">
-                ${centsToDollarString(cartTotalCents)}
-              </span>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[13px] font-medium text-white/75 tabular-nums">
+                  共 {cartCount} 份
+                </span>
+                <span className="text-[15px] font-bold tabular-nums">
+                  ${centsToDollarString(cartTotalCents)}
+                </span>
+              </div>
             </button>
           </div>
         </div>
