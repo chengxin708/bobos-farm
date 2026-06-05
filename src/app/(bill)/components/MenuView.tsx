@@ -2,8 +2,43 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import useSWR from "swr";
-import { ShoppingBag, Plus, Minus, UtensilsCrossed } from "lucide-react";
+import {
+  ShoppingBag,
+  Plus,
+  Minus,
+  UtensilsCrossed,
+  Camera,
+  Image as ImageIcon,
+} from "lucide-react";
 import { centsToDollarString } from "@/lib/bill/totals";
+
+// Downscale an image File to a JPEG dataURL whose longest edge is <= 1600px.
+// Normalizes HEIC/PNG/etc to JPEG and shrinks the payload to save tokens.
+async function fileToDownscaledJpegDataUrl(file: File): Promise<string> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("图片解码失败"));
+      el.src = objectUrl;
+    });
+    const maxEdge = 1600;
+    const longest = Math.max(img.naturalWidth, img.naturalHeight) || 1;
+    const scale = Math.min(1, maxEdge / longest);
+    const w = Math.max(1, Math.round(img.naturalWidth * scale));
+    const h = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("无法处理图片");
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export interface MenuItemLite {
   id: string;
@@ -37,6 +72,8 @@ interface Props {
   onUpdateQty: (menuItemId: string, delta: number) => void;
   onCheckout: () => void;
   onBack: () => void;
+  aiEnabled?: boolean;
+  onOpenRecognize?: (imageDataUrl: string) => void;
 }
 
 interface CategoryGroup {
@@ -47,13 +84,37 @@ interface CategoryGroup {
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
 
-export default function MenuView({ mode, items, onAddItem, onUpdateQty, onCheckout, onBack }: Props) {
+export default function MenuView({ mode, items, onAddItem, onUpdateQty, onCheckout, onBack, aiEnabled, onOpenRecognize }: Props) {
   const { data: menuItems, isLoading } = useSWR<MenuItemLite[]>(
     "/api/menu/items?activeOnly=true",
     fetcher,
   );
 
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [aiMenuOpen, setAiMenuOpen] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePickedFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      // Reset so picking the same file again still fires onChange.
+      e.target.value = "";
+      setAiMenuOpen(false);
+      if (!file) return;
+      setAiProcessing(true);
+      try {
+        const dataUrl = await fileToDownscaledJpegDataUrl(file);
+        onOpenRecognize?.(dataUrl);
+      } catch {
+        alert("图片处理失败,请重试");
+      } finally {
+        setAiProcessing(false);
+      }
+    },
+    [onOpenRecognize],
+  );
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
   const waterfallScrollRef = useRef<HTMLDivElement>(null);
@@ -170,13 +231,80 @@ export default function MenuView({ mode, items, onAddItem, onUpdateQty, onChecko
         <h1 className="text-[17px] font-bold text-[#1A1208]">
           {mode === "new" ? "新建账单" : "编辑账单"}
         </h1>
-        <button
-          onClick={onBack}
-          className="text-sm text-[#8C8478] press-effect"
-        >
-          返回
-        </button>
+        <div className="flex items-center gap-3">
+          {aiEnabled && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setAiMenuOpen((v) => !v)}
+                disabled={aiProcessing}
+                aria-label="拍照识别点单"
+                className="w-9 h-9 rounded-full bg-[#F7F4EE] flex items-center justify-center press-effect disabled:opacity-50"
+              >
+                <Camera className="w-[18px] h-[18px] text-[#1A1208]" />
+              </button>
+              {aiMenuOpen && (
+                <>
+                  {/* backdrop to dismiss */}
+                  <button
+                    type="button"
+                    aria-hidden
+                    onClick={() => setAiMenuOpen(false)}
+                    className="fixed inset-0 z-40 cursor-default"
+                  />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-40 bg-white rounded-2xl shadow-float border border-[#E8ECE4] overflow-hidden py-1">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#1A1208] active:bg-[#F0EDE6] transition-colors"
+                    >
+                      <Camera className="w-4 h-4 text-[#6B7F5E]" />
+                      拍照
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[#1A1208] active:bg-[#F0EDE6] transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4 text-[#6B7F5E]" />
+                      从文件选择
+                    </button>
+                  </div>
+                </>
+              )}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handlePickedFile}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePickedFile}
+              />
+            </div>
+          )}
+          <button
+            onClick={onBack}
+            className="text-sm text-[#8C8478] press-effect"
+          >
+            返回
+          </button>
+        </div>
       </div>
+
+      {aiProcessing && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20">
+          <div className="bg-white rounded-2xl px-5 py-4 shadow-float text-sm text-[#1A1208]">
+            处理图片中…
+          </div>
+        </div>
+      )}
 
       {/* Body: sidebar + waterfall */}
       <div className="flex flex-1 min-h-0 overflow-hidden">

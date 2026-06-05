@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MenuView, { MenuItemLite } from "./MenuView";
 import CheckoutView from "./CheckoutView";
+import RecognitionReview, { ConfirmLine } from "./RecognitionReview";
 import { centsToDollarString } from "@/lib/bill/totals";
 
 interface EditorItem {
@@ -28,19 +29,21 @@ interface Props {
   mode: "new" | "edit";
   taxRate: number;
   initial?: Initial;
+  aiEnabled?: boolean;
 }
 
-type View = "menu" | "checkout";
+type View = "menu" | "checkout" | "recognize";
 
 function centsToDollarInput(cents: number): string {
   return centsToDollarString(cents);
 }
 
-export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
+export default function ReceiptEditor({ mode, taxRate, initial, aiEnabled }: Props) {
   const router = useRouter();
 
   const [view, setView] = useState<View>(mode === "edit" ? "checkout" : "menu");
   const [cameFromCheckout, setCameFromCheckout] = useState(false);
+  const [recognizeImage, setRecognizeImage] = useState<string | null>(null);
   const [items, setItems] = useState<EditorItem[]>(initial?.items ?? []);
   const [customerName, setCustomerName] = useState(
     initial?.customerName ?? "",
@@ -79,6 +82,30 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
           quantity: 1,
         },
       ];
+    });
+  }
+
+  // Merge recognized lines into the cart using the same accumulate-by-id
+  // semantics as addOrIncrement, but honoring each line's quantity (>=1).
+  function mergeRecognized(lines: ConfirmLine[]) {
+    setItems((prev) => {
+      const next = [...prev];
+      for (const line of lines) {
+        const qty = Math.max(1, line.quantity);
+        const idx = next.findIndex((it) => it.menuItemId === line.menuItemId);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], quantity: next[idx].quantity + qty };
+        } else {
+          next.push({
+            menuItemId: line.menuItemId,
+            nameEnSnap: line.nameEn,
+            nameZhSnap: line.nameZh,
+            priceCents: line.priceCents,
+            quantity: qty,
+          });
+        }
+      }
+      return next;
     });
   }
 
@@ -151,6 +178,24 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
     }
   }
 
+  if (view === "recognize" && recognizeImage) {
+    return (
+      <RecognitionReview
+        imageDataUrl={recognizeImage}
+        taxRate={taxRate}
+        onConfirm={(lines) => {
+          mergeRecognized(lines);
+          setRecognizeImage(null);
+          setView("menu");
+        }}
+        onCancel={() => {
+          setRecognizeImage(null);
+          setView("menu");
+        }}
+      />
+    );
+  }
+
   if (view === "menu") {
     return (
       <MenuView
@@ -159,6 +204,11 @@ export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
         onAddItem={addOrIncrement}
         onUpdateQty={updateQty}
         onCheckout={() => setView("checkout")}
+        aiEnabled={aiEnabled}
+        onOpenRecognize={(imageDataUrl) => {
+          setRecognizeImage(imageDataUrl);
+          setView("recognize");
+        }}
         onBack={() => {
           if (cameFromCheckout) {
             setCameFromCheckout(false);
