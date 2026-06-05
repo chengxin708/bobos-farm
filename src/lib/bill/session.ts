@@ -43,28 +43,54 @@ async function hmacBase64Url(value: string): Promise<string> {
   return bytesToBase64Url(sig);
 }
 
-export async function signSession(expiresAt: number): Promise<string> {
+export async function signSession(expiresAt: number, ai: boolean): Promise<string> {
   const exp = String(expiresAt);
-  const sig = await hmacBase64Url(exp);
-  return `${exp}.${sig}`;
+  const aiFlag = ai ? "1" : "0";
+  const sig = await hmacBase64Url(`${exp}.${aiFlag}`);
+  return `${exp}.${aiFlag}.${sig}`;
 }
 
-export async function verifySession(cookie: string | undefined): Promise<{ ok: boolean }> {
-  if (!cookie) return { ok: false };
-  const parts = cookie.split(".");
-  if (parts.length !== 2) return { ok: false };
-  const [exp, sig] = parts;
-  if (!exp || !sig) return { ok: false };
-  let expected: string;
-  try {
-    expected = await hmacBase64Url(exp);
-  } catch {
-    return { ok: false };
-  }
-  if (!timingSafeEqualStr(sig, expected)) return { ok: false };
+function isExpValid(exp: string): boolean {
   const expNum = Number(exp);
-  if (!Number.isFinite(expNum) || Date.now() >= expNum) return { ok: false };
-  return { ok: true };
+  return Number.isFinite(expNum) && Date.now() < expNum;
+}
+
+export async function verifySession(
+  cookie: string | undefined,
+): Promise<{ ok: boolean; ai: boolean }> {
+  if (!cookie) return { ok: false, ai: false };
+  const parts = cookie.split(".");
+
+  if (parts.length === 3) {
+    const [exp, aiFlag, sig] = parts;
+    if (!exp || !aiFlag || !sig) return { ok: false, ai: false };
+    let expected: string;
+    try {
+      expected = await hmacBase64Url(`${exp}.${aiFlag}`);
+    } catch {
+      return { ok: false, ai: false };
+    }
+    if (!timingSafeEqualStr(sig, expected)) return { ok: false, ai: false };
+    if (!isExpValid(exp)) return { ok: false, ai: false };
+    return { ok: true, ai: aiFlag === "1" };
+  }
+
+  // Legacy 2-part cookie (exp.sig): backward compatible, never AI-enabled.
+  if (parts.length === 2) {
+    const [exp, sig] = parts;
+    if (!exp || !sig) return { ok: false, ai: false };
+    let expected: string;
+    try {
+      expected = await hmacBase64Url(exp);
+    } catch {
+      return { ok: false, ai: false };
+    }
+    if (!timingSafeEqualStr(sig, expected)) return { ok: false, ai: false };
+    if (!isExpValid(exp)) return { ok: false, ai: false };
+    return { ok: true, ai: false };
+  }
+
+  return { ok: false, ai: false };
 }
 
 export function newSessionExpiresAt(): number {
