@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Plus, MoreVertical, Trash2, Copy, Pencil } from "lucide-react";
+import { Plus, MoreVertical, Trash2, Copy, Pencil, Camera } from "lucide-react";
 import { centsToDollarString } from "@/lib/bill/totals";
+import {
+  usePhotoCapture,
+  PhotoCaptureMenu,
+  PENDING_RECOGNIZE_IMAGE_KEY,
+} from "../../components/photoCapture";
 
 interface Row {
   id: string;
@@ -27,8 +33,16 @@ function formatTs(iso: string): string {
 }
 
 export default function ListClient() {
+  const router = useRouter();
   const { data, mutate } = useSWR<ListResponse>("/api/bill/receipts?limit=50", fetcher);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+
+  // 拍照新建: stash the captured photo and let the editor pick it up.
+  const capture = usePhotoCapture((dataUrl) => {
+    sessionStorage.setItem(PENDING_RECOGNIZE_IMAGE_KEY, dataUrl);
+    router.push("/new");
+  });
 
   async function onDelete(id: string) {
     if (!confirm("确认删除这个 receipt?")) return;
@@ -47,12 +61,37 @@ export default function ListClient() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-serif">历史 receipt</h2>
-        <Link
-          href="/new"
-          className="inline-flex items-center gap-1 bg-[#1A1208] text-white px-3 py-2 rounded-lg text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" /> 新建
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setPhotoMenuOpen((v) => !v)}
+              disabled={capture.processing}
+              className="inline-flex items-center gap-1 bg-white border border-[#E8ECE4] text-[#1A1208] px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              <Camera className="w-4 h-4 text-[#6B7F5E]" /> 拍照新建
+            </button>
+            <PhotoCaptureMenu
+              open={photoMenuOpen}
+              onClose={() => setPhotoMenuOpen(false)}
+              onCamera={() => {
+                setPhotoMenuOpen(false);
+                capture.openCamera();
+              }}
+              onFile={() => {
+                setPhotoMenuOpen(false);
+                capture.openFile();
+              }}
+            />
+            {capture.elements}
+          </div>
+          <Link
+            href="/new"
+            className="inline-flex items-center gap-1 bg-[#1A1208] text-white px-3 py-2 rounded-lg text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" /> 新建
+          </Link>
+        </div>
       </div>
       {!data ? (
         <p className="text-sm text-[#8C8478]">加载中...</p>

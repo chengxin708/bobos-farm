@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MenuView, { MenuItemLite } from "./MenuView";
 import CheckoutView from "./CheckoutView";
 import RecognitionReview, { ConfirmLine } from "./RecognitionReview";
+import { PENDING_RECOGNIZE_IMAGE_KEY } from "./photoCapture";
 import { centsToDollarString } from "@/lib/bill/totals";
 
 interface EditorItem {
@@ -29,7 +30,6 @@ interface Props {
   mode: "new" | "edit";
   taxRate: number;
   initial?: Initial;
-  aiEnabled?: boolean;
 }
 
 type View = "menu" | "checkout" | "recognize";
@@ -38,7 +38,7 @@ function centsToDollarInput(cents: number): string {
   return centsToDollarString(cents);
 }
 
-export default function ReceiptEditor({ mode, taxRate, initial, aiEnabled }: Props) {
+export default function ReceiptEditor({ mode, taxRate, initial }: Props) {
   const router = useRouter();
 
   const [view, setView] = useState<View>(mode === "edit" ? "checkout" : "menu");
@@ -63,6 +63,18 @@ export default function ReceiptEditor({ mode, taxRate, initial, aiEnabled }: Pro
   const [receiptId, setReceiptId] = useState<string | null>(
     initial?.id ?? null,
   );
+
+  // 拍照新建 on the list page stashes the captured photo in sessionStorage
+  // and navigates here; pick it up and jump straight into recognition.
+  useEffect(() => {
+    if (mode !== "new") return;
+    const pending = sessionStorage.getItem(PENDING_RECOGNIZE_IMAGE_KEY);
+    if (pending) {
+      sessionStorage.removeItem(PENDING_RECOGNIZE_IMAGE_KEY);
+      setRecognizeImage(pending);
+      setView("recognize");
+    }
+  }, [mode]);
 
   function addOrIncrement(m: MenuItemLite) {
     setItems((prev) => {
@@ -204,7 +216,6 @@ export default function ReceiptEditor({ mode, taxRate, initial, aiEnabled }: Pro
         onAddItem={addOrIncrement}
         onUpdateQty={updateQty}
         onCheckout={() => setView("checkout")}
-        aiEnabled={aiEnabled}
         onOpenRecognize={(imageDataUrl) => {
           setRecognizeImage(imageDataUrl);
           setView("recognize");

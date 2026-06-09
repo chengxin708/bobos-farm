@@ -55,11 +55,12 @@ describe("POST /api/bill/recognize", () => {
     mockedFindMany.mockResolvedValue(MENU_ITEMS);
   });
 
-  it("returns 403 when the session is valid but ai is false", async () => {
+  it("allows a valid session even when the ai flag is false", async () => {
     mockedVerify.mockResolvedValue({ ok: true, ai: false });
+    mockedRecognize.mockResolvedValue([]);
     const res = await POST(makeReq({ image: IMAGE }));
-    expect(res.status).toBe(403);
-    expect(mockedRecognize).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(mockedRecognize).toHaveBeenCalled();
   });
 
   it("returns 403 when the session is invalid", async () => {

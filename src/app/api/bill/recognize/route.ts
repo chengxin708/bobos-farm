@@ -36,9 +36,11 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // AI recognition is open to every authenticated bill session; the
+  // session's `ai` flag is no longer required.
   const cookie = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const { ok, ai } = await verifySession(cookie);
-  if (!ok || !ai) {
+  const { ok } = await verifySession(cookie);
+  if (!ok) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
