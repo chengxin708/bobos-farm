@@ -14,7 +14,8 @@ interface Props {
 export default async function ReceiptPublicPage({ params, searchParams }: Props) {
   const { token } = await params;
   const sp = await searchParams;
-  const lang = sp.lang === "en" ? "en" : "zh";
+  // Customer-facing receipt defaults to English; ?lang=zh switches to Chinese.
+  const lang = sp.lang === "zh" ? "zh" : "en";
   const receipt = await prisma.quickReceipt.findUnique({
     where: { token },
     include: { items: { orderBy: { sortOrder: "asc" } } },
@@ -23,11 +24,14 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
 
   const itemName = (en: string, zh: string | null) => (lang === "zh" ? (zh ?? en) : en);
   const t = lang === "zh"
-    ? { subtotal: "小计", discount: "折扣", tax: "税", total: "总计", langSwitch: "EN", title: "Bobo's Farm" }
-    : { subtotal: "Subtotal", discount: "Discount", tax: "Tax", total: "Total", langSwitch: "中", title: "Bobo's Farm" };
+    ? { subtotal: "小计", discount: "折扣", tax: "税", total: "总计", tips: "建议小费", memo: "备注", langSwitch: "EN", title: "Bobo's Farm" }
+    : { subtotal: "Subtotal", discount: "Discount", tax: "Tax", total: "Total", tips: "Suggested tips", memo: "Memo", langSwitch: "中", title: "Bobo's Farm" };
 
   return (
-    <main className="max-w-md mx-auto px-5 py-8">
+    // globals.css locks html/body to overflow:hidden, so the page needs its
+    // own scroll container (same fix as the bill list page).
+    <main className="h-dvh overflow-y-auto overscroll-contain">
+      <div className="max-w-md mx-auto px-5 py-8">
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-serif font-semibold">{t.title}</h1>
@@ -68,7 +72,7 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
       </div>
 
       <div className="bg-[#FCFAF5] border border-[#E8ECE4] rounded-lg p-4">
-        <div className="text-xs text-[#8C8478] mb-2">Suggested tips</div>
+        <div className="text-xs text-[#8C8478] mb-2">{t.tips}</div>
         <div className="space-y-1 text-sm">
           {TIP_PERCENTAGES.map((pct) => (
             <div key={pct} className="flex justify-between">
@@ -80,8 +84,12 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
       </div>
 
       {receipt.notes && (
-        <div className="mt-6 text-xs text-[#8C8478] whitespace-pre-wrap">{receipt.notes}</div>
+        <div className="mt-4 bg-[#FCFAF5] border border-[#E8ECE4] rounded-lg p-4">
+          <div className="text-xs text-[#8C8478] mb-1">{t.memo}</div>
+          <p className="text-sm whitespace-pre-wrap">{receipt.notes}</p>
+        </div>
       )}
+      </div>
     </main>
   );
 }
