@@ -96,9 +96,9 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
           href="https://lnfitservices.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-xs text-[#8C8478] hover:text-[#6B7F5E] transition-colors"
+          className="inline-flex items-center gap-1 text-xs text-[#8C8478] underline underline-offset-2 hover:text-[#6B7F5E] transition-colors"
         >
-          Powered by LNF IT SERVICES
+          Powered by LNF IT SERVICES 🔗
         </a>
       </div>
       </div>
