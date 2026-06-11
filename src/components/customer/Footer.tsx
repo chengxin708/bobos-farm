@@ -77,6 +77,14 @@ export default function Footer() {
               ))}
             </div>
             <span className="text-[11px] text-[#F8F7F4]/30">{t('copyright')}</span>
+            <a
+              href="https://lnfitservices.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-[#F8F7F4]/30 underline underline-offset-2 hover:text-[#6B7F5E] transition-colors"
+            >
+              Powered by LNF IT SERVICES 🔗
+            </a>
           </div>
         </div>
 
@@ -157,7 +165,17 @@ export default function Footer() {
                 </span>
               ))}
             </div>
-            <span className="text-xs text-[#F8F7F4]/30">{t('copyright')}</span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-xs text-[#F8F7F4]/30">{t('copyright')}</span>
+              <a
+                href="https://lnfitservices.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-[#F8F7F4]/30 underline underline-offset-2 hover:text-[#6B7F5E] transition-colors"
+              >
+                Powered by LNF IT SERVICES 🔗
+              </a>
+            </div>
           </div>
         </div>
 
