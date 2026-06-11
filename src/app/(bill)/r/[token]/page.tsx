@@ -90,12 +90,13 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
         </div>
       )}
 
-      <div className="mt-6 pt-4 border-t border-[#E8ECE4] text-center">
+      <div className="mt-6 pt-4 border-t border-[#E8ECE4] text-center space-y-1">
+        <p className="text-xs text-[#8C8478]">© {new Date().getFullYear()} First Harvest Inc</p>
         <a
           href="https://lnfitservices.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-[#8C8478] hover:text-[#6B7F5E] transition-colors"
+          className="block text-xs text-[#8C8478] hover:text-[#6B7F5E] transition-colors"
         >
           Powered by LNF IT SERVICES
         </a>
