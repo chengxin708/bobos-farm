@@ -89,6 +89,17 @@ export default async function ReceiptPublicPage({ params, searchParams }: Props)
           <p className="text-sm whitespace-pre-wrap">{receipt.notes}</p>
         </div>
       )}
+
+      <div className="mt-6 pt-4 border-t border-[#E8ECE4] text-center">
+        <a
+          href="https://lnfitservices.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-[#8C8478] hover:text-[#6B7F5E] transition-colors"
+        >
+          Powered by LNF IT SERVICES
+        </a>
+      </div>
       </div>
     </main>
   );
