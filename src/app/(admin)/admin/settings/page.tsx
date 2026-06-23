@@ -646,11 +646,42 @@ export default function Settings() {
       updateField(key, current === 'true' ? 'false' : 'true')
     }
     const isEnabled = (key: string) => (formValues[key] ?? 'true') === 'true'
+    // Maintenance master switch defaults to OFF when unset (normal operation),
+    // unlike the generic toggles above which default ON.
+    const maintenanceOn = formValues.booking_maintenance === 'true'
 
     return (
       <div className="bg-white rounded-xl border border-[#E8ECE4] p-6">
         <h2 className="text-base font-semibold text-[#1A1208] font-serif">{t('booking.title')}</h2>
         <p className="text-sm text-[#8C8478] mt-1 mb-8">{t('booking.subtitle')}</p>
+
+        {/* Master switch: pause online booking ("under development" mode) */}
+        <div className="mb-8 p-4 rounded-lg border-2 border-[#E8ECE4] bg-[#FAFAF7]">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-bold text-[#1A1208]">{t('booking.maintenanceMode')}</p>
+              <p className="text-xs text-[#8C8478] mt-1">{t('booking.maintenanceModeHelp')}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateField('booking_maintenance', maintenanceOn ? 'false' : 'true')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0 ${
+                maintenanceOn ? 'bg-[#DC3545]' : 'bg-[#5B8C3E]'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  maintenanceOn ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          {maintenanceOn && (
+            <p className="mt-3 text-xs font-semibold text-[#DC3545] bg-[#DC3545]/10 px-3 py-2 rounded">
+              {t('booking.maintenanceOnNote')}
+            </p>
+          )}
+        </div>
 
         {/* Deposit Amount */}
         <div className="mb-8">

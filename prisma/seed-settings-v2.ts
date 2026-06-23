@@ -104,6 +104,13 @@ const NEW_SETTINGS: NewSetting[] = [
     value: "0.08",
     description: "Sales tax rate as a decimal (Ulster County, NY = 0.08)",
   },
+
+  // Booking availability
+  {
+    key: "booking_maintenance",
+    value: "false",
+    description: "在线预约「开发中」总开关；true=暂停顾客预约与咨询，显示致电提示",
+  },
 ];
 
 async function main() {

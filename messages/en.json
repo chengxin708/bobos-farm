@@ -526,6 +526,10 @@
     "zh": "\u4e2d\u6587",
     "switchTo": "Switch language"
   },
+  "bookingClosed": {
+    "title": "Online Booking Under Development",
+    "body": "Our online reservation system is still being set up. To book your visit, please give us a call — we'll be glad to help."
+  },
   "admin": {
     "nav": {
       "admin": "Admin",
@@ -1469,7 +1473,10 @@
         "reactivationDeadlineUnit": "hours",
         "reactivationDeadlineHelp": "Payment window (hours) after reactivating an expired reservation.",
         "requireEmailVerification": "Require email verification",
-        "requireEmailVerificationHelp": "When on, customers must verify their email before creating a reservation."
+        "requireEmailVerificationHelp": "When on, customers must verify their email before creating a reservation.",
+        "maintenanceMode": "Pause online booking (under development)",
+        "maintenanceModeHelp": "When ON, customers can't book or submit an inquiry online — they see a notice asking them to call instead. You can still create reservations for them from the admin side.",
+        "maintenanceOnNote": "Online booking & inquiries are paused. Customers are being asked to call to reserve."
       },
       "inquiry": {
         "title": "Inquiry Settings",

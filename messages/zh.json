@@ -526,6 +526,10 @@
     "zh": "中文",
     "switchTo": "切换语言"
   },
+  "bookingClosed": {
+    "title": "预约系统开发中",
+    "body": "我们的在线预约系统正在开发中。如需预约,请直接致电,我们很乐意为您服务。"
+  },
   "admin": {
     "nav": {
       "admin": "管理",
@@ -1469,7 +1473,10 @@
         "reactivationDeadlineUnit": "小时",
         "reactivationDeadlineHelp": "过期订单被重新激活后的支付宽限窗口（小时）。",
         "requireEmailVerification": "强制邮箱验证",
-        "requireEmailVerificationHelp": "开启后，客户必须验证邮箱才能创建预订。"
+        "requireEmailVerificationHelp": "开启后，客户必须验证邮箱才能创建预订。",
+        "maintenanceMode": "暂停在线预约（开发中）",
+        "maintenanceModeHelp": "打开后，顾客无法在线预约或提交咨询，只会看到「请致电预约」的提示。你仍可在后台代客创建预约。",
+        "maintenanceOnNote": "在线预约和咨询已暂停，顾客会被提示致电预约。"
       },
       "inquiry": {
         "title": "咨询单设置",

@@ -57,6 +57,8 @@ const ALLOWED_SETTING_KEYS = [
   "inquiry_timeout_escalate_hours",
   "inquiry_auto_expire_days",
   "require_email_verification",
+  // Booking availability master switch (customer-facing "under development" mode)
+  "booking_maintenance",
   // Tax
   "tax_rate",
 ] as const;

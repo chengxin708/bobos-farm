@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth-options";
 import { z } from "zod";
 import { computeInquiryTags } from "@/lib/inquiry-tagging";
 import { ipFromRequest, rateLimit } from "@/lib/rate-limit";
+import { isBookingMaintenance } from "@/lib/booking-maintenance";
 
 const createInquirySchema = z.object({
   preferredDate: z.string().min(1).refine((v) => !isNaN(Date.parse(v)), {
@@ -76,6 +77,18 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
     if (user.role === "ADMIN") {
       return NextResponse.json({ error: "Admins cannot submit inquiries" }, { status: 403 });
+    }
+
+    // Online booking / inquiries can be paused ("under development") from
+    // admin settings. All callers here are customers (admins rejected above).
+    if (await isBookingMaintenance()) {
+      return NextResponse.json(
+        {
+          error: "Online booking is temporarily unavailable. Please call to make a reservation.",
+          code: "BOOKING_MAINTENANCE",
+        },
+        { status: 403 },
+      );
     }
 
     // Rate limit AFTER auth so admins / unauthenticated users don't

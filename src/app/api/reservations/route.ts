@@ -10,6 +10,7 @@ import { sendPushToAdmins } from "@/lib/push";
 import { simulateWithNewReservation, assignYurtsForDate, checkDateAnomalies, tryDeterministicAssignment } from "@/lib/yurt-assignment";
 import { recordContactsFromUser } from "@/lib/contact-history";
 import { syncReservationYurt } from "@/lib/reservation-yurt-sync";
+import { isBookingMaintenance } from "@/lib/booking-maintenance";
 import { isYurtDateConflict } from "@/lib/reservation-errors";
 import { computeAdminPaymentDeadline, resolveAdminDeadlineHours } from "@/lib/admin-deadline";
 import { computeCustomerPaymentDeadline, resolveCustomerDeadlineHours } from "@/lib/customer-deadline";
@@ -129,6 +130,12 @@ export async function GET(req: NextRequest) {
                 yurt: { select: { id: true, name: true, alias: true } },
               },
             },
+            items: {
+              select: {
+                quantity: true,
+                menuItem: { select: { price: true } },
+              },
+            },
           },
         },
       },
@@ -153,6 +160,19 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = (session.user as { role?: string }).role === "ADMIN";
+
+    // Online booking can be paused ("under development") from admin settings.
+    // Customers are blocked here; admins can still create reservations on
+    // behalf of customers who call in.
+    if (!isAdmin && (await isBookingMaintenance())) {
+      return NextResponse.json(
+        {
+          error: "Online booking is temporarily unavailable. Please call to make a reservation.",
+          code: "BOOKING_MAINTENANCE",
+        },
+        { status: 403 },
+      );
+    }
 
     // Customer-side rate limit: 5 reservations per user per hour. Admins
     // creating proxy bookings are exempt — they may legitimately punch
